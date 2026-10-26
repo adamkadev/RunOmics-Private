@@ -660,6 +660,10 @@ export const en = {
         in: 'Load in range',
         above: 'Load above range',
       },
+      // Said in place of the load line while a break has left nothing to read it against.
+      buildingBack: 'Building back - no reading yet',
+      // "Estimated" where the watch rates no load and the app did the arithmetic itself.
+      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimated` : state),
       ctl: 'Fitness',
       atl: 'Fatigue',
       // "↘ 2 this week" under a tile.
@@ -2145,6 +2149,8 @@ export const en = {
       eyebrow: 'Rest',
       title: 'Rest day',
       next: (weekday: string) => `Next: ${weekday}`,
+      finishedEyebrow: 'Block finished',
+      finished: (done: number, total: number) => `${done} of ${total} sessions`,
     },
     comingUp: {
       title: 'Coming up',
@@ -2166,6 +2172,7 @@ export const en = {
     phase: {
       weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
       generalShort: 'General prep',
+      blockEnds: (weekday: string) => `Block ends ${weekday}; next block not planned yet`,
       raceInWeeks: (race: string, weeks: number) => `${race} in ${weeks} wk`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} today` : days === 1 ? `${race} tomorrow` : `${race} in ${days} days`),
     },

@@ -20,7 +20,8 @@ export async function getOverreachingAlerts(): Promise<{ newAlerts: Overreaching
 
   const lastState = await getLastOverreachingState()
   const wasAlerted = lastState?.alerted ?? false
-  const isHighRisk = status.risk === 'high'
+  // Only the watch's own reading warns: the app's estimate calls a return from a break overreaching.
+  const isHighRisk = status.source === 'garmin' && status.risk === 'high'
 
   return {
     newAlerts: isHighRisk && !wasAlerted ? [{ tsb: status.tsb, acwr: status.acwr, ctlDelta: status.ctlDelta }] : [],

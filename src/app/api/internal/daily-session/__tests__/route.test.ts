@@ -3,13 +3,13 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { getTodayPlannedWorkout, sendPush, sent } = vi.hoisted(() => ({
-  getTodayPlannedWorkout: vi.fn(),
+const { getDailySession, sendPush, sent } = vi.hoisted(() => ({
+  getDailySession: vi.fn(),
   sendPush: vi.fn(),
   sent: new Set<string>(),
 }))
 
-vi.mock('@/application/usecases/GetPlannedWorkouts', () => ({ getTodayPlannedWorkout }))
+vi.mock('@/application/usecases/GetDailySession', () => ({ getDailySession }))
 vi.mock('@/lib/sendPushNotification', () => ({ sendPush, sendPushes: vi.fn() }))
 vi.mock('@/application/usecases/SendScheduledPush', () => ({
   sendOncePer: async (_push: string, key: string, send: () => Promise<void>) => {
@@ -58,15 +58,15 @@ describe('POST /api/internal/daily-session', () => {
   })
 
   it('announces a rest day', async () => {
-    getTodayPlannedWorkout.mockResolvedValue(null)
+    getDailySession.mockResolvedValue({ workout: null, source: null })
     const { POST } = await routeIn('en')
 
-    expect(await (await POST(request())).json()).toEqual({ sent: true, restDay: true })
+    expect(await (await POST(request())).json()).toEqual({ sent: true, restDay: true, source: null })
     expect(sendPush).toHaveBeenCalledWith('training', 'Rest day', 'No session scheduled today - recovery day.')
   })
 
   it('names the session, its distance and its duration', async () => {
-    getTodayPlannedWorkout.mockResolvedValue({ date: '2026-10-02', name: 'Strides 6 x 20s', distanceM: 8000, durationSecs: 2700 })
+    getDailySession.mockResolvedValue({ workout: { date: '2026-10-02', name: 'Strides 6 x 20s', distanceM: 8000, durationSecs: 2700 }, source: 'garmin' })
     const { POST } = await routeIn('en')
 
     await POST(request())
@@ -74,25 +74,33 @@ describe('POST /api/internal/daily-session', () => {
   })
 
   it('sends from the cron in the 08:xx Paris hour only, once a day', async () => {
-    getTodayPlannedWorkout.mockResolvedValue(null)
+    getDailySession.mockResolvedValue({ workout: null, source: null })
     const { GET, POST } = await routeIn('en')
 
     vi.useFakeTimers({ now: new Date('2026-01-15T06:20:00Z'), toFake: ['Date'] })
     expect(await (await GET(cronRequest())).json()).toEqual({ skipped: 'not 08:xx in Paris' })
 
     vi.setSystemTime(new Date('2026-01-15T07:20:00Z'))
-    expect(await (await GET(cronRequest())).json()).toEqual({ sent: true, restDay: true })
+    expect(await (await GET(cronRequest())).json()).toEqual({ sent: true, restDay: true, source: null })
     expect(await (await POST(request())).json()).toEqual({ skipped: 'already sent today' })
     expect(sendPush).toHaveBeenCalledTimes(1)
   })
 
+  it('says nothing on a morning with no plan within a week either way', async () => {
+    getDailySession.mockResolvedValue(null)
+    const { POST } = await routeIn('en')
+
+    expect(await (await POST(request())).json()).toEqual({ skipped: 'nothing planned within a week' })
+    expect(sendPush).not.toHaveBeenCalled()
+  })
+
   it('speaks the deployment’s language', async () => {
-    getTodayPlannedWorkout.mockResolvedValue(null)
+    getDailySession.mockResolvedValue({ workout: null, source: null })
     const { POST: restDay } = await routeIn('fr')
     await restDay(request())
     expect(sendPush).toHaveBeenLastCalledWith('training', 'Jour de repos', 'Aucune séance prévue aujourd’hui : place à la récupération.')
 
-    getTodayPlannedWorkout.mockResolvedValue({ date: '2026-10-02', name: 'Footing', distanceM: 8000, durationSecs: 2700 })
+    getDailySession.mockResolvedValue({ workout: { date: '2026-10-02', name: 'Footing', distanceM: 8000, durationSecs: 2700 }, source: 'coach' })
     sent.clear()
     const { POST: session } = await routeIn('fr')
     await session(request())

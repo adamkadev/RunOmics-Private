@@ -68,7 +68,8 @@ export function ReadinessCard({
   const tone = verdictTone(status)
   const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
   const band = formBand(status.tsbNow)
-  const line = load ? s.loadState[load.state] : s.lineByTone[tone]
+  // Building back there is no reading at all, so no load line and none of the tone's own either.
+  const line = status.buildingBack ? s.buildingBack : load ? s.loadLine(s.loadState[load.state], load.estimated) : s.lineByTone[tone]
   const fresh = band === 'fresh' || band === 'veryFresh'
   const fallback = load ? s.fallback[load.state](load.acute, load.lo, load.hi, fresh) : null
   // A written headline that names a form state the status line doesn't ("You're fresh" over NEUTRAL) gives way to the load's own.

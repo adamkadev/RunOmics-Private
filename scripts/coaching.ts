@@ -2,6 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 import { readProposalPreview, writeProposalPreview } from '@/application/coaching/preview'
+import { renewalDefaults } from '@/domain/coaching/renewal'
 import { dataWorkspace, pushWorkspace, removeWorkspace } from './coachingWorkspace'
 import { interopImport } from './interopImport'
 
@@ -30,6 +31,8 @@ function usage(): string {
     'Options:',
     '  --data-dir <path>  Read/write an existing workspace without fetching or pushing it.',
     '  --runs-per-week <n> Normal desired runs, independently of available --days.',
+    '                     With a current plan, --days, --runs-per-week and --start all',
+    '                     default to it, so a renewal needs none of them.',
     '  --start <monday>   Write the new block from that Monday, at most a week out,',
     '                     keeping the current plan\'s sessions until then unchanged.',
     '  --general          Plan general preparation toward no race; races inside the',
@@ -60,8 +63,11 @@ function fileOption(args: string[], name: string): string | undefined {
   return fs.readFileSync(resolved, 'utf-8')
 }
 
-function availableDays(raw: string | undefined): number[] {
-  if (!raw) throw new Error('bootstrap requires --days (for example: --days tue,thu,sat,sun)')
+function availableDays(raw: string | undefined, fallback: number[] | undefined): number[] {
+  if (!raw) {
+    if (fallback?.length) return fallback
+    throw new Error('bootstrap requires --days (for example: --days tue,thu,sat,sun)')
+  }
   const parsed = raw.split(',').map((day) => {
     const value = WEEKDAY[day.trim().toLowerCase()]
     if (value === undefined) throw new Error(`Unknown weekday: ${day}`)
@@ -70,9 +76,12 @@ function availableDays(raw: string | undefined): number[] {
   return [...new Set(parsed)]
 }
 
-function requestedRuns(args: string[]): number {
+function requestedRuns(args: string[], fallback: number | undefined): number {
   const raw = option(args, '--runs-per-week')
-  if (!raw) throw new Error('bootstrap requires --runs-per-week independently of --days')
+  if (!raw) {
+    if (fallback) return fallback
+    throw new Error('bootstrap requires --runs-per-week independently of --days')
+  }
   return Number(raw)
 }
 
@@ -129,7 +138,17 @@ async function createProposal(command: string, args: string[]) {
     const context = await getCoachingContext(currentPlan, referenceDate)
     const contextOutput = option(args, '--context-out')
     if (contextOutput) fs.writeFileSync(path.resolve(contextOutput), JSON.stringify(context, null, 2) + '\n')
-    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), bootstrapGuidance(args, repository.getGuidance()), args.includes('--replace'), args.includes('--general'), option(args, '--start'))
+    const defaults = renewalDefaults(currentPlan, referenceDate)
+    const days = availableDays(option(args, '--days'), defaults.availableWeekdays)
+    const runs = requestedRuns(args, defaults.runsPerWeek)
+    const start = option(args, '--start') ?? defaults.start
+    const defaulted = [
+      option(args, '--days') ? null : `--days ${days.join(',')}`,
+      option(args, '--runs-per-week') ? null : `--runs-per-week ${runs}`,
+      option(args, '--start') || !start ? null : `--start ${start}`,
+    ].filter((part): part is string => part !== null)
+    if (defaulted.length) console.log(`From the current plan: ${defaulted.join(' ')}`)
+    return createBootstrapProposal(context, days, { advisor, repository }, option(args, '--race'), runs, bootstrapGuidance(args, repository.getGuidance()), args.includes('--replace'), args.includes('--general'), start)
   }
 
   if (command === 'evaluate') {

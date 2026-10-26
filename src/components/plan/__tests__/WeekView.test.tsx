@@ -426,6 +426,41 @@ describe('a rest day', () => {
   })
 })
 
+describe('the end of a block', () => {
+  const ending = (endDate: string) => overview({ coachingPlan: plan({ block: { ...plan().block, endDate } }) })
+
+  it('says when the block ends and that nothing follows it yet', () => {
+    renderWeek({ coaching: ending('2026-09-13') })
+
+    expect(screen.getByTestId('phase-note').textContent).toBe(t.plan.phase.blockEnds('Sun'))
+  })
+
+  it('says nothing on a week the block runs straight through', () => {
+    renderWeek({ coaching: ending('2026-10-04') })
+
+    expect(screen.queryByTestId('phase-note')).toBeNull()
+  })
+
+  it('counts the sessions done once the block is over, in place of a rest day', async () => {
+    const user = userEvent.setup()
+    const coaching = ending('2026-09-08')
+    renderWeek({ coaching })
+
+    await user.click(day('2026-09-11'))
+    const card = screen.getByTestId('plan-block-finished')
+    expect(within(card).getByRole('heading').textContent).toBe(t.plan.restCard.finished(0, coaching.workouts.length))
+    expect(screen.queryByTestId('plan-rest-day')).toBeNull()
+  })
+
+  it('calls a day before the block nothing planned, not a rest day', async () => {
+    const user = userEvent.setup()
+    renderWeek({ coaching: overview({ coachingPlan: plan({ block: { ...plan().block, startDate: '2026-09-10' } }) }) })
+
+    await user.click(day('2026-09-08'))
+    expect(within(screen.getByTestId('plan-rest-day')).getByRole('heading').textContent).toBe(t.plan.dayCard.notPlanned)
+  })
+})
+
 describe('other training', () => {
   const strength: CrossTrainingEntry = { id: 'x1', date: '2026-09-08', kind: 'strength', durationSeconds: 2700, distanceKm: null, sets: 12 }
 

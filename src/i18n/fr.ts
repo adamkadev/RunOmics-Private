@@ -81,11 +81,12 @@ export const fr = {
     monthShortYear: (month: string, year2: string) => `${month} ${year2}`,
   },
 
+  // Des états, pas des adjectifs : l’app ne sait pas qui la lit, et « Fatigué » accorde au masculin.
   formBand: {
-    tired: 'Fatigué',
+    tired: 'En fatigue',
     neutral: 'Neutre',
-    fresh: 'Frais',
-    veryFresh: 'Très frais',
+    fresh: 'Fraîcheur',
+    veryFresh: 'Grande fraîcheur',
   },
 
   zoneLabels: {
@@ -623,13 +624,15 @@ export const fr = {
         in: 'Charge dans la zone',
         above: 'Charge au-dessus de la zone',
       },
+      buildingBack: 'Reprise - pas encore de lecture',
+      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimée` : state),
       ctl: 'Condition',
       atl: 'Fatigue',
       // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
       deltaWeek: (n: number, days: number) => `${n} en ${days} j`,
       fallback: {
         below: (acute: number, lo: number, hi: number, fresh = false) => ({
-          headline: fresh ? 'Tu es frais. Il est temps de reconstruire.' : 'La charge est sous ta zone. Il est temps de reconstruire.',
+          headline: fresh ? 'La fatigue est retombée. Il est temps de reconstruire.' : 'La charge est sous ta zone. Il est temps de reconstruire.',
           body: `La charge ${acute} est passée sous ta zone sûre ${lo}–${hi}. Fais la séance du jour en entier pour la remonter.`,
         }),
         in: (acute: number, lo: number, hi: number) => ({
@@ -765,7 +768,7 @@ export const fr = {
         loadRow: (state: 'below' | 'in' | 'above', acute: number, lo: number, hi: number) =>
           state === 'below' ? `Charge ${acute}, sous la zone sûre ${lo}–${hi}.` : state === 'above' ? `Charge ${acute}, au-dessus de la zone sûre ${lo}–${hi}.` : `Charge ${acute}, dans la zone sûre ${lo}–${hi}.`,
         fitnessNow: (perWeek: number, n: string) => (perWeek < 0 ? ` En recul de ${n} par semaine.` : perWeek > 0 ? ` En hausse de ${n} par semaine.` : ' Stable en ce moment.'),
-        fatigueNow: { fresh: ' Tu es bien récupéré.', veryFresh: ' Tu es bien récupéré.', neutral: ' La récupération suit son cours.', tired: ' Tu portes de la fatigue.' } as Record<string, string>,
+        fatigueNow: { fresh: ' La récupération est faite.', veryFresh: ' La récupération est faite.', neutral: ' La récupération suit son cours.', tired: ' Tu portes de la fatigue.' } as Record<string, string>,
         restingHrRow: (side: 'low' | 'high' | null, value: number, lo: number, hi: number) =>
           side === 'high' ? `FC repos ${value}, au-dessus de ta base ${lo}–${hi}.` : side === 'low' ? `FC repos ${value}, sous ta base ${lo}–${hi}.` : `FC repos ${value}, dans ta base ${lo}–${hi}.`,
         thresholdFaster: (pace: string, s: number, ago: string) => `Seuil ${pace} /km, ${s} s plus rapide qu’${ago}.`,
@@ -810,7 +813,7 @@ export const fr = {
         about: 'La forme est la condition moins la fatigue. La condition est ta charge moyenne sur 42 jours, la fatigue celle sur 7 jours. Sous −10, tu accumules de la fatigue ; au-dessus de +5, tes jambes sont fraîches.',
         fitness: 'Condition',
         fatigue: 'Fatigue',
-        legend: { fresh: 'Frais', neutral: 'Neutre', tired: 'Fatigué' },
+        legend: { fresh: 'Fraîcheur', neutral: 'Neutre', tired: 'En fatigue' },
       },
       loadCompact: {
         title: 'Charge',
@@ -939,7 +942,7 @@ export const fr = {
         noRuns: 'aucune sortie',
         plus: (s: number) => `+${s} s`,
         barKey: 'Barre plus longue : plus de s/km perdues face à ta meilleure tranche.',
-        fastest: (band: string) => `Tu es le plus rapide entre ${band}.`,
+        fastest: (band: string) => `Ton allure est la plus rapide entre ${band}.`,
         coldCosts: (s: string) => [' Sous 5 °C, tu perds ', `${s} s/km`, ''] as [string, string, string],
         warmCosts: (s: string, afterCold: boolean) => [afterCold ? ', au-dessus de 20 °C ' : ' Au-dessus de 20 °C, tu perds ', `${s} s/km`, ''] as [string, string, string],
       },
@@ -1988,6 +1991,8 @@ export const fr = {
       eyebrow: 'Repos',
       title: 'Jour de repos',
       next: (weekday: string) => `Prochaine : ${weekday}`,
+      finishedEyebrow: 'Bloc terminé',
+      finished: (done: number, total: number) => `${done} séance${done > 1 ? 's' : ''} sur ${total}`,
     },
     comingUp: {
       title: 'À venir',
@@ -2008,6 +2013,7 @@ export const fr = {
     phase: {
       weekOf: (total: number) => ({ before: 'Semaine', after: `sur ${total}` }),
       generalShort: 'Prépa générale',
+      blockEnds: (weekday: string) => `Le bloc finit ${weekday} ; prochain bloc pas encore prévu`,
       raceInWeeks: (race: string, weeks: number) => `${race} dans ${weeks} sem.`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} aujourd’hui` : days === 1 ? `${race} demain` : `${race} dans ${days} jours`),
     },

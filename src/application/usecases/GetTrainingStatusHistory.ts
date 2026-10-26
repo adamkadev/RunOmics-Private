@@ -1,6 +1,7 @@
 import { getTrainingStatusDays } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { buildSegments } from '@/domain/training/statusHistory'
+import { buildingBack } from '@/domain/training/buildingBack'
 import { LOAD_TREND_DAYS } from '@/domain/training/status'
 import { DAY_MS } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
@@ -55,9 +56,10 @@ export function getLocalTrainingStatusHistory(): TrainingStatusHistory | null {
     const latest = upTo[0]
     const ctlDelta = round(day.ctl - series[Math.max(0, i - LOAD_TREND_DAYS)]![1].ctl, 1)
     const status =
-      !latest || Date.parse(date) - Date.parse(latest.date) >= LOCAL_STATUS_DAYS * DAY_MS
+      !latest || Date.parse(date) - Date.parse(latest.date) >= LOCAL_STATUS_DAYS * DAY_MS || buildingBack(upTo.map((a) => a.date), date)
         ? null
-        : classify(day.tsb, ctlDelta, acwr(upTo, new Date(`${latest.date}T00:00:00`))).status
+        // The day being replayed, not its last run: anchored on the run, a week off reads as a full acute week.
+        : classify(day.tsb, ctlDelta, acwr(upTo, new Date(`${date}T00:00:00`))).status
     return { date, status, acuteLoad: null, chronicLoad: null, targetBand: null }
   })
   if (points.length < 14 || !buildSegments(points).length) return null

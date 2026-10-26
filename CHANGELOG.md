@@ -4,6 +4,37 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- After a break of four weeks or more, Today holds its load reading for the
+  first four weeks of running back: the status line reads "Building back - no
+  reading yet" instead of a form band and a load state, the overreaching push
+  never fires from the app's own estimate, and the verdict card is told the
+  athlete is building back rather than overreaching. Analytics' local training
+  status leaves those weeks blank. The acute/chronic ratio is worked out from
+  today, not from the last run, so a week off reads as a week off; and a load
+  line the app estimated itself says "Estimated".
+
+- French no longer agrees anything with the athlete: the form bands read
+  "En fatigue", "Fraîcheur" and "Grande fraîcheur", and three sentences lose
+  "Tu es frais", "bien récupéré" and "le plus rapide". The parity test now
+  walks the whole French tree, calling every function with sample arguments.
+
+- Plan says where a block stands. In its last week the phase card adds "Block
+  ends Sunday; next block not planned yet"; after the last day a "Block
+  finished" card counts the sessions done out of those prescribed, in place of
+  a run of rest days; a day before the block starts reads "Nothing planned".
+  Paging forward now follows the last planned date from either the coach's
+  block or the watch's calendar, so a deployment without a coach plan can page
+  ahead at all. `npm run coach -- bootstrap` takes `--days`, `--runs-per-week`
+  and `--start` from the current plan when they are not given.
+
+- A sheet dismissed and then unmounted before its close animation ends no
+  longer leaves a timer behind that sets state on nothing.
+
+- The morning push reads the coach's plan when Garmin's calendar has nothing
+  for today, and says nothing at all when no session is planned within a week
+  either way, rather than announcing a rest day every morning after a block
+  ends.
+
 - `export:demo --check` passes again, and CI runs it with a new `--strict`
   flag, which also fails on a stale config entry. The daylight test uses a
   made-up point, the GPX file name example a made-up quartier, and twelve

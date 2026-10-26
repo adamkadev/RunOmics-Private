@@ -3,7 +3,7 @@ import { getActivitySummaries } from './GetActivities'
 import { getTodayPlannedWorkout } from './GetPlannedWorkouts'
 import { getTodayPrescription } from '@/application/coaching/GetCoachingView'
 import type { PlannedWorkout } from '@/domain/activity/types'
-import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
+import { prescriptionAsPlannedWorkout } from '@/domain/coaching/plannedWorkout'
 import { verdictTone } from '@/domain/training/readiness'
 import { recentTraining } from '@/domain/training/recentTraining'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash, type TodayContext } from '@/domain/ai/todayInsight'
@@ -25,31 +25,13 @@ export function buildTodayContext(
 }
 
 /**
- * Read before the Garmin entry, the prescription lets the verdict name the
- * workout rather than whatever the watch called it.
- */
-function asPlannedWorkout(prescription: WorkoutPrescription): PlannedWorkout {
-  return {
-    date: prescription.date,
-    name: prescription.title,
-    type: COACHING_TO_ACTIVITY_TYPE[prescription.type],
-    ...(prescription.totalDurationSeconds === undefined
-      ? {}
-      : { durationSecs: prescription.totalDurationSeconds }),
-    ...(prescription.totalDistanceMeters === undefined
-      ? {}
-      : { distanceM: prescription.totalDistanceMeters }),
-  }
-}
-
-/**
  * The generator and the page must both resolve today's session here, from
  * appTodayIso(): two resolutions are two cache hashes, and the page would never
  * find the card.
  */
 export async function todayInsightSession(today: string = appTodayIso()): Promise<PlannedWorkout | null> {
   const prescription = getTodayPrescription(today)
-  return prescription ? asPlannedWorkout(prescription) : await getTodayPlannedWorkout(today)
+  return prescription ? prescriptionAsPlannedWorkout(prescription) : await getTodayPlannedWorkout(today)
 }
 
 export interface TodayVerdict extends Insight {

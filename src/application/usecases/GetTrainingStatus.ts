@@ -1,9 +1,10 @@
-import { DAY_MS } from '@/lib/calendarDate'
+import { appTodayIso, DAY_MS } from '@/lib/calendarDate'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { getTrainingLoad } from './GetTrainingLoad'
 import { round } from '@/lib/math'
+import { buildingBack } from '@/domain/training/buildingBack'
 import { LOAD_TREND_DAYS, STATUS_DELTA_DAYS, type TrainingStatusType, type RiskLevel, type LoadTrend, type TrainingStatus } from '@/domain/training/status'
 
 export type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
@@ -77,19 +78,20 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const tsbDelta = round(tsbNow - (weekAgo?.tsb ?? tsbNow), 1)
 
   const activities = getAllActivities()
-  const firstActivity = activities[0]
-  if (!firstActivity) return null
-  const refDate = new Date(firstActivity.date + 'T00:00:00')
+  if (!activities.length) return null
+  // Today, not the last run: anchored on the run, a week off still reads as a full acute week.
+  const today = appTodayIso()
 
   const garmin = getLatestTrainingStatusDay()
   const garminType = garminStatusType(garmin?.status) ?? undefined
 
-  const localRatio = acwr(activities, refDate)
+  const localRatio = acwr(activities, new Date(today + 'T00:00:00'))
   const local = classify(tsb, ctlDelta, localRatio)
   const useGarmin = garminType !== undefined
+  const rebuilding = !useGarmin && buildingBack(activities.map((a) => a.date), today)
   const ratio = useGarmin ? (garmin?.acwr ?? null) : localRatio
   const status = garminType ?? local.status
-  const risk = useGarmin ? riskFromGarmin(status, garmin?.acwrStatus ?? null) : local.risk
+  const risk = useGarmin ? riskFromGarmin(status, garmin?.acwrStatus ?? null) : rebuilding ? 'low' : local.risk
 
   const ctlPeak = points.reduce((max, p) => Math.max(max, p.ctl), ctl)
 
@@ -108,6 +110,7 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
     tsbDelta,
     ctlPeak,
     source: useGarmin ? 'garmin' : 'local',
+    buildingBack: rebuilding,
     acwrStatus: garmin?.acwrStatus ?? null,
     chronicLoad: garmin?.chronicLoad ?? null,
     chronicLoadMin: garmin?.chronicLoadMin ?? null,

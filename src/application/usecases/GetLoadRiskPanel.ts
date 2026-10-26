@@ -4,7 +4,7 @@ import { latestLoadPair, loadRatio } from '@/domain/training/loadTrend'
 import { getLoadSeries } from './GetLoadRecovery'
 import { buildTimeSeries, dailyTrimpByDate, type HrBounds } from './GetTrainingLoad'
 import { acwr } from './GetTrainingStatus'
-import { DAY_MS, addDays, isoDate } from '@/lib/calendarDate'
+import { appTodayIso, DAY_MS, addDays, isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 export type RiskZone = 'low' | 'safe' | 'caution' | 'risk'
@@ -105,7 +105,8 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
   const loads = getLoadSeries()
   const pair = latestLoadPair(loads.pairs)
   const pairAcwr = pair ? loadRatio(pair) : null
-  const localAcwr = acwr(activities, refDate)
+  // Today, not the last run: anchored on the run, a week off still reads as a full acute week.
+  const localAcwr = acwr(activities, new Date(appTodayIso() + 'T00:00:00'))
   const acwrValue = pairAcwr ?? localAcwr
   const acwrZoneValue = acwrZone(acwrValue)
   const acwrSource = acwrValue === null ? null : pairAcwr !== null ? loads.source : 'local'

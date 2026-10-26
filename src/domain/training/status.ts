@@ -28,6 +28,8 @@ export interface TrainingStatus {
   tsbDelta: number
   ctlPeak: number
   source: 'garmin' | 'local'
+  /** No reading yet: a long break erased the base these numbers are read against. */
+  buildingBack: boolean
   acwrStatus: string | null
   chronicLoad: number | null
   chronicLoadMin: number | null

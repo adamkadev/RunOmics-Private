@@ -38,6 +38,7 @@ function status(overrides: Partial<TrainingStatus> = {}): TrainingStatus {
     tsbDelta: 3.4,
     ctlPeak: 60,
     source: 'garmin',
+    buildingBack: false,
     acwrStatus: 'OPTIMAL',
     chronicLoad: 420,
     chronicLoadMin: 380,

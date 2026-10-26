@@ -16,7 +16,7 @@ vi.mock('@/infrastructure/repositories/FirestoreConfigRepository', () => ({
 const { getOverreachingAlerts } = await import('../GetOverreachingAlerts')
 
 function status(overrides: Partial<TrainingStatus> = {}): TrainingStatus {
-  return { risk: 'low', tsb: -12, acwr: 1.1, ctlDelta: 2.4, ...overrides } as TrainingStatus
+  return { risk: 'low', tsb: -12, acwr: 1.1, ctlDelta: 2.4, source: 'garmin', ...overrides } as TrainingStatus
 }
 
 async function run(current: TrainingStatus | null, alerted: boolean | null) {
@@ -85,6 +85,11 @@ describe('getOverreachingAlerts', () => {
 
     await commit()
     expect(saveLastOverreachingState).toHaveBeenCalledWith({ alerted: true })
+  })
+
+  it('stays quiet on a high risk the app estimated itself, with no reading from the watch', async () => {
+    expect(await run(status({ risk: 'high', source: 'local' }), false)).toEqual([])
+    expect(saveLastOverreachingState).toHaveBeenCalledWith({ alerted: false })
   })
 
   it('carries an unknown ratio through rather than inventing one', async () => {

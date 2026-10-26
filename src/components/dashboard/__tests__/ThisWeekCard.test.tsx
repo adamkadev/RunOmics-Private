@@ -40,7 +40,7 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
   })
 
   it('dashes the days to come, tints today, and reads the load in the header', () => {
-    render(<ThisWeekCard target={WEEK} today={TODAY} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79 }} />)
+    render(<ThisWeekCard target={WEEK} today={TODAY} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79, estimated: false }} />)
 
     const card = screen.getByTestId('this-week-card')
     expect(screen.getByTestId('this-week-link')).toHaveAttribute('href', '/plan?view=week')

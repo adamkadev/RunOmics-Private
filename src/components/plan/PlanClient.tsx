@@ -8,6 +8,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
+import { lastPlannedDate } from './blockLifecycle'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -95,8 +96,13 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
     return map
   }, [coaching])
 
-  const canGoForward = coaching
-    ? (mode === 'week' ? isoDate(addDays(weekStart, 6)) < coaching.plan.block.endDate : monthKey < coaching.plan.block.endDate.slice(0, 7))
+  // The watch's calendar counts too: a deployment with no coach plan still has sessions ahead of this week.
+  const lastPlanned = useMemo(
+    () => lastPlannedDate(coaching, [...plannedWorkouts.map((p) => p.date), ...(coaching?.workouts ?? []).map((v) => v.prescription.date)]),
+    [coaching, plannedWorkouts]
+  )
+  const canGoForward = lastPlanned
+    ? (mode === 'week' ? isoDate(addDays(weekStart, 6)) < lastPlanned : monthKey < lastPlanned.slice(0, 7))
     : false
 
   const thisWeek = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
