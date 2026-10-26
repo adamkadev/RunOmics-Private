@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildCoachingOverview } from '@/application/coaching/GetCoachingView'
-import { coachReadout } from '@/application/coaching/GetCoachReadout'
-import type { AutoregulationReport } from '@/application/coaching/autoregulation'
 import type { Activity } from '@/domain/activity/types'
 import { COACHING_SCHEMA_VERSION, type WorkoutEvaluation } from '@/domain/coaching/types'
-import { keepDecision, plan, workout } from '@/domain/coaching/__tests__/fixtures'
+import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 import { coachWorkoutView, heroWorkoutView } from '../planWorkoutView'
 import { planCoachingView } from '../planCoachingView'
 
@@ -37,11 +35,9 @@ const overview = buildCoachingOverview(
     tuneUpEvents: [{ id: 'race-2', name: 'Park 5K', date: '2026-09-27', role: 'tune_up', courseContext: { pacingNotes: ['Hilly'] } }],
     weeks: [{ id: 'week-1', index: 1, startDate: '2026-09-07', endDate: '2026-09-13', focus: 'Threshold introduction', workouts: [withNotes] }],
   }),
-  [keepDecision()],
   [evaluation],
   // The prescription reads as completed only when its matched run is on record.
   [{ id: 'activity-1' } as Activity],
-  [],
   '2026-09-09',
 )
 
@@ -90,31 +86,6 @@ describe('planCoachingView', () => {
     const trimmed = coachWorkoutView(view.workouts[0]!)
 
     expect({ ...trimmed, description: full.description, notes: full.notes }).toEqual(full)
-  })
-})
-
-describe('the coach readout', () => {
-  const report = {
-    referenceDate: '2026-09-09',
-    controlledSessions: [],
-    guideProposals: [{ repClass: 'long', direction: 'faster', guide: { min: 272, max: 280 }, proposedGuide: { min: 268, max: 276 }, stepSecPerKm: 4, sessions: [] }],
-    fatigue: { run: { activityId: 'easy', date: '2026-09-08', hr: 152, paceSecPerKm: 345, gapSecPerKm: null, climbMPerKm: 2, tempC: 14, durationSeconds: 3_300 }, normalHr: 146, comparables: 3, gradeAdjusted: 0, leftOut: [], flagged: true },
-    fitnessCheck: null,
-  } as AutoregulationReport
-
-  it('carries what the coach decided and autoregulate proposes as facts, never their written summaries', () => {
-    const readout = coachReadout(overview, report)
-    const payload = JSON.stringify(planCoachingView(overview, readout))
-
-    expect(readout).toMatchObject({
-      decision: { outcome: 'KEEP', trigger: 'post_activity', date: '2026-09-05' },
-      guideProposals: [{ repClass: 'long', direction: 'faster', proposedGuide: { min: 268, max: 276 } }],
-      fatigue: { date: '2026-09-08', aboveNormalBpm: 6 },
-      nextKey: null,
-    })
-    for (const text of ['Session completed as intended.', 'PACE_IN_RANGE', 'tagged the run sick']) {
-      expect(payload).not.toContain(text)
-    }
   })
 })
 

@@ -1,6 +1,6 @@
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { median } from '@/lib/math'
-import type { DayWindow, WeekRow } from './analyticsView'
+import type { WeekRow } from './analyticsView'
 
 const known = (values: (number | null | undefined)[]): number[] => values.filter((v): v is number => v !== null && v !== undefined)
 
@@ -17,36 +17,6 @@ export function blockShift(series: (number | null)[]): Shift | null {
   const block = Math.max(1, Math.min(4, Math.floor(values.length / 2)))
   const now = median(values.slice(-block))
   return { now, delta: values.length < 2 ? null : now - median(values.slice(0, block)) }
-}
-
-// ─── Threshold ─────────────────────────────────────────────────────────────
-
-export interface StepPoint {
-  date: string
-  value: number
-}
-
-export interface StepView extends Shift {
-  /** The reading in force at the window's start, then each revision inside it. */
-  points: StepPoint[]
-  /** What the change is counted from: the window's start, or the first reading inside it. */
-  since: string
-}
-
-/** The watch revises its threshold every few weeks, so a reading holds until the next one: the line steps. */
-export function stepView(readings: StepPoint[], window: DayWindow): StepView | null {
-  const upTo = readings.filter((p) => p.date <= window.end)
-  const latest = upTo.at(-1)
-  if (!latest) return null
-  const held = [...upTo].reverse().find((p) => p.date <= window.start)
-  const inside = upTo.filter((p) => p.date > window.start)
-  const first = held ?? inside[0]!
-  return {
-    now: latest.value,
-    delta: first === latest ? null : latest.value - first.value,
-    points: held ? [{ date: window.start, value: held.value }, ...inside] : inside,
-    since: held ? window.start : first.date,
-  }
 }
 
 // ─── Running form ──────────────────────────────────────────────────────────

@@ -34,7 +34,7 @@ interface VerdictStatus {
   ready: boolean
   synced: boolean
   reason?: string
-  activity: { id: string; name: string; distance: string; duration: string; url: string } | null
+  activity: { id: string; distance: string; duration: string } | null
   verdict: { headline: string; body: string } | null
 }
 

@@ -751,9 +751,6 @@ export const en = {
   },
 
   analytics: {
-    // Which load model a card reads, named in its head: the watch's
-    // acute/chronic load, or the app's own stress (Fitness / Fatigue).
-    model: { garmin: 'Your watch' },
     title: 'Analytics',
 
     aboutChart: 'What this chart measures',
@@ -1142,16 +1139,6 @@ export const en = {
           up: (metric: string, delta: string, unit: string) => `${metric} is trending up, +${delta} ${unit} across this window.`,
           down: (metric: string, delta: string, unit: string) => `${metric} is trending down, -${delta} ${unit} across this window.`,
           flat: (metric: string) => `${metric} is holding steady across this window.`,
-        },
-      },
-      threshold: {
-        title: 'Lactate threshold',
-        pace: 'Threshold pace',
-        lthr: 'Threshold HR',
-        footnote: 'The effort you can hold before lactate builds up, as the watch measures it. The watch revises it every few weeks, so the line steps rather than drifts.',
-        reading: {
-          change: (delta: string, since: string) => `Threshold pace is ${delta} since ${since}.`,
-          flat: (since: string) => `Threshold pace is unchanged since ${since}.`,
         },
       },
     },
@@ -2248,7 +2235,6 @@ export const en = {
   },
 
   coaching: {
-    garminOutOfDate: 'Watch data out of date',
     states: {
       prescribed: 'Prescribed',
       adjusted: 'Adjusted',
@@ -2287,22 +2273,6 @@ export const en = {
       band: (target: number, ceiling: number) => `Target ${target} · ceiling ${ceiling}`,
       cols: { rep: '#', pace: 'Pace', hr: 'HR', peak: 'Peak' },
       footnote: (minute: number, guide: string) => `Heart rate lags, so each rep is read from minute ${minute}. Pace guide ${guide} /km.`,
-    },
-    readout: {
-      title: 'Coach',
-      triggers: { bootstrap: 'new block', post_activity: 'after a run', weekly_review: 'weekly review', autoregulation: 'autoregulation' },
-      lastRun: 'Last run',
-      threshold: 'Threshold',
-      paceGuide: 'Pace guide',
-      guideChange: (from: string, to: string) => `${from} → ${to} /km`,
-      proposed: (reps: string) => `${reps} · proposed, not applied.`,
-      easyRuns: 'Easy runs',
-      fatigue: (bpm: number, gradeAdjusted: boolean) =>
-        `Heart rate ${bpm} bpm above your normal${gradeAdjusted ? ' at similar grade-adjusted pace' : ''}: a lighter week is proposed.`,
-      fitnessCheck: '5K check',
-      check: (date: string, pace: string, threshold: string) => `${date} · ${pace} · threshold ${threshold}`,
-      checkGuides: 'The next block’s guides come from it.',
-      nextKey: 'Next key',
     },
   },
 

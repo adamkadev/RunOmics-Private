@@ -30,11 +30,11 @@ function recovery(overrides: Partial<WorkoutPrescription> = {}): WorkoutPrescrip
   })
 }
 
-function viewOf(prescription: WorkoutPrescription, garminPlanned: PlannedWorkout[] = []): PrescriptionView {
+function viewOf(prescription: WorkoutPrescription): PrescriptionView {
   const coachingPlan: CoachingPlan = plan()
   coachingPlan.weeks[0]!.workouts = [prescription]
   coachingPlan.weeks[1]!.workouts = []
-  return buildCoachingOverview(coachingPlan, [], [], [], garminPlanned, '2026-09-09').workouts[0]!
+  return buildCoachingOverview(coachingPlan, [], [], '2026-09-09').workouts[0]!
 }
 
 describe('coach prescriptions normalised into the Plan session view', () => {
@@ -155,7 +155,7 @@ describe('coach prescriptions normalised into the Plan session view', () => {
 
   it('takes the time of day from a Garmin session matched to the prescription', () => {
     const garmin: PlannedWorkout = { date: '2026-09-09', name: 'Recovery', type: 'Base', scheduledTime: 'Evening' }
-    const view = coachWorkoutView(viewOf(recovery(), [garmin]), ZONES, garmin)
+    const view = coachWorkoutView(viewOf(recovery()), ZONES, garmin)
 
     expect(view.scheduledTime).toBe('Evening')
     expect(view.title).toBe('Post-Race Recovery Run')
@@ -245,7 +245,6 @@ describe('a Garmin planned workout is untouched by any of this', () => {
     expect(view.statusLabel).toBe(t.plan.planned)
     expect(view.description).toBeNull()
     expect(view.notes).toEqual([])
-    expect(view.alert).toBeNull()
     expect(view.target).toBeNull()
     expect(view.effort).toBe('Threshold · 4:20-4:30 /km')
   })

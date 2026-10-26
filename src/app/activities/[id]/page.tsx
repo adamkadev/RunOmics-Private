@@ -21,7 +21,7 @@ import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsigh
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getRunSessions } from '@/application/coaching/GetCoachingView'
-import { controlledRunView } from '@/application/coaching/GetCoachReadout'
+import { controlledRunView } from '@/application/coaching/controlledRunView'
 import { ControlledThresholdCard } from '@/components/activity/ControlledThresholdCard'
 import { sessionLabel } from '@/lib/activityTitle'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'

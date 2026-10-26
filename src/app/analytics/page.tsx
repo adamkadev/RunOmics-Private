@@ -49,7 +49,6 @@ export default async function AnalyticsPage() {
     missed: plan.missed,
     vo2max: getVO2maxReadings(),
     threshold: threshold.flatMap((p) => (p.thresholdPaceSecPerKm !== null ? [{ date: p.date, pace: p.thresholdPaceSecPerKm }] : [])),
-    lthr: threshold.flatMap((p) => (p.lthrBpm !== null ? [{ date: p.date, bpm: p.lthrBpm }] : [])),
     predictions: getGarminRacePredictions()?.points.map(({ date, seconds }) => ({ date, seconds })) ?? [],
     race:
       spotlight && isRaceDistanceKey(spotlight.race.distance.toLowerCase())

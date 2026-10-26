@@ -1,38 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
-import { dayWindow, type WeekRow } from '../analyticsView'
-import { formLead, formRows, heartRateView, stepView } from '../trendView'
-
-const window = dayWindow('2026-09-26', '12w')
-
-describe('stepView', () => {
-  it('starts from the reading in force at the window start and counts the change from it', () => {
-    const view = stepView(
-      [
-        { date: '2026-05-01', value: 270 },
-        { date: '2026-08-01', value: 265 },
-        { date: '2026-09-10', value: 261 },
-        { date: '2026-10-01', value: 250 },
-      ],
-      window,
-    )
-    expect(view).toEqual({
-      now: 261,
-      delta: -9,
-      since: window.start,
-      points: [
-        { date: window.start, value: 270 },
-        { date: '2026-08-01', value: 265 },
-        { date: '2026-09-10', value: 261 },
-      ],
-    })
-  })
-
-  it('counts from the first reading inside when none came before, and has no change with one', () => {
-    expect(stepView([{ date: '2026-09-10', value: 179 }], window)).toMatchObject({ now: 179, delta: null, since: '2026-09-10' })
-    expect(stepView([{ date: '2026-10-01', value: 179 }], window)).toBeNull()
-  })
-})
+import type { WeekRow } from '../analyticsView'
+import { formLead, formRows, heartRateView } from '../trendView'
 
 const week = (over: Partial<WeeklyTrendPoint>) => ({ cadenceSpm: null, groundContactMs: null, verticalOscillationMm: null, verticalRatioPct: null, strideLengthM: null, ...over }) as WeeklyTrendPoint
 

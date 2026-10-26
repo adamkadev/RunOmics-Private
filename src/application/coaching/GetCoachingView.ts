@@ -1,25 +1,15 @@
 import type { Activity } from '@/domain/activity/types'
-import {
-  COACHING_TO_ACTIVITY_TYPE,
-  type CoachDecision,
-  type CoachingPlan,
-  type GarminScheduleStatus,
-  type WorkoutEvaluation,
-  type WorkoutPrescription,
-} from '@/domain/coaching/types'
-import { garminScheduleStatus } from '@/domain/coaching/matching'
+import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { appTodayIso } from '@/lib/calendarDate'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 
 export type PrescriptionDisplayState = 'prescribed' | 'adjusted' | 'completed' | 'missed' | 'cancelled'
 
 export interface PrescriptionView {
   prescription: WorkoutPrescription
   state: PrescriptionDisplayState
-  garminStatus: GarminScheduleStatus
   activityId: string | null
 }
 
@@ -27,9 +17,6 @@ export interface CoachingOverview {
   plan: CoachingPlan
   currentWeekId: string | null
   workouts: PrescriptionView[]
-  latestDecision: CoachDecision | null
-  latestEvaluation: WorkoutEvaluation | null
-  nextKeyWorkout: PrescriptionView | null
 }
 
 function findCompletedActivity(prescription: WorkoutPrescription, evaluations: WorkoutEvaluation[], activities: Activity[]): Activity | null {
@@ -40,10 +27,8 @@ function findCompletedActivity(prescription: WorkoutPrescription, evaluations: W
 
 export function buildCoachingOverview(
   plan: CoachingPlan,
-  decisions: CoachDecision[],
   evaluations: WorkoutEvaluation[],
   activities: Activity[],
-  plannedWorkouts: ReturnType<typeof getAllPlannedWorkouts>,
   today: string,
 ): CoachingOverview {
   const views = plan.weeks.flatMap((week) => week.workouts).map((prescription): PrescriptionView => {
@@ -57,43 +42,21 @@ export function buildCoachingOverview(
           : prescription.status === 'adjusted'
             ? 'adjusted'
             : 'prescribed'
-    return {
-      prescription,
-      state,
-      garminStatus: garminScheduleStatus(prescription, plannedWorkouts.find((planned) => planned.date === prescription.date) ?? null),
-      activityId: activity?.id ?? null,
-    }
+    return { prescription, state, activityId: activity?.id ?? null }
   }).sort((a, b) => a.prescription.date.localeCompare(b.prescription.date))
 
   const currentWeek = plan.weeks.find((week) => today >= week.startDate && today <= week.endDate) ?? null
-  const latestDecision = decisions[0] ?? null
-  const latestEvaluation = evaluations[0] ?? null
-  // Key as the week view's quality days are: a long run is easy running, and a session already run is behind.
-  const nextKeyWorkout = views.find((view) =>
-    view.prescription.date >= today &&
-    view.state !== 'cancelled' &&
-    view.state !== 'completed' &&
-    COACHING_TO_ACTIVITY_TYPE[view.prescription.type] !== 'Base'
-  ) ?? null
-
-  return { plan, currentWeekId: currentWeek?.id ?? null, workouts: views, latestDecision, latestEvaluation, nextKeyWorkout }
+  return { plan, currentWeekId: currentWeek?.id ?? null, workouts: views }
 }
 
 // Both readers must date "today" by appTodayIso(), as their pages do, or they disagree on the day after local midnight.
 export function getCoachingOverview(
   today = appTodayIso(),
-  repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getDecisions' | 'getEvaluations'> = new JsonCoachingRepository(),
+  repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getEvaluations'> = new JsonCoachingRepository(),
 ): CoachingOverview | null {
   const plan = repository.getCurrentPlan()
   if (!plan) return null
-  return buildCoachingOverview(
-    plan,
-    repository.getDecisions(),
-    repository.getEvaluations(),
-    getAllActivities(),
-    getAllPlannedWorkouts(),
-    today,
-  )
+  return buildCoachingOverview(plan, repository.getEvaluations(), getAllActivities(), today)
 }
 
 export interface RunSession {

@@ -12,7 +12,7 @@ const run = (type: 'Base' | 'Threshold', durationSeconds: number, description = 
 function coach(type: 'long_run' | 'easy'): Map<string, PrescriptionView[]> {
   const overview = buildCoachingOverview(
     plan({ weeks: [{ id: 'w', index: 1, startDate: '2026-09-07', endDate: '2026-09-13', focus: '', workouts: [workout({ type, title: 'Run' })] }] }),
-    [], [], [], [], DATE,
+    [], [], DATE,
   )
   return new Map([[DATE, overview.workouts]])
 }

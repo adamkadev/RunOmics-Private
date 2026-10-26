@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { ControlledRunView } from '@/application/coaching/GetCoachReadout'
+import type { ControlledRunView } from '@/application/coaching/controlledRunView'
 import { t } from '@/i18n'
 import { ControlledThresholdCard } from '../ControlledThresholdCard'
 

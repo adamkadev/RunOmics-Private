@@ -1,5 +1,4 @@
 import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
-import type { CoachReadout } from '@/application/coaching/GetCoachReadout'
 import type { TargetEvent, TrainingBlock, WorkoutBlock, WorkoutPrescription } from '@/domain/coaching/types'
 import { pickDefined } from '@/components/pickDefined'
 
@@ -40,7 +39,6 @@ export interface PlanCoachingView {
     tuneUpEvents?: PlanEvent[]
   }
   workouts: PlanPrescriptionView[]
-  readout?: CoachReadout
 }
 
 function withoutNotes(block: WorkoutBlock): WorkoutBlock {
@@ -58,7 +56,7 @@ function planEvent(event: TargetEvent): PlanEvent {
   return pickDefined(event, EVENT_FIELDS)
 }
 
-export function planCoachingView(overview: CoachingOverview, readout?: CoachReadout): PlanCoachingView {
+export function planCoachingView(overview: CoachingOverview): PlanCoachingView {
   const { block, macrocycleStartDate, targetEvent, tuneUpEvents } = overview.plan
   return {
     plan: {
@@ -68,6 +66,5 @@ export function planCoachingView(overview: CoachingOverview, readout?: CoachRead
       ...(tuneUpEvents ? { tuneUpEvents: tuneUpEvents.map(planEvent) } : {}),
     },
     workouts: overview.workouts.map((view) => ({ ...view, prescription: planPrescription(view.prescription) })),
-    ...(readout ? { readout } : {}),
   }
 }

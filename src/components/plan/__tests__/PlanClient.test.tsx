@@ -63,7 +63,7 @@ describe('PlanClient week/month switching', () => {
 
   it('behaves the same way once a coaching block is active', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    renderPlan(buildCoachingOverview(plan(), [], [], [], [], '2026-09-09'))
+    renderPlan(buildCoachingOverview(plan(), [], [], '2026-09-09'))
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.month }))
     expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('true')
@@ -73,7 +73,7 @@ describe('PlanClient week/month switching', () => {
   })
 
   it('carries no subtitle under the title', () => {
-    render(planClient(planCoachingView(buildCoachingOverview(plan(), [], [], [], [], '2026-09-09'))))
+    render(planClient(planCoachingView(buildCoachingOverview(plan(), [], [], '2026-09-09'))))
 
     expect(screen.queryByTestId('plan-subtitle')).toBeNull()
     expect(screen.getByTestId('phase-line').textContent).toContain(t.plan.phase.raceInWeeks('10K', 6))

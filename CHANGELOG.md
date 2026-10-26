@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- `/api/internal/latest-verdict` is gone with the iOS Shortcut that polled
+  it; the Sync button in the app asks `/api/sync/status`.
+
 - Analytics' Charge tab draws its Load and Training status cards on a watch
   that sends neither, like the Forerunner 55: from the app's own heart-rate
   load, marked "Estimated". Load focus still needs Garmin's own figures.
@@ -51,9 +54,7 @@ All notable changes to this project are documented in this file.
 
 - The coach in the app: a controlled-threshold run's page shows each
   rep's heart rate from minute 3 against its target and ceiling, with the
-  verdict, and Plan has a Coach card with the latest decision, the last
-  controlled session, pace-guide proposals, the easy-run fatigue flag,
-  the 5K check and the next key session. Each session shows its state.
+  verdict. Each session on Plan shows its state.
 
 - Controlled-threshold heart rates come from each athlete's LTHR, and the
   planner reads the athlete's own numbers instead of rules written for
@@ -79,8 +80,7 @@ All notable changes to this project are documented in this file.
   own store, with a strength session's sets. They show on Plan and
   Consistency and in the coach's context, never in running numbers.
 
-- Analytics: the Load tab ends with your watch's load focus, a Lactate
-  threshold card shows threshold heart rate beside threshold pace,
+- Analytics: the Load tab ends with your watch's load focus,
   Running form is back (cadence, ground contact, vertical oscillation,
   stride), and Intensity shows easy and workout heart rate by week. The
   Athlete page has a fitness age card with a year of history.

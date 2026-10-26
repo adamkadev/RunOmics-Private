@@ -56,11 +56,6 @@ the UI marks such a value with `~`. Only the bookends may be left open: a warm-u
 that remainder exactly the way it does for a parsed Garmin session — one shared rule, not
 two that drift.
 
-**Garmin sync status is silent when healthy.** Coach workouts are expected to reach
-Garmin, so only a state the athlete must act on earns a line on the Plan page: today that
-means Garmin holding a session that no longer matches the prescription. The full sync state
-is still kept for idempotency and diagnostics.
-
 ## Controlled threshold
 
 **Heart-rate targets come from the athlete's own LTHR, never from rules written for one
@@ -86,11 +81,11 @@ run faster than the guide (easing off on a hot day still reads as over). Under: 
 5 bpm or more under its target at the guide. Off guide: run more than 3 s/km away from the guide,
 which says nothing about the guide. Two sessions of one class in a row that agree, both under or
 both over, propose a 3-5 s/km change to its guide. A run's page shows each
-repetition's heart rate against its target and ceiling with the verdict, and Plan's Coach card
-gathers the latest decision, the last controlled session, the proposals, the easy-run fatigue
-flag (an easy run 5 bpm over the recent normal at a similar pace, temperature and duration;
-pace is grade-adjusted where both runs carry it, and a run climbing 15 m/km or more without it
-is left out, since walked climbs slow its pace more than its effort) and the 5K check.
+repetition's heart rate against its target and ceiling with the verdict. `npm run coach -- autoregulate`
+prints the sessions, the proposals, the easy-run fatigue flag (an easy run 5 bpm over the
+recent normal at a similar pace, temperature and duration; pace is grade-adjusted where both
+runs carry it, and a run climbing 15 m/km or more without it is left out, since walked climbs
+slow its pace more than its effort) and the 5K check.
 
 ## The 12-week checkpoint
 

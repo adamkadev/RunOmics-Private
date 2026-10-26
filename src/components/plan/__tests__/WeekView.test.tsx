@@ -41,8 +41,8 @@ function blockPlan(): CoachingPlan {
   }
 }
 
-function overview(options: { garminPlanned?: PlannedWorkout[]; coachingPlan?: CoachingPlan } = {}): CoachingOverview {
-  return buildCoachingOverview(options.coachingPlan ?? plan(), [], [], [], options.garminPlanned ?? [], TODAY)
+function overview(options: { coachingPlan?: CoachingPlan } = {}): CoachingOverview {
+  return buildCoachingOverview(options.coachingPlan ?? plan(), [], [], TODAY)
 }
 
 function byDateCoach(coaching: CoachingOverview): Map<string, PrescriptionView[]> {

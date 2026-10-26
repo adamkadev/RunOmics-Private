@@ -19,7 +19,7 @@ const USER = { getIdToken: () => Promise.resolve('test-token') } as unknown as U
 const VERDICT_STATUS = {
   ready: true,
   synced: true,
-  activity: { id: 'a1', name: 'Easy run', distance: '7.7 km', duration: '44:27', url: '/activities/a1' },
+  activity: { id: 'a1', distance: '7.7 km', duration: '44:27' },
   verdict: { headline: 'Held together to the last rep', body: 'Only two seconds a kilometre of fade.' },
 }
 
