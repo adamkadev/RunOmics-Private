@@ -127,6 +127,7 @@ function provenance(value: unknown, path: string): CoachingProvenance {
     ...(raw.promptVersion === undefined ? {} : { promptVersion: string(raw.promptVersion, `${path}.promptVersion`) }),
     ...(raw.decisionId === undefined ? {} : { decisionId: string(raw.decisionId, `${path}.decisionId`) }),
     ...(raw.parentRevision === undefined ? {} : { parentRevision: integer(raw.parentRevision, `${path}.parentRevision`, 1) }),
+    ...(raw.guidanceHash === undefined ? {} : { guidanceHash: string(raw.guidanceHash, `${path}.guidanceHash`) }),
   }
 }
 

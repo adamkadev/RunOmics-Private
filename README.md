@@ -348,16 +348,17 @@ npm run coach -- --apply .coach-previews/<proposal>.json
 ```
 
 The coach reads the notes and tags written in the app from Firestore `activityNotes`, live,
-at the moment it builds its context; the nightly copy in `activity_notes.json` is a backup and
-nothing reads it. Morning check-ins come the same way from Firestore `wellness`, with the
-nightly `wellness.json` as the fallback when Firestore does not answer. That read needs the Firebase **Admin** credentials, and `.env.local` points at the dev project,
+at the moment it builds its context, and morning check-ins the same way from Firestore
+`wellness`. When Firestore does not answer, it falls back to the nightly copies,
+`activity_notes.json` and `wellness.json`, at most a day old. That read needs the Firebase **Admin** credentials, and `.env.local` points at the dev project,
 where those notes are not. Put the production admin trio (`FIREBASE_PROJECT_ID`,
 `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) in a gitignored `.env.prod`; `npm run coach`
 layers it over `.env.local`, and dotenv gives the first `-e` file precedence for a key it
 defines, so `.env.prod` need hold only those three and everything else still comes from
-`.env.local`. Without that file dotenv carries on, and the coach prints a warning that it is
-building the plan without notes - which is the whole failure mode, because a plan built
-blind looks exactly like one built with the tags the athlete wrote. There was a separate
+`.env.local`. Without that file dotenv carries on, and the coach warns that it read the
+nightly copies instead, or, with no copy either, that it is building the plan without notes -
+the whole failure mode, because a plan built blind looks exactly like one built with the tags
+the athlete wrote. There was a separate
 `coach:prod` for this and it only ever meant the plain command was the degraded one. The
 coaching path only ever reads that collection, but the service account itself is not
 read-only, so treat `.env.prod` as the production credential it is.
@@ -701,9 +702,12 @@ Normal desired frequency is not a taper quota: an explicitly targeted race must
 not be preceded by three consecutive runs within its final four pre-race days.
 Use fewer runs with an explicit taper reason when that produces better spacing.
 
-Bootstrap accepts `--guidance-file <path>` for case-specific athlete instructions,
-including accepted workouts to preserve and nonmandatory volume ranges. These
-instructions reach Gemini separately from deterministic training-history facts.
+Bootstrap reads case-specific athlete instructions from `coaching/guidance.md` in the
+data workspace, or from `--guidance-file <path>` in its place: accepted workouts to
+preserve, nonmandatory volume ranges, a clinician's instructions during a return to
+running. Keeping them in the data repository means the next renewal is told what the
+last one was, and the decision records the guidance's hash. These instructions reach
+Gemini separately from deterministic training-history facts.
 A limited tune-up-specific session does not automatically make its week a cutback:
 additional appropriate volume comes from easy running, never extra quality.
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { RotateCw } from 'lucide-react'
@@ -13,6 +13,7 @@ import { useToday } from '@/lib/useToday'
 import { SYNC_LIMITS } from '@/lib/syncLimits'
 import { useRefreshWhenLive, useSyncNow } from '@/components/settings/SyncNowCard'
 import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
+import { Toast, useToast } from '@/components/ui/Toast'
 import { fadeElement } from '@/lib/glassFade'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -56,67 +57,81 @@ interface Line {
   tone: 'muted' | 'accent' | 'caution'
   spinning?: boolean
   disabled?: boolean
-  /** The words on screen beside the button: while a sync runs or has just answered, never at rest. */
-  shown?: boolean
   onClick: () => void
 }
 
 const NOTHING = () => {}
 
-function SyncButton({ text, tone, spinning = false, onClick, disabled = false, shown = false, children }: Line & { children: ReactNode }) {
+function SyncButton({ text, tone, spinning = false, onClick, disabled = false, children }: Line & { children: ReactNode }) {
   const color = tone === 'caution' ? 'var(--tone-caution)' : 'var(--muted-foreground)'
   return (
-    <div className="flex min-w-0 items-center">
-      <span role="status" data-testid="sync-note" className={cn('min-w-0 truncate text-right text-xs', shown && 'mr-2')} style={{ color }}>
-        {shown ? text : ''}
-      </span>
-      <div data-testid="today-capsule" className={CAPSULE}>
-        <GlassLayers />
-        <button
-          type="button"
-          onClick={onClick}
-          disabled={disabled}
-          aria-label={text}
-          title={text}
-          data-testid="sync-line"
-          data-tone={tone}
-          // The compact bar copies it once the page scrolls, its arrows turning on data-bar-busy.
-          data-bar-action="refresh"
-          data-bar-busy={spinning ? '' : undefined}
-          className={BUTTON}
-          style={{ color }}
-        >
-          <RotateCw size={20} strokeWidth={2} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
-        </button>
-        {children}
-      </div>
+    <div data-testid="today-capsule" className={CAPSULE}>
+      <GlassLayers />
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={text}
+        title={text}
+        data-testid="sync-line"
+        data-tone={tone}
+        // The compact bar copies it once the page scrolls, its arrows turning on data-bar-busy.
+        data-bar-action="refresh"
+        data-bar-busy={spinning ? '' : undefined}
+        className={BUTTON}
+        style={{ color }}
+      >
+        <RotateCw size={20} strokeWidth={2} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
+      </button>
+      {children}
     </div>
   )
+}
+
+/** What a sync answered, for a toast: words beside the button would squeeze the title. */
+function answer(phase: ReturnType<typeof useSyncNow>['phase']): { text: string; ok: boolean } | null {
+  const s = t.dashboard.syncStatus
+  if (phase.kind === 'done') return { text: s.synced(s.justNow), ok: true }
+  if (phase.kind === 'upToDate') return { text: s.upToDate, ok: true }
+  if (phase.kind === 'timedOut') return { text: s.stillRunning, ok: true }
+  if (phase.kind === 'failed') return { text: s.failed, ok: false }
+  if (phase.kind === 'limited') return { text: phase.reason === 'dailyCap' ? s.dailyCap : s.nextIn(Math.ceil(phase.retryAfterSec / 60)), ok: true }
+  return null
 }
 
 function OwnerSyncLine({ user, lastSyncedAt, ago, children }: { user: User; lastSyncedAt: string; ago: string; children: ReactNode }) {
   const s = t.dashboard.syncStatus
   const sync = useSyncNow(user)
   const router = useRouter()
-  const [freshNote, setFreshNote] = useState(false)
+  const { toast, leaving, showToast } = useToast()
   const { phase } = sync
 
   useRefreshWhenLive(phase, router.refresh)
 
+  useEffect(() => {
+    const said = answer(phase)
+    if (said) showToast(said.text, said.ok)
+  }, [phase, showToast])
+
   const age = syncAgeMs(lastSyncedAt)
   const late = isSyncLate(lastSyncedAt)
-  const noteFresh = () => setFreshNote(true)
+  const noteFresh = () => showToast(s.nextIn(Math.max(1, Math.ceil((FRESH_SYNC_MS - age) / 60_000))), true)
   let line: Line
-  if (phase.kind === 'starting' || phase.kind === 'waiting') line = { text: s.syncing, tone: 'muted', spinning: true, disabled: true, shown: true, onClick: NOTHING }
-  else if (phase.kind === 'failed') line = { text: s.failed, tone: 'caution', shown: true, onClick: sync.handleSync }
-  else if (phase.kind === 'limited') line = { text: phase.reason === 'dailyCap' ? s.dailyCap : s.nextIn(Math.ceil(phase.retryAfterSec / 60)), tone: 'muted', disabled: true, shown: true, onClick: NOTHING }
-  else if (phase.kind === 'done') line = { text: s.synced(s.justNow), tone: 'muted', shown: true, onClick: noteFresh }
-  else if (phase.kind === 'upToDate') line = { text: s.upToDate, tone: 'muted', shown: true, onClick: noteFresh }
-  else if (phase.kind === 'timedOut') line = { text: s.stillRunning, tone: 'muted', shown: true, onClick: sync.handleSync }
+  if (phase.kind === 'starting' || phase.kind === 'waiting') line = { text: s.syncing, tone: 'muted', spinning: true, disabled: true, onClick: NOTHING }
+  else if (phase.kind === 'failed') line = { text: s.failed, tone: 'caution', onClick: sync.handleSync }
+  else if (phase.kind === 'limited') line = { text: phase.reason === 'dailyCap' ? s.dailyCap : s.nextIn(Math.ceil(phase.retryAfterSec / 60)), tone: 'muted', disabled: true, onClick: NOTHING }
+  else if (phase.kind === 'done') line = { text: s.synced(s.justNow), tone: 'muted', onClick: noteFresh }
+  else if (phase.kind === 'upToDate') line = { text: s.upToDate, tone: 'muted', onClick: noteFresh }
+  else if (phase.kind === 'timedOut') line = { text: s.stillRunning, tone: 'muted', onClick: sync.handleSync }
   // Fresh: nothing to fetch yet, and the server would hold it back anyway.
-  else if (age < FRESH_SYNC_MS) line = { text: freshNote ? s.nextIn(Math.ceil((FRESH_SYNC_MS - age) / 60_000)) : s.synced(ago), tone: 'muted', shown: freshNote, onClick: noteFresh }
+  else if (age < FRESH_SYNC_MS) line = { text: s.synced(ago), tone: 'muted', onClick: noteFresh }
   else line = { text: isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago), tone: late ? 'caution' : 'accent', onClick: sync.handleSync }
-  return <SyncButton {...line}>{children}</SyncButton>
+  return (
+    <>
+      <SyncButton {...line}>{children}</SyncButton>
+      <Toast toast={toast} leaving={leaving} compact />
+    </>
+  )
 }
 
 /** No date in its words: "Today" and every session's own date already say it. */
@@ -153,7 +168,7 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
       const y = window.scrollY
       const opacity = y <= 0 ? 1 : Math.max(0, 1 - y / Math.max(1, side.offsetHeight))
       // Each on its own: the capsule fades its glass layers, never itself, which would flatten its blur.
-      for (const el of side.querySelectorAll<HTMLElement>('[data-testid="sync-note"], [data-testid="today-capsule"]')) fadeElement(el, opacity)
+      for (const el of side.querySelectorAll<HTMLElement>('[data-testid="today-capsule"]')) fadeElement(el, opacity)
       if (opacity <= 0) side.style.pointerEvents = 'none'
       else side.style.removeProperty('pointer-events')
     }

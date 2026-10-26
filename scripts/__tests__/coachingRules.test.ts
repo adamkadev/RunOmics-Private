@@ -20,6 +20,16 @@ describe('coaching rules generation', () => {
     expect(BOOTSTRAP_SYSTEM_INSTRUCTION).not.toContain('build:coaching-rules')
   })
 
+  it('states in every controlled threshold rule that it applies to a controlled threshold block alone', () => {
+    const section = fs.readFileSync('.claude/skills/coaching-plan/rules.md', 'utf-8').split('\n## ').find((part) => part.startsWith('Controlled threshold blocks'))!
+    const bullets = section.split('\n').filter((line) => line.startsWith('- '))
+
+    expect(bullets.length).toBeGreaterThan(5)
+    for (const bullet of bullets) {
+      expect(bullet).toMatch(/^- (A controlled threshold block is|context\.autoregulation )|In a controlled threshold block/)
+    }
+  })
+
   it('refuses a rules file with no rules in it', () => {
     expect(() => rulesFromMarkdown('# Coaching rules\n\nProse only.\n')).toThrow(/No rules found/)
   })

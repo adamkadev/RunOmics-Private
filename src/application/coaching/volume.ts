@@ -127,6 +127,7 @@ export function validateDraftVolume(
   band: VolumeBand,
   availableWeekdays: number[],
   before?: CoachingPlanDraft,
+  returning = false,
 ): void {
   if (!(band.baselineKm > 0)) return
 
@@ -162,7 +163,8 @@ export function validateDraftVolume(
     }
 
     const reduction = week.reducedVolume
-    if (!adapting && km < floorKm && reduction === undefined) {
+    // Walks in a return carry no distance while the recorded kilometres include them, so those set no floor.
+    if (!adapting && !returning && km < floorKm && reduction === undefined) {
       throw new Error(`Week ${week.startDate} prescribes ${km} km against a recent ${band.baselineKm} km; either build from that or set week.reducedVolume with the recovery, taper or cutback reason`)
     }
 

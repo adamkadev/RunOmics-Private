@@ -28,6 +28,7 @@ import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import { otherTrainingFacts, type CrossTrainingSession, type OtherTrainingFacts } from '@/domain/activity/crossTraining'
+import { returnToRunning, type ReturnToRunning } from './returnToRunning'
 
 const RECENT_DAYS = 28
 const NIGGLE_DAYS = 84
@@ -101,6 +102,8 @@ export interface CoachingContext {
     /** Typed into athlete.json; absent when it has none. */
     trainingBreaks?: TrainingBreak[]
   }
+  /** Absent unless a long injury, illness or pregnancy break has not yet been followed by 30 minutes of running. */
+  returnToRunning?: ReturnToRunning
   /** The morning check-ins; absent when they could not be read, which is not the same as none written. */
   wellness?: {
     checkIns: ({ date: string } & CheckIn)[]
@@ -255,6 +258,8 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
   const history = trainingHistory(input.activities, referenceDate)
   const otherTraining = otherTrainingFacts(input.crossTraining ?? [], referenceDate)
   const sessions = input.plan ? sessionsAcrossPlans([input.plan, ...(input.archivedPlans ?? [])], []) : []
+  const breaks = recentBreaks(input.athlete.trainingBreaks, referenceDate)
+  const returning = returnToRunning(breaks.trainingBreaks, input.activities.filter(isRunningActivity), referenceDate)
 
   return {
     schemaVersion: 1,
@@ -313,8 +318,9 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       trainingZones: input.trainingZones,
       // Null means nobody has asked, which is not the same as none.
       injuryHistory: input.athlete.injuryHistory ?? null,
-      ...recentBreaks(input.athlete.trainingBreaks, referenceDate),
+      ...breaks,
     },
+    ...(returning ? { returnToRunning: returning } : {}),
     ...wellnessFacts(input.wellness, referenceDate),
     trajectories: input.trajectories,
     goals: input.goals,

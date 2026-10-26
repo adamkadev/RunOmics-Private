@@ -121,8 +121,8 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
 - **Run notes and morning check-ins** (`activity_notes.json`, `wellness.json`). Both exist
   only in Firestore otherwise. The workflow reads them through `GET /api/internal/activity-notes`
   and `GET /api/internal/wellness`, sorted so the commit changes only where an entry did, and
-  logs a count, never an entry. The coach falls back to `wellness.json` when Firestore does
-  not answer; nothing reads the notes copy, which is a backup. Neither step can fail the sync.
+  logs a count, never an entry. The coach falls back to both when Firestore does not answer.
+  Neither step can fail the sync.
 - **Duration bests** (`durationBests` on each run, `scripts/processing/pace_profile.py`): the
   most metres covered in 30 s, 1, 2, 3, 5, 10, 20, 30, 60, 90 and 120 min, on the moving clock
   and from the full-resolution records. A step faster than 8 m/s (2:05/km) is capped as a GPS
@@ -201,6 +201,16 @@ athlete's private workspace (`RUNOMICS_DATA_DIR`), never in this repository.
   must exist, on the date it was scheduled for.
 - `GarminWorkoutGateway` deliberately exposes no bulk or list-wide operation — every
   mutation names exactly one workout or one calendar entry.
+
+**The mapping travels like the plan.** `coach:sync-garmin` takes its data workspace
+the way `coach --apply` does: an explicit `--data-dir` or `RUNOMICS_DATA_DIR` is the
+operator's checkout, read and written in place, and the CLI reminds them to commit the
+mapping. Otherwise, with `RUNOMICS_DATA_REPO_URL` set, it fetches the private data, and
+`--apply` pushes the mapping back through the same base-revision guard once Garmin has
+been written, including after a partial failure, since every operation's state is
+persisted. A push refused after Garmin writes would lose the only record of those
+workouts with the temporary workspace, so the mapping is first saved under
+`.coach-previews/` to commit by hand.
 
 **Payload mapping quirks.** Garmin stores a pace target as speed in m/s, so the conversion
 inverts: the *faster* bound of a `paceSecPerKm` range (the smaller number of seconds)

@@ -4,6 +4,36 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Today's header no longer writes the sync's words beside its button, where
+  they squeezed the title. A small toast at the top says what a tap did,
+  including when the next sync can run.
+
+- The coach has rules for a return to running after an injury, illness or
+  pregnancy break: sessions by time, walk breaks with no pace, effort and
+  the talk test as the guide, progress only on comfortable sessions, no
+  quality work, and stop rules that defer to the clinician. The coach
+  context marks the return (`returnToRunning`) from a stop of four weeks or
+  more until a run since holds 30 minutes without a walk. While it is
+  marked, the prompt drops the rebuild toward the best four-week average,
+  and the volume floor is off, since walks carry no distance. The
+  controlled threshold rules (speed weeks, fitness checks, lighter weeks)
+  state their condition, so they reach no other block. `trainingBreaks`
+  accepts `pregnancy` as a reason, and `validate:data` warns on a reason
+  the coach does not know. A heart-rate zone in the athlete's guidance becomes
+  the target of the running steps in a return, never beside a pace, which the
+  watch would execute instead; walk breaks carry no target.
+
+- Bootstrap reads `coaching/guidance.md` from the data workspace unless
+  `--guidance-file` is given, and the decision records the guidance's hash.
+
+- `coach:sync-garmin` uses the same data workspace as `coach --apply`: with
+  the private repository configured and no data directory, it fetches the
+  data, and `--apply` pushes the Garmin mapping back. A mapping it cannot
+  push is saved under `.coach-previews/`.
+
+- When Firestore cannot answer, the coach reads the run notes from the
+  nightly `activity_notes.json`, as it already did for check-ins.
+
 - A push that no device accepted now counts as failed, so the scheduled pushes
   and alerts retry it instead of recording it as sent. Tokens FCM calls invalid
   are deleted along with unregistered ones, and refusal codes are logged.

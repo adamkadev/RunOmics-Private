@@ -13,8 +13,8 @@ const runs = block.runs as unknown as Activity[]
 
 const walkRunPlan: CoachingPlan = plan({
   weeks: [
-    { id: 'w1', index: 1, startDate: '2026-10-12', endDate: '2026-10-18', focus: 'Return', workouts: [] },
-    { id: 'w2', index: 2, startDate: '2026-10-19', endDate: '2026-10-25', focus: 'Return', workouts: [] },
+    { id: 'w1', index: 1, startDate: '2026-04-13', endDate: '2026-04-19', focus: 'Return', workouts: [] },
+    { id: 'w2', index: 2, startDate: '2026-04-20', endDate: '2026-04-26', focus: 'Return', workouts: [] },
   ].map((week) => ({
     ...week,
     workouts: block.sessions
@@ -43,7 +43,7 @@ function context(referenceDate: string) {
 
 describe('a walk/run block the watch filed as VO2Max', () => {
   it('counts every run as its session in the coach context', () => {
-    const coach = context('2026-10-26')
+    const coach = context('2026-04-27')
 
     expect(coach.adherence).toEqual({ prescribed: 5, completed: 5, percent: 100 })
     expect(coach.recentActivities.map((run) => [run.type, run.intendedType])).toEqual(Array(5).fill(['VO2Max', 'Base']))
@@ -54,13 +54,13 @@ describe('a walk/run block the watch filed as VO2Max', () => {
     const advisor = {
       evaluateActivity: async () => ({ outcome: 'KEEP', reasonCodes: ['SESSION_COMPLETED'], summary: 'Done.', evidence: [], changes: [] }),
     } as unknown as CoachingAdvisor
-    const proposal = await createPostActivityProposal(context('2026-10-25'), runs.at(-1)!, { repository, advisor, now: () => new Date('2026-10-25T12:00:00Z') })
+    const proposal = await createPostActivityProposal(context('2026-04-26'), runs.at(-1)!, { repository, advisor, now: () => new Date('2026-04-26T12:00:00Z') })
 
     expect(proposal.evaluation).toMatchObject({ prescriptionId: 'session-5', matchStatus: 'matched' })
   })
 
   it('shows every session done on Plan and names each run after its session', () => {
-    const overview = buildCoachingOverview(walkRunPlan, [] as WorkoutEvaluation[], runs, '2026-10-26')
+    const overview = buildCoachingOverview(walkRunPlan, [] as WorkoutEvaluation[], runs, '2026-04-27')
 
     expect(overview.workouts.map((view) => [view.state, view.activityId])).toEqual(runs.map((run) => ['completed', run.id]))
     expect(runs.map((run) => sessionForRun(run, sessionsAcrossPlans([walkRunPlan], []))?.id)).toEqual(block.sessions.map((s) => s.id))
