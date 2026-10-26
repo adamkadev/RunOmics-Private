@@ -243,7 +243,7 @@ export function ActivityDetailClient({
         )
       })()}
 
-      <RunVerdict activity={activity} aiVerdict={aiVerdict}>
+      <RunVerdict activity={activity} type={type} aiVerdict={aiVerdict}>
         {!activity.avgHeartRate && (
           <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
         )}
