@@ -88,7 +88,7 @@ describe('ActivityDetailClient', () => {
     renderDetail()
     const stats = screen.getByTestId('run-stats')
     expect(stats.textContent).toBe(
-      `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
+      `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.units.min}${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
     )
     expect(stats.className).toContain('grid-cols-[repeat(4,minmax(0,1fr))]')
     expect(stats.className).toContain('gap-x-2')
@@ -96,8 +96,14 @@ describe('ActivityDetailClient', () => {
     expect(screen.getAllByText(t.activity.stats.distance)).toHaveLength(1)
   })
 
-  // "Time" has no unit: a cell sized by its content would lift its label above the others.
-  it('puts every value in one fixed row and every label in the next, unit or not', () => {
+  it('reads a run of an hour or more to the minute, as the share card does', () => {
+    renderDetail({ activity: { ...ACTIVITY, durationSeconds: 5_270 } })
+    const time = screen.getByTestId('run-stats').querySelectorAll<HTMLElement>('[data-stat-value]')[1]!
+
+    expect(time.textContent).toBe(`1:28${t.units.hour}`)
+  })
+
+  it('puts every value in one fixed row and every label in the next', () => {
     renderDetail()
     const stats = screen.getByTestId('run-stats')
     expect(stats.className).toContain('grid-rows-[44px_auto]')
@@ -114,7 +120,6 @@ describe('ActivityDetailClient', () => {
       expect(value.className).toContain('text-[length:min(28px,')
       expect(value.nextElementSibling?.hasAttribute('data-stat-label')).toBe(true)
     }
-    expect(values[1]!.children).toHaveLength(0)
     expect(values[0]!.querySelector('span')!.className).toContain('leading-none')
     expect(labels[0]!.className).toContain('text-[15px]')
   })

@@ -15,7 +15,7 @@ import { KmSplits } from './KmSplits'
 import { BestEfforts } from './BestEfforts'
 import { RunPlace } from './RunPlace'
 import type { ChartZones } from './chartStackLanes'
-import { formatClock, formatDistance, formatDuration, formatDurationRounded } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDurationRounded } from '@/lib/formatters'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -85,8 +85,8 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.stats
   const stats: PrimaryStat[] = [
     { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
-    // No unit: m:ss or h:mm:ss says what it is, and "min" crowded the pace beside it.
-    { label: s.duration, value: formatDuration(Math.round(activity.durationSeconds)) },
+    // As the share card reads it: h:mm from an hour, m:ss under; h:mm:ss took too much of the row.
+    { label: s.duration, ...formatDurationRounded(activity.durationSeconds) },
   ]
   if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
   if (activity.avgHeartRate) stats.push({ label: s.avgHr, value: `${activity.avgHeartRate}`, unit: t.units.bpm })
