@@ -30,7 +30,7 @@ describe('ReadinessCard (App Fixes 1a)', () => {
   })
 
   it('names the form state and the load against its range, amber while out of it', () => {
-    render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79 }} />)
+    render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79, estimated: false }} />)
     const line = screen.getByTestId('readiness-status')
     expect(line.textContent).toBe(`${t.formBand[formBand(-6)]} · ${t.dashboard.readiness.loadState.below}`)
     expect(line.style.color).toBe('var(--warn)')
@@ -67,7 +67,7 @@ describe('ReadinessCard (App Fixes 1a)', () => {
   })
 
   it('writes its own headline and body from the load, matching the form state', () => {
-    const load = { acute: 456, lo: 462, hi: 750, state: 'below' as const, ratio: 0.79 }
+    const load = { acute: 456, lo: 462, hi: 750, state: 'below' as const, ratio: 0.79, estimated: false }
     const { rerender } = render(<ReadinessCard status={{ ...STATUS, tsbNow: 4 }} load={load} />)
     expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.dashboard.readiness.fallback.below(456, 462, 750).headline)
     expect(screen.getByTestId('readiness-verdict')).toHaveTextContent('456')

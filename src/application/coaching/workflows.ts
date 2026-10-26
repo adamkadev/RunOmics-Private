@@ -24,6 +24,7 @@ import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecyc
 import { sessionForRun } from '@/domain/coaching/sessionForRun'
 import { isoWeekWindows, weekWindowIndex } from '@/domain/coaching/weekWindows'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
+import { BOOTSTRAP_START_WINDOW_DAYS } from '@/domain/coaching/renewal'
 import { GENERAL_PREPARATION, macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
 import { fatigueBasis, lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
@@ -108,10 +109,8 @@ function selectBootstrapTarget(context: CoachingContext, targetEventId?: string,
   const earliestStart = completedRaceToday && !hasPendingSameDayRace
     ? new Date(reference.getTime() + DAY_MS).toISOString().slice(0, 10)
     : context.referenceDate
-  // A block opens on a Monday at most a week out, so the days kept from the
-  // current plan fill no more than the one week before it.
   if (start !== undefined) {
-    const latest = new Date(reference.getTime() + 7 * DAY_MS).toISOString().slice(0, 10)
+    const latest = new Date(reference.getTime() + BOOTSTRAP_START_WINDOW_DAYS * DAY_MS).toISOString().slice(0, 10)
     if (start < earliestStart || start > latest || new Date(`${start}T00:00:00Z`).getUTCDay() !== 1) {
       throw new Error(`--start must be a Monday from ${earliestStart} to ${latest}, not ${start}`)
     }

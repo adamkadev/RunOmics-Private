@@ -301,16 +301,17 @@ export function DoneDayCard({
   )
 }
 
-export function RestDayCard({ date, next }: { date: string; next: { weekday: string; title: string } | null }) {
+export function RestDayCard({ date, next, covered = true }: { date: string; next: { weekday: string; title: string } | null; covered?: boolean }) {
   const r = t.plan.restCard
   return (
     <section
       data-testid="plan-rest-day"
+      data-covered={String(covered)}
       className="flex items-center justify-between gap-3 rounded-[18px] border border-dashed border-border px-4 py-3"
     >
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{`${formatWeekday(date, true)} · ${r.eyebrow}`}</p>
-        <h2 className="text-[17px] font-semibold leading-tight text-foreground">{r.title}</h2>
+        <h2 className="text-[17px] font-semibold leading-tight text-foreground">{covered ? r.title : t.plan.dayCard.notPlanned}</h2>
       </div>
       {next && (
         <p className="flex min-w-0 flex-col items-end text-right text-xs text-muted-foreground" data-testid="rest-next">
@@ -318,6 +319,19 @@ export function RestDayCard({ date, next }: { date: string; next: { weekday: str
           <span className="max-w-full truncate">{next.title}</span>
         </p>
       )}
+    </section>
+  )
+}
+
+export function BlockFinishedCard({ done, total }: { done: number; total: number }) {
+  const r = t.plan.restCard
+  return (
+    <section
+      data-testid="plan-block-finished"
+      className="flex flex-col gap-0.5 rounded-[18px] border border-dashed border-border px-4 py-3"
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{r.finishedEyebrow}</p>
+      <h2 className="text-[17px] font-semibold leading-tight text-foreground">{r.finished(done, total)}</h2>
     </section>
   )
 }

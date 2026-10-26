@@ -45,7 +45,8 @@ function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
     promptVersion: promptVersion(CARD_PROMPT_VERSION),
     tone,
     kind,
-    status: status.status,
+    // The held reading, not the raw one: a break's "overreaching" would otherwise reach the model as a fact.
+    status: status.buildingBack ? 'building back after a long break' : status.status,
     loadTrend: status.loadTrend,
     risk: status.risk,
     form: Math.round(status.tsbNow),

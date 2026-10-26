@@ -19,6 +19,7 @@ const status: TrainingStatus = {
   tsbDelta: -8,
   ctlPeak: 60,
   source: 'garmin',
+  buildingBack: false,
   acwrStatus: 'HIGH',
   chronicLoad: 420,
   chronicLoadMin: 380,

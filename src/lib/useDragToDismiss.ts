@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useHaptic } from './useHaptic'
 
 const DISMISS_THRESHOLD_PX = 80
@@ -14,14 +14,21 @@ export function useDragToDismiss(onDismiss: () => void) {
   const pastThreshold = useRef(false)
   const haptic = useHaptic()
 
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const triggerClose = useCallback(() => {
     setClosing(true)
-    setTimeout(() => {
+    closeTimer.current = setTimeout(() => {
       onDismiss()
       setClosing(false)
       setDragY(0)
     }, CLOSE_ANIMATION_MS)
   }, [onDismiss])
+
+  // The close animation outlives a sheet that is unmounted while it plays, and its timer would set state on nothing.
+  useEffect(() => () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+  }, [])
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId)

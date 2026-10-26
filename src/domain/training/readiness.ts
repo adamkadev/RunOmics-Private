@@ -22,6 +22,8 @@ function fatigueRisingFast(status: TrainingStatus): boolean {
  * watch; hold is for real risk.
  */
 export function verdictTone(status: TrainingStatus): ReadinessTone {
+  // Building back, the numbers describe the break: nothing in them is a warning about today.
+  if (status.buildingBack) return 'build'
   if (status.status === 'overreaching' || status.risk === 'high') return 'hold'
   const climbing = fatigueRisingFast(status)
   if (status.tsbNow < FORM_HIGH_RISK || (status.tsbNow < FORM_DEEP && climbing)) return 'hold'

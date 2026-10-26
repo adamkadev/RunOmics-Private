@@ -5,8 +5,8 @@ import type { Activity, ActivityType } from '@/domain/activity/types'
 import { DAY_MS } from '@/lib/calendarDate'
 import { dailyTrimpByDate } from './GetTrainingLoad'
 import type { TrainingStatus } from './GetTrainingStatus'
-import { getLoadPairs } from './GetLoadRecovery'
-import { latestLoadPair, loadRatio, safeRange } from '@/domain/training/loadTrend'
+import { getLoadSeries } from './GetLoadRecovery'
+import { latestLoadPair, loadRatio, safeRange, type LoadPair } from '@/domain/training/loadTrend'
 
 export const RECENT_LOAD_DAYS = 7
 
@@ -31,6 +31,8 @@ export interface LoadReading {
   hi: number
   state: 'below' | 'in' | 'above'
   ratio: number
+  /** The app's own arithmetic, for a watch that sends no loads: said so on the card. */
+  estimated: boolean
 }
 
 export interface RecentLoad {
@@ -41,7 +43,7 @@ export interface RecentLoad {
   reading: LoadReading | null
 }
 
-export function loadReading(pairs: ReturnType<typeof getLoadPairs>): LoadReading | null {
+export function loadReading(pairs: LoadPair[], estimated = false): LoadReading | null {
   const pair = latestLoadPair(pairs)
   if (!pair) return null
   const { lo, hi } = safeRange(pair.chronic)
@@ -51,6 +53,7 @@ export function loadReading(pairs: ReturnType<typeof getLoadPairs>): LoadReading
     hi,
     state: pair.acute < lo ? 'below' : pair.acute > hi ? 'above' : 'in',
     ratio: loadRatio(pair),
+    estimated,
   }
 }
 
@@ -92,5 +95,9 @@ export function getRecentLoad(today: string, status: TrainingStatus | null): Rec
   }))
   const band = { lo: Math.round(status.ctl * LOAD_BAND.lo), hi: Math.round(status.ctl * LOAD_BAND.hi) }
 
-  return { days, band, peak: Math.max(band.hi, ...days.map((day) => day.load)), reading: loadReading(getLoadPairs()) }
+  // Building back, the chronic load the band is drawn from is the break's, so there is no band to be inside.
+  const series = getLoadSeries()
+  const reading = status.buildingBack ? null : loadReading(series.pairs, series.source === 'local')
+
+  return { days, band, peak: Math.max(band.hi, ...days.map((day) => day.load)), reading }
 }

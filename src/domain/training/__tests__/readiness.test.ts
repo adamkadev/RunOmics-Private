@@ -4,7 +4,7 @@ import { verdictTone } from '../readiness'
 
 const status = (over: Partial<TrainingStatus>): TrainingStatus => ({
   status: 'productive', risk: 'low', loadTrend: 'building', ctl: 49, atl: 63, tsb: -11, tsbNow: -14, acwr: 0.9,
-  ctlDelta: 8, ctlDeltaShown: 3, atlDelta: 2, tsbDelta: 10, ctlPeak: 50, source: 'garmin', acwrStatus: 'OPTIMAL',
+  ctlDelta: 8, ctlDeltaShown: 3, atlDelta: 2, tsbDelta: 10, ctlPeak: 50, source: 'garmin', buildingBack: false, acwrStatus: 'OPTIMAL',
   chronicLoad: 623, chronicLoadMin: 498, chronicLoadMax: 934, ...over,
 })
 

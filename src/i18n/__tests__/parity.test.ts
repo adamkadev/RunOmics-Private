@@ -35,19 +35,43 @@ describe('French week streaks', () => {
   })
 })
 
-describe('French coach copy', () => {
-  function strings(node: unknown): string[] {
-    if (typeof node === 'string') return [node]
-    if (typeof node === 'function') return [String((node as (...args: string[]) => string)('KIND', 'WHEN'))]
-    if (node && typeof node === 'object') return Object.values(node).flatMap(strings)
-    return []
+describe('French copy', () => {
+  const SAMPLES: unknown[] = ['Sample', 'Autre', 1, 2, 0, -1, true, false, null, ['Sample', 'Autre'], { name: 'Sample' }]
+
+  function tryCall(fn: (...args: unknown[]) => unknown, sample: unknown): unknown {
+    try {
+      return fn(...Array.from({ length: Math.max(fn.length, 1) + 2 }, () => sample))
+    } catch {
+      return null
+    }
   }
 
-  // The app is not told who reads it: « tu es frais » is wrong for half its athletes.
-  it('agrees nothing with the athlete', () => {
-    const gendered = /\btu es (?:frais|fraîche|fatigué|fatiguée|prêt|prête|reposé|reposée)\b|\bt[’']es (?:entraîné|préparé)/i
-    const copy = [...strings(fr.dashboard), ...strings(fr.notifications)]
-    expect(copy.filter((line) => gendered.test(line))).toEqual([])
+  function strings(node: unknown, out: string[] = [], depth = 0): string[] {
+    if (typeof node === 'string') out.push(node)
+    else if (typeof node === 'function' && depth < 3) for (const sample of SAMPLES) strings(tryCall(node as (...args: unknown[]) => unknown, sample), out, depth + 1)
+    else if (Array.isArray(node)) for (const value of node) strings(value, out, depth)
+    else if (node && typeof node === 'object') for (const value of Object.values(node)) strings(value, out, depth)
+    return out
+  }
+
+  const WORD_END = '(?![a-zàâäçéèêëîïôöûùüÿœæ])'
+  const MASCULINE = '(?:frais|fatigué|prêt|reposé|récupéré|entraîné|préparé|motivé|seul|dernier|premier|content|sûr)'
+  const GENDERED = [
+    new RegExp(`\\btu (?:es|étais|seras|restes|parais|sembles) (?:bien |déjà |encore )?${MASCULINE}${WORD_END}`, 'i'),
+    new RegExp(`\\bt[’']es (?:bien |déjà |encore )?(?:entraîné|préparé|reposé|récupéré|amélioré|rapproché)${WORD_END}`, 'i'),
+    new RegExp(`\\bbien (?:récupéré|reposé|préparé|entraîné)${WORD_END}`, 'i'),
+    /\btu es le (?:plus|moins) \w+/i,
+    new RegExp(`^(?:Fatigué|Frais|Très frais|Reposé|Prêt|Récupéré|Entraîné)\\.?$`),
+  ]
+
+  it('agrees nothing with the athlete, anywhere in the tree', () => {
+    const copy = strings(fr)
+
+    expect(copy.filter((line) => GENDERED.some((pattern) => pattern.test(line)))).toEqual([])
+  })
+
+  it('reads the whole tree, not a corner of it', () => {
+    expect(strings(fr).length).toBeGreaterThan(2000)
   })
 })
 
