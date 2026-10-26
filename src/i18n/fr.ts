@@ -708,8 +708,6 @@ export const fr = {
   },
 
   analytics: {
-    // The load model a card reads: the watch's acute/chronic load or the app's own stress.
-    model: { garmin: 'Ta montre' },
     title: 'Analyses',
 
     aboutChart: 'Ce que mesure ce graphique',
@@ -1068,16 +1066,6 @@ export const fr = {
           up: (metric: string, delta: string, unit: string) => `${metric} en hausse, +${delta} ${unit} sur la période.`,
           down: (metric: string, delta: string, unit: string) => `${metric} en baisse, -${delta} ${unit} sur la période.`,
           flat: (metric: string) => `${metric} stable sur la période.`,
-        },
-      },
-      threshold: {
-        title: 'Seuil lactique',
-        pace: 'Allure au seuil',
-        lthr: 'FC au seuil',
-        footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Elle le révise à quelques semaines d’intervalle : la courbe avance donc par paliers.',
-        reading: {
-          change: (delta: string, since: string) => `Allure au seuil ${delta} depuis le ${since}.`,
-          flat: (since: string) => `L’allure au seuil est stable depuis le ${since}.`,
         },
       },
     },
@@ -2083,7 +2071,6 @@ export const fr = {
   },
 
   coaching: {
-    garminOutOfDate: 'Données de la montre pas à jour',
     states: {
       prescribed: 'Prescrite',
       adjusted: 'Ajustée',
@@ -2121,22 +2108,6 @@ export const fr = {
       band: (target: number, ceiling: number) => `Cible ${target} · plafond ${ceiling}`,
       cols: { rep: 'n°', pace: 'Allure', hr: 'FC', peak: 'Pic' },
       footnote: (minute: number, guide: string) => `La FC réagit en retard : chaque fraction est lue à partir de la ${minute}ᵉ minute. Guide d’allure ${guide} /km.`,
-    },
-    readout: {
-      title: 'Coach',
-      triggers: { bootstrap: 'nouveau bloc', post_activity: 'après une sortie', weekly_review: 'bilan de la semaine', autoregulation: 'autorégulation' },
-      lastRun: 'Dernière sortie',
-      threshold: 'Seuil',
-      paceGuide: 'Guide d’allure',
-      guideChange: (from: string, to: string) => `${from} → ${to} /km`,
-      proposed: (reps: string) => `${reps} · proposé, pas appliqué.`,
-      easyRuns: 'Footings',
-      fatigue: (bpm: number, gradeAdjusted: boolean) =>
-        `FC ${bpm} bpm au-dessus de ta normale${gradeAdjusted ? ' à allure similaire ajustée à la pente' : ''} : une semaine plus légère est proposée.`,
-      fitnessCheck: 'Test 5 km',
-      check: (date: string, pace: string, threshold: string) => `${date} · ${pace} · seuil ${threshold}`,
-      checkGuides: 'Les guides du prochain bloc en viennent.',
-      nextKey: 'Prochaine clé',
     },
   },
 

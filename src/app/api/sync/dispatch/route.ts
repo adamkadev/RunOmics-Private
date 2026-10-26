@@ -2,10 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { handleOwnerRoute } from '@/lib/ownerRoute'
 import { dispatchSync, readSyncGate, syncConfig } from '@/lib/githubSync'
 
-/**
- * The GitHub token is a server env var the browser never sees, behind the owner claim, unlike the iOS shortcut's PAT,
- * which syncs to iCloud in plain text.
- */
+/** The GitHub token stays a server env var behind the owner claim, so it never reaches a phone or iCloud. */
 export async function POST(req: NextRequest) {
   return handleOwnerRoute('sync-dispatch', req, async () => {
     const config = syncConfig(process.env)

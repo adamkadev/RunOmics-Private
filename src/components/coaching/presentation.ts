@@ -1,5 +1,4 @@
 import { DAY_MS, isoDate, startOfWeek } from '@/lib/calendarDate'
-import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { WorkoutStep, WorkoutStepKind } from '@/domain/activity/types'
 import {
@@ -13,7 +12,6 @@ import { macrocyclePhases } from '@/domain/coaching/macrocycle'
 import { bookends } from '@/domain/training/workoutStructure'
 import type { SessionHrTarget } from '@/domain/training/hrTarget'
 import { formatClock } from '@/lib/formatters'
-import { t } from '@/i18n'
 
 function utc(date: string): number {
   return Date.parse(date + 'T00:00:00Z')
@@ -55,10 +53,6 @@ export function preparationWeek(plan: MacrocycleSpan, date: string): number | nu
   const monday = isoDate(startOfWeek(new Date(`${date}T00:00:00`)))
   const week = Math.floor(daysBetween(startMonday, monday) / 7) + 1
   return week >= 1 ? week : null
-}
-
-export function garminAlert(view: Pick<PrescriptionView, 'garminStatus'>): string | null {
-  return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }
 
 // Reuses the map that sends every easy-effort type (easy, recovery, long_run) to 'Base', so a literal list cannot drift from it.

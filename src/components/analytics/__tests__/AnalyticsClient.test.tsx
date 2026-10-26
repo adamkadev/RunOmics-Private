@@ -50,7 +50,6 @@ const data: AnalyticsBoardData = {
   missed: [],
   vo2max: { value: 55, samples: [{ date: day(80), vo2max: 56 }, { date: day(2), vo2max: 55 }] },
   threshold: [{ date: day(300), pace: 254 }, { date: day(10), pace: 263 }],
-  lthr: [{ date: day(300), bpm: 176 }, { date: day(10), bpm: 179 }],
   predictions: Array.from({ length: 200 }, (_, i) => ({ date: day(199 - i), seconds: { '5k': 1150 + i * 0.4, '10k': 2440 + i } })),
   race: { distance: '10k', date: '2026-11-29', daysUntil: 64, targetSeconds: 2400 },
   heat: {

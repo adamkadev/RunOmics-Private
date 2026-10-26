@@ -7,7 +7,6 @@ import { t } from '@/i18n'
 const STRIDES = {
   state: 'planned',
   activityId: null,
-  garminStatus: null,
   prescription: {
     id: 'w1',
     date: '2026-09-26',

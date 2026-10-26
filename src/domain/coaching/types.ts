@@ -232,12 +232,6 @@ export interface CoachState {
   updatedAt: string
 }
 
-export type GarminScheduleStatus =
-  | 'scheduled_match'
-  | 'scheduled_different'
-  | 'scheduled_unknown'
-  | 'not_scheduled'
-
 export const COACHING_TO_ACTIVITY_TYPE: Record<CoachingWorkoutType, ActivityType> = {
   easy: 'Base',
   recovery: 'Base',

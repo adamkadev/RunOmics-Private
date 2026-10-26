@@ -1,5 +1,5 @@
 import type { SessionVerdict } from '@/application/coaching/autoregulation'
-import type { ControlledRunView } from '@/application/coaching/GetCoachReadout'
+import type { ControlledRunView } from '@/application/coaching/controlledRunView'
 import { cardClass } from '@/components/ui/Card'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { formatClock } from '@/lib/formatters'

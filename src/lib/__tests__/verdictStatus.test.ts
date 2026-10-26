@@ -4,18 +4,12 @@ import { parseSince, verdictReadiness } from '../verdictStatus'
 const DISPATCHED_AT = Date.parse('2026-09-19T21:04:07Z')
 
 describe('parseSince', () => {
-  it('reads the dispatch time the shortcut stamps onto every poll', () => {
+  it('reads the dispatch time the Sync button stamps onto every poll', () => {
     expect(parseSince('2026-09-19T21:04:07Z')).toBe(DISPATCHED_AT)
   })
 
   it('treats an absent since as no baseline rather than as zero', () => {
     expect(parseSince(null)).toBeNull()
-  })
-
-  it('survives the unencoded + Shortcuts puts in a local-time offset', () => {
-    // `...T23:04:07+02:00` reaches the query parser as `...T23:04:07 02:00`.
-    expect(parseSince('2026-09-19T23:04:07 02:00')).toBe(DISPATCHED_AT)
-    expect(parseSince('2026-09-19T23:04:07 0200')).toBe(DISPATCHED_AT)
   })
 
   it('rejects a since it cannot compare, instead of silently answering ready', () => {
@@ -25,7 +19,7 @@ describe('parseSince', () => {
 })
 
 describe('verdictReadiness', () => {
-  it('is ready once a verdict has been written since the shortcut asked', () => {
+  it('is ready once a verdict has been written since the sync was asked for', () => {
     expect(
       verdictReadiness(
         {

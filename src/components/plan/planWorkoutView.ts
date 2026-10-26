@@ -13,7 +13,6 @@ import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
 import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
 import type { SessionHrTarget } from '@/domain/training/hrTarget'
 import {
-  garminAlert,
   isKeyPrescription,
   prescriptionDistanceMeters,
   prescriptionDuration,
@@ -45,7 +44,6 @@ export interface PlanWorkoutView {
   statusLabel: string
   /** The coach's state; absent for a session only the watch planned. */
   state?: PrescriptionDisplayState
-  alert: string | null
   activityId: string | null
   isKey: boolean
 }
@@ -95,7 +93,6 @@ export function plannedWorkoutView(
     structure: plan.steps ?? parseWorkoutStructure(plan.name, plan.durationSecs),
     hr: null,
     statusLabel: t.plan.planned,
-    alert: null,
     activityId: null,
     isKey: type ? KEY_SESSION_TYPES.has(type) : false,
   }
@@ -141,7 +138,6 @@ export function coachWorkoutView(
     hr: prescriptionHr(workout),
     statusLabel: t.coaching.states[view.state],
     state: view.state,
-    alert: garminAlert(view),
     activityId: view.activityId,
     isKey: isKeyPrescription(workout),
   }

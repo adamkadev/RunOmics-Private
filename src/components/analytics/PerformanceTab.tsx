@@ -574,7 +574,6 @@ export interface PerformanceTabProps {
   weeks: WeeklyTrendPoint[]
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
   threshold: { date: string; pace: number }[]
-  lthr: { date: string; bpm: number }[]
   predictions: PredictionDay[]
   race: GoalRaceInput | null
   heat: HeatImpactData | null

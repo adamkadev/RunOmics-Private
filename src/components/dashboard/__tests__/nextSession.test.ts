@@ -14,7 +14,7 @@ function prescription(date: string, title: string, totalDistanceMeters: number):
 }
 
 function view(p: WorkoutPrescription, state: 'prescribed' | 'cancelled' = 'prescribed') {
-  return { prescription: p, state, garminStatus: 'not_scheduled' as const, activityId: null }
+  return { prescription: p, state, activityId: null }
 }
 
 describe('findNextSession', () => {
