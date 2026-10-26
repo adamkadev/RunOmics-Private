@@ -1,19 +1,19 @@
 import { test, expect } from './fixtures'
 
-test('analytics page renders lifetime stats and switches tabs', async ({ page }) => {
+test('analytics page renders lifetime stats and switches tabs', async ({ page, t }) => {
   await page.goto('/analytics')
-  await expect(page.getByRole('heading', { name: 'Analytics' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: t.analytics.title })).toBeVisible()
 
-  await expect(page.getByRole('tab', { name: 'Load' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('tab', { name: t.analytics.tabs.fitness })).toHaveAttribute('aria-selected', 'true')
 
-  await page.getByRole('tab', { name: 'Performance' }).click()
-  await expect(page.getByRole('tab', { name: 'Performance' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('tab', { name: t.analytics.tabs.performance }).click()
+  await expect(page.getByRole('tab', { name: t.analytics.tabs.performance })).toHaveAttribute('aria-selected', 'true')
 })
 
-test('a chart readout stays inside its card, even over the last bars', async ({ page }) => {
+test('a chart readout stays inside its card, even over the last bars', async ({ page, t }) => {
   await page.setViewportSize({ width: 393, height: 852 })
   await page.goto('/analytics')
-  await page.getByRole('tab', { name: 'Volume' }).click()
+  await page.getByRole('tab', { name: t.analytics.tabs.volume }).click()
   const chart = page.locator('[data-chart-scrub]').first()
   await expect(chart).toBeVisible()
   const box = (await chart.boundingBox())!
@@ -25,14 +25,15 @@ test('a chart readout stays inside its card, even over the last bars', async ({ 
   }
 })
 
-test('the period control keeps its place whichever period is picked', async ({ page }) => {
+test('the period control keeps its place whichever period is picked', async ({ page, t }) => {
   await page.setViewportSize({ width: 393, height: 852 })
   await page.goto('/analytics')
   const control = page.getByRole('radiogroup').first()
   const places: { x: number; y: number }[] = []
-  for (const name of ['4 weeks', '12 weeks', 'a year']) {
-    await page.getByRole('radio', { name }).click()
-    await expect(page.getByRole('radio', { name })).toHaveAttribute('aria-checked', 'true')
+  for (const period of ['4w', '12w', '1y']) {
+    const name = t.analytics.cards.period.words[period]!
+    await page.getByRole('radio', { name, exact: true }).click()
+    await expect(page.getByRole('radio', { name, exact: true })).toHaveAttribute('aria-checked', 'true')
     places.push(await control.evaluate((el) => ({ x: el.getBoundingClientRect().left + scrollX, y: el.getBoundingClientRect().top + scrollY })))
   }
   for (const place of places.slice(1)) {

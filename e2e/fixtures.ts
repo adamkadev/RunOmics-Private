@@ -1,4 +1,10 @@
 import { test as base, expect } from '@playwright/test'
+import { en, type Strings } from '../src/i18n/en'
+import { fr } from '../src/i18n/fr'
+
+export interface AppOptions {
+  appLocale: 'en' | 'fr'
+}
 
 // Specs import `test` from here, not @playwright/test, so every test also fails on a page error or console error.
 const EXPECTED_CONSOLE_NOISE: RegExp[] = [
@@ -12,7 +18,9 @@ const EXPECTED_CONSOLE_NOISE: RegExp[] = [
   /\/_vercel\/(insights|speed-insights)\/script\.js/,
 ]
 
-export const test = base.extend<{ runtimeErrors: string[] }>({
+export const test = base.extend<AppOptions & { runtimeErrors: string[]; t: Strings }>({
+  appLocale: ['en', { option: true }],
+  t: async ({ appLocale }, provide) => provide(appLocale === 'fr' ? fr : en),
   runtimeErrors: [
     async ({ page }, use) => {
       const errors: string[] = []

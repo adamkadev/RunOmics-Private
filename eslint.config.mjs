@@ -83,6 +83,7 @@ const eslintConfig = defineConfig([
   ...boundaries,
   globalIgnores([
     ".next/**",
+    ".next-e2e-sparse/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
