@@ -147,11 +147,13 @@ jobs:
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
         run: node scripts/fetch_private_data.mjs data
 
+      # Saved by the step after the sync, keyed by the files it holds: a key known before the sync skipped the save.
       - name: Restore FIT cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: fitcache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .fit-cache
-          key: fit-cache-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
+          key: fit-cache-${{ matrix.profile }}-${{ github.run_id }}
           restore-keys: |
             fit-cache-${{ matrix.profile }}-
 
@@ -323,6 +325,24 @@ jobs:
       - name: Reprocess cached runs
         if: inputs.reprocess == true && inputs.dry_run != true && steps.config.outputs.quick != 'true'
         run: python scripts/reprocess.py
+
+      # A quick sync's new FIT file is kept too: the key changes whenever the set of files does.
+      - name: Name the FIT cache by its files
+        id: fitkey
+        if: always() && inputs.dry_run != true
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          if [ -d .fit-cache ] && [ -n "$(ls -A .fit-cache)" ]; then
+            echo "key=fit-cache-${PROFILE}-$(ls .fit-cache | LC_ALL=C sort | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Save FIT cache
+        if: always() && steps.fitkey.outputs.key != '' && steps.fitkey.outputs.key != steps.fitcache.outputs.cache-matched-key
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .fit-cache
+          key: ${{ steps.fitkey.outputs.key }}
 
       - name: Backfill missing weather
         if: inputs.dry_run != true
