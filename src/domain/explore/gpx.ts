@@ -87,20 +87,17 @@ export function buildGpx({ name, description, time, points }: GpxInput): string 
 }
 
 /** Letters a decomposition leaves whole, spelled out so they survive the ASCII filter. */
-const LIGATURES: Readonly<Record<string, string>> = { œ: 'oe', Œ: 'Oe', æ: 'ae', Æ: 'Ae', ß: 'ss' }
+const LIGATURES: Readonly<Record<string, string>> = { œ: 'oe', Œ: 'oe', æ: 'ae', Æ: 'ae', ß: 'ss' }
 
-/**
- * 'Nouvelle Ville', 8.4 → 'RunOmics-NouvelleVille-8km.gpx'. ASCII only, so
- * the name survives every share sheet, mail client and FAT-formatted watch.
- */
+/** 'Nouvelle Ville', 8.4 → 'runomics-nouvelle-ville-8km.gpx': lowercase ASCII survives every share sheet and watch. */
 export function gpxFileName(unitName: string, km: number): string {
   const words = unitName
     .replace(/[œŒæÆß]/g, (c) => LIGATURES[c]!)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .split(/[^A-Za-z0-9]+/)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
     .filter(Boolean)
-  const pascal = words.map((w) => w[0]!.toUpperCase() + w.slice(1)).join('')
   const rounded = Number.isFinite(km) ? Math.max(0, Math.round(km)) : 0
-  return pascal ? `RunOmics-${pascal}-${rounded}km.gpx` : `RunOmics-${rounded}km.gpx`
+  return ['runomics', ...words, `${rounded}km.gpx`].join('-')
 }

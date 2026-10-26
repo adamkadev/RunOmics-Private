@@ -66,7 +66,7 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
     page.waitForEvent('download'),
     panel.getByRole('button', { name: 'Download GPX' }).click(),
   ])
-  expect(download.suggestedFilename()).toMatch(/^RunOmics-[A-Za-z0-9]+-\d+km\.gpx$/)
+  expect(download.suggestedFilename()).toMatch(/^runomics-[a-z0-9-]+-\d+km\.gpx$/)
 
   const gpx = readFileSync((await download.path())!, 'utf8')
   const parsed = await page.evaluate((xml) => {
