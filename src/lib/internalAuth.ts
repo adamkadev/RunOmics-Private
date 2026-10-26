@@ -18,6 +18,11 @@ export function isAuthorizedInternalRequest(req: NextRequest): boolean {
   return matchesSecret(req.headers.get('x-internal-secret'), process.env.INTERNAL_NOTIFY_SECRET)
 }
 
+/** Scoped to /api/internal/ops-push: the other deployment holds this secret, never the master internal one. */
+export function isAuthorizedOpsRequest(req: NextRequest): boolean {
+  return matchesSecret(req.headers.get('x-ops-secret'), process.env.OPS_PUSH_SECRET)
+}
+
 /** Vercel Cron sends CRON_SECRET as a bearer token and cannot send any other header. */
 export function isAuthorizedCronRequest(req: NextRequest): boolean {
   return matchesSecret(req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1], process.env.CRON_SECRET)

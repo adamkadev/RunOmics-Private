@@ -173,7 +173,20 @@ off. A device registered before categories existed has none stored and keeps get
 | `training` | The morning session or rest day, the Monday digest, the Friday goal check-in, a new run, the AI verdict of a run that just landed, an overreaching alert |
 | `shoes` | Shoe wear |
 | `records` | A new record, a quartier past 90 % |
-| `always` | A failed workflow, a stale sync, a data token about to expire, the digest of phone errors: sent whatever the switches say |
+| `always` | A failed workflow, a stale sync, a data token about to expire, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
+
+**Operator alerts leave the athlete's deployment.** A second athlete's deployment registers
+her devices, so an `always` push about a dead token or a failed workflow reaches her and not
+the person who can fix it. `sendOpsPush` carries those four - a failed workflow, a data token
+about to expire, the digest of phone errors and the coaching-block reminder - and with
+`OPS_PUSH_URL` and `OPS_PUSH_SECRET` set it POSTs them to the operator's own deployment at
+`/api/internal/ops-push` instead of pushing locally. That route is the one internal route
+guarded by `OPS_PUSH_SECRET` rather than `INTERNAL_NOTIFY_SECRET`, so the second deployment
+holds a secret that opens nothing else. The alert arrives titled with the sending deployment's
+`GITHUB_SYNC_PROFILE` - not the athlete's name, because an alert about a workspace that will
+not load must not need that workspace to say who it is about - and its words come from the
+English locale whatever that deployment speaks. A refusal or a timeout throws, so the calling route answers 500 rather than record an
+alert nobody read. A stale sync is **not** an operator alert: the athlete can act on it.
 
 ## Garmin write path (coaching sync)
 

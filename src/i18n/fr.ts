@@ -1787,6 +1787,14 @@ export const fr = {
       status: { ahead: 'en avance', on_track: 'dans les temps', behind: 'en retard' },
       body: (status: string, rate: string, needed: string) => `Tu es ${status} à ${rate} km/semaine (il en faut ${needed}).`,
     },
+    forwarded: (from: string, title: string) => `${from} · ${title}`,
+    coachBlock: {
+      title: 'Bloc d’entraînement',
+      endsIn: (days: number) => (days === 0 ? 'le bloc finit aujourd’hui' : days === 1 ? 'le bloc finit demain' : `le bloc finit dans ${days} jours`),
+      reviewAge: (days: number) => `aucun bilan hebdo depuis ${days} jours`,
+      reviewNever: 'aucun bilan hebdo à ce jour',
+      body: (reasons: string) => `${reasons.charAt(0).toUpperCase()}${reasons.slice(1)}. Prépare le bloc suivant et synchronise-le sur la montre.`,
+    },
     workflowFailed: {
       title: (workflow: string) => `Échec : ${workflow}`,
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,

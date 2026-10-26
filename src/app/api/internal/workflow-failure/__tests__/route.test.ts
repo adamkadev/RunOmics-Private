@@ -57,6 +57,16 @@ describe('POST /api/internal/workflow-failure', () => {
     expect(sendPush).toHaveBeenCalledWith('always', 'Synchronisation nocturne · données failed', expect.any(String))
   })
 
+  it('writes the operator’s alert in English on a deployment that speaks French', async () => {
+    vi.resetModules()
+    vi.stubEnv('NEXT_PUBLIC_LOCALE', 'fr')
+    const { POST: french } = await import('../route')
+
+    await french(request({ workflow: 'Nightly sync', runUrl: RUN_URL }))
+
+    expect(sendPush).toHaveBeenCalledWith('always', 'Nightly sync failed', `Open the run: ${RUN_URL}`)
+  })
+
   it('refuses a caller without the internal secret before reading the body', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
 
