@@ -1927,7 +1927,7 @@ export const en = {
       body: (hours: number) => `Your last sync was ${hours}h ago - check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
-    // Monday's look back, two short lines: what fits an iPhone notification unexpanded.
+    // The focus is never cut: iOS truncates the unexpanded notification, and expanding it must show the whole sentence.
     weeklyDigest: {
       title: 'Last week',
       km: (ran: string) => `${ran} km`,
