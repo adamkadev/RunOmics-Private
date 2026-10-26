@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 type ToastData = { msg: string; ok: boolean } | null
@@ -17,7 +17,7 @@ export function useToast() {
     return () => pending.current.forEach(clearTimeout)
   }, [])
 
-  function showToast(msg: string, ok: boolean) {
+  const showToast = useCallback((msg: string, ok: boolean) => {
     // Clear the older toast's timers, or they would fade and remove the newer one early.
     timers.current.forEach(clearTimeout)
     setLeaving(false)
@@ -27,24 +27,37 @@ export function useToast() {
       setTimeout(() => setLeaving(true), displayMs),
       setTimeout(() => setToast(null), displayMs + EXIT_MS),
     ]
-  }
+  }, [])
 
   return { toast, leaving, showToast }
 }
 
-export function Toast({ toast, leaving }: { toast: ToastData; leaving?: boolean }) {
+const TOP = { top: 'max(calc(env(safe-area-inset-top, 0px) + 0.75rem), 0.75rem)' }
+
+export function Toast({ toast, leaving, compact = false }: { toast: ToastData; leaving?: boolean; compact?: boolean }) {
   if (!toast) return null
+  // White on red: the destructive red is tuned for it.
+  const tone = toast.ok ? 'surface-raised border border-border text-foreground' : 'bg-destructive text-white'
+
+  if (compact) {
+    return (
+      <div role="status" className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4" style={TOP}>
+        <span className={cn('max-w-full animate-fade-up truncate rounded-full px-3 py-1.5 text-xs font-medium shadow-lg transition-opacity duration-200 ease-out', tone, leaving && 'opacity-0')}>
+          {toast.msg}
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div
       role="status"
       className={cn(
         'fixed inset-x-4 z-50 animate-fade-up rounded-lg px-4 py-2.5 text-center text-sm font-semibold shadow-lg transition-opacity duration-200 ease-out sm:inset-x-auto sm:right-4 sm:text-left',
-        // White on red: the destructive red is tuned for it.
-        toast.ok ? 'surface-raised border border-border text-foreground' : 'bg-destructive text-white',
+        tone,
         leaving && 'opacity-0'
       )}
-      style={{ top: 'max(calc(env(safe-area-inset-top, 0px) + 0.75rem), 0.75rem)' }}
+      style={TOP}
     >
       {toast.msg}
     </div>
