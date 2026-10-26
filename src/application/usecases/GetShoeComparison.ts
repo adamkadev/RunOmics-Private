@@ -1,4 +1,4 @@
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import type { Activity } from '@/domain/activity/types'
 import { round } from '@/lib/math'
@@ -62,7 +62,7 @@ function buildRow(gearId: string, runs: Activity[]): ShoeComparisonRow | null {
 
 export function getShoeComparison(): ShoeComparisonRow[] {
   const byGear = new Map<string, Activity[]>()
-  for (const a of getAllActivities()) {
+  for (const a of getActivitiesWithEffectiveTypes()) {
     if (!a.gearId) continue
     byGear.set(a.gearId, [...(byGear.get(a.gearId) ?? []), a])
   }

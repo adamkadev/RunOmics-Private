@@ -1,5 +1,5 @@
 import { t } from '@/i18n'
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 
@@ -72,5 +72,5 @@ export function heatImpact(activities: Activity[]): HeatImpactData | null {
 }
 
 export function getHeatImpact(): HeatImpactData | null {
-  return heatImpact(getAllActivities())
+  return heatImpact(getActivitiesWithEffectiveTypes())
 }

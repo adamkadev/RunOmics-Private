@@ -1,4 +1,5 @@
 import type { Activity } from '@/domain/activity/types'
+import { withEffectiveTypes } from '@/domain/activity/effectiveType'
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -96,6 +97,17 @@ export function getRunSessions(
 ): RunSession[] {
   const current = repository.getCurrentPlan()
   return sessionsAcrossPlans([...(current ? [current] : []), ...archivedPlans(repository)], repository.getEvaluations())
+}
+
+/** Every run as Analytics and Shoes count it; an unreadable plan costs the coach's types, never the page. */
+export function getActivitiesWithEffectiveTypes(): Activity[] {
+  const activities = getAllActivities()
+  try {
+    return withEffectiveTypes(activities, getRunSessions())
+  } catch (error) {
+    console.error('[coaching] plan unreadable, runs keep their own types', error)
+    return activities
+  }
 }
 
 /** Reads the plan alone: the overview walks every week against every evaluation, too much for one row. */

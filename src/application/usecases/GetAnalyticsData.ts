@@ -1,4 +1,4 @@
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import type { Activity, ActivityType, ActivityWeather } from '@/domain/activity/types'
 import { heatAdjustedEf } from '@/domain/activity/heat'
 import { easyHardShare } from '@/domain/training/easyHard'
@@ -230,5 +230,5 @@ function startOfWeek(d: Date): Date {
 }
 
 export async function getAnalyticsData(): Promise<AnalyticsPageData> {
-  return { weeklyTrends: buildWeeklyTrends(getAllActivities(), getAthleteProfile().hrZoneBoundsBpm?.[3] ?? DEFAULT_Z4_FLOOR_BPM) }
+  return { weeklyTrends: buildWeeklyTrends(getActivitiesWithEffectiveTypes(), getAthleteProfile().hrZoneBoundsBpm?.[3] ?? DEFAULT_Z4_FLOOR_BPM) }
 }

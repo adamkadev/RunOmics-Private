@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A run whose watch sends no Training Effect (the Forerunner 55) is no
+  longer filed as VO2 max or threshold for its laps alone. A run that
+  follows its coach session's reps takes the session's type. Otherwise
+  quality types need reps near threshold pace, or, with an LTHR on file, at
+  zone 4 heart rate. Time in zone counts only with an LTHR or a Training
+  Effect. Analytics' trends, heat cost and the Shoes pages read a guessed
+  type as the coach session's; Garmin's measured types are unchanged.
+
 - `/api/internal/latest-verdict` is gone with the iOS Shortcut that polled
   it; the Sync button in the app asks `/api/sync/status`.
 
