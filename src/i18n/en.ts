@@ -2294,7 +2294,8 @@ export const en = {
       guideChange: (from: string, to: string) => `${from} → ${to} /km`,
       proposed: (reps: string) => `${reps} · proposed, not applied.`,
       easyRuns: 'Easy runs',
-      fatigue: (bpm: number) => `Heart rate ${bpm} bpm above your normal: a lighter week is proposed.`,
+      fatigue: (bpm: number, gradeAdjusted: boolean) =>
+        `Heart rate ${bpm} bpm above your normal${gradeAdjusted ? ' at similar grade-adjusted pace' : ''}: a lighter week is proposed.`,
       fitnessCheck: '5K check',
       check: (date: string, pace: string, threshold: string) => `${date} · ${pace} · threshold ${threshold}`,
       checkGuides: 'The next block’s guides come from it.',

@@ -98,7 +98,7 @@ describe('the coach readout', () => {
     referenceDate: '2026-09-09',
     controlledSessions: [],
     guideProposals: [{ repClass: 'long', direction: 'faster', guide: { min: 272, max: 280 }, proposedGuide: { min: 268, max: 276 }, stepSecPerKm: 4, sessions: [] }],
-    fatigue: { run: { activityId: 'easy', date: '2026-09-08', hr: 152, paceSecPerKm: 345, tempC: 14, durationSeconds: 3_300 }, normalHr: 146, comparables: 3, flagged: true },
+    fatigue: { run: { activityId: 'easy', date: '2026-09-08', hr: 152, paceSecPerKm: 345, gapSecPerKm: null, climbMPerKm: 2, tempC: 14, durationSeconds: 3_300 }, normalHr: 146, comparables: 3, gradeAdjusted: 0, leftOut: [], flagged: true },
     fitnessCheck: null,
   } as AutoregulationReport
 

@@ -1410,7 +1410,7 @@ describe('an autoregulation proposal', () => {
     const { context, services } = setup()
     const proposal = createAutoregulationProposal(context, services, {
       kind: 'lighter_week',
-      fatigue: { run: { activityId: 'h', date: '2026-11-04', hr: 152, paceSecPerKm: 345, tempC: 12, durationSeconds: 3_300 }, normalHr: 146, comparables: 4, flagged: true },
+      fatigue: { run: { activityId: 'h', date: '2026-11-04', hr: 152, paceSecPerKm: 345, gapSecPerKm: null, climbMPerKm: 2, tempC: 12, durationSeconds: 3_300 }, normalHr: 146, comparables: 4, gradeAdjusted: 0, leftOut: [], flagged: true },
     })!
 
     const after = Object.fromEntries(proposal.decision.changes.map((change) => change.kind === 'upsert_workout' ? [change.after.id, change.after.title] : []))
@@ -1425,7 +1425,7 @@ describe('an autoregulation proposal', () => {
     const { context, services } = setup()
     expect(createAutoregulationProposal(context, services, {
       kind: 'lighter_week',
-      fatigue: { run: { activityId: 'h', date: '2026-11-04', hr: 147, paceSecPerKm: 345, tempC: 12, durationSeconds: 3_300 }, normalHr: 146, comparables: 4, flagged: false },
+      fatigue: { run: { activityId: 'h', date: '2026-11-04', hr: 147, paceSecPerKm: 345, gapSecPerKm: null, climbMPerKm: 2, tempC: 12, durationSeconds: 3_300 }, normalHr: 146, comparables: 4, gradeAdjusted: 0, leftOut: [], flagged: false },
     })).toBeNull()
   })
 })

@@ -38,7 +38,7 @@ export interface CoachReadout {
   nextKey: { date: string; title: string } | null
   controlled: { date: string; activityId: string; repClass: RepLengthClass; verdict: SessionVerdict } | null
   guideProposals: Pick<GuideProposal, 'repClass' | 'direction' | 'guide' | 'proposedGuide'>[]
-  fatigue: { date: string; aboveNormalBpm: number } | null
+  fatigue: { date: string; aboveNormalBpm: number; gradeAdjusted: boolean } | null
   fitnessCheck: { date: string; paceSecPerKm: number; impliedThresholdSecPerKm: number; proposedGuides: { repClass: RepLengthClass; proposedGuide: NumberRange }[] } | null
 }
 
@@ -56,7 +56,9 @@ export function coachReadout(overview: CoachingOverview, report: AutoregulationR
     nextKey: nextKey ? { date: nextKey.prescription.date, title: nextKey.prescription.shortName ?? nextKey.prescription.title } : null,
     controlled: controlled ? { date: controlled.date, activityId: controlled.activityId, repClass: controlled.repClass, verdict: controlled.verdict } : null,
     guideProposals: (report?.guideProposals ?? []).map(({ repClass, direction, guide, proposedGuide }) => ({ repClass, direction, guide, proposedGuide })),
-    fatigue: fatigue ? { date: fatigue.run.date, aboveNormalBpm: Math.round(fatigue.run.hr - fatigue.normalHr!) } : null,
+    fatigue: fatigue
+      ? { date: fatigue.run.date, aboveNormalBpm: Math.round(fatigue.run.hr - fatigue.normalHr!), gradeAdjusted: fatigue.gradeAdjusted === fatigue.comparables }
+      : null,
     fitnessCheck: check
       ? {
           date: check.date,

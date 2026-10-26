@@ -24,7 +24,7 @@ import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecyc
 import { isoWeekWindows, weekWindowIndex } from '@/domain/coaching/weekWindows'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import { GENERAL_PREPARATION, macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
-import { lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
+import { fatigueBasis, lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
@@ -658,13 +658,16 @@ function lighterWeekAdvice(plan: CoachingPlan, fatigue: FatigueReading, referenc
     delete recounted.totalDurationSeconds
     return [{ kind: 'upsert_workout' as const, workoutId: workout.id, workout: { ...recounted, ...calculatedTotals(recounted.blocks) } }]
   })
+  const { run } = fatigue
+  const gap = run.gapSecPerKm === null ? '' : ` (${paceLabel(Math.round(run.gapSecPerKm))} grade-adjusted)`
+  const temperature = run.tempC === null ? '' : `, ${run.tempC} °C`
   return {
     outcome: 'ADJUST',
     reasonCodes: ['EASY_RUN_HR_ABOVE_NORMAL'],
     summary: `A lighter week: easy-run heart rate is ${Math.round(fatigue.run.hr - fatigue.normalHr!)} bpm above the recent normal. Controlled threshold time down by about a third, easy running by about a fifth, every run kept.`,
     evidence: [{
       code: 'EASY_RUN_HR',
-      message: `${fatigue.run.date}: ${fatigue.run.hr} bpm at ${paceLabel(Math.round(fatigue.run.paceSecPerKm))}${fatigue.run.tempC === null ? '' : `, ${fatigue.run.tempC} °C`}, against a normal of ${fatigue.normalHr} bpm over ${fatigue.comparables} similar runs`,
+      message: `${run.date}: ${run.hr} bpm at ${paceLabel(Math.round(run.paceSecPerKm))}${gap}${temperature}, against a normal of ${fatigue.normalHr} bpm over ${fatigue.comparables} runs at similar ${fatigueBasis(fatigue)}`,
       value: fatigue.run.hr - fatigue.normalHr!,
       unit: 'bpm',
     }],

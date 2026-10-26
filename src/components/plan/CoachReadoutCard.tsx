@@ -95,7 +95,7 @@ export function CoachReadoutCard({ readout, onSelectDate }: { readout: CoachRead
           ))}
           {fatigue && (
             <Row label={r.easyRuns} testId="coach-fatigue">
-              <span className="text-[var(--warn)]">{r.fatigue(fatigue.aboveNormalBpm)}</span>
+              <span className="text-[var(--warn)]">{r.fatigue(fatigue.aboveNormalBpm, fatigue.gradeAdjusted)}</span>
             </Row>
           )}
           {fitnessCheck && (
