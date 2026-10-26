@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Today's header no longer writes the sync's words beside its button, where
+  they squeezed the title. A small toast at the top says what a tap did,
+  including when the next sync can run.
+
 - The coach has rules for a return to running after an injury, illness or
   pregnancy break: sessions by time, walk breaks with no pace, effort and
   the talk test as the guide, progress only on comfortable sessions, no
