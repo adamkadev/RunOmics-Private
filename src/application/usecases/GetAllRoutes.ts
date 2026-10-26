@@ -3,7 +3,6 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { distanceKm } from '@/lib/math'
 import { percentileBounds, type LngLatBounds } from '@/lib/routeFrame'
-import { simplifyTrack } from '@/lib/simplifyTrack'
 
 export interface RouteMeta {
   id: string
@@ -170,17 +169,14 @@ export function getMapShellData(): MapShellData {
   return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years }
 }
 
-/** Finer than a heatmap stroke shows; Districts coverage reads the full tracks, which this would shift. */
-export const DRAWN_TOLERANCE_M = 3
-
-/** Bump when an answer's shape or the drawn tracks change: a browser keeps an answer by its version for good. */
+/** Bump when an answer's shape changes: a browser keeps an answer by its version for good. */
 const MAP_FORMAT = 1
 
-const derived = new WeakMap<AllRoutesData, { version?: string; drawn: ([number, number][] | undefined)[] }>()
+const derived = new WeakMap<AllRoutesData, { version?: string }>()
 
 function derivedOf(data: AllRoutesData) {
   let entry = derived.get(data)
-  if (!entry) derived.set(data, (entry = { drawn: [] }))
+  if (!entry) derived.set(data, (entry = {}))
   return entry
 }
 
@@ -195,14 +191,5 @@ export function getMapVersion(): string {
     entry.version = `${MAP_FORMAT}.${hash.digest('base64url').slice(0, 16)}`
   }
   return entry.version
-}
-
-/** What the map draws of a route: within DRAWN_TOLERANCE_M of the track recorded, about a fifth of its points. */
-export function getDrawnRoute(routeIdx: number): [number, number][] | undefined {
-  const data = getAllRoutes()
-  const { drawn } = derivedOf(data)
-  const route = data.routes[routeIdx]
-  if (route && !drawn[routeIdx]) drawn[routeIdx] = simplifyTrack(route, DRAWN_TOLERANCE_M)
-  return drawn[routeIdx]
 }
 

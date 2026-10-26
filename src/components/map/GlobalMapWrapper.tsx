@@ -45,7 +45,7 @@ export function GlobalMapWrapper({
 
   useEffect(() => {
     let live = true
-    if (clusterId !== null) void clusterTracks(version, clusterId, 'drawn')
+    if (clusterId !== null) void clusterTracks(version, clusterId)
     void mapShell(version).then((data) => {
       if (live) setShell({ version, data })
     })
