@@ -26,20 +26,40 @@ interface Props {
   variant?: 'card' | 'inset'
 }
 
-export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds' | 'avgHeartRate'>, variant: 'card' | 'inset' = 'card'): string {
+type MetaRun = Pick<ActivitySummary, 'date' | 'durationSeconds' | 'avgHeartRate'>
+
+/** Day, moving time, average HR: null where the run has none. */
+export function thumbRowMetaParts(a: MetaRun, variant: 'card' | 'inset' = 'card'): [string, string | null, string | null] {
   return [
     variant === 'inset' ? formatWeekday(a.date, true) : formatDate(a.date),
     a.durationSeconds > 0 ? formatDuration(Math.round(a.durationSeconds)) : null,
     a.avgHeartRate ? `${Math.round(a.avgHeartRate)} ${t.units.bpm}` : null,
   ]
-    .filter(Boolean)
-    .join(' · ')
+}
+
+export function thumbRowMeta(a: MetaRun, variant: 'card' | 'inset' = 'card'): string {
+  return thumbRowMetaParts(a, variant).filter(Boolean).join(' · ')
+}
+
+// Widths fit "Wed 28" and "1:27:50", so a week's rows line up their day, time and HR whatever their lengths.
+const META_COLUMNS = ['w-[7.5ch] shrink-0', 'w-[9ch] shrink-0', 'min-w-0 truncate']
+
+function MetaColumns({ parts }: { parts: (string | null)[] }) {
+  return (
+    <span data-testid="thumb-row-meta" className="flex min-w-0 items-baseline whitespace-nowrap text-[13px] tabular-nums">
+      {parts.map((part, i) => (
+        <span key={i} className={META_COLUMNS[i]}>
+          {i > 0 && part && <span aria-hidden>{' · '}</span>}
+          {part}
+        </span>
+      ))}
+    </span>
+  )
 }
 
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.type, variant = 'card' }: Props) {
   // The session as its set ("3 × 8′ @ 4:25"), not its type: the type is the dot beside the meta.
   const title = sessionLabel(activityTitle(a))
-  const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
   const router = useRouter()
   const href = `/activities/${a.id}`
@@ -78,7 +98,11 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <TypeDot type={type} size={6} />
-          <span className={cn('min-w-0', inset ? 'truncate text-[13px]' : 'break-words text-pretty')}>{meta}</span>
+          {inset ? (
+            <MetaColumns parts={thumbRowMetaParts(a, variant)} />
+          ) : (
+            <span className="min-w-0 break-words text-pretty">{thumbRowMeta(a, variant)}</span>
+          )}
         </span>
       </span>
       <span className="flex shrink-0 flex-col items-end gap-0.75">
