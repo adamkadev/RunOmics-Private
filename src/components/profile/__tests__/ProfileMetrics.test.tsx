@@ -43,7 +43,7 @@ describe('capability-driven athlete metrics', () => {
     expect(screen.queryByText(a.thresholdPace)).not.toBeInTheDocument()
   })
 
-  it('shows the heart row, then threshold pace and VMA, in one card of three columns', () => {
+  it('shows the heart row, then threshold pace and VMA, in one card', () => {
     render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261 }} />)
 
     const cells = screen.getAllByTestId('athlete-stat')
@@ -52,7 +52,7 @@ describe('capability-driven athlete metrics', () => {
       `45${t.units.bpm}`, `179${t.units.bpm}`, `200${t.units.bpm}`, `4:21${t.units.perKm}`, `16.3${t.units.kmh}`,
     ])
     const card = screen.getByTestId('athlete-stats')
-    expect(card.className).toContain('grid-cols-3')
+    expect(card.className).toContain('grid-cols-6')
     expect(card.textContent).not.toMatch(/estimated|zones\)/i)
     expect(screen.queryByRole('button')).toBeNull()
   })
@@ -64,18 +64,18 @@ describe('capability-driven athlete metrics', () => {
     expect(cells.map((cell) => cell.className.includes('border-t'))).toEqual([false, false, false, true, true])
   })
 
-  it('gives the last tile the rest of its row', () => {
+  it('splits a short last row evenly', () => {
     const spans = () => screen.getAllByTestId('athlete-stat').map((cell) => cell.className.match(/col-span-\d/)?.[0] ?? null)
     const { unmount } = render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261 }} />)
-    expect(spans()).toEqual([null, null, null, null, 'col-span-2'])
+    expect(spans()).toEqual(['col-span-2', 'col-span-2', 'col-span-2', 'col-span-3', 'col-span-3'])
     unmount()
     render(<AthleteStats athlete={{ restingHrBpm: 76, lthrBpm: 165, maxHrBpm: 206, vmaKmh: 10.6 }} />)
-    expect(spans()).toEqual([null, null, null, 'col-span-3'])
+    expect(spans()).toEqual(['col-span-2', 'col-span-2', 'col-span-2', 'col-span-6'])
   })
 
-  it('leaves a full last row as thirds', () => {
+  it('keeps a full last row as thirds', () => {
     render(<AthleteStats athlete={{ restingHrBpm: 76, maxHrBpm: 206, vmaKmh: 10.6 }} />)
-    expect(screen.getAllByTestId('athlete-stat').some((cell) => /col-span/.test(cell.className))).toBe(false)
+    expect(screen.getAllByTestId('athlete-stat').every((cell) => cell.className.includes('col-span-2'))).toBe(true)
   })
 })
 

@@ -35,12 +35,20 @@ export function athleteStats(athlete: AthletePageView): AvailableMetric[] {
   ])
 }
 
+/** Rows of three; a short last row splits the width evenly rather than leave an empty cell. */
+function rowSize(i: number, count: number): 1 | 2 | 3 {
+  const last = count % 3
+  return last > 0 && i >= count - last ? (last as 1 | 2) : 3
+}
+
+const SPAN = { 1: 'col-span-6', 2: 'col-span-3', 3: 'col-span-2' } as const
+
 export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
   const cells = athleteStats(athlete)
   if (cells.length === 0) return null
 
   return (
-    <section className={cardClass({ padding: 'none', overflow: true, className: 'grid grid-cols-3 rounded-[18px]' })} data-testid="athlete-stats">
+    <section className={cardClass({ padding: 'none', overflow: true, className: 'grid grid-cols-6 rounded-[18px]' })} data-testid="athlete-stats">
       {cells.map((cell, i) => (
         <div
           key={cell.label}
@@ -49,8 +57,7 @@ export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
             'flex min-w-0 flex-col gap-1 px-4 py-3.5',
             i % 3 > 0 && 'border-l border-border',
             i >= 3 && 'border-t border-border',
-            // The last tile takes the rest of its row rather than leave an empty cell beside it.
-            i === cells.length - 1 && (i % 3 === 0 ? 'col-span-3' : i % 3 === 1 && 'col-span-2'),
+            SPAN[rowSize(i, cells.length)],
           )}
         >
           <div className="truncate text-xs text-muted-foreground">
