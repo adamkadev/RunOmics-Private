@@ -28,7 +28,7 @@ const boundaries = [
     },
     {
       group: [
-        'react', 'react-dom', 'next', 'next/**', 'lucide-react', 'maplibre-gl',
+        'react', 'react-dom', 'next', 'next/**', 'lucide-react', 'recharts', 'maplibre-gl',
         'firebase', 'firebase/**', 'firebase-admin', 'firebase-admin/**', ...SERVER_ONLY_LIB, '@/lib/use*',
       ],
       message: 'The domain may not depend on a UI framework, an SDK or a server adapter.',

@@ -12,8 +12,9 @@ Other chart decisions worth keeping:
 
 - The last week of the weekly distance chart is a week still being run, so its short bar is not a
   real drop and is outlined and labelled "this week" rather than left to imply a finished week.
-- **Every chart is hand-drawn SVG,** with no chart library: the last one, the similar runs'
-  line, dropped about 100 KB from a run's page. An SVG has no semantics of its own, so a screen
+- **Every chart but one is hand-drawn SVG.** The similar runs' line stays on Recharts, loaded
+  only when its card opens: a hand-drawn copy moved its pace ticks, date labels and tooltip, and a
+  speed-up may not change what the chart looks like. An SVG has no semantics of its own, so a screen
   reader announces nothing or reads scattered tick and label nodes piecemeal. So the SVG is hidden
   from assistive tech and the chart reaches it as text: `ChartFigure` (a run's charts, the similar
   runs) makes it one `img`-role element with a summarising sentence, the WCAG text-alternative

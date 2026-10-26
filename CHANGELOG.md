@@ -21,6 +21,10 @@ All notable changes to this project are documented in this file.
 - The heat map looks as it did before: full tracks at the phone's full
   resolution again, after a speed-up had thinned its glow.
 
+- The "Same route" chart on a run looks as it did before: its pace axis,
+  date labels, dots and tooltip are Recharts' again, after a hand-drawn
+  copy of it had moved them.
+
 - A 12-week checkpoint: Plan's "General preparation" card opens a page
   that sets this cycle against the 12 weeks before it - km and runs a
   week, controlled threshold time and pace guides, heat-adjusted
@@ -94,7 +98,7 @@ All notable changes to this project are documented in this file.
   Activities list and Plan send less than half the data; the map loads
   its lines when opened and keeps them until the next sync; scrolling does
   far less work per frame; dates and numbers format about 40 times
-  faster; the "Same route" chart drops a 100 KB library.
+  faster.
 
 - After a sync, the server renders Today, Activities, Plan, Analytics,
   Profile and your newest run itself, so the first tap does not wait.
