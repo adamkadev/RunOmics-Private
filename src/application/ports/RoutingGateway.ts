@@ -1,3 +1,4 @@
+import type { AvoidCircle } from '@/domain/explore/avoidSpots'
 import type { RouteCandidate } from '@/domain/explore/types'
 
 export interface RoundTripRequest {
@@ -11,6 +12,8 @@ export interface RoundTripRequest {
   seed: number
   /** A hint only: route scoring penalises busy roads either way. */
   avoidBusyRoads: boolean
+  /** Spots the athlete marked to avoid; one too close to the start or a via is dropped rather than fail the loop. */
+  avoid?: AvoidCircle[]
   /** The caller has gone: stop waiting. The provider may already have counted the call. */
   signal?: AbortSignal
 }

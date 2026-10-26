@@ -243,6 +243,12 @@ export function formatWeekdayTime(iso: string): string {
   return `${weekday} ${time}`
 }
 
+/** "17:27" on the athlete's clock: the app's time zone, Paris without one, whatever the device's. */
+export function formatTimeOfDay(epochMs: number): string {
+  const timeZone = process.env.NEXT_PUBLIC_TIME_ZONE || 'Europe/Paris'
+  return stableSpaces(dateFormat({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(new Date(epochMs)))
+}
+
 export function formatRelativeAgo(iso: string): string {
   const s = t.dashboard.syncStatus
   const { unit, value } = relativeTimeParts(iso)

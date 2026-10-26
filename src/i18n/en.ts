@@ -388,8 +388,50 @@ export const en = {
         newStreetsFirst: 'New streets first',
         // On by itself on a reps or tempo day: flat ground, on paths and cycleways rather than across streets.
         flatForReps: 'Flat for the reps',
+        // Off by default: lets loops take forest paths, dirt, grass and steps in daylight.
+        trailsOk: 'Trails OK',
+        // Under Trails OK on a quality day or the day before one, where it does not apply.
+        trailsLocked: 'Not on or before a quality day',
         // The options row's summary, "Loop · Avoid busy roads · New streets first": one line on a 393 pt phone.
-        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat' },
+        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat', trailsOk: 'Trails' },
+        // The climb a loop may hold for the day's session. `max` and `perKm` are whole metres a km, "20".
+        climb: {
+          sessions: {
+            quality: 'Quality day',
+            beforeQuality: 'Before a quality day',
+            recovery: 'Recovery run',
+            long: 'Long run',
+            easy: 'Easy run',
+            none: 'No session planned',
+          },
+          upTo: (session: string, max: string) => `${session} · up to ${max} m/km of climb`,
+          within: (session: string, perKm: string, max: string) => `${session} · ${perKm} of ${max} m/km of climb`,
+          over: (session: string, perKm: string, max: string) => `${session} · ${perKm} m/km of climb, over ${max}`,
+          flat: (session: string) => `${session} · as flat as it gets`,
+          flatLoop: (session: string, perKm: string) => `${session} · ${perKm} m/km of climb, flat wanted`,
+        },
+        // When the run would end after dusk or start before dawn. `time` is "17:27" on the athlete's clock.
+        dark: {
+          dusk: (time: string) => `Sunset ${time} · streets first after dark`,
+          dawn: (time: string) => `Dark until ${time} · streets first`,
+          night: 'Dark all day · streets first',
+        },
+        // `pct` is "18%".
+        trailShare: (pct: string) => `${pct} on trails or unpaved ground`,
+        steepHint: 'Steep climbs: walk them to keep it easy',
+        // Places the owner marks for loops to go around: a fallen tree, a flooded path.
+        avoid: {
+          title: 'Spots to avoid',
+          mark: 'Mark a spot',
+          cancel: 'Cancel',
+          markPrompt: 'Tap the map where loops must not go.',
+          // A spot's row. `date` is "26 Oct".
+          marked: (date: string) => `Marked ${date}`,
+          reason: 'Reason',
+          reasons: { none: 'No reason', blocked: 'Blocked', mud: 'Muddy', unsafe: 'Unsafe' },
+          remove: 'Remove spot',
+          failed: 'That change wasn’t saved. Try again.',
+        },
         distanceStat: 'Distance',
         timeStat: 'Time',
         // Under the time: the pace it is worked out at, "5:50".

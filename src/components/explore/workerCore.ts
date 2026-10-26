@@ -316,7 +316,7 @@ function coverage(area: AreaState, msg: RequestOf<'coverage'>): ExploreResults['
 function score(area: AreaState, msg: RequestOf<'scoreRoutes'>): ExploreResults['scoreRoutes'] {
   if (!Array.isArray(msg.candidates)) throw new Error('Invalid route candidates')
   // New ground means ground no run has touched, whatever the map filters say.
-  return scoreRoutes(area.index, visitedCells(area), msg.candidates, msg.targetM, msg.prefs)
+  return scoreRoutes(area.index, visitedCells(area), msg.candidates, msg.targetM, msg.prefs, msg.context)
 }
 
 function plan(area: AreaState, msg: RequestOf<'routePlan'>): ExploreResults['routePlan'] {

@@ -6,6 +6,7 @@ import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { ACTIVITY_TYPES } from "@/domain/activity/types";
 import { areaForCluster } from "@/domain/explore/areaForCluster";
 import { medianStart } from "@/domain/explore/home";
+import type { AvoidCircle } from "@/domain/explore/avoidSpots";
 import type { ExploreAreaRef, ScoredRoute } from "@/domain/explore/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
@@ -33,8 +34,10 @@ import { QuartierSheet } from "@/components/explore/QuartierSheet";
 import { useDistrictsTap, useQuartierCamera } from "@/components/explore/useQuartierMap";
 import { parseExploreRoute } from "@/components/explore/exploreHref";
 import { RouteGeneratorMode } from "@/components/explore/RouteGeneratorMode";
+import { useAvoidSpots } from "@/components/explore/useAvoidSpots";
 import {
   easyPaceOf,
+  generatorDay,
   generatorPlan,
   generatorTarget,
   lineBounds,
@@ -252,14 +255,19 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   const nextCardRef = useRef<HTMLButtonElement>(null);
   const expandRef = useRef<HTMLButtonElement>(null);
-  const [routePrefs, setRoutePrefs] = useState(() => ({ avoidBusyRoads: true, newStreetsFirst: true, flatForReps: !!generator?.plan?.quality }));
+  const [routePrefs, setRoutePrefs] = useState(() => ({
+    avoidBusyRoads: true,
+    newStreetsFirst: true,
+    flatForReps: generator?.plan?.session === "quality",
+    trailsOk: false,
+  }));
   const planRun = useCallback(
     (unitId: string) => {
       const active = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
       const opener = { element: active, fromNextCard: !!active?.closest("[data-testid='next-quartier-card']") };
       const plan = generatorPlan(explorePlans, null, today);
       setGenerator({ ...generatorTarget(null, { unitId, plan, medianKm, easyPace }), plan, returnTo: { expanded, unitId: openUnitId }, opener });
-      setRoutePrefs((prefs) => ({ ...prefs, flatForReps: !!plan?.quality }));
+      setRoutePrefs((prefs) => ({ ...prefs, flatForReps: plan?.session === "quality" }));
       setOpenUnitId(null);
     },
     [explorePlans, today, medianKm, easyPace, expanded, openUnitId],
@@ -269,6 +277,10 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const [startMode, setStartMode] = useState<RouteStartMode>("pick");
   const [pickedStart, setPickedStart] = useState<[number, number] | null>(null);
   const routeStart = useMemo(() => routeStartState(startMode, pickedStart), [startMode, pickedStart]);
+  const avoid = useAvoidSpots(generatorOpen);
+  const setAvoidMarking = avoid.setMarking;
+  const generatorPlanDay = generator?.plan ?? null;
+  const sessionDay = useMemo(() => generatorDay(explorePlans, generatorPlanDay, today), [explorePlans, generatorPlanDay, today]);
   // The closed generator's opener, until the map it gives back has rendered.
   const closedOpener = useRef<GeneratorOpener | null>(null);
   const closeGenerator = useCallback(() => {
@@ -278,12 +290,13 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     setDrawnRoute(null);
     setStartMode("pick");
     setPickedStart(null);
+    setAvoidMarking(false);
     if (back) {
       setExpanded(back.expanded);
       setOpenUnitId(back.unitId);
     }
     if (exploreParam !== null) removeUrlParams(EXPLORE_PARAMS);
-  }, [generator, exploreParam]);
+  }, [generator, exploreParam, setAvoidMarking]);
   const setRouteKm = useCallback((km: number) => setGenerator((g) => (g ? { ...g, km } : g)), []);
 
   const generatorUnitId = generator?.unitId ?? null;
@@ -312,11 +325,14 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   // Home is drawn here only, never sent anywhere.
   const startPoint = routeStart.origin;
+  const avoidCircles = useMemo(() => avoid.spots.map((spot): AvoidCircle => [spot.lon, spot.lat, spot.radiusM]), [avoid.spots]);
   const routeDrawing = useMemo<RouteDrawing | null>(() => {
     if (!generatorOpen) return null;
-    if (drawnRoute) return { coordinates: drawnRoute.candidate.coordinates, newSteps: drawnRoute.newSteps, from: startPoint ?? districtsHome };
-    return startPoint ? { coordinates: [], newSteps: [], from: startPoint } : null;
-  }, [generatorOpen, drawnRoute, districtsHome, startPoint]);
+    if (drawnRoute) {
+      return { coordinates: drawnRoute.candidate.coordinates, newSteps: drawnRoute.newSteps, from: startPoint ?? districtsHome, avoid: avoidCircles };
+    }
+    return startPoint || avoidCircles.length ? { coordinates: [], newSteps: [], from: startPoint, avoid: avoidCircles } : null;
+  }, [generatorOpen, drawnRoute, districtsHome, startPoint, avoidCircles]);
   const routeOverlay = useRouteOverlay(routeDrawing, generatorOpen);
   const overlay = useMemo(() => combineOverlays(districtsOverlay, routeOverlay), [districtsOverlay, routeOverlay]);
 
@@ -446,7 +462,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     (unitId) => {
       if (districtsOn && !generatorOpen) setOpenUnitId(unitId);
     },
-    generatorOpen && startMode === "pick" ? setPickedStart : null,
+    !generatorOpen ? null : avoid.marking ? avoid.mark : startMode === "pick" ? setPickedStart : null,
   );
   useQuartierCamera(mapRef, mapReady, openUnit?.id ?? null, districtsFile);
 
@@ -558,6 +574,8 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             onPrefsChange={setRoutePrefs}
             start={routeStart}
             onStartModeChange={setStartMode}
+            day={sessionDay}
+            avoid={avoid}
             home={districtsHome}
             paceSecPerKm={generator.pace}
             plan={generator.plan}

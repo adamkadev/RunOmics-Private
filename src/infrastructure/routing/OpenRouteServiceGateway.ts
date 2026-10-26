@@ -5,13 +5,10 @@ import type {
   RoutingErrorKind,
   RoutingGateway,
 } from '@/application/ports/RoutingGateway'
+import { avoidPolygons } from '@/domain/explore/avoidSpots'
 import type { RouteCandidate } from '@/domain/explore/types'
 
-/**
- * Server-side only: an ORS key belongs to one person and must never reach a browser.
- * `avoidBusyRoads` is not sent: ORS's `quiet` weighting is untried with `round_trip`, and a refused
- * combination would fail every loop; route scoring penalises busy roads instead.
- */
+/** Server-side only: an ORS key belongs to one person and must never reach a browser. */
 
 export const ORS_DIRECTIONS_URL = 'https://api.openrouteservice.org/v2/directions/foot-walking/geojson'
 
@@ -22,18 +19,22 @@ const LOG_BODY_LIMIT = 300
 const NO_ROUTE_CODES = new Set([2009, 2010])
 const NO_ROUTE_MESSAGE = /route could not be found|could not find routable point|unable to find a route/i
 
-function requestBody({ start, lengthM, seed, vias = [] }: RoundTripRequest) {
+// No `quiet` weighting for avoidBusyRoads: untried with round_trip, and a refused option would fail every loop.
+// An extra ORS lacks comes back as a warning; avoid_polygons takes avoid_features' path in ORS, round trip included.
+function requestBody({ start, lengthM, seed, vias = [], avoid = [] }: RoundTripRequest) {
   const tour = vias.length > 0
+  const avoidPolygonsOption = avoidPolygons(avoid, [start, ...vias])
   return {
     coordinates: tour ? [start, ...vias, start] : [start],
     elevation: true,
     instructions: false,
     preference: 'recommended',
     units: 'm',
-    extra_info: ['waytype', 'noise'],
+    extra_info: ['waytype', 'surface', 'steepness', 'noise'],
     options: {
       ...(tour ? {} : { round_trip: { length: Math.round(lengthM), points: 4, seed } }),
       avoid_features: ['ferries', 'fords'],
+      ...(avoidPolygonsOption ? { avoid_polygons: avoidPolygonsOption } : {}),
     },
   }
 }
@@ -87,7 +88,22 @@ interface OrsProperties {
   duration?: unknown
   ascent?: unknown
   descent?: unknown
-  extras?: { waytype?: { values?: unknown } }
+  extras?: { waytype?: { values?: unknown }; surface?: { values?: unknown }; steepness?: { values?: unknown } }
+}
+
+/** [from, to, value] index ranges into the line; a malformed one is dropped, not the loop. */
+function rangesOf(values: unknown, points: number): [number, number, number][] {
+  return (Array.isArray(values) ? values : [])
+    .filter(
+      (range): range is [number, number, number] =>
+        Array.isArray(range) &&
+        range.length === 3 &&
+        range.every(Number.isInteger) &&
+        range[0] >= 0 &&
+        range[0] <= range[1] &&
+        range[1] < points,
+    )
+    .map(([from, to, value]) => [from, to, value])
 }
 
 /** Read field by field, so an answer that moves or drops a field costs that field and not the loop; only the line and its length are required. */
@@ -107,17 +123,6 @@ export function parseCandidate(json: unknown, seed: number): RouteCandidate | nu
   const distanceM = numberOr(props.summary?.distance, numberOr(props.distance, null))
   if (distanceM === null || distanceM <= 0) return null
 
-  const ranges = props.extras?.waytype?.values
-  const waytypes = (Array.isArray(ranges) ? ranges : []).filter(
-    (range): range is [number, number, number] =>
-      Array.isArray(range) &&
-      range.length === 3 &&
-      range.every(Number.isInteger) &&
-      range[0] >= 0 &&
-      range[0] <= range[1] &&
-      range[1] < coordinates.length,
-  )
-
   return {
     seed,
     coordinates,
@@ -126,7 +131,9 @@ export function parseCandidate(json: unknown, seed: number): RouteCandidate | nu
     durationS: numberOr(props.summary?.duration, numberOr(props.duration, 0)),
     ascentM: numberOr(props.ascent, null),
     descentM: numberOr(props.descent, null),
-    waytypes: waytypes.map(([from, to, value]) => [from, to, value]),
+    waytypes: rangesOf(props.extras?.waytype?.values, coordinates.length),
+    surfaces: rangesOf(props.extras?.surface?.values, coordinates.length),
+    steepness: rangesOf(props.extras?.steepness?.values, coordinates.length),
   }
 }
 

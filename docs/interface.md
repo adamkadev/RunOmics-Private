@@ -147,13 +147,32 @@ seeds a batch. The panel's **Start** picks where the loop begins:
 The device's position is never read: the loop starts exactly at the tapped point. The vias the
 worker picks are never closer than 600 m to home (the median start of the runs, kept on the
 device). The key stays on the server; on a private site any signed-in session may call
-it, on a public one only the owner, 12 batches a minute per caller. Loops are ranked by
-`|d − target|/target + wNew·(1 − new share) + wBusy·busy share`, with `wNew` 0.6 ("New streets
-first") or 0.15 and `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully
-and other roads half. "Flat for the reps", on by default when the day's session is a quality one, adds
-`0.5·min(1, climb per km / 20 m) + 0.4·(1 − traffic-free share)`, traffic-free being paths, tracks,
-footways and cycleways; it re-ranks the loops already fetched, without a new request. The GPX is
-GPX 1.1, the loop only, closed on its start.
+it, on a public one only the owner, 12 batches a minute per caller. Each request asks ORS for the
+`waytype`, `surface` and `steepness` extras. Loops are ranked by
+`|d − target|/target + wNew·(1 − new share) + wBusy·busy share + wTrail·trail share + 1·steep share
++ wClimb·min(1, climb per km / 20 m) + 0.2·(m/km over the climb budget)`, with `wNew` 0.6 ("New streets
+first") or 0.15, `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully and
+other roads half, and `wClimb` 0.25. Trail share counts steps, soft ground on any way (unpaved, dirt,
+ground or mud, sand, grass, ice) and paths or tracks without a paved surface (gravel half); `wTrail` is
+1.5, 0 with **Trails OK** (off by default; it does not apply on a quality day or the day before one), and
+6 more whenever the run would start before sunrise or end after sunset less 15 min (NOAA's solar
+equations at the start, the run timed from now at the easy pace, 6:00/km without one), which Trails OK
+never lifts. Steep share counts climbs of 7-10 % half and steeper ones in full, and descents too on a
+long run. The climb budget comes from the day's session (see
+[Explore loops](coaching-and-metrics.md#explore-loops)). "Flat for the reps", on by default when the
+day's session is a quality one, makes `wClimb` 0.5 and adds `0.4·(1 − traffic-free share)`, traffic-free
+being paved paths and tracks, footways and cycleways. The toggles but "Avoid busy roads", the session
+and the daylight re-rank the loops already fetched, without a new request. The panel names the day's
+budget and the loop's m/km against it, the sunset when it applies, and the share on trails and a hint
+to walk steep climbs when they are notable. The GPX is GPX 1.1, the loop only, closed on its start,
+named `runomics-<quartier>-<km>km.gpx`.
+
+**Spots to avoid:** the owner marks a spot (Route options › Spots to avoid › Mark a spot, then a tap on
+the map) where a fallen tree, a flooded path or an unsafe corner should keep loops away. Each is an
+80 m circle in Firestore `avoidSpots` (owner-only rules), with an optional reason, listed and removed
+in the same place and drawn on the map. A batch sends the nearest 20 a loop could reach to ORS as
+`options.avoid_polygons` (octagons around the circles), leaving out any within 50 m of the start or a
+via, where it would leave ORS no routable point and fail every loop.
 
 **New ground:** the server replays each area's runs oldest first, from the busiest cluster in it as the map
 opens it (`src/domain/explore/gains.ts`,

@@ -39,9 +39,9 @@ const FAILURES: Record<RoutingErrorKind, { status: number; error: string; reason
 /** What was sent, never where: field names, counts and the distance, no coordinate. */
 function requestShape(body: unknown): string {
   if (typeof body !== 'object' || body === null) return typeof body
-  const { distanceM, seeds, vias } = body as Record<string, unknown>
+  const { distanceM, seeds, vias, avoid } = body as Record<string, unknown>
   const lists = Array.isArray(vias) ? vias.map((list) => (Array.isArray(list) ? list.length : typeof list)).join(',') : typeof vias
-  return `keys=${Object.keys(body).join(',')} distanceM=${typeof distanceM === 'number' ? Math.round(distanceM) : typeof distanceM} seeds=${Array.isArray(seeds) ? seeds.length : typeof seeds} vias=${lists}`
+  return `keys=${Object.keys(body).join(',')} distanceM=${typeof distanceM === 'number' ? Math.round(distanceM) : typeof distanceM} seeds=${Array.isArray(seeds) ? seeds.length : typeof seeds} vias=${lists} avoid=${Array.isArray(avoid) ? avoid.length : typeof avoid}`
 }
 
 function answer(body: object, status: number, retryAfter?: number): NextResponse {

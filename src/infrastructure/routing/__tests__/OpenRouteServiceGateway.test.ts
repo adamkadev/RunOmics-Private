@@ -23,7 +23,12 @@ function orsAnswer(properties: Record<string, unknown> = {}) {
           ascent: 4.2,
           descent: 4.1,
           summary: { distance: 8123.4, duration: 5848.8 },
-          extras: { waytype: { values: [[0, 1, 3], [1, 3, 7]] }, noise: { values: [[0, 3, 2]] } },
+          extras: {
+            waytype: { values: [[0, 1, 3], [1, 3, 7]] },
+            surface: { values: [[0, 1, 3], [1, 3, 12]] },
+            steepness: { values: [[0, 2, -4], [2, 3, 4]] },
+            noise: { values: [[0, 3, 2]] },
+          },
           ...properties,
         },
       },
@@ -71,7 +76,7 @@ describe('OpenRouteServiceGateway', () => {
       instructions: false,
       preference: 'recommended',
       units: 'm',
-      extra_info: ['waytype', 'noise'],
+      extra_info: ['waytype', 'surface', 'steepness', 'noise'],
       options: { round_trip: { length: 8000, points: 4, seed: 17 }, avoid_features: ['ferries', 'fords'] },
     })
   })
@@ -87,7 +92,21 @@ describe('OpenRouteServiceGateway', () => {
     expect(body.options).toEqual({ avoid_features: ['ferries', 'fords'] })
   })
 
-  it('reads the loop, its length, climb and way types', async () => {
+  it('sends the spots to avoid as polygons, all but one that covers the start', async () => {
+    fetchMock.mockResolvedValue(json(orsAnswer()))
+
+    await new OpenRouteServiceGateway('ors-test-key').roundTrip({ ...REQUEST, avoid: [[-150.01, 0, 80], [-150, 0, 80]] })
+
+    const polygons = JSON.parse(fetchMock.mock.calls[0]![1].body).options.avoid_polygons
+    expect(polygons.type).toBe('MultiPolygon')
+    expect(polygons.coordinates).toHaveLength(1)
+    const ring: number[][] = polygons.coordinates[0][0]
+    expect(ring).toHaveLength(9)
+    expect(ring[8]).toEqual(ring[0])
+    expect(ring.every(([lon]) => Math.abs(lon! + 150.01) < 0.001)).toBe(true)
+  })
+
+  it('reads the loop, its length, climb, way types, surfaces and steepness', async () => {
     fetchMock.mockResolvedValue(json(orsAnswer()))
 
     expect(await roundTrip()).toEqual({
@@ -100,6 +119,8 @@ describe('OpenRouteServiceGateway', () => {
         ascentM: 4.2,
         descentM: 4.1,
         waytypes: [[0, 1, 3], [1, 3, 7]],
+        surfaces: [[0, 1, 3], [1, 3, 12]],
+        steepness: [[0, 2, -4], [2, 3, 4]],
       },
     })
   })

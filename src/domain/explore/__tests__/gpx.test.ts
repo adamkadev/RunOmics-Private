@@ -101,18 +101,18 @@ describe('buildGpx', () => {
 
 describe('gpxFileName', () => {
   it.each([
-    ['Nouvelle Ville', 8.4, 'RunOmics-NouvelleVille-8km.gpx'],
-    ['Le Ban-Saint-Martin', 9.5, 'RunOmics-LeBanSaintMartin-10km.gpx'],
-    ['Longeville-lès-Metz', 12, 'RunOmics-LongevilleLesMetz-12km.gpx'],
-    ['Sainte-Thérèse', 5.2, 'RunOmics-SainteTherese-5km.gpx'],
-    ["Plantières-Queuleu l'Île", 7, 'RunOmics-PlantieresQueuleuLIle-7km.gpx'],
-    ['Cœur de ville', 6, 'RunOmics-CoeurDeVille-6km.gpx'],
-    ['Metz 2', 3.49, 'RunOmics-Metz2-3km.gpx'],
+    ['Nouvelle Ville', 8.4, 'runomics-nouvelle-ville-8km.gpx'],
+    ['Le Ban-Saint-Martin', 9.5, 'runomics-le-ban-saint-martin-10km.gpx'],
+    ['Longeville-lès-Metz', 12, 'runomics-longeville-les-metz-12km.gpx'],
+    ['Sainte-Thérèse', 5.2, 'runomics-sainte-therese-5km.gpx'],
+    ["Plantières-Queuleu l'Île", 7, 'runomics-plantieres-queuleu-l-ile-7km.gpx'],
+    ['Cœur de ville', 6, 'runomics-coeur-de-ville-6km.gpx'],
+    ['Metz 2', 3.49, 'runomics-metz-2-3km.gpx'],
   ])('%s, %s km → %s', (name, km, expected) => {
     expect(gpxFileName(name, km)).toBe(expected)
   })
 
   it('still names the file without a usable name', () => {
-    expect(gpxFileName('—', 8)).toBe('RunOmics-8km.gpx')
+    expect(gpxFileName('—', 8)).toBe('runomics-8km.gpx')
   })
 })

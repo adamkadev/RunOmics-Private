@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
+import { spotsInReach, type AvoidSpot } from '@/domain/explore/avoidSpots'
+import type { RouteContext } from '@/domain/explore/routeScore'
 import type { ExploreAreaRef, RouteCandidate, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
 import { getExploreEngine, type ExploreEngine } from './exploreEngine'
 import { RouteRequestError, requestRouteBatch, type RouteFailure } from './routeApi'
@@ -27,6 +29,10 @@ export interface RouteGeneratorInput {
   waiting: boolean
   /** On the device only: the worker picks no via near it. */
   home: LonLat | null
+  /** The day's session and whether the loop runs into the dark: they re-rank, they ask nothing new. */
+  context: RouteContext
+  /** Marked by the owner; the provider routes around those within reach. */
+  avoidSpots: readonly AvoidSpot[]
 }
 
 export type RouteGeneratorStatus = 'idle' | 'generating' | 'ready' | 'error'
@@ -77,17 +83,22 @@ interface Result {
 /** About a metre: GPS noise under it asks for no new batch. */
 const startKeyOf = (origin: LonLat | null) => (origin ? `${origin[0].toFixed(5)},${origin[1].toFixed(5)}` : 'quartier')
 
-const prefsKeyOf = (p: RoutePreferences) => `${p.avoidBusyRoads ? 1 : 0}${p.newStreetsFirst ? 1 : 0}${p.flatForReps ? 1 : 0}`
+const bit = (on: boolean) => (on ? 1 : 0)
+
+const prefsKeyOf = (p: RoutePreferences, c: RouteContext) =>
+  `${bit(p.avoidBusyRoads)}${bit(p.newStreetsFirst)}${bit(p.flatForReps)}${bit(p.trailsOk)}|${c.day.session ?? '-'}${bit(c.day.beforeQuality)}${bit(c.dark)}`
+
+const spotsKeyOf = (spots: readonly AvoidSpot[]) => spots.map((s) => `${s.id}:${s.radiusM}`).join(',')
 
 /** "Avoid busy roads" asks for a new batch: the provider routes around them. */
 export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGeneratorDeps = {}): RouteGenerator {
-  const { enabled, area, unitId, km, prefs, tracksReady, user, authReady, origin, waiting, home } = input
+  const { enabled, area, unitId, km, prefs, tracksReady, user, authReady, origin, waiting, home, context, avoidSpots } = input
   const { engineFor = getExploreEngine, request = requestRouteBatch, debounceMs = ROUTE_DEBOUNCE_MS } = deps
   const active = enabled && !!area && !!unitId && tracksReady && authReady && !waiting
   const unitKey = `${area ? areaKey(area) : ''}|${unitId ?? ''}`
   const startKey = waiting ? 'waiting' : startKeyOf(origin)
-  const requestKey = `${unitKey}|${startKey}|${km}|${prefs.avoidBusyRoads ? 1 : 0}`
-  const prefsKey = prefsKeyOf(prefs)
+  const requestKey = `${unitKey}|${startKey}|${km}|${bit(prefs.avoidBusyRoads)}|${spotsKeyOf(avoidSpots)}`
+  const prefsKey = prefsKeyOf(prefs, context)
 
   const [cursorState, setCursor] = useState<Cursor | null>(null)
   const cursor = cursorState?.forKey === requestKey ? cursorState : { forKey: requestKey, seedBase: FIRST_SEED, attempt: 0 }
@@ -95,9 +106,9 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
   const [result, setResult] = useState<Result | null>(null)
 
   // Read by the effects, which key on the strings built from them.
-  const inputs = useRef({ area, unitId, km, prefs, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home })
+  const inputs = useRef({ area, unitId, km, prefs, context, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home, avoidSpots })
   useLayoutEffect(() => {
-    inputs.current = { area, unitId, km, prefs, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home }
+    inputs.current = { area, unitId, km, prefs, context, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home, avoidSpots }
   })
 
   // The quartier whose first batch has gone out: every request after it waits for the stepper to rest.
@@ -105,8 +116,21 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
 
   useEffect(() => {
     if (!active) return
-    const { area: ref, unitId: unit, km: distanceKm, prefs: wanted, user: owner, seedBase, result: shown, unitKey: forUnit, startKey: forStart, origin: from, home: homePoint } =
-      inputs.current
+    const {
+      area: ref,
+      unitId: unit,
+      km: distanceKm,
+      prefs: wanted,
+      context: scoredFor,
+      user: owner,
+      seedBase,
+      result: shown,
+      unitKey: forUnit,
+      startKey: forStart,
+      origin: from,
+      home: homePoint,
+      avoidSpots: spots,
+    } = inputs.current
     if (!ref || !unit) return
     // Back on the question the batch in hand answers (the stepper went there and back): the loop shown stays.
     if (shown && shown.fetchKey === fetchKey && !shown.failure) return
@@ -121,7 +145,7 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
         const targetM = distanceKm * 1000
         const seeds = batchSeeds(seedBase)
         const failed = (failure: GeneratorFailure, minKm: number | null = null) =>
-          setResult({ fetchKey, unitKey: forUnit, startKey: forStart, candidates: [], ranked: [], prefsKey: prefsKeyOf(wanted), index: 0, failure, minKm })
+          setResult({ fetchKey, unitKey: forUnit, startKey: forStart, candidates: [], ranked: [], prefsKey: prefsKeyOf(wanted, scoredFor), index: 0, failure, minKm })
         try {
           let start: LonLat | null
           let vias: LonLat[][] | undefined
@@ -135,15 +159,26 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
             start = await engine.routeStart(ref, { unitId: unit })
           }
           if (!start) throw new RouteRequestError('noRoute')
+          const avoid = spotsInReach(spots, start, targetM)
           const batch = await request(
-            { start, distanceM: targetM, seeds, avoidBusyRoads: wanted.avoidBusyRoads, ...(vias ? { vias } : {}) },
+            { start, distanceM: targetM, seeds, avoidBusyRoads: wanted.avoidBusyRoads, ...(vias ? { vias } : {}), ...(avoid.length ? { avoid } : {}) },
             { user: owner, signal: controller.signal },
           )
           if (controller.signal.aborted) return
-          const ranked = await engine.scoreRoutes(ref, { candidates: batch.candidates, targetM, prefs: wanted })
+          const ranked = await engine.scoreRoutes(ref, { candidates: batch.candidates, targetM, prefs: wanted, context: scoredFor })
           if (controller.signal.aborted) return
           if (ranked.length === 0) throw new RouteRequestError('noRoute')
-          setResult({ fetchKey, unitKey: forUnit, startKey: forStart, candidates: batch.candidates, ranked, prefsKey: prefsKeyOf(wanted), index: 0, failure: null, minKm: null })
+          setResult({
+            fetchKey,
+            unitKey: forUnit,
+            startKey: forStart,
+            candidates: batch.candidates,
+            ranked,
+            prefsKey: prefsKeyOf(wanted, scoredFor),
+            index: 0,
+            failure: null,
+            minKm: null,
+          })
         } catch (err) {
           if (controller.signal.aborted) return
           if (!(err instanceof RouteRequestError)) {
@@ -160,24 +195,24 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
     }
   }, [active, fetchKey, engineFor, request, debounceMs])
 
-  // "New streets first" re-ranks the batch in hand; nothing is asked of the provider.
+  // Every toggle but "Avoid busy roads", the session and the daylight re-rank the batch in hand: no new request.
   const current = active && result?.fetchKey === fetchKey ? result : null
   const rescore = current && !current.failure && current.prefsKey !== prefsKey ? current : null
   useEffect(() => {
     if (!rescore) return
     let stale = false
-    const { area: ref, km: distanceKm, prefs: wanted } = inputs.current
+    const { area: ref, km: distanceKm, prefs: wanted, context: scoredFor } = inputs.current
     if (!ref) return
     engineFor()
-      .scoreRoutes(ref, { candidates: rescore.candidates, targetM: distanceKm * 1000, prefs: wanted })
+      .scoreRoutes(ref, { candidates: rescore.candidates, targetM: distanceKm * 1000, prefs: wanted, context: scoredFor })
       .then((ranked) => {
         if (stale) return
-        setResult((prev) => (prev === rescore ? { ...rescore, ranked, prefsKey: prefsKeyOf(wanted), index: 0 } : prev))
+        setResult((prev) => (prev === rescore ? { ...rescore, ranked, prefsKey: prefsKeyOf(wanted, scoredFor), index: 0 } : prev))
       })
       .catch((err) => {
         if (stale) return
         console.warn('Route scoring failed', err)
-        setResult((prev) => (prev === rescore ? { ...rescore, prefsKey: prefsKeyOf(wanted), failure: 'upstream' } : prev))
+        setResult((prev) => (prev === rescore ? { ...rescore, prefsKey: prefsKeyOf(wanted, scoredFor), failure: 'upstream' } : prev))
       })
     return () => {
       stale = true

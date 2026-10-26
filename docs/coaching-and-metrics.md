@@ -285,6 +285,39 @@ this heat cost about +14 s/km: run by heart rate". The line appears only when ev
   2.5 s at most, cached for the page's hour, and no line rather than a slow page.
 - **A warm band at that hour.** The cost shown is that band's.
 
+## Explore loops
+
+**A generated loop has a climb budget for the day's session**, in metres of climb per km of loop as
+ORS's elevation model measures it on the planned loop. Past
+the budget each m/km costs 0.2 in the loop's score, so 3 m/km over outweighs all the new ground a loop
+can bring: an over-budget loop loses to an in-budget one with less new ground, yet a hilly area still
+yields a loop. The session is the coach plan's for the day, else Garmin's planned workout; with none
+it is scored as an easy run.
+
+| Session | Budget | Also |
+|---|---|---|
+| Quality (controlled threshold, threshold, tempo, intervals) | flat, as "Flat for the reps" | Trails OK does not apply |
+| The day before a quality session | ≤ 12 m/km | Trails OK does not apply |
+| Recovery run | ≤ 12 m/km | |
+| Long run | ≤ 15 m/km | steep descents (7 % or more) scored like steep climbs |
+| Easy run, or no session | ≤ 20 m/km; ≤ 30 m/km with Trails OK | |
+
+These are [convention], not research thresholds. The reasoning behind them: walking grades steeper
+than about 15-20 % costs about as much energy as running them (Minetti et al. 2002's cost curves), so
+an easy run up them turns into a hike or leaves zone 2; downhill running's eccentric damage peaks 24-48 h
+later, when it would land on the next quality session, hence the long run's descents and the flat day
+before reps; and the goal race, a road half marathon, favours runnable terrain for most easy volume.
+The panel names the budget and each loop's m/km against it, and on an easy, recovery or long run a loop
+with 200 m or more at 10 % or steeper says to walk the steep climbs.
+
+**Trails, mud and darkness weigh more than new ground.** A loop's share on trails (steps, soft ground,
+and paths or tracks without a paved surface) costs 1.5, two and a half times what new ground can earn
+(0.6), so "New streets first" can no longer pull a loop into a muddy wood. "Trails OK" lifts that
+penalty in daylight. When the run, timed from now at the easy pace, would start before sunrise or end
+within 15 minutes of sunset, trails cost 6 more whatever the toggles, and the panel says the loop keeps
+to streets. These weights are [convention] too, set against a forest loop of 25 October 2026: 13.3 km, 407 m
+of DEM climb, muddy and steep, run into the dusk the day the clocks went back.
+
 ## AI insight generation
 
 **The adaptive coach bills its own Google project.** It reads `GEMINI_COACH_API_KEY`

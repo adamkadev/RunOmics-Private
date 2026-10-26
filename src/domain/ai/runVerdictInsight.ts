@@ -4,6 +4,7 @@ import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
 import type { LongestRun, PreviousRun, PreviousSession, RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
 import type { SessionIntent } from '@/domain/coaching/sessionIntent'
+import { gapHalves } from '@/domain/activity/gradeAdjusted'
 import { isLongSession } from '@/domain/activity/longRun'
 import { raceExecution } from '@/domain/activity/raceExecution'
 import { MIN_REP_SECONDS, repStats, sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
@@ -16,7 +17,7 @@ export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
 /** Part of every verdict's hash: bump it with a prompt change, so runs inside the horizon are written again. */
-export const RUN_VERDICT_PROMPT_VERSION = 4
+export const RUN_VERDICT_PROMPT_VERSION = 5
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
@@ -224,12 +225,16 @@ function heartChange(bpm: number | null, when: string): string {
   return Math.abs(bpm) < HR_NOISE_BPM ? `, heart rate level ${when}` : `, heart rate ${Math.abs(bpm)} bpm ${bpm > 0 ? 'higher' : 'lower'} ${when}`
 }
 
-function executionLine(execution: NonNullable<SessionExecution>, kind: RunKind): string {
+function executionLine(execution: NonNullable<SessionExecution>, kind: RunKind, activity: Activity): string {
   if (execution.kind === 'intervals') {
     return `- How the reps held: ${execution.spreadSecPerKm}s/km between the fastest and slowest, the last rep ${paceChange(execution.fadeSecPerKm, 'the first')}${heartChange(execution.hrDriftBpm, 'by the last rep')}`
   }
   const drift = heartChange(execution.hrDriftBpm, 'in the second half')
-  const halves = `the second half ${paceChange(execution.fadeSecPerKm, 'the first')}`
+  // On a hilly run raw pace splits measure where the climbs fell, not how the athlete held.
+  const gap = gapHalves(activity)
+  const halves = gap
+    ? `by grade-adjusted pace (the run climbed ${gap.climbMPerKm} m a km), the second half ${paceChange(gap.fadeSecPerKm, 'the first')}`
+    : `the second half ${paceChange(execution.fadeSecPerKm, 'the first')}`
   // Spread on an easy day is terrain and traffic, not execution; given as a fact, the model reports it as one.
   const spread = EASY_KINDS.has(kind) ? '' : `, ${execution.spreadSecPerKm}s/km between the fastest and slowest kilometre`
   return `- How it held: ${halves}${drift}${spread}`
@@ -468,7 +473,7 @@ function facts({ activity, history, planned, official, intent }: RunVerdictConte
     airTemperature: recentWeather ? Math.round(recentWeather.tempC) : null,
     windKph: recentWeather ? Math.round(recentWeather.windKph) : null,
     humidityPct: recentWeather ? Math.round(recentWeather.humidityPct) : null,
-    execution: execution ? executionLine(execution, kind) : null,
+    execution: execution ? executionLine(execution, kind, activity) : null,
     reps: reps ? repsLine(reps) : execution?.kind === 'intervals' && QUALITY_KINDS.has(kind) ? `- Reps: ${execution.reps}, at ${execution.repPaces.map(pace).join(', ')} /km` : null,
     strides: kind === 'strides' ? stridesLine(execution, plan.strides) : null,
     pacing: kind === 'race' ? pacingLine(activity) : null,
@@ -548,6 +553,7 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   'When the effort sits outside the expected band, look for a cause in the other facts - heat, humidity, wind, elevation - and name it rather than assuming the athlete misjudged the session. Name the cause, never its number.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
   "The athlete's note, when there is one, is what the numbers cannot tell you: never quote it back, it is printed on the card, but judge the run in its light. A session run sick, tired or sore is never written up as if nothing happened.",
+  'When the note reports a problem with the run - the terrain, the route, feeling unsafe, pain - acknowledge it plainly as what happened; never reframe it as a success or credit the athlete for coping with it.',
   'Write as a coach talks to the athlete, not as a report. The headline is a full sentence with a verb, something you would say to them once they stop - never a label of adjectives and nouns. If it would fit any other session of its kind, it is not this run\'s verdict yet.',
   'The body gives the one or two facts the headline rests on and what they mean, as one or two plain sentences - never a list of numbers.',
   'Vary the shape from one verdict to the next: a plain statement, a contrast, a comparison with last time, one moment of the run.',

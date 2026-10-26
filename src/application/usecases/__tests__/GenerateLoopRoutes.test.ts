@@ -156,6 +156,7 @@ describe('parseLoopRequest', () => {
   it('accepts a well-formed body, avoidBusyRoads off unless asked', () => {
     expect(parseLoopRequest(valid)).toEqual({ ...valid, avoidBusyRoads: false })
     expect(parseLoopRequest({ ...valid, avoidBusyRoads: true })?.avoidBusyRoads).toBe(true)
+    expect(parseLoopRequest({ ...valid, avoid: [[-150.01, 0, 80]] })?.avoid).toEqual([[-150.01, 0, 80]])
   })
 
   it('folds repeated seeds into one request each', () => {
@@ -178,6 +179,8 @@ describe('parseLoopRequest', () => {
     ['a fractional seed', { ...valid, seeds: [1.5] }],
     ['seeds that are not an array', { ...valid, seeds: 4 }],
     ['avoidBusyRoads as a string', { ...valid, avoidBusyRoads: 'yes' }],
+    ['an avoid spot 5 km wide', { ...valid, avoid: [[-150.01, 0, 5000]] }],
+    ['twenty-one avoid spots', { ...valid, avoid: Array.from({ length: 21 }, () => [-150.01, 0, 80]) }],
   ])('refuses %s', (_label, body) => {
     expect(parseLoopRequest(body)).toBeNull()
   })
