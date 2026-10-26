@@ -73,11 +73,12 @@ const returnBlock = (run = PACE, walk: WorkoutTarget = {}): CoachingPlanDraft =>
   ],
 })
 
-const validate = (athlete: AthleteProfile, draft = returnBlock()) => () => validateBootstrapDraft(draft, {
+const validate = (athlete: AthleteProfile, draft = returnBlock(), guidance?: string) => () => validateBootstrapDraft(draft, {
   availableWeekdays: [3, 5, 0],
   runsPerWeek: 3,
   context: context(athlete),
   events: { primary: null, tuneUps: [], planningStartDate: '2026-04-27' },
+  ...(guidance ? { guidance } : {}),
 })
 
 describe('a return to running', () => {
@@ -143,5 +144,19 @@ describe('a return to running', () => {
 
     expect(validate({ trainingBreaks: [injury] }, noted((workout) => ({ ...workout, notes: ['Talk in full sentences.'] })))).toThrow(/one-line description/)
     expect(validate({ trainingBreaks: [injury] }, noted((workout) => ({ ...workout, blocks: [{ kind: 'warmup', target: { durationSeconds: 300 }, notes: ['Brisk walk.'] }, ...workout.blocks.slice(1)] })))).toThrow(/step in a return carries no notes/)
+  })
+
+  it('accepts the stop rule by default, and refuses one anywhere when the guidance asks for no stop signals', () => {
+    const noStopSignals = 'Write no stop signals or symptom warnings in sessions, descriptions or focus.'
+    const described = (description: string, focus = 'Four-minute runs.'): CoachingPlanDraft => {
+      const draft = returnBlock()
+      return { ...draft, weeks: draft.weeks.map((week, index) => ({ ...week, ...(index === 0 ? { focus } : {}), workouts: week.workouts.map((workout) => ({ ...workout, description })) })) }
+    }
+
+    expect(validate({ trainingBreaks: [injury] })).not.toThrow()
+    expect(validate({ trainingBreaks: [injury] }, returnBlock(), noStopSignals)).toThrow(/asks for no stop signals/)
+    expect(validate({ trainingBreaks: [injury] }, described('Course continue, marche si besoin.'), noStopSignals)).not.toThrow()
+    expect(validate({ trainingBreaks: [injury] }, described('Arrête si fuite, pesanteur ou douleur.'), noStopSignals)).toThrow(/workouts\[0\]: the guidance asks/)
+    expect(validate({ trainingBreaks: [injury] }, described('Easy, walk when you need to.', 'Stop on any leaking.'), noStopSignals)).toThrow(/weeks\[0\]\.focus/)
   })
 })

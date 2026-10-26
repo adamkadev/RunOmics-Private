@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
   one-line description, the stop rule, and the validator refuses notes on a
   return block. The talk test, the guidance's own with full sentences by
   default, and any walk-down rule go in the week's focus, shown in the app.
+- The guidance can turn the stop rule off. A return block writes its stop
+  rule as each session's description by default; when the guidance says "no
+  stop signals", the planner writes none, and a draft carrying a stop rule or
+  a symptom warning in a name, focus, description or note is sent back.
 - The second athlete's deployment has a test of its own (E1). The demo
   generator takes `--profile sparse`: a made-up runner on a Forerunner 55, with
   no Training Effect, training status, races, goals or PBs, a long break and a

@@ -533,7 +533,7 @@ export async function createBootstrapProposal(
   })
 
   const review = (draft: CoachingPlanDraft) => {
-    validateBootstrapDraft(draft, { availableWeekdays, runsPerWeek, context, events: strategy })
+    validateBootstrapDraft(draft, { availableWeekdays, runsPerWeek, context, events: strategy, ...(guidance ? { guidance } : {}) })
     return normalizeBootstrapPlan(draft, context, strategy, createdAt, id, macrocycleStartDate, sourceOf(services), carried)
   }
 

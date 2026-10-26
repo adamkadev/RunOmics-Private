@@ -103,6 +103,30 @@ export interface BootstrapRules {
   runsPerWeek?: number
   context: CoachingContext
   events: BootstrapEvents
+  guidance?: string
+}
+
+/** The guidance's own words, so a stop line the planner writes anyway goes back to it rather than to the athlete. */
+export function asksNoStopSignals(guidance: string | undefined): boolean {
+  return guidance !== undefined && /\bno stop signals?\b/i.test(guidance)
+}
+
+const STOP_SIGNAL = /(?<!\p{L})(?:stop signals?|signaux d'arrêt|stop and see|stop the session|arrête(?:r)? la séance|arrête si|fuites?|pesanteur|leak(?:s|ing)?|heaviness|dragging|urgency|incontinence|pelvi(?:c|en|enne)|périnée|perineum|sage-femme|midwife)(?!\p{L})/iu
+
+function validateNoStopSignals(draft: CoachingPlanDraft): void {
+  const texts: [string, string | undefined][] = [['plan.name', draft.name], ['plan.focus', draft.focus]]
+  draft.weeks.forEach((week, weekIndex) => {
+    texts.push([`plan.weeks[${weekIndex}].focus`, week.focus], [`plan.weeks[${weekIndex}].reducedVolume`, week.reducedVolume?.explanation])
+    week.workouts.forEach((workout, workoutIndex) => {
+      const label = `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`
+      const steps = workout.blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [block])
+      for (const text of [workout.title, workout.description, ...(workout.notes ?? []), ...steps.flatMap((step) => step.notes ?? [])]) {
+        texts.push([label, text])
+      }
+    })
+  })
+  const found = texts.find(([, text]) => text !== undefined && STOP_SIGNAL.test(text))
+  if (found) throw new Error(`${found[0]}: the guidance asks for no stop signals; write no stop rule or symptom warning`)
 }
 
 /** The watch executes one target a step and pace wins over a zone; notes on a step are unreadable mid-run. */
@@ -136,6 +160,7 @@ export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: Bootstra
   validateDraftIntensity(draft, intensityBand(rules.context.athlete.thresholdPaceSecPerKm), rules.availableWeekdays)
   validateBootstrapDraftSemantics(draft, rules.events, rules.context)
   if (rules.context.returnToRunning) validateReturnTargets(draft)
+  if (asksNoStopSignals(rules.guidance)) validateNoStopSignals(draft)
   validateAvailableWeekdays(draft.weeks.flatMap((week) => week.workouts), rules.availableWeekdays)
   // Last: a name is the cheapest thing to put right, so the substance is
   // judged first and a repair is asked for it first.
