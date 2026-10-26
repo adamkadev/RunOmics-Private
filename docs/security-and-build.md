@@ -200,7 +200,8 @@ notes on every step, one missed session, and its first runs carrying a wrong VO2
 On her phone's WebKit it runs `layout`, `dashboard`, `plan` and `analytics` (whose names
 come from the active locale's strings through the `t` fixture), `sparse.spec.ts` for the
 second athlete's own fixes, and `a11y.spec.ts`, an axe pass (WCAG 2.1 A and AA, serious and
-critical) over seven pages. A change that only breaks the sparse French deployment fails here.
+critical) over seven pages, with one exemption: Plan's day buttons keep a spoken label
+("mardi 27 octobre : Repos") fuller than their "M 27". A change that only breaks the sparse French deployment fails here.
 
 The screenshot audit has its own config so it never runs as part of the e2e suite, or vice
 versa. It captures through an iPhone 13 viewport (390×844 @3×) because the app is designed

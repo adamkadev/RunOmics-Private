@@ -9,7 +9,13 @@ All notable changes to this project are documented in this file.
   no Training Effect, training status, races, goals or PBs, a long break and a
   French run/walk return block. A third Playwright project, `sparse-fr`, builds
   it in French and runs the layout, Today, Plan and Analytics specs on the
-  iPhone, checks that her fixes hold, and runs an axe pass over seven pages.
+  iPhone, checks that her fixes hold, and runs an axe pass over seven pages;
+  only Plan's day buttons, which speak the whole date, are exempt from its
+  label-in-name rule.
+
+- The readiness card on Today and the all-time card on Profile lay their
+  link over the card instead of around it, so a screen reader reads the
+  card's own words, not only "Open load in Analytics" (F10, in part).
 
 - While building back after a break, Today no longer names a form band:
   the status line reads "Building back - no reading yet" alone, as intended,
