@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- `export:demo --check` passes again, and CI runs it with a new `--strict`
+  flag, which also fails on a stale config entry. The daylight test uses a
+  made-up point, the GPX file name example a made-up quartier, and twelve
+  config entries that matched nothing are gone.
+
 - A push that no device accepted now counts as failed, so the scheduled pushes
   and alerts retry it instead of recording it as sent. Tokens FCM calls invalid
   are deleted along with unregistered ones, and refusal codes are logged.
