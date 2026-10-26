@@ -701,9 +701,12 @@ Normal desired frequency is not a taper quota: an explicitly targeted race must
 not be preceded by three consecutive runs within its final four pre-race days.
 Use fewer runs with an explicit taper reason when that produces better spacing.
 
-Bootstrap accepts `--guidance-file <path>` for case-specific athlete instructions,
-including accepted workouts to preserve and nonmandatory volume ranges. These
-instructions reach Gemini separately from deterministic training-history facts.
+Bootstrap reads case-specific athlete instructions from `coaching/guidance.md` in the
+data workspace, or from `--guidance-file <path>` in its place: accepted workouts to
+preserve, nonmandatory volume ranges, a clinician's instructions during a return to
+running. Keeping them in the data repository means the next renewal is told what the
+last one was, and the decision records the guidance's hash. These instructions reach
+Gemini separately from deterministic training-history facts.
 A limited tune-up-specific session does not automatically make its week a cutback:
 additional appropriate volume comes from easy running, never extra quality.
 

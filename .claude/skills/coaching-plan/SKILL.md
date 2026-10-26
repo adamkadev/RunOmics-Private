@@ -25,6 +25,11 @@ npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 \
   --guidance-file guidance.txt --prompt-out coach-prompt.md
 ```
 
+Without `--guidance-file`, bootstrap reads `coaching/guidance.md` from the data
+workspace, so what one block was told carries to the next; the decision records its
+hash. Keep an athlete's standing instructions there, such as a clinician's limits
+during a return to running.
+
 That file carries the rules, the athlete's context and the answer schema. Answer
 it with a single JSON object, save it, and feed it back:
 

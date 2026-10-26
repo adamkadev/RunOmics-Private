@@ -1270,6 +1270,20 @@ describe('provenance', () => {
 
     expect(proposal.proposedPlan?.provenance.source).toBe('gemini')
   })
+
+  it('records the hash of the guidance the block was written from, and none without guidance', async () => {
+    const bootstrap = (guidance?: string) => createBootstrapProposal(targetContext([]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: targetAdvisor([]), id: ids(), now: () => new Date('2026-09-04T08:00:00Z'),
+    }, undefined, undefined, guidance)
+
+    const guided = await bootstrap('Run/walk by time; stop on pelvic symptoms.')
+    const again = await bootstrap('Run/walk by time; stop on pelvic symptoms.')
+    const unguided = await bootstrap()
+
+    expect(guided.decision.provenance.guidanceHash).toMatch(/^[0-9a-f]{24}$/)
+    expect(again.decision.provenance.guidanceHash).toBe(guided.decision.provenance.guidanceHash)
+    expect(unguided.decision.provenance).not.toHaveProperty('guidanceHash')
+  })
 })
 
 describe('a block that starts on a later Monday', () => {

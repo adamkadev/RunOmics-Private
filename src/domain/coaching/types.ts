@@ -56,6 +56,7 @@ export interface CoachingProvenance {
   promptVersion?: string
   decisionId?: string
   parentRevision?: number
+  guidanceHash?: string
 }
 
 /**

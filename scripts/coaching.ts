@@ -34,7 +34,8 @@ function usage(): string {
     '                     keeping the current plan\'s sessions until then unchanged.',
     '  --general          Plan general preparation toward no race; races inside the',
     '                     block are run as supporting ones. The default with no race.',
-    '  --guidance-file <path> Additional athlete instructions for bootstrap.',
+    '  --guidance-file <path> Athlete instructions for bootstrap, in place of the data',
+    '                     workspace\'s coaching/guidance.md (read by default).',
     '  --context-out <path> Save the compact bootstrap context for inspection.',
     '  --prompt-out <path> Write the coaching prompt to paste into a chat instead of calling the API.',
     '  --from-answer <path> Build the proposal from a chat reply saved as JSON.',
@@ -113,6 +114,17 @@ async function dataWorkspace(args: string[], applying: boolean): Promise<DataWor
   return { root: path.join(process.cwd(), 'data'), shouldPush: false }
 }
 
+/** guidance.md keeps what a hand-guided block was told, so the next renewal is told it too. */
+function bootstrapGuidance(args: string[], stored: string | null): string | undefined {
+  const given = fileOption(args, '--guidance-file')
+  if (given !== undefined) {
+    console.log(`Guidance: ${option(args, '--guidance-file')}`)
+    return given
+  }
+  console.log(stored === null ? 'Guidance: none (no coaching/guidance.md)' : 'Guidance: coaching/guidance.md')
+  return stored ?? undefined
+}
+
 function printProposal(filePath: string, proposal: Awaited<ReturnType<typeof createProposal>>): void {
   console.log(`\n${proposal.decision.outcome}: ${proposal.decision.summary}`)
   for (const evidence of proposal.decision.evidence) console.log(`- ${evidence.message}`)
@@ -139,7 +151,7 @@ async function createProposal(command: string, args: string[]) {
     const context = await getCoachingContext(currentPlan, referenceDate)
     const contextOutput = option(args, '--context-out')
     if (contextOutput) fs.writeFileSync(path.resolve(contextOutput), JSON.stringify(context, null, 2) + '\n')
-    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), fileOption(args, '--guidance-file'), args.includes('--replace'), args.includes('--general'), option(args, '--start'))
+    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), bootstrapGuidance(args, repository.getGuidance()), args.includes('--replace'), args.includes('--general'), option(args, '--start'))
   }
 
   if (command === 'evaluate') {
