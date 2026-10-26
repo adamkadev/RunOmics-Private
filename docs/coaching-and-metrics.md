@@ -288,7 +288,7 @@ this heat cost about +14 s/km: run by heart rate". The line appears only when ev
 ## Explore loops
 
 **A generated loop has a climb budget for the day's session**, in metres of climb per km of loop as
-ORS's elevation model measures it (it reads higher than a barometric watch, notably under trees). Past
+ORS's elevation model measures it on the planned loop. Past
 the budget each m/km costs 0.2 in the loop's score, so 3 m/km over outweighs all the new ground a loop
 can bring: an over-budget loop loses to an in-budget one with less new ground, yet a hilly area still
 yields a loop. The session is the coach plan's for the day, else Garmin's planned workout; with none
