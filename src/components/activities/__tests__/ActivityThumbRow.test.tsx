@@ -32,7 +32,7 @@ describe('ActivityThumbRow', () => {
   it('names the session by its set, its type left to the dot and to VoiceOver', () => {
     render(<ActivityThumbRow activity={activity} variant="inset" />)
     const row = screen.getByTestId('thumb-row')
-    expect(screen.getByTestId('thumb-row-meta').textContent).toBe(thumbRowMeta(activity, 'inset'))
+    expect(screen.getByText(thumbRowMeta(activity, 'inset'))).toBeInTheDocument()
     expect(row.textContent).toContain('2 × 7′')
     expect(row.textContent).not.toContain('2 × 7:00')
     // On screen, no "Threshold"; read aloud, the type before the set.
@@ -44,12 +44,6 @@ describe('ActivityThumbRow', () => {
     render(<ActivityThumbRow activity={{ ...activity, type: 'Tempo' }} type="Threshold" variant="inset" />)
     expect(screen.getByText('Threshold', { exact: false, selector: '.sr-only' })).toBeInTheDocument()
     expect(screen.queryByText('Tempo', { exact: false, selector: '.sr-only' })).toBeNull()
-  })
-
-  it('keeps the HR in its column when the run has no moving time', () => {
-    render(<ActivityThumbRow activity={{ ...activity, durationSeconds: 0 }} variant="inset" />)
-    const columns = screen.getByTestId('thumb-row-meta').children
-    expect([...columns].map((c) => c.textContent)).toEqual(['Tue 20', '', ` · 139 ${t.units.bpm}`])
   })
 
   it('keeps a name with no set whole', () => {

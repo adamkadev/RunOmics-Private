@@ -276,7 +276,7 @@ describe('the list at a phone', () => {
     const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
     expect(screen.getByText('3 × 8′ @ 4:25').className).toContain('truncate')
-    expect(screen.getByTestId('thumb-row-meta').textContent).toBe(`${formatWeekday('2026-09-22', true)} · 1:00:00`)
+    expect(screen.getByText(`${formatWeekday('2026-09-22', true)} · 1:00:00`)).toBeInTheDocument()
     expect(screen.getByTestId('thumb-row').textContent).not.toContain('7:40')
   })
 })
