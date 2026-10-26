@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { checkDataDirectory } from '../dataContract'
-import { writeDemoDataset } from '../../../../scripts/generate_demo_data.mjs'
+import { generateDemoDataset, writeDemoDataset } from '../../../../scripts/generate_demo_data.mjs'
 
 let dir: string
 
@@ -39,6 +39,11 @@ const warnings = () => checkDataDirectory(dir).filter((p) => p.severity === 'war
 describe('the data contract', () => {
   it('accepts the demo dataset the generator writes', () => {
     writeDemoDataset(dir)
+    expect(checkDataDirectory(dir)).toEqual([])
+  })
+
+  it('accepts the sparse profile the generator writes', () => {
+    writeDemoDataset(dir, generateDemoDataset({ profile: 'sparse' }))
     expect(checkDataDirectory(dir)).toEqual([])
   })
 

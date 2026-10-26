@@ -1024,7 +1024,352 @@ function buildDemoExploreArea() {
   }
 }
 
-export function generateDemoDataset({ now = new Date() } = {}) {
+// The second athlete's shape, made up: a Forerunner 55 (no Training Effect, status, LTHR or running dynamics), a long
+// break, a run/walk return planned in French, and no races, goals, PBs or explore area.
+const SPARSE_SEED = 20261102
+const SPARSE_CENTER = [-140.0, -5.0]
+const SPARSE_ATHLETE = {
+  displayName: 'Camille',
+  age: 31,
+  sex: 'female',
+  heightCm: 165,
+  weightKg: 58,
+  restingHrBpm: 61,
+  maxHrBpm: 194,
+  hrZoneBoundsBpm: [103, 124, 144, 165, 184],
+  vmaKmh: 11.5,
+  vo2maxMlKgMin: 37.2,
+  fitnessAgeYrs: 32,
+  achievableFitnessAgeYrs: 29,
+  bmi: 21.3,
+  deviceName: 'Forerunner 55',
+  deviceFirmware: '21.19',
+  deviceSince: '2025-06-01',
+}
+const SPARSE_GEAR_ID = 'demo-shoe-sparse-000000000001'
+const SPARSE_SAMPLE_SECONDS = 30
+const WALK_PACE = { min: 660, max: 840 }
+// Reps × minutes for each session, Wednesday, Friday and Sunday, over the five weeks of the return block.
+const RETURN_WEEKS = [
+  [[6, 3], [6, 3], [5, 4]],
+  [[5, 4], [5, 4], [4, 6]],
+  [[4, 6], [4, 6], [3, 8]],
+  [[3, 8], [3, 8], [2, 12]],
+  [[2, 12], [2, 12], [2, 15]],
+]
+const RETURN_WEEKDAY_OFFSETS = [2, 4, 6]
+// Garmin names a run after the workout sent to the watch, and spells its primes in ASCII.
+const watchName = (reps, minutes) => `Footing · ${reps} × ${minutes}'`
+
+function sparseRun(rng, { id, date, type, description, segments }) {
+  const bounds = SPARSE_ATHLETE.hrZoneBoundsBpm
+  const samples = segments.flatMap((segment) => Array.from({ length: Math.max(1, Math.round(segment.seconds / SPARSE_SAMPLE_SECONDS)) }, () => ({
+    hr: Math.round(segment.hr + between(rng, -4, 4)),
+    pace: Math.round(1000 / (segment.speed * between(rng, 0.95, 1.05))),
+    cadence: Math.round((segment.speed < 1.6 ? 112 : 158) + between(rng, -3, 3)),
+  })))
+  const durationSeconds = segments.reduce((sum, s) => sum + s.seconds, 0)
+  const metres = segments.reduce((sum, s) => sum + s.seconds * s.speed, 0)
+  const distanceKm = round(metres / 1000, 2)
+  const paceSecPerKm = round(durationSeconds / distanceKm, 1)
+  const avgHeartRate = Math.round(samples.reduce((sum, s) => sum + s.hr, 0) / samples.length)
+  const zoneSeconds = [0, 0, 0, 0, 0]
+  for (const sample of samples) {
+    const zone = bounds.findLastIndex((bound) => sample.hr >= bound)
+    if (zone >= 0) zoneSeconds[zone] += SPARSE_SAMPLE_SECONDS
+  }
+  const runningSpeed = Math.max(...segments.map((s) => s.speed))
+  const tempC = round(between(rng, 6, 18), 1)
+  const activity = {
+    id: String(id),
+    week: isoWeek(date),
+    date: isoDate(date),
+    dayOfWeek: dayOfWeekName(date),
+    startTimeLocal: `${isoDate(date)}T18:${pad(Math.round(between(rng, 0, 50)), 2)}:00`,
+    type,
+    typeSource: 'runomics',
+    sport: 'running',
+    description,
+    durationSeconds,
+    distanceKm,
+    paceSecPerKm,
+    hrZones: zoneSeconds.map((seconds, i) => ({
+      zone: i + 1,
+      seconds,
+      percent: round((seconds / durationSeconds) * 100, 1),
+      minBpm: bounds[i],
+      maxBpm: i + 1 < bounds.length ? bounds[i + 1] - 1 : null,
+    })),
+    avgHeartRate,
+    rpe: rng() < 0.4 ? Math.round(between(rng, 3, 6)) : null,
+    comment: rng() < 0.25 ? pick(rng, ['Bonnes sensations.', 'Jambes lourdes.', 'Il pleuvait, sortie courte.']) : '',
+    polyline: null,
+    route: generateRoute(rng, distanceKm, SPARSE_CENTER),
+    elevationGain: round(between(rng, 5, 40), 1),
+    aerTrainingEffect: null,
+    anaTrainingEffect: null,
+    hrSamples: samples.map((s) => s.hr),
+    elevationProfile: smoothSeries(rng, samples.length, 30, 2),
+    calories: Math.round(distanceKm * 55),
+    cadenceSpm: round(samples.reduce((sum, s) => sum + s.cadence, 0) / samples.length, 1),
+    groundContactMs: null,
+    verticalOscillationMm: null,
+    verticalRatioPct: null,
+    strideLengthM: null,
+    bestEfforts: distanceKm >= 1 ? { '1k': Math.round(1000 / runningSpeed) } : null,
+    paceSamples: samples.map((s) => s.pace),
+    vo2maxGarmin: SPARSE_ATHLETE.vo2maxMlKgMin,
+    avgTemperature: null,
+    cadenceSamples: samples.map((s) => s.cadence),
+    splits: segments.map((segment) => ({
+      type: segment.type,
+      durationSec: segment.seconds,
+      distanceM: round(segment.seconds * segment.speed, 1),
+      avgSpeedMs: round(segment.speed, 4),
+      avgHr: segment.hr,
+      laps: [{ durationSec: segment.seconds, distanceM: round(segment.seconds * segment.speed, 1), avgSpeedMs: round(segment.speed, 4), avgHr: segment.hr }],
+    })),
+    gearId: SPARSE_GEAR_ID,
+    weather: {
+      tempC,
+      apparentTempC: round(tempC - between(rng, 0, 3), 1),
+      humidityPct: Math.round(between(rng, 55, 90)),
+      windKph: round(between(rng, 3, 20), 1),
+      windDirDeg: Math.round(between(rng, 0, 359)),
+      precipitationMm: rng() < 0.3 ? round(between(rng, 0.2, 2), 1) : 0,
+      code: pick(rng, [0, 2, 3, 61]),
+    },
+  }
+  addPaceProfile(activity)
+  return activity
+}
+
+function easySegments(rng) {
+  const km = Math.round(between(rng, 4, 8))
+  return Array.from({ length: km }, () => {
+    const speed = 1000 / between(rng, 375, 420)
+    return { type: 'lap', seconds: Math.round(1000 / speed), speed, hr: Math.round(between(rng, 148, 160)) }
+  })
+}
+
+function runWalkSegments(rng, reps, minutes) {
+  const walk = (type, seconds) => ({ type, seconds, speed: between(rng, 1.3, 1.45), hr: Math.round(between(rng, 112, 128)) })
+  const segments = [walk('interval_warmup', 300)]
+  for (let rep = 0; rep < reps; rep++) {
+    segments.push({ type: 'interval_active', seconds: minutes * 60, speed: between(rng, 1.9, 2.1), hr: Math.round(between(rng, 150, 162)) })
+    if (rep < reps - 1) segments.push({ ...walk('interval_recovery', 60), hr: Math.round(between(rng, 138, 148)) })
+  }
+  segments.push(walk('interval_cooldown', 300))
+  return segments
+}
+
+function returnWorkout(date, week, index, [reps, minutes], provenance) {
+  return {
+    id: `demo-sparse-plan:workout:${week + 1}:${index + 1}`,
+    revision: 1,
+    date: isoDate(date),
+    type: 'easy',
+    title: `Footing · ${reps} × ${minutes}′`,
+    shortName: `Footing ${reps}×${minutes}′`,
+    structure: { reps, repMinutes: minutes },
+    description: `Course très lente en alternance avec la marche : ${minutes} minutes de course, 1 minute de marche, ${reps} fois. Tu dois pouvoir parler en phrases complètes pendant la course.`,
+    status: 'prescribed',
+    blocks: [
+      { kind: 'warmup', target: { durationSeconds: 300 }, notes: ['5 minutes de marche active pour démarrer.'] },
+      {
+        kind: 'repeat',
+        repetitions: reps,
+        steps: [
+          { kind: 'effort', target: { durationSeconds: minutes * 60, hrZone: 2 }, notes: ['Course très lente, au rythme où tu peux parler.'] },
+          { kind: 'recovery', target: { durationSeconds: 60 }, notes: ['1 minute de marche.'] },
+        ],
+      },
+      { kind: 'cooldown', target: { durationSeconds: 300 }, notes: ['5 minutes de marche pour finir en douceur.'] },
+    ],
+    notes: ['Au moindre signe inhabituel, passe à la marche et arrête la séance.'],
+    provenance,
+  }
+}
+
+function plannedFromWorkout(workout) {
+  const { reps, repMinutes } = workout.structure
+  const steps = [{ kind: 'warmup', minutes: 5, seconds: 300, paceSecPerKm: [WALK_PACE.min, WALK_PACE.max] }]
+  for (let rep = 1; rep <= reps; rep++) {
+    steps.push({ kind: 'effort', minutes: repMinutes, rep })
+    if (rep < reps) steps.push({ kind: 'recovery', minutes: 1, rep, paceSecPerKm: [WALK_PACE.min, WALK_PACE.max] })
+  }
+  steps.push({ kind: 'cooldown', minutes: 5, seconds: 300, paceSecPerKm: [WALK_PACE.min, WALK_PACE.max] })
+  const durationSecs = 600 + reps * repMinutes * 60 + (reps - 1) * 60
+  return { date: workout.date, name: watchName(reps, repMinutes), distanceM: Math.round(durationSecs * 1.7), durationSecs, steps }
+}
+
+export function generateSparseDataset({ now = new Date() } = {}) {
+  const rng = makeRng(SPARSE_SEED)
+  const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const monday = addDays(endDate, -((endDate.getUTCDay() + 6) % 7))
+  const blockStart = addDays(monday, -14)
+  const breakEnd = addDays(blockStart, -1)
+  const breakStart = addDays(blockStart, -200)
+  const historyStart = addDays(breakStart, -180)
+
+  const activities = []
+  let id = 91000001
+  for (let date = historyStart; date < breakStart; date = addDays(date, 1)) {
+    if (![0, 3, 6].includes(date.getUTCDay()) || rng() < 0.3) continue
+    activities.push(sparseRun(rng, { id: id++, date, type: 'Base', description: rng() < 0.8 ? 'Course à pied' : 'Footing', segments: easySegments(rng) }))
+  }
+
+  const createdAt = new Date(blockStart.getTime() - 86_400_000 + 18 * 3_600_000).toISOString()
+  const provenance = { source: 'demo', trigger: 'bootstrap', createdAt }
+  const planId = 'demo-sparse-plan'
+  const weeks = RETURN_WEEKS.map((sessions, week) => {
+    const weekStart = addDays(blockStart, week * 7)
+    return {
+      id: `${planId}:week:${week + 1}`,
+      index: week + 1,
+      startDate: isoDate(weekStart),
+      endDate: isoDate(addDays(weekStart, 6)),
+      focus: week === 0
+        ? 'On démarre doucement : des blocs de 3 minutes de course très lente, avec 1 minute de marche entre chaque.'
+        : 'Les blocs de course s’allongent ; si une séance a été difficile, refaire la semaine précédente est une très bonne idée.',
+      workouts: sessions.map((shape, index) => returnWorkout(addDays(weekStart, RETURN_WEEKDAY_OFFSETS[index]), week, index, shape, provenance)),
+    }
+  })
+  const workouts = weeks.flatMap((week) => week.workouts)
+  const done = workouts.filter((workout) => workout.date < isoDate(endDate))
+  for (const [index, workout] of done.entries()) {
+    // A missed session, so adherence reads less than all.
+    if (index === 1) continue
+    const { reps, repMinutes } = workout.structure
+    activities.push(sparseRun(rng, {
+      id: id++,
+      date: new Date(`${workout.date}T00:00:00Z`),
+      // Runs synced before the walk/run fix carry a wrong quality guess that the session overrides.
+      type: index < 3 ? 'VO2Max' : 'Base',
+      description: index === 3 ? 'Course à pied' : watchName(reps, repMinutes),
+      segments: runWalkSegments(rng, reps, repMinutes),
+    }))
+  }
+
+  const plan = {
+    schemaVersion: 1,
+    id: planId,
+    revision: 1,
+    status: 'active',
+    block: {
+      id: `${planId}:block`,
+      name: 'Reprise en douceur',
+      startDate: isoDate(blockStart),
+      endDate: isoDate(addDays(blockStart, RETURN_WEEKS.length * 7 - 1)),
+      focus: 'Cinq semaines pour te réhabituer à courir : trois sorties par semaine en alternant course très lente et marche.',
+    },
+    trainingPreferences: { availableWeekdays: [3, 5, 0], runsPerWeek: 3 },
+    macrocycleStartDate: isoDate(blockStart),
+    goal: { kind: 'performance', description: 'Progresser en forme générale, sans course visée.' },
+    weeks,
+    provenance,
+  }
+  const decision = {
+    schemaVersion: 1,
+    id: 'demo-sparse-bootstrap',
+    outcome: 'REPLAN',
+    trigger: 'bootstrap',
+    createdAt,
+    effectiveDate: isoDate(blockStart),
+    planId,
+    basePlanRevision: null,
+    resultPlanRevision: 1,
+    reasonCodes: ['INITIAL_PLAN'],
+    summary: 'Un bloc de reprise en course et marche, après l’arrêt.',
+    evidence: [],
+    changes: [{ kind: 'replace_future', effectiveDate: isoDate(blockStart), beforeWeeks: [], afterWeeks: weeks }],
+    provenance,
+  }
+
+  const months = {}
+  for (const a of activities) (months[a.date.slice(0, 7)] ??= []).push(a)
+  const runEvery = (step) => activities.filter((_, i) => i % step === 0)
+  const plannedYears = {}
+  for (const workout of workouts) (plannedYears[workout.date.slice(0, 4)] ??= []).push(plannedFromWorkout(workout))
+
+  const cycling = []
+  for (let date = addDays(breakStart, 60), cid = 96000001; date < breakEnd; date = addDays(date, 1)) {
+    if (date.getUTCDay() !== 6 || rng() < 0.4) continue
+    const durationSeconds = Math.round(between(rng, 2400, 4200))
+    cycling.push({
+      id: String(cid++),
+      date: isoDate(date),
+      startTimeLocal: `${isoDate(date)}T10:00:00`,
+      sport: 'cycling',
+      durationSeconds,
+      distanceKm: round((durationSeconds / 3600) * between(rng, 16, 20), 2),
+      avgHeartRate: Math.round(between(rng, 115, 130)),
+      trainingLoad: null,
+    })
+  }
+  const crossByYear = {}
+  for (const session of cycling.reverse()) (crossByYear[session.date.slice(0, 4)] ??= []).push(session)
+
+  const files = {
+    'athlete.json': {
+      ...SPARSE_ATHLETE,
+      trainingBreaks: [{ start: isoDate(breakStart), end: isoDate(breakEnd), reason: 'illness', note: 'Arrêt fictif du profil de test.' }],
+      injuryHistory: { reviewedOn: isoDate(breakEnd), injuries: [] },
+      lastUpdate: endDate.toISOString(),
+    },
+    'athlete_history.json': {
+      days: Object.fromEntries(runEvery(12).map((a) => [a.date, { vo2maxMlKgMin: a.vo2maxGarmin, weightKg: SPARSE_ATHLETE.weightKg }])),
+    },
+    'fitness_age_history.json': {
+      weeks: Object.fromEntries(Array.from({ length: 40 }, (_, i) => [
+        isoDate(addDays(endDate, -7 * i)),
+        { fitnessAgeYrs: SPARSE_ATHLETE.fitnessAgeYrs + (i > 2 && i < 30 ? 1 : 0), bmi: SPARSE_ATHLETE.bmi },
+      ])),
+    },
+    'shoes.json': { shoes: [{ gearId: SPARSE_GEAR_ID, brand: 'Velox', model: 'Daily 3', maxKm: 800, retired: false, firstUseDate: isoDate(historyStart) }] },
+    'training_status.json': { days: {}, weeks: {} },
+    'vo2max_history.json': {
+      days: Object.fromEntries(runEvery(8).map((a) => [a.date, { date: a.date, vo2max: a.vo2maxGarmin }])),
+      months: Object.fromEntries(runEvery(8).map((a) => [`${a.date.slice(0, 7)}-01`, { date: `${a.date.slice(0, 7)}-01`, vo2max: a.vo2maxGarmin }])),
+    },
+    'vo2max_norms.json': GENERIC_VO2MAX_NORMS,
+    'recovery_history.json': {
+      days: Object.fromEntries(Array.from({ length: 300 }, (_, i) => addDays(endDate, -i))
+        .filter(() => rng() > 0.3)
+        .map((d) => [isoDate(d), { restingHr: Math.round(between(rng, 58, 64)) }])),
+    },
+    'race_predictions.json': {
+      days: Object.fromEntries(runEvery(6).map((a) => [a.date, { '5k': 1_980, '10k': 4_150, half: 9_250, marathon: 19_700 }])),
+    },
+    'upcoming_races.json': { races: [] },
+    'location-overrides.json': {},
+    'sync_meta.json': { lastSyncedAt: endDate.toISOString() },
+    'activities/index.json': { months: Object.keys(months).sort().reverse() },
+    'planned_workouts/index.json': { years: Object.keys(plannedYears).sort().reverse() },
+    'cross_training/index.json': { years: Object.keys(crossByYear).sort().reverse() },
+    'coaching/current_plan.json': plan,
+    'coaching/coach_state.json': {
+      schemaVersion: 1,
+      activePlanId: planId,
+      activePlanRevision: 1,
+      lastDecisionId: decision.id,
+      lastBootstrapAt: createdAt,
+      lastPostActivityAt: null,
+      lastWeeklyReviewAt: null,
+      macrocycle: { targetEventId: 'general', startDate: isoDate(blockStart) },
+      updatedAt: createdAt,
+    },
+    'coaching/decisions/index.json': { keys: [createdAt.slice(0, 4)] },
+    [`coaching/decisions/${createdAt.slice(0, 4)}.json`]: { decisions: [decision] },
+  }
+  for (const [month, runs] of Object.entries(months)) files[`activities/${month}.json`] = { activities: runs.sort((a, b) => b.date.localeCompare(a.date)) }
+  for (const [year, planned] of Object.entries(plannedYears)) files[`planned_workouts/${year}.json`] = { planned }
+  for (const [year, sessions] of Object.entries(crossByYear)) files[`cross_training/${year}.json`] = { sessions }
+  return files
+}
+
+export function generateDemoDataset({ now = new Date(), profile = 'rich' } = {}) {
+  if (profile === 'sparse') return generateSparseDataset({ now })
   const rng = makeRng(SEED)
   const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   const totalDays = MONTHS_BACK * 30
@@ -1109,7 +1454,11 @@ const GENERIC_VO2MAX_NORMS = {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const outDir = process.argv[2] ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
-  writeDemoDataset(outDir)
-  console.log(`Demo dataset written to ${outDir}`)
+  const args = process.argv.slice(2)
+  const flag = args.indexOf('--profile')
+  const profile = flag >= 0 ? args.splice(flag, 2)[1] : 'rich'
+  if (profile !== 'rich' && profile !== 'sparse') throw new Error(`Unknown profile ${profile}: use rich or sparse.`)
+  const outDir = args[0] ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
+  writeDemoDataset(outDir, generateDemoDataset({ profile }))
+  console.log(`Demo dataset (${profile}) written to ${outDir}`)
 }

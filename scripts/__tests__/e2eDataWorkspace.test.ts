@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { E2E_DATA_DIRNAME, prepareE2eData } from '../prepare-e2e-data.mjs'
+import { E2E_DATA_DIRNAME, E2E_DATA_DIRNAMES, prepareE2eData } from '../prepare-e2e-data.mjs'
 import { prepareData } from '../prepare-data.mjs'
 
 const temporaryRoots: string[] = []
@@ -33,6 +33,16 @@ describe('prepare-e2e-data', () => {
     expect(dataDir).toBe(path.join(root, E2E_DATA_DIRNAME))
     expect(writeDemo).toHaveBeenCalledWith(dataDir)
     expect(fs.existsSync(path.join(dataDir, 'activities', 'index.json'))).toBe(true)
+  })
+
+  it('writes the sparse profile into a workspace of its own', () => {
+    const root = temporaryRoot()
+
+    const dataDir = prepareE2eData({ root, profile: 'sparse' })
+
+    expect(dataDir).toBe(path.join(root, E2E_DATA_DIRNAMES.sparse))
+    expect(JSON.parse(fs.readFileSync(path.join(dataDir, 'athlete.json'), 'utf8')).deviceName).toBe('Forerunner 55')
+    expect(fs.existsSync(path.join(root, E2E_DATA_DIRNAME))).toBe(false)
   })
 
   it('resets stale state from a previous run', () => {
