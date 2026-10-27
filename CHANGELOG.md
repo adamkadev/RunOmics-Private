@@ -53,6 +53,8 @@ All notable changes to this project are documented in this file.
   note's button rather than around it. The share card is back to its state
   before R8: no "Show full route" switch, the whole route drawn, and no map
   credit on the image.
+- E2E caches WebKit's system packages (`~/.cache/webkit-apt`, apt's archive directory, one entry per
+  Playwright version a week), so a run on a crawling Ubuntu mirror installs them without downloading.
 - E2E's WebKit install no longer fails its retries on a held lock: a try cut short left its `apt-get`
   running under sudo with the dpkg lock, so tries 2 and 3 failed at once. Each retry now ends the
   leftover `apt-get` (a `dpkg` it started finishes), and apt waits up to 2 minutes for a lock.
