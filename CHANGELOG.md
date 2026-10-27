@@ -15,6 +15,14 @@ All notable changes to this project are documented in this file.
   its FCM token when it changed or was saved over 30 days ago, keeping its
   switches; Settings says when the device could not be registered. The server
   drops tokens not saved in 270 days.
+- The coach's own words reach the app (F1). Plan's phase card names the
+  coach's block ("Reprise en douceur") instead of « Préparation générale » and
+  adds the week's focus; a planned session's card carries the coach's note,
+  its description and notes; Today's session card gives the description's
+  first sentence. The text comes from a new route, `/api/coaching/words`,
+  behind the private site's sign-in gate, never in a page's HTML. In the step
+  list, a warm-up, cool-down or break at a walking pace, or with no target in
+  an easy session, reads "walk" (« marche ») instead of "1:00 rec".
 - The sync survives garth's token dying (G1). A 401 on the token exchange is
   `GarminTokenExpired`: the sync writes `connect_status.json`, carries on
   through the Personal API with exit 0, stops marking new runs gear-pending

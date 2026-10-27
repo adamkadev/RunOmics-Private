@@ -33,6 +33,11 @@ token once and sets a cookie signed with `SESSION_SECRET` (32 characters or more
 in `RUNOMICS_VIEWERS` (verified emails only) get in. If the site is private but has no usable
 secret, nobody gets in.
 
+Pages are prerendered (ISR), so what a page's HTML carries is served from a cache. The coach's
+own words (the block's name and focus, each week's focus, each session's description and notes)
+stay out of it: Plan and Today fetch them from `/api/coaching/words` after load, behind the same
+gate as the run notes (`/api/activities/[id]/note`), with `private, no-store`.
+
 `isSitePrivate()` defaults to off, so the demo builds without any setup. To make sure a real
 athlete's site is never public by mistake, `npm run validate:data` (run by `prebuild`) fails
 any Vercel build (`VERCEL=1`) that has `RUNOMICS_DATA_REPO_URL` set but is missing

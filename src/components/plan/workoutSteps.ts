@@ -23,6 +23,8 @@ export interface StepRow {
 }
 
 const EASE_FILL = WORKOUT_SEGMENT_COLORS.warmup
+/** Slower than 10:30 /km is walking: a run/walk return jogs near 10:00 /km and walks at 11–14. */
+const WALK_PACE_FLOOR_SEC_PER_KM = 630
 /** Strides draw in Z5, as Today's bar draws them. */
 const STRIDE_FILL = zoneColor(5)
 
@@ -37,10 +39,18 @@ function paceText(step: WorkoutStep | undefined): string | null {
   return pace ? t.plan.row.pace(rangeText(pace)) : null
 }
 
-function easeRow(key: string, title: string, parts: WorkoutStep[]): StepRow {
+/** A break without a target is a walk only in an easy session: a quality session's jog recoveries carry none either. */
+function isWalk(step: WorkoutStep, runWalk: boolean): boolean {
+  const pace = step.paceSecPerKm
+  return pace ? pace[0] >= WALK_PACE_FLOOR_SEC_PER_KM : runWalk
+}
+
+function easeRow(key: string, title: string, parts: WorkoutStep[], runWalk: boolean): StepRow {
   const ranges = parts.flatMap((step) => (step.paceSecPerKm ? [rangeText(step.paceSecPerKm)] : []))
   const seconds = parts.reduce((sum, step) => sum + stepSeconds(step), 0)
-  const detail = ranges.length > 0 ? t.plan.row.pace(ranges.join(' → ')) : t.plan.steps.easy
+  const detail = parts.every((step) => isWalk(step, runWalk))
+    ? t.plan.steps.walk
+    : ranges.length > 0 ? t.plan.row.pace(ranges.join(' → ')) : t.plan.steps.easy
   return { key, tone: 'ease', fill: EASE_FILL, title, detail, duration: stepLength(seconds) }
 }
 
@@ -100,8 +110,9 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
   const recovery = list.find((step) => step.kind === 'recovery')
   const { body, reps, strides } = sessionParts(list)
   const efforts = list.filter((step) => step.kind === 'effort')
+  const runWalk = kind === 'easy' && !strides
 
-  if (warmups.length > 0) rows.push(easeRow('warmup', s.warmup, warmups))
+  if (warmups.length > 0) rows.push(easeRow('warmup', s.warmup, warmups, runWalk))
   if (body) {
     rows.push({ key: 'body', tone: 'work', fill: color, title: label, detail: join(zone, paceText(body)), duration: stepLength(stepSeconds(body)) })
   } else if (efforts.length === 1) {
@@ -109,7 +120,9 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
   }
   if (reps.length > 0) {
     const rep = stepLength(stepSeconds(reps[0]!))
-    const rec = recovery ? t.plan.row.recovery(stepClock(stepSeconds(recovery))) : null
+    const rec = recovery
+      ? (isWalk(recovery, runWalk) ? t.plan.row.walk : t.plan.row.recovery)(stepClock(stepSeconds(recovery)))
+      : null
     const setSeconds = setSpanSeconds(list, reps)
     rows.push({
       key: 'reps',
@@ -120,6 +133,6 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
       duration: setSeconds > 0 ? stepLength(setSeconds) : s.repsShort(reps.length, rep),
     })
   }
-  if (cooldowns.length > 0) rows.push(easeRow('cooldown', s.cooldown, cooldowns))
+  if (cooldowns.length > 0) rows.push(easeRow('cooldown', s.cooldown, cooldowns, runWalk))
   return rows
 }

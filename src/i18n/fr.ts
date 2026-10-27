@@ -2020,6 +2020,7 @@ export const fr = {
       hrTargetZone: (zone: number) => `Fréquence cardiaque · Z${zone}`,
       hrCap: (bpm: number) => `≤ ${bpm}`,
       findRoute: 'Trouver un parcours',
+      coachNote: 'Mot du coach',
     },
     restCard: {
       eyebrow: 'Repos',
@@ -2069,6 +2070,7 @@ export const fr = {
       warmup: 'Échauffement',
       cooldown: 'Retour au calme',
       easy: 'facile',
+      walk: 'marche',
       minutes: (m: number) => `${m}′`,
       reps: (n: number, rep: string, kind: string) => `${n} × ${rep} ${kind}`,
       strides: (n: number, rep: string) => `${n} accélérations de ${rep}`,
@@ -2088,6 +2090,7 @@ export const fr = {
     row: {
       pace: (range: string) => `${range} /km`,
       recovery: (clock: string) => `${clock} récup`,
+      walk: (clock: string) => `${clock} marche`,
     },
     raceFooter: {
       targetTime: (clock: string) => `cible ${clock}`,
