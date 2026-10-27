@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A change to the live plan is held to "no stop signals" too. A weekly
+  review's ADJUST or REPLAN and a run's evaluation are now told the athlete's
+  guidance, as a new block is, and one that adds a stop rule or a symptom
+  warning under that guidance is refused. Only what the change wrote is
+  read: a session it reschedules keeps the words it already had.
 - A return block runs to the athlete's own pace, on a simple watch. With no
   heart-rate zone in the guidance, each running interval takes the pace range
   the guidance gives, rather than a wide easy range the planner picks, which

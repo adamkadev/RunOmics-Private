@@ -113,20 +113,43 @@ export function asksNoStopSignals(guidance: string | undefined): boolean {
 
 const STOP_SIGNAL = /(?<!\p{L})(?:stop signals?|signaux d'arrêt|stop and see|stop the session|arrête(?:r)? la séance|arrête si|fuites?|pesanteur|leak(?:s|ing)?|heaviness|dragging|urgency|incontinence|pelvi(?:c|en|enne)|périnée|perineum|sage-femme|midwife)(?!\p{L})/iu
 
+type LabelledText = [label: string, text: string | undefined]
+
+function workoutTexts(workout: BootstrapWorkoutDraft): string[] {
+  const steps = workout.blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [block])
+  return [workout.title, workout.description, ...(workout.notes ?? []), ...steps.flatMap((step) => step.notes ?? [])]
+}
+
+function refuseStopSignals(texts: LabelledText[]): void {
+  const found = texts.find(([, text]) => text !== undefined && STOP_SIGNAL.test(text))
+  if (found) throw new Error(`${found[0]}: the guidance asks for no stop signals; write no stop rule or symptom warning`)
+}
+
 function validateNoStopSignals(draft: CoachingPlanDraft): void {
-  const texts: [string, string | undefined][] = [['plan.name', draft.name], ['plan.focus', draft.focus]]
+  const texts: LabelledText[] = [['plan.name', draft.name], ['plan.focus', draft.focus]]
   draft.weeks.forEach((week, weekIndex) => {
     texts.push([`plan.weeks[${weekIndex}].focus`, week.focus], [`plan.weeks[${weekIndex}].reducedVolume`, week.reducedVolume?.explanation])
     week.workouts.forEach((workout, workoutIndex) => {
-      const label = `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`
-      const steps = workout.blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [block])
-      for (const text of [workout.title, workout.description, ...(workout.notes ?? []), ...steps.flatMap((step) => step.notes ?? [])]) {
-        texts.push([label, text])
-      }
+      for (const text of workoutTexts(workout)) texts.push([`plan.weeks[${weekIndex}].workouts[${workoutIndex}]`, text])
     })
   })
-  const found = texts.find(([, text]) => text !== undefined && STOP_SIGNAL.test(text))
-  if (found) throw new Error(`${found[0]}: the guidance asks for no stop signals; write no stop rule or symptom warning`)
+  refuseStopSignals(texts)
+}
+
+/** Only what the change wrote: a session it reschedules keeps the words it was written with. */
+function validateAdaptedStopSignals(before: CoachingPlan, after: CoachingPlan, changed: WorkoutPrescription[]): void {
+  const previous = new Map(before.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
+  const texts: LabelledText[] = []
+  if (after.block.name !== before.block.name) texts.push(['plan.name', after.block.name])
+  if (after.block.focus !== before.block.focus) texts.push(['plan.focus', after.block.focus])
+  const focuses = new Set(before.weeks.map((week) => week.focus))
+  for (const week of after.weeks) if (!focuses.has(week.focus)) texts.push([`week ${week.startDate}.focus`, week.focus])
+  for (const workout of changed) {
+    const prior = previous.get(workout.id)
+    const written = new Set(prior ? workoutTexts(prior) : [])
+    for (const text of workoutTexts(workout)) if (!written.has(text)) texts.push([`workout ${workout.id}`, text])
+  }
+  refuseStopSignals(texts)
 }
 
 /** The watch executes one target a step and pace wins over a zone; notes on a step are unreadable mid-run. */
@@ -200,7 +223,7 @@ function validateAdaptedFrequency(before: CoachingPlan, after: CoachingPlan, cha
  * A change may always take load away - that is what an adaptation for fatigue or illness is for -
  * but whatever it adds must fit the bootstrap bounds. Rules that demand a minimum stay with bootstrap.
  */
-export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, context: CoachingContext, options: { guideChange?: boolean } = {}): void {
+export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, context: CoachingContext, options: { guideChange?: boolean; guidance?: string } = {}): void {
   const previous = new Map(before.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
   const changed = after.weeks.flatMap(active).filter((workout) => {
     const prior = previous.get(workout.id)
@@ -212,6 +235,7 @@ export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, co
   const weekdays = preferences?.availableWeekdays ?? []
   if (preferences) validateAvailableWeekdays(changed, weekdays)
   if (preferences?.runsPerWeek !== undefined) validateAdaptedFrequency(before, after, changed, preferences.runsPerWeek)
+  if (asksNoStopSignals(options.guidance)) validateAdaptedStopSignals(before, after, changed)
 
   const draft = asDraft(after)
   const prior = asDraft(before)

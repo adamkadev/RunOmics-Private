@@ -825,6 +825,35 @@ describe('coaching workflows', () => {
     expect(result.weeks[0]!.workouts[0]).toEqual(plan().weeks[0]!.workouts[0])
   })
 
+  it('refuses an adjustment that adds a stop line when the guidance asks for no stop signals', async () => {
+    const noStopSignals = 'Write no stop signals or symptom warnings in sessions, descriptions or focus.'
+    const review = async (guidance: string | null) => {
+      const repository = Object.assign(new MemoryRepository(), { getGuidance: () => guidance })
+      repository.plan = plan()
+      const future = repository.plan.weeks[1]!.workouts[0]!
+      const told: (string | undefined)[] = []
+      const advisor: CoachingAdvisor = {
+        bootstrap: async () => { throw new Error('not called') },
+        evaluateActivity: async () => { throw new Error('not called') },
+        reviewWeek: async (input) => {
+          told.push(input.guidance)
+          return {
+            outcome: 'ADJUST', reasonCodes: ['ATHLETE_PREFERENCE'], summary: 'Remind her when to stop.', evidence: [],
+            changes: [{ kind: 'upsert_workout', workoutId: future.id, workout: { ...future, description: 'Arrête si fuite, pesanteur ou douleur.' } }],
+          }
+        },
+      }
+      const context = buildCoachingContext(contextInput(repository.plan), '2026-09-09')
+      const proposal = createWeeklyReviewProposal(context, { repository, advisor, id: ids(), now: () => new Date('2026-09-09T08:00:00Z') })
+      return { proposal, told }
+    }
+
+    const refused = await review(noStopSignals)
+    await expect(refused.proposal).rejects.toThrow(/asks for no stop signals/)
+    expect(refused.told).toEqual([noStopSignals])
+    await expect((await review(null)).proposal).resolves.toMatchObject({ decision: { outcome: 'ADJUST' } })
+  })
+
   it('replans only the future horizon while preserving unchanged prescriptions and their revisions', async () => {
     const repository = new MemoryRepository()
     repository.plan = plan()
