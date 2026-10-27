@@ -390,8 +390,10 @@ per call, so one reservation is one request against the day's quota.
 out from under us. Both mean stop asking and take the next in the pool. `reserve()` returning
 null is ambiguous on its own — spent for the day, or out of this invocation's clock — so the
 daily ledger is read back to let a stuck verdict name which. `GEMINI_MODEL` replaces the
-*pool*, not the request, so what gets counted stays what gets called; overriding at the
-transport layer would bill one model's ledger for another's call.
+main *pool* and `GEMINI_BACKFILL_MODEL` the backfill one, not the request, so what gets counted
+stays what gets called; overriding at the transport layer would bill one model's ledger for
+another's call. They are separate because the pools are: one Flash model standing in for the
+Lite pool would spend its 20 requests a day on the backfill.
 
 **Two pools, sized from the demand.** Free-tier quotas are per model, and Flash and Flash Lite
 are not in the same league: Flash allows 20 requests a day, Lite 500. `MODEL_POOL` carries the
@@ -410,11 +412,11 @@ the one after it brought no new activity, so nothing asked again. Now every sync
 anything - the timestamp alone included - runs the AI passes; with no new data it skips the
 wait for the new deployment and the other checks, and a pass with nothing left to do costs a
 few Firestore reads.
-Four Flash models give it 72, five times its worst night: 3.8 and 3.6 Flash first, then 3 Flash
-and 2.5 Flash, which joined in Oct 2026 with a free quota of their own and none of it used, after
-a day Google answered 3.8 and 3.6 with nothing but 503s and a run's verdict had nowhere else to
-go. 2.5 sets its thinking by a token budget (512, about what `'low'` spends here) where 3.x takes
-a level. The pool also held 3.7 Flash, until Google retired it into 3.8: asked under
+Three Flash models give it 54, nearly four times its worst night: 3.8 and 3.6 Flash first, then
+3 Flash, which joined in Oct 2026 with a free quota of its own and none of it used, after a day
+Google answered 3.8 and 3.6 with nothing but 503s and a run's verdict had nowhere else to go. 2.5
+Flash joined with it and left again: Google serves it only to accounts that used it before, and
+answers others with a 404. The pool also held 3.7 Flash, until Google retired it into 3.8: asked under
 its old name it was 3.8 asked twice, paced and budgeted as if it were another model, so the
 second ask came inside 3.8's minute and drew on its day.
 
@@ -427,6 +429,15 @@ spacing that is roughly two dozen verdicts, which is what `DEFAULT_RUN_VERDICTS_
 is set to.
 Five passes clear the 100 with room to spare. The pools share one ledger and one spender, so a
 verdict backfill can never starve the dashboard even when it is churning through a rebuild.
+
+**A retired model is not silent.** Every pass but a `?limit=0` one keeps its status in Firestore
+`aiStatus/lastPass`: when it ran, how much it wrote, how much it left (`missed`: a surface or a
+verdict it tried and could not write), and each model Google closed during it (429 or 404) with
+its answer. Health reports it as `ai` and Settings → Diagnostics shows it above the scheduled
+jobs. A pass that writes nothing while it missed something adds its UTC date to `idleDays`; any
+pass that writes something, or finds nothing left to write, clears it. On the third idle night
+the route sends one operator push (`sendOpsPush`, tag `ai-idle`) naming the closed models, and
+no other until a pass writes again: until then every card shows its rule-based copy.
 
 **Ordering.** Verdicts for runs that just landed are written before any other surface — behind
 the other ten, the one insight the athlete is waiting for is the first thing the quota or the

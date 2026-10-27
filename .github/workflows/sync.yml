@@ -616,6 +616,24 @@ jobs:
             | curl -fsS --max-time 60 -X POST "$APP_URL/api/internal/token-expiry" -H @- --data @"$RUNNER_TEMP/token-expiry.json" \
             | jq -r '.tokens[] | "- \(.name) expires \(.expiresAt)"' >> "$GITHUB_STEP_SUMMARY"
 
+      # Rules are deployed by hand to each profile's Firebase project; this names a project left behind.
+      - name: Compare the live Firestore rules
+        if: inputs.nightly == true
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          LIVE=$(printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -sS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+            | jq -r '.firestoreRulesHash // empty' 2>/dev/null || true)
+          REPO=$(sha256sum firestore.rules | cut -d' ' -f1)
+          if [ -z "$LIVE" ]; then
+            echo "::warning::Health did not report the live Firestore rules: no Firebase Admin credentials, or the service account lacks the Firebase Rules Viewer role."
+          elif [ "$LIVE" != "$REPO" ]; then
+            echo "::warning::The live Firestore rules (${LIVE:0:12}) differ from firestore.rules (${REPO:0:12}): deploy them with firebase deploy --only firestore:rules."
+          fi
+
       # Last, so a partial sync still reaches the data repository first.
       - name: Report a partial sync
         if: always() && (steps.sync.outputs.partial_failure == 'true' || steps.shoes.outputs.partial_failure == 'true')

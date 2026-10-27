@@ -407,7 +407,11 @@ not a broken sync. Data that will not load answers `unloaded`, also with 503.
 Its `integrations` field says which server integrations the deployment has
 credentials for (`firebaseAdmin`, `gemini`, `syncButton`, `cron`) and whether it
 is private (`privateSite`), by name only, and the nightly sync warns when one the
-post-sync checks need is missing.
+post-sync checks need is missing. `ai` is the last AI insight pass (see
+[AI insight generation](docs/coaching-and-metrics.md#ai-insight-generation)), and
+`firestoreRulesHash` the SHA-256 of the ruleset Firestore enforces now: the nightly
+sync warns when it differs from `firestore.rules` in the repository, or when health
+cannot read it (the service account needs the *Firebase Rules Viewer* role).
 
 Every other alert is sent by the deployment it watches, so one that is down, or
 has lost its Firebase or cron credentials, cannot report itself. The *Deployment
@@ -481,7 +485,7 @@ from your `.env.local` *except* the Garmin ones, `RUNOMICS_DATA_DIR` and `GEMINI
 | `RUNOMICS_PRIVATE`, `SESSION_SECRET`, `RUNOMICS_VIEWERS` | `RUNOMICS_PRIVATE=1` puts every page behind sign-in; `SESSION_SECRET` (32 characters or more) signs the session cookie; `RUNOMICS_VIEWERS` lists the Google accounts invited to view, comma-separated |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](docs/interface.md#date-handling) |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_BACKFILL_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts. `GEMINI_MODEL` replaces the Flash pool, `GEMINI_BACKFILL_MODEL` the Flash-Lite pool that backfills older run verdicts; unset, each pool keeps its own models |
 | `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService loops) - see [Explore](docs/interface.md#explore) |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | The private data repository the build clones; a fine-grained token with Contents: Read only |
 | `RUNOMICS_DATA_SOURCE` | `github`: reads that repository at run time. The sync never rebuilds a deployment, so without it a deployment keeps the data of its last build - see [Reading the data at run time](docs/data-and-sync.md#reading-the-data-at-run-time) |
@@ -520,7 +524,10 @@ project, or the phones' writes are refused:
 firebase deploy --only firestore:rules --project <firebase-project-id>
 ```
 
-`npm run test:rules` checks the rules against the emulator first.
+`npm run test:rules` checks the rules against the emulator first. The nightly sync compares
+the deployed ruleset with the repository's and warns in its run when a project was left behind;
+for that, grant the Firebase Admin service account the **Firebase Rules Viewer** role
+(Google Cloud console → IAM) on each project.
 
 ### 5. Sync and deploy
 
