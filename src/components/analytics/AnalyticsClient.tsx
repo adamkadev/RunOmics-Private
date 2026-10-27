@@ -89,11 +89,11 @@ export interface AnalyticsBoardData {
 
 const DEFAULT_PERIOD: Record<TabId, LoadPeriod> = { fitness: '4w', performance: '12w', volume: '12w', health: '12w' }
 
-export function parseAnalyticsTab(value: string | null): TabId {
+function parseAnalyticsTab(value: string | null): TabId {
   return TABS.find((tb) => tb.id === value)?.id ?? 'fitness'
 }
 
-export function parseAnalyticsPeriod(value: string | null, tab: TabId): LoadPeriod {
+function parseAnalyticsPeriod(value: string | null, tab: TabId): LoadPeriod {
   return PERIODS.find((p) => p === value) ?? DEFAULT_PERIOD[tab]
 }
 
