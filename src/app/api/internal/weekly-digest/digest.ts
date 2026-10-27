@@ -3,8 +3,7 @@ import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { qualityKind } from '@/domain/training/qualitySession'
 import type { RecoveryDay } from '@/domain/training/recovery'
-import { weekTarget } from '@/domain/training/weekTarget'
-import { planMaps, resolvePlannedType, weekDates, weekPlanDays } from '@/components/plan/weekPlanDays'
+import { planMaps, planWeekTarget, resolvePlannedType, weekDates, weekPlanDays } from '@/components/plan/weekPlanDays'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatDelta, formatDurationWords, formatPlannedKm, formatRanKm } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -41,7 +40,7 @@ export function weeklyDigest({ today, activities, planned, coaching, recovery, c
   const nextMonday = isoDate(addDays(monday, 7))
   const maps = planMaps(activities, planned, coaching?.workouts ?? [])
   const days = weekPlanDays(weekDates(monday), maps)
-  const target = weekTarget(days, today, null)
+  const target = planWeekTarget(weekDates(monday), maps, today, null)
 
   const week = recovery.filter((d) => d.date >= lastMonday && d.date < nextMonday).map((d) => d.restingHr)
   const baseline = recovery

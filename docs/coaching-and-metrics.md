@@ -268,6 +268,12 @@ carries one. The coach reads the last 28 days of check-ins and 84 days of niggle
 of up to three unreported days is still the same niggle) through the Admin SDK, with the nightly
 `wellness.json` as its fallback.
 
+**A skipped session lives on its day.** A missed session marked skipped on Plan (ill, rest or
+life) is a `skipped` field on that day's `wellness` document, beside the check-in: Today, Plan's
+week and month draw the day as rest, and the coach reads the reason with the check-ins. Marks an
+older build kept in one browser's `localStorage` move there once, as rest, when the owner next
+opens Today or Plan.
+
 ## The heat line
 
 On a warm day Today's session says what the forecast will cost: "29 °C at 19:00 - your runs at

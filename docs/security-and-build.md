@@ -80,8 +80,9 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
 - `activityNotes` and `routeNames`: a note of 500 characters and 10 tags at most; a route name
   of 1 to 80 characters.
 - `wellness/{date}`: one document per `YYYY-MM-DD`, with only `sleep`, `soreness`, `stress` and
-  `mood` (integers 1-5), `ill` and `travel` (booleans) and a `niggle` (a known site, an optional
-  side, pain 0-10, an optional `changesRun`). Read by the owner only: health data never reaches
+  `mood` (integers 1-5), `ill` and `travel` (booleans), a `niggle` (a known site, an optional
+  side, pain 0-10, an optional `changesRun`) and `skipped` (`ill`, `rest` or `life`: the day's
+  planned session, marked skipped on Plan). Read by the owner only: health data never reaches
   another viewer, and pages never server-render it.
 - `avoidSpots`: Explore's spots to avoid, with `lon`, `lat`, an integer `radiusM` of 20-250, a
   `createdAt` date and an optional `reason` (`blocked`, `mud` or `unsafe`). Read by the owner only:

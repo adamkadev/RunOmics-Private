@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useSyncExternalStore } from 'react'
-import type { CheckIn } from '@/domain/wellness/checkIn'
+import type { CheckIn, SkipReason } from '@/domain/wellness/checkIn'
 import { isClientFirebaseConfigured } from './firebaseConfig'
 import { useOwnerAuth } from './useOwnerAuth'
 import { useToday } from './useToday'
@@ -47,6 +47,17 @@ export async function saveCheckIn(date: string, entry: CheckIn | null): Promise<
     }
     throw error
   }
+}
+
+/** The check-in card writes its whole day, so a skip set elsewhere has to be in the copy it writes from. */
+export function noteSkipped(date: string, reason: SkipReason | null): void {
+  const day = days.get(date)
+  if (day?.status !== 'ready') return
+  const entry: CheckIn = { ...day.entry }
+  if (reason) entry.skipped = reason
+  else delete entry.skipped
+  days.set(date, { status: 'ready', entry: Object.keys(entry).length > 0 ? entry : null })
+  publish()
 }
 
 /** The check-in card and the readiness card share one read of today's answers; anyone but the owner gets nothing. */

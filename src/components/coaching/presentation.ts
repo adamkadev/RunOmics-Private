@@ -9,6 +9,7 @@ import {
   type WorkoutTarget,
 } from '@/domain/coaching/types'
 import { macrocyclePhases } from '@/domain/coaching/macrocycle'
+import { prescriptionMeters } from '@/domain/coaching/sessionDistance'
 import { bookends } from '@/domain/training/workoutStructure'
 import type { SessionHrTarget } from '@/domain/training/hrTarget'
 import { formatClock } from '@/lib/formatters'
@@ -87,15 +88,6 @@ function eachSegment(
   return true
 }
 
-/** A repetition prescribed as time still covers ground: converted through its own prescribed pace, as weekKm does. */
-function segmentMeters(target: WorkoutTarget): number {
-  if (target.distanceMeters !== undefined) return target.distanceMeters
-  if (target.durationSeconds && target.paceSecPerKm) {
-    return (target.durationSeconds * 2_000) / (target.paceSecPerKm.min + target.paceSecPerKm.max)
-  }
-  return 0
-}
-
 const STEP_KIND: Record<WorkoutSegmentKind, WorkoutStepKind> = {
   warmup: 'warmup',
   effort: 'effort',
@@ -166,11 +158,7 @@ export function prescriptionDuration(
 }
 
 export function prescriptionDistanceMeters(workout: Segmented & Pick<WorkoutPrescription, 'totalDistanceMeters'>): number | null {
-  if (workout.totalDistanceMeters !== undefined) return workout.totalDistanceMeters
-
-  let meters = 0
-  eachSegment(workout, (target) => { meters += segmentMeters(target) })
-  return Math.round(meters) || null
+  return prescriptionMeters(workout)
 }
 
 export function prescriptionStructure(workout: Segmented & Pick<WorkoutPrescription, 'totalDurationSeconds'>): WorkoutStep[] | null {

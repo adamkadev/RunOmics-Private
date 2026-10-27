@@ -1,7 +1,9 @@
 import type { Activity } from '@/domain/activity/types'
 import { withEffectiveTypes } from '@/domain/activity/effectiveType'
 import { sessionForRun, sessionsAcrossPlans, type RunSession } from '@/domain/coaching/sessionForRun'
-import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
+import type { CoachingPlan, NumberRange, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
+import { planEasyPace, prescriptionMeters } from '@/domain/coaching/sessionDistance'
+import { trainingZonesOn } from '@/application/usecases/GetTrainingZones'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { appTodayIso } from '@/lib/calendarDate'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
@@ -13,6 +15,8 @@ export interface PrescriptionView {
   prescription: WorkoutPrescription
   state: PrescriptionDisplayState
   activityId: string | null
+  /** Its untargeted warm-up, cool-down and recoveries counted at the athlete's easy pace, as Plan, Today and Analytics show it. */
+  distanceMeters: number | null
 }
 
 export interface CoachingOverview {
@@ -36,6 +40,7 @@ export function buildCoachingOverview(
   evaluations: WorkoutEvaluation[],
   activities: Activity[],
   today: string,
+  easyPace: NumberRange | null = planEasyPace(plan.weeks.flatMap((week) => week.workouts)),
 ): CoachingOverview {
   const runs = completedRuns(plan, evaluations, activities)
   const views = plan.weeks.flatMap((week) => week.workouts).map((prescription): PrescriptionView => {
@@ -49,7 +54,7 @@ export function buildCoachingOverview(
           : prescription.status === 'adjusted'
             ? 'adjusted'
             : 'prescribed'
-    return { prescription, state, activityId: activity?.id ?? null }
+    return { prescription, state, activityId: activity?.id ?? null, distanceMeters: prescriptionMeters(prescription, easyPace) }
   }).sort((a, b) => a.prescription.date.localeCompare(b.prescription.date))
 
   const currentWeek = plan.weeks.find((week) => today >= week.startDate && today <= week.endDate) ?? null
@@ -63,7 +68,13 @@ export function getCoachingOverview(
 ): CoachingOverview | null {
   const plan = repository.getCurrentPlan()
   if (!plan) return null
-  return buildCoachingOverview(plan, repository.getEvaluations(), getAllActivities(), today)
+  return buildCoachingOverview(plan, repository.getEvaluations(), getAllActivities(), today, easyPaceFor(plan, today))
+}
+
+/** The athlete's easy pace zone, else the span the plan itself gives easy running. */
+export function easyPaceFor(plan: CoachingPlan, today: string): NumberRange | null {
+  const easy = trainingZonesOn(today)?.zones.find((zone) => zone.key === 'easy')
+  return easy ? { min: easy.paceMinSecPerKm, max: easy.paceMaxSecPerKm } : planEasyPace(plan.weeks.flatMap((week) => week.workouts))
 }
 
 /** An archive that fails to parse costs only the superseded blocks, never the page. */

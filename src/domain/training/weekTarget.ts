@@ -1,4 +1,5 @@
 import type { ActivityType } from '@/domain/activity/types'
+import { monthDays, type MonthDay } from './monthDays'
 
 /**
  * Two numbers exist, and they are named apart:
@@ -24,12 +25,10 @@ export interface WeekTargetDay {
   plannedType?: ActivityType
 }
 
-/**
- * Done: something was run. Missed: the plan had a session on a day that is
- * over and nothing was run. Planned: a session is still to come (today
- * included). Rest: nothing planned, nothing run.
- */
+/** Done: run, or its session run a day either side. Missed: over, nothing stood for it. Planned: still to come. */
 export type WeekDayState = 'done' | 'planned' | 'missed' | 'rest'
+
+export type WeekTargetDayState = WeekTargetDay & { state: WeekDayState } & Pick<MonthDay, 'ranOn' | 'standsFor'>
 
 export interface WeekTarget {
   ranKm: number
@@ -37,36 +36,39 @@ export interface WeekTarget {
   /** The plan's total, missed sessions included; null when nothing is planned or no session gives a distance. */
   planKm: number | null
   planSessions: number
-  /** Planned sessions that were run on their day; unplanned runs never count here. */
+  /** Planned sessions that were run on their day or a day either side; unplanned runs never count here. */
   plannedDone: number
-  /** Runs on a day the plan left empty. */
+  /** Runs on a day the plan left empty that stand for no session. */
   unplannedRuns: number
   missedSessions: number
   /** The annual goal's weekly share; null when there is no annual goal. */
   goalKm: number | null
-  days: (WeekTargetDay & { state: WeekDayState })[]
+  days: WeekTargetDayState[]
 }
 
-export function weekDayState(day: WeekTargetDay, today: string): WeekDayState {
-  if (day.runs > 0) return 'done'
-  if (day.plannedSessions === 0) return 'rest'
-  return day.date < today ? 'missed' : 'planned'
-}
-
-export function weekTarget(days: WeekTargetDay[], today: string, goalKm: number | null): WeekTarget {
+/** In the Month view's states, `edges` the days either side, so a session run a day early or late is done everywhere. */
+export function weekTarget(days: WeekTargetDay[], today: string, goalKm: number | null, edges: readonly WeekTargetDay[] = []): WeekTarget {
   const planned = days.filter((d) => d.plannedSessions > 0)
-  const states = days.map((d) => ({ ...d, state: weekDayState(d, today) }))
+  const byDate = new Map([...edges, ...days].map((d) => [d.date, d]))
+  const month = monthDays(
+    days.map((d) => d.date),
+    (date) => (byDate.get(date)?.runs ?? 0) > 0,
+    (date) => (byDate.get(date)?.plannedSessions ?? 0) > 0,
+    today,
+  )
+  const states = days.map((d): WeekTargetDayState => {
+    const { state, ranOn, standsFor } = month.get(d.date) ?? { state: 'rest' }
+    return { ...d, state: state === 'extra' ? 'done' : state, ...(ranOn ? { ranOn } : {}), ...(standsFor ? { standsFor } : {}) }
+  })
 
   return {
     ranKm: round1(days.reduce((sum, d) => sum + d.ranKm, 0)),
     ranSessions: days.reduce((sum, d) => sum + d.runs, 0),
     planKm: planned.some((d) => d.plannedKm !== null) ? round1(planned.reduce((sum, d) => sum + (d.plannedKm ?? 0), 0)) : null,
     planSessions: planned.reduce((sum, d) => sum + d.plannedSessions, 0),
-    plannedDone: planned.reduce((sum, d) => sum + Math.min(d.runs, d.plannedSessions), 0),
-    unplannedRuns: days.filter((d) => d.plannedSessions === 0).reduce((sum, d) => sum + d.runs, 0),
-    missedSessions: days
-      .filter((d, i) => states[i]!.state === 'missed')
-      .reduce((sum, d) => sum + d.plannedSessions, 0),
+    plannedDone: states.reduce((sum, d) => sum + (d.plannedSessions === 0 ? 0 : d.ranOn ? 1 : Math.min(d.runs, d.plannedSessions)), 0),
+    unplannedRuns: states.filter((d) => d.plannedSessions === 0).reduce((sum, d) => sum + d.runs - (d.standsFor ? 1 : 0), 0),
+    missedSessions: states.filter((d) => d.state === 'missed').reduce((sum, d) => sum + d.plannedSessions, 0),
     goalKm: goalKm !== null && goalKm > 0 ? goalKm : null,
     days: states,
   }

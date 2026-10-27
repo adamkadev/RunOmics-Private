@@ -140,10 +140,10 @@ const GENERAL_BLOCK: CoachingOverview = {
   plan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined, block: { ...plan().block, name: 'Base rebuild', endDate: '2026-10-04' } },
   currentWeekId: null,
   workouts: [
-    { prescription: workout({ id: 'a', date: '2026-09-22' }), state: 'completed', activityId: 'run-a' },
-    { prescription: workout({ id: 'b', date: '2026-09-24' }), state: 'missed', activityId: null },
-    { prescription: workout({ id: 'c', date: '2026-09-25' }), state: 'cancelled', activityId: null },
-    { prescription: workout({ id: 'd', date: '2026-09-29' }), state: 'prescribed', activityId: null },
+    { prescription: workout({ id: 'a', date: '2026-09-22' }), state: 'completed', activityId: 'run-a', distanceMeters: null },
+    { prescription: workout({ id: 'b', date: '2026-09-24' }), state: 'missed', activityId: null, distanceMeters: null },
+    { prescription: workout({ id: 'c', date: '2026-09-25' }), state: 'cancelled', activityId: null, distanceMeters: null },
+    { prescription: workout({ id: 'd', date: '2026-09-29' }), state: 'prescribed', activityId: null, distanceMeters: null },
   ],
 }
 
