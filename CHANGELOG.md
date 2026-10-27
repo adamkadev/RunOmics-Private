@@ -43,12 +43,10 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   week too. "Skipped" takes a reason (ill, rest, life), stored on Firestore `wellness/{date}` and read by Today,
   Plan's week and month and the coach; this browser's old marks move there once. **Needs** the rules deploy.
 - **The coach's own words (F1).** The phase card names the coach's block ("Reprise en douceur") instead of
-  « Préparation générale » and adds the week's focus; a planned session's card carries the coach's note, its
-  description and notes; Today's session card gives the description's first sentence. The text comes from
-  `/api/coaching/words`, behind the private site's sign-in gate, never in a page's HTML. Plan folds the words to
-  their first line; a tap opens them whole (a button with `aria-expanded`), and a note that fits has no toggle.
-  In the step list, a warm-up, cool-down or break at a walking pace, or with no target in an easy session, reads
-  "walk" (« marche ») instead of "1:00 rec".
+  « Préparation générale »; Today's session card gives the description's first sentence. The text comes from
+  `/api/coaching/words`, behind the private site's sign-in gate, never in a page's HTML. Plan shows no week's
+  focus, coach's note or watch line. In the step list, a warm-up, cool-down or break at a walking pace, or with no
+  target in an easy session, reads "walk" (« marche ») instead of "1:00 rec".
 - **Where a block stands.** In its last week the phase card adds "Block ends Sunday; next block not planned yet";
   after the last day a "Block finished" card counts the sessions done out of those prescribed; a day before the
   block starts reads "Nothing planned". Paging forward follows the last planned date from either the coach's
@@ -57,10 +55,9 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   minutes per week and the longest non-stop run, Records gets a Comeback tab (first 10, 20 and 30 minutes
   non-stop, first 3 and 5 km without walking, first block completed), and each new milestone gets the
   celebration overlay and a push in the records category. **Needs** the reprocess.
-- **Race-day form and watch alerts (F8, G5 display).** The race page carries fitness, fatigue and form to race
-  day through the planned sessions' estimated load, the last four weeks solid and the forecast dashed; no number
-  before 42 days of running since the start or a long break, or while the plan stops more than a week before the
-  race. Each structured session says on one line what the watch alerts on: the Run/Walk times and the pace range.
+- **Race-day form (F8).** The race page carries fitness, fatigue and form to race day through the planned
+  sessions' estimated load, the last four weeks solid and the forecast dashed; no number before 42 days of running
+  since the start or a long break, or while the plan stops more than a week before the race.
 - A 12-week checkpoint: the "General preparation" card opens a page setting this cycle against the 12 weeks
   before it (volume, controlled threshold, heat-adjusted efficiency, easy-run heart rate at a set pace, the 5K
   check, VO2max, threshold, resting heart rate, fitness), each marked better, worse or level; a Progress tile

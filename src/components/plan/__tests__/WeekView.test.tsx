@@ -327,12 +327,6 @@ describe('a session still to come', () => {
     expect(screen.queryByRole('link', { name: /watch/i })).toBeNull()
     expect(screen.queryByTestId('week-sessions')).toBeNull()
   })
-
-  it('says on one line what the watch alerts on', () => {
-    renderWeek({ coaching: overview() })
-
-    expect(screen.getByTestId('watch-alerts')).toHaveTextContent(`${t.plan.session.watchAlerts} ${t.plan.session.paceAlert(`4:25–4:30 ${t.units.perKm}`)}`)
-  })
 })
 
 describe('a day that is over', () => {
@@ -558,51 +552,38 @@ describe('the coach’s words', () => {
     vi.restoreAllMocks()
   })
 
-  it('names general preparation after the coach’s block and adds the week’s focus', async () => {
+  it('names general preparation after the coach’s block, with no focus under it', async () => {
     serve(WORDS)
     renderWeek({ coaching: overview({ coachingPlan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined } }) })
 
     const card = screen.getByTestId('phase-line')
     expect(await within(card).findByText('Reprise en douceur')).toBeInTheDocument()
     expect(within(card).getByRole('heading').textContent).not.toContain(t.plan.weekPurpose.generalPreparation)
-    expect(within(card).getByTestId('phase-focus').textContent).toBe('On démarre doucement.')
+    expect(card).not.toHaveTextContent('On démarre doucement.')
+    expect(card).not.toHaveTextContent(WORDS.block.focus)
   })
 
-  it('folds a long week focus to one line, its toggle outside the checkpoint link', async () => {
-    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(60)
-    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(20)
-    serve(WORDS)
-    renderWeek({ coaching: overview({ coachingPlan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined } }) })
-
-    const card = screen.getByTestId('phase-line')
-    await within(card).findByTestId('phase-focus')
-    const toggle = within(card).getByRole('button', { name: t.plan.session.coachNote })
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(toggle.closest('a')).toBeNull()
-    await userEvent.click(toggle)
-    expect(toggle).toHaveAttribute('aria-expanded', 'true')
-  })
-
-  it('keeps a race block’s phase name, with the week’s focus under it', async () => {
-    serve(WORDS)
+  it('keeps a race block’s phase name, with no focus under it', async () => {
+    const fetch = serve(WORDS)
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
     const card = screen.getByTestId('phase-line')
-    expect(await within(card).findByTestId('phase-focus')).toHaveTextContent('On démarre doucement.')
     expect(within(card).getByRole('heading').textContent).toBe(t.plan.weekPurpose.planPhase.base)
+    expect(card).not.toHaveTextContent('On démarre doucement.')
   })
 
-  it('puts the session’s description and notes on its card', async () => {
-    serve(WORDS)
+  it('leaves the session’s description and notes off its card', async () => {
+    const fetch = serve(WORDS)
     renderWeek({ coaching: overview() })
 
-    const note = await within(screen.getByTestId('plan-workout-workout-threshold')).findByTestId('coach-note')
-    expect(note).toHaveTextContent(t.plan.session.coachNote)
-    expect(note).toHaveTextContent('Course très lente, 1 minute de marche.')
-    expect(note).toHaveTextContent('Passe à la marche au moindre doute.')
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
+    const card = screen.getByTestId('plan-workout-workout-threshold')
+    expect(card).not.toHaveTextContent('Course très lente, 1 minute de marche.')
+    expect(card).not.toHaveTextContent('Passe à la marche au moindre doute.')
   })
 
-  it('asks for nothing without a coach plan, and draws nothing when the server has none', async () => {
+  it('asks for nothing without a coach plan', async () => {
     const fetch = serve(null)
     renderWeek({ planPhaseRanges: [{ phase: 'build', startDate: '2026-09-07', endDate: '2026-10-04' }] })
     expect(fetch).not.toHaveBeenCalled()
@@ -610,7 +591,5 @@ describe('the coach’s words', () => {
     forgetCoachWords()
     renderWeek({ coaching: overview() })
     await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
-    expect(screen.queryByTestId('coach-note')).toBeNull()
-    expect(screen.queryByTestId('phase-focus')).toBeNull()
   })
 })

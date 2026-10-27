@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CoachWords } from '@/application/coaching/GetCoachWords'
-import { COACH_WORDS_PATH, forgetCoachWords, readCoachWords, sessionWords, weekFocus } from '../useCoachWords'
+import { COACH_WORDS_PATH, forgetCoachWords, readCoachWords, sessionWords } from '../useCoachWords'
 
 const WORDS: CoachWords = {
   block: { name: 'Reprise en douceur', focus: 'Trois sorties par semaine.' },
@@ -18,13 +18,6 @@ describe('the coach’s words', () => {
   afterEach(() => {
     forgetCoachWords()
     vi.unstubAllGlobals()
-  })
-
-  it('finds the focus of the week a day falls in', () => {
-    expect(weekFocus(WORDS, '2026-09-09')).toBe('On démarre doucement.')
-    expect(weekFocus(WORDS, '2026-09-15')).toBeNull()
-    expect(weekFocus(WORDS, '2026-10-01')).toBeNull()
-    expect(weekFocus(null, '2026-09-09')).toBeNull()
   })
 
   it('drops a description that only repeats the session’s title', () => {

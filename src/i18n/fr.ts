@@ -2180,10 +2180,6 @@ export const fr = {
       hrTargetZone: (zone: number) => `Fréquence cardiaque · Z${zone}`,
       hrCap: (bpm: number) => `≤ ${bpm}`,
       findRoute: 'Trouver un parcours',
-      coachNote: 'Mot du coach',
-      watchAlerts: 'Montre :',
-      runWalkAlert: (run: string, walk: string) => `Course/Marche ${run} / ${walk}`,
-      paceAlert: (range: string) => `Allure ${range}`,
     },
     restCard: {
       eyebrow: 'Repos',

@@ -2349,12 +2349,6 @@ export const en = {
       hrCap: (bpm: number) => `≤ ${bpm}`,
       // Opens the map's route generator with the session's distance.
       findRoute: 'Find a route',
-      // Above the session's description and notes, in the coach's own words.
-      coachNote: 'Coach’s note',
-      // What the watch alerts on during the session, as its own settings name it.
-      watchAlerts: 'Watch:',
-      runWalkAlert: (run: string, walk: string) => `Run/Walk ${run} / ${walk}`,
-      paceAlert: (range: string) => `Pace ${range}`,
     },
     // The rest day on one line, then the week's sessions still to come.
     restCard: {
