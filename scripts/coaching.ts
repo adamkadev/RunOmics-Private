@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { readProposalPreview, writeProposalPreview } from '@/application/coaching/preview'
 import { renewalDefaults } from '@/domain/coaching/renewal'
+import { appTodayIso } from '@/lib/calendarDate'
 import { dataWorkspace, pushWorkspace, removeWorkspace } from './coachingWorkspace'
 import { interopImport } from './interopImport'
 
@@ -139,7 +140,7 @@ async function createProposal(command: string, args: string[]) {
   const currentPlan = repository.getCurrentPlan()
 
   if (command === 'bootstrap') {
-    const referenceDate = option(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
+    const referenceDate = option(args, '--reference-date') ?? appTodayIso()
     const context = await getCoachingContext(currentPlan, referenceDate)
     const contextOutput = option(args, '--context-out')
     if (contextOutput) fs.writeFileSync(path.resolve(contextOutput), JSON.stringify(context, null, 2) + '\n')
@@ -167,7 +168,7 @@ async function createProposal(command: string, args: string[]) {
   }
 
   if (command === 'weekly-review') {
-    const referenceDate = option(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
+    const referenceDate = option(args, '--reference-date') ?? appTodayIso()
     const context = await getCoachingContext(currentPlan, referenceDate)
     return createWeeklyReviewProposal(context, { advisor, repository })
   }
@@ -212,7 +213,7 @@ async function autoregulate(args: string[]): Promise<void> {
   const repository = new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR)
   const plan = repository.getCurrentPlan()
   if (!plan) throw new Error('No current coaching plan exists')
-  const referenceDate = option(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
+  const referenceDate = option(args, '--reference-date') ?? appTodayIso()
   const report = autoregulationReport(getAllActivities(), [plan, ...repository.getArchivedPlans()], referenceDate, getOfficialRaceResults())
 
   const hr = controlledThresholdHr(getAthleteProfile().lthrBpm)

@@ -4,7 +4,7 @@ import { guardInternalRequest, isAuthorizedCronRequest, isAuthorizedInternalRequ
 import { errorName, jobOutcome, JOB_EVENTS_KEPT, type JobTrigger } from '@/domain/diagnostics/jobEvent'
 import { integrationStatus } from '@/infrastructure/integrations'
 import { keepJobEvent } from '@/infrastructure/repositories/FirestoreJobEventRepository'
-import { withTimeout } from '@/infrastructure/withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 
 const TRACE_TIMEOUT_MS = 3_000
 

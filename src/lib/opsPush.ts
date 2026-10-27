@@ -1,6 +1,6 @@
 import 'server-only'
 import { en } from '@/i18n/en'
-import { withTimeout } from '@/infrastructure/withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 import { absolutePushLink } from './pushLinks'
 import { sendPush, type Push } from './sendPushNotification'
 

@@ -1,6 +1,7 @@
 import 'server-only'
 import type { NextRequest, NextResponse } from 'next/server'
 import { requireOwner } from '@/lib/ownerRoute'
+import { clientIp } from '@/lib/rateLimit'
 import { isSitePrivate } from '@/lib/siteAccess'
 
 /**
@@ -11,15 +12,6 @@ import { isSitePrivate } from '@/lib/siteAccess'
  */
 
 export type ExploreCaller = { ok: true; key: string } | { ok: false; response: NextResponse }
-
-/** For counting requests only - never logged. Vercel sets x-forwarded-for itself, so its first entry is the client's. */
-export function clientIp(req: NextRequest): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip')?.trim() ||
-    'unknown'
-  )
-}
 
 /** The owner is one person on every device, so one key: `requireOwner` vouches for the claim, not for a uid. */
 export async function authorizeExploreCaller(req: NextRequest): Promise<ExploreCaller> {

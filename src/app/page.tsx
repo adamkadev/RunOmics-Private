@@ -1,4 +1,4 @@
-import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getAthleteProfile } from '@/application/usecases/GetAthleteProfile'
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'

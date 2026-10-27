@@ -426,7 +426,7 @@ cannot read it (the service account needs the *Firebase Rules Viewer* role).
 Every other alert is sent by the deployment it watches, so one that is down, or
 has lost its Firebase or cron credentials, cannot report itself. The *Deployment
 Health Watchdog* workflow checks each profile from GitHub instead, daily at
-14:47 UTC, with its GitHub Environment's `APP_URL` and `INTERNAL_NOTIFY_SECRET`.
+17:47 UTC, with its GitHub Environment's `APP_URL` and `INTERNAL_NOTIFY_SECRET`.
 It fails when the last sync is 36 hours old (one missed night), when the data is
 unloaded, or when `firebaseAdmin` or `cron` is missing, and GitHub emails a
 failed scheduled run to whoever last changed its schedule. Run it by hand from
@@ -580,11 +580,11 @@ be set on each project, or every call is refused.
 
 | Route | When (UTC) | What it does |
 |-------|------------|--------------|
-| `/api/internal/nightly-sync` | 01:00 daily | Dispatches this deployment's full `sync.yml` run (`nightly`), unless one is already running |
+| `/api/internal/nightly-sync` | 04:00 daily | Dispatches this deployment's full `sync.yml` run (`nightly`), unless one is already running |
 | `/api/internal/daily-session` | 06:00 and 07:00 daily | The morning session push; only the call in the 08:xx Paris hour sends, so it arrives between 08:00 and 09:00 summer and winter, once a day |
 | `/api/internal/stale-sync-check` | 06:00 daily | Pushes once when no sync has landed for 72 hours |
 | `/api/internal/weekly-digest` | 06:00 Monday | Last week's km and quality sessions against the plan, other training, resting heart rate and this week's focus |
-| `/api/internal/weekly-reminder` | 15:00 Friday | The annual distance goal: ahead, on track or behind |
+| `/api/internal/weekly-reminder` | 15:00 Friday | The annual distance goal: ahead, on track or behind; once a year, from 1 December, that the goals have no entry for the coming year (or, from 1 January, this one) |
 
 A scheduled push is sent once per day (Firestore remembers the day it went). To run a route
 by hand, `POST` it with the internal secret, or `GET` it the way Vercel Cron does:

@@ -1,6 +1,6 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { isCheckInDate, readCheckIn, WELLNESS_COLLECTION, type CheckIn } from '@/domain/wellness/checkIn'
-import { withTimeout } from '../withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 
 /** Generous: the callers are the coaching CLI and the nightly backup, whose first Firestore call is cold. */
 const READ_TIMEOUT_MS = 10_000

@@ -4,6 +4,8 @@
  * in, so a test needs no fake timers.
  */
 
+import type { NextRequest } from 'next/server'
+
 export type RateLimitDecision = { ok: true } | { ok: false; retryAfterS: number }
 
 export interface RateLimiter {
@@ -46,4 +48,13 @@ export function createRateLimiter({ max, windowMs, maxKeys }: RateLimitOptions):
       return { ok: true }
     },
   }
+}
+
+/** For counting requests only - never logged. Vercel sets x-forwarded-for itself, so its first entry is the client's. */
+export function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip')?.trim() ||
+    'unknown'
+  )
 }

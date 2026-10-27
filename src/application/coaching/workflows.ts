@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-import { DAY_MS } from '@/lib/calendarDate'
+import { appTodayIso, DAY_MS } from '@/lib/calendarDate'
 import { validateTrainingFrequency } from './frequency'
 import { validateAdaptation, validateBootstrapDraft } from './draftRules'
 import type { Activity } from '@/domain/activity/types'
@@ -593,7 +593,7 @@ async function createAdaptationProposal(
     ? new Date(new Date(`${activity.date.slice(0, 10)}T00:00:00Z`).getTime() + DAY_MS).toISOString().slice(0, 10)
     : null
   const effectiveDate = kind === 'post_activity' && dayAfterActivity
-    ? [dayAfterActivity, now.toISOString().slice(0, 10)].sort().at(-1)!
+    ? [dayAfterActivity, appTodayIso(now)].sort().at(-1)!
     : context.referenceDate
   const matched = activity ? matchPrescription(plan, activity).prescription : null
   const guidance = services.repository.getGuidance?.() ?? undefined

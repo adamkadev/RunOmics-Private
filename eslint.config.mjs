@@ -6,7 +6,6 @@ const SERVER_ONLY_LIB = [
   '@/lib/gemini',
   '@/lib/firebase-admin',
   '@/lib/sendPushNotification',
-  '@/lib/aiSpend',
   '@/lib/internalAuth',
   '@/lib/internalRoute',
   '@/lib/ownerRoute',
@@ -47,6 +46,18 @@ const boundaries = [
     },
     { group: ['@/components/**', '@/app/**', 'react', 'react-dom'], message: 'Adapters may not depend on the UI.' },
   ]),
+  layer(
+    ['src/lib/**'],
+    [
+      {
+        group: ['@/application/**', '@/infrastructure/**', '@/components/**', '@/app/**'],
+        allowTypeImports: true,
+        message: 'src/lib sits under every layer: move the module into src/application or src/infrastructure instead.',
+      },
+    ],
+    // Keeps each route's run trace in Firestore: shrink this list, never grow it.
+    ['src/lib/internalRoute.ts']
+  ),
   layer(['src/components/**'], [
     { group: ['@/infrastructure/**'], allowTypeImports: true, message: 'Components get their data from the page, never from a repository.' },
     { group: SERVER_ONLY_LIB, allowTypeImports: true, message: 'A server-only module has no place in a component.' },
@@ -65,12 +76,8 @@ const boundaries = [
       'src/app/api/internal/ai-insights/route.ts',
       'src/app/api/internal/health/route.ts',
       'src/app/api/location-override/route.ts',
-      'src/app/page.tsx',
       'src/app/activities/[[]id]/page.tsx',
-      'src/app/athlete/page.tsx',
-      'src/app/plan/page.tsx',
       'src/app/profile/page.tsx',
-      'src/app/settings/page.tsx',
       'src/app/shoes/[[]gearId]/page.tsx',
       'src/app/shoes/page.tsx',
     ]

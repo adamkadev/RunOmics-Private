@@ -9,7 +9,7 @@ import { integrationStatus } from '@/infrastructure/integrations'
 import { dataVersion, loadData } from '@/application/usecases/LoadData'
 import { lastAiPass } from '@/application/usecases/AiPassStatus'
 import { liveFirestoreRulesHash } from '@/infrastructure/firestoreRulesHash'
-import { withTimeout } from '@/infrastructure/withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 
 const FIRESTORE_TIMEOUT_MS = 3_000
 

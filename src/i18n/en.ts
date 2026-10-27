@@ -1649,6 +1649,7 @@ export const en = {
     empty: 'No goals configured yet.',
     emptyHow: 'Set a distance for the year, target times and your races in Settings → Races & goals.',
     emptyAction: 'Open Races & goals',
+    noGoalYear: (year: number) => `No goal set for ${year}`,
     back: 'Progress',
     // The ‹ 2026 › stepper's arrows.
     prevYear: 'Previous year',
@@ -2089,6 +2090,10 @@ export const en = {
       otherTraining: (time: string) => `${time} other training`,
       restingHr: (bpm: number, change: string) => `Resting HR ${bpm} (${change})`,
       focus: (focus: string) => `This week: ${focus}`,
+    },
+    goalYear: {
+      title: (year: number) => `No goal set for ${year}`,
+      body: 'Set it in Settings → Races & goals to keep the Friday goal check-in.',
     },
     weeklyGoal: {
       title: 'Weekly goal check-in',

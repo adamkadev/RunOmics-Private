@@ -94,6 +94,9 @@ the data of its last build, and `data-revalidate` answers it with a 409.
 - **If GitHub is unreachable,** an instance keeps serving the commit it has;
   a new one cannot start serving and answers with an error, and cached pages
   stay up.
+- **The functions ship without the data.** With the mode set at build,
+  `next.config.ts` stops tracing `./data/**` into them; the build itself still
+  reads its clone to prerender.
 - **Local runs never read GitHub:** the mode needs `VERCEL=1`, and the build
   reads its clone, so dev, E2E and the CLIs work from files as before.
 - **Month files are written one key a line, with number arrays on one line**
@@ -221,7 +224,7 @@ with `force`, which downloads every FIT again.
 hours late and the morning push arrived around lunchtime. Each deployment runs the crons for
 its own athlete:
 
-- `nightly-sync` at 01:00 UTC dispatches `sync.yml` with `nightly` (and the deployment's
+- `nightly-sync` at 04:00 UTC dispatches `sync.yml` with `nightly` (and the deployment's
   `GITHUB_SYNC_PROFILE`), unless the sync gate says a run is already going. `nightly` is what
   turns on the token-expiry warning, which a dispatch from the Sync button leaves off.
 - `daily-session` runs at 06:00 and 07:00 UTC. Paris is UTC+2 in summer and UTC+1 in winter,

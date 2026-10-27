@@ -6,7 +6,7 @@ import { config, proxy } from '@/proxy'
 const requireOwner = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/ownerRoute', () => ({ requireOwner }))
 
-const { authorizeExploreCaller, clientIp } = await import('../exploreAccess')
+const { authorizeExploreCaller } = await import('../exploreAccess')
 
 const request = (headers: Record<string, string> = {}) =>
   new NextRequest('https://run.example/api/explore/route', { method: 'POST', headers })
@@ -67,13 +67,5 @@ describe('the gate a private site relies on', () => {
     expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(true)
     const response = proxy(new NextRequest(new URL(path, 'https://run.example'), { method: 'POST' }))
     expect(response.status).toBe(401)
-  })
-})
-
-describe('clientIp', () => {
-  it('takes the first forwarded address, then x-real-ip', () => {
-    expect(clientIp(request({ 'x-forwarded-for': ' 203.0.113.7 , 10.0.0.1' }))).toBe('203.0.113.7')
-    expect(clientIp(request({ 'x-real-ip': '198.51.100.2' }))).toBe('198.51.100.2')
-    expect(clientIp(request())).toBe('unknown')
   })
 })

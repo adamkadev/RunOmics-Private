@@ -22,6 +22,20 @@ All notable changes to this project are documented in this file.
   stays hidden, and the coach's dump warns when the app holds edits the last
   sync has not mirrored. The Goals page's empty state links to the editor.
   `firestore.rules` changed: deploy it to both Firebase projects.
+- Cleanup batch 2 (C7, C9, C11, E7, E8, R15, R19). One rate limiter and one
+  `clientIp()` for the internal, client-error and explore routes. With
+  `RUNOMICS_DATA_SOURCE=github` the functions no longer ship `./data`. The
+  workbook use case returns a plain sheet description that
+  `infrastructure/export/xlsxWorkbook.ts` renders with ExcelJS. The coach CLIs and a
+  post-activity review date "today" in `NEXT_PUBLIC_TIME_ZONE`, not UTC. `src/lib`
+  gets an ESLint layer rule (`verdictStatus` moves to the use cases, `aiSpend` to
+  `application/ai`, `withTimeout` to `src/lib`), and Today, Athlete, Plan and
+  Settings leave the repository allowlist. The nightly sync runs at 04:00 UTC and
+  the health watchdog at 17:47. From 1 December, when the goals have no entry
+  for the coming year (or, from 1 January, for this one), Goals says "No goal set
+  for 2027" with a link to Races & goals, and the Friday cron sends one push for
+  that year.
+
 - Shoes without garth and Garmin warnings (G3, G6). The owner picks a run's
   shoe on its page and sets a default shoe on Shoes, stored in Firestore
   (`runShoes`, `shoeSettings/default`, owner-only rules) and committed nightly as

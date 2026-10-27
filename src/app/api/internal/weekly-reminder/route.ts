@@ -25,15 +25,21 @@ async function remindAboutTheBlock(today: string): Promise<boolean> {
   return sendOncePer('coachBlock', today, () => sendOpsPush({ title: c.title, body: c.body(reasons.join(' · ')), link: pushPaths.plan, tag: 'coach-block' }))
 }
 
+async function askForTheGoal(year: number): Promise<boolean> {
+  const n = t.notifications.goalYear
+  return sendOncePer('goalYear', String(year), () => sendPush('training', { title: n.title(year), body: n.body, link: pushPaths.goals, tag: 'goal-year' }))
+}
+
 export const { GET, POST } = scheduledRoute('weekly-reminder', async () => {
   await loadData()
   const today = appTodayIso()
   const coachBlock = await remindAboutTheBlock(today)
-  const { byYear } = await getGoalsPageData(today)
+  const { byYear, missingGoalYear } = await getGoalsPageData(today)
+  const goalYear = missingGoalYear !== null && (await askForTheGoal(missingGoalYear))
   const projection = byYear[Number(today.slice(0, 4))]?.projection
 
   if (!projection) {
-    return NextResponse.json({ sent: false, coachBlock })
+    return NextResponse.json({ sent: false, coachBlock, goalYear })
   }
 
   const n = t.notifications.weeklyGoal
@@ -46,5 +52,5 @@ export const { GET, POST } = scheduledRoute('weekly-reminder', async () => {
     })
   )
 
-  return NextResponse.json(sent ? { sent: true, status: projection.status, coachBlock } : { skipped: 'already sent today', coachBlock })
+  return NextResponse.json(sent ? { sent: true, status: projection.status, coachBlock, goalYear } : { skipped: 'already sent today', coachBlock, goalYear })
 })

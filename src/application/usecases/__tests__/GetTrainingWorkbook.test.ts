@@ -2,7 +2,10 @@ import ExcelJS from 'exceljs'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { CoachingPlan } from '@/domain/coaching/types'
-import { buildActivitiesCsv, buildTrainingWorkbook, type TrainingWorkbookData } from '../GetTrainingWorkbook'
+import { xlsxWorkbook } from '@/infrastructure/export/xlsxWorkbook'
+import { buildActivitiesCsv, buildTrainingWorkbook as buildSpec, type TrainingWorkbookData } from '../GetTrainingWorkbook'
+
+const buildTrainingWorkbook = (...args: Parameters<typeof buildSpec>) => xlsxWorkbook(buildSpec(...args))
 
 function activity(overrides: Partial<Activity> = {}): Activity {
   return {
@@ -455,7 +458,7 @@ describe('buildTrainingWorkbook', () => {
     it('writes the guide and the context in French and keeps the column and item keys', () => {
       const input = data()
       input.athlete = { ...input.athlete, trainingBreaks: [{ start: '2026-01-02', end: '2026-01-02', reason: 'heat' }] }
-      const workbook = fr.buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z'))
+      const workbook = xlsxWorkbook(fr.buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z')))
       const guide = workbook.getWorksheet('Guide')!
       const context = workbook.getWorksheet('Context')!
 

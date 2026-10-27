@@ -1,7 +1,7 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { GOAL_ENTRIES_COLLECTION, RACE_ENTRIES_COLLECTION } from '@/lib/goalsRaces'
 import { readGoalEntry, readRaceEntry, type GoalEntry, type RaceEntry } from '@/domain/goals/entries'
-import { withTimeout } from '../withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 
 /** The nightly backup's first Firestore call is cold. */
 const READ_TIMEOUT_MS = 10_000

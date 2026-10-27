@@ -68,6 +68,16 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
         <h1 data-bar-title={t.goals.barTitle} className="text-display text-foreground">{t.goals.title}</h1>
       </header>
 
+      {data.missingGoalYear !== null && yearData && (
+        <section className={cardClass({ className: 'flex flex-col gap-1' })} data-testid="goals-missing-year">
+          <p className="text-sm font-semibold text-foreground">{t.goals.noGoalYear(data.missingGoalYear)}</p>
+          <p className="text-sm text-subtle text-pretty">{t.goals.emptyHow}</p>
+          <Link href={GOALS_RACES_HREF} className="hit-44 self-start text-sm font-medium text-accent-text">
+            {t.goals.emptyAction}
+          </Link>
+        </section>
+      )}
+
       <div>
         {yearData ? (
           <YearView key={yearData.year} yearData={yearData} today={today} block={block} />

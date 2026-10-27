@@ -3,7 +3,7 @@
   "regions": ["cdg1"],
   "installCommand": "npm ci",
   "crons": [
-    { "path": "/api/internal/nightly-sync", "schedule": "0 1 * * *" },
+    { "path": "/api/internal/nightly-sync", "schedule": "0 4 * * *" },
     { "path": "/api/internal/daily-session", "schedule": "0 6 * * *" },
     { "path": "/api/internal/daily-session", "schedule": "0 7 * * *" },
     { "path": "/api/internal/stale-sync-check", "schedule": "0 6 * * *" },

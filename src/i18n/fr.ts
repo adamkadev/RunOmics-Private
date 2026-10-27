@@ -1538,6 +1538,7 @@ export const fr = {
     empty: 'Aucun objectif configuré pour le moment.',
     emptyHow: 'Fixe une distance pour l’année, des temps visés et tes courses dans Réglages → Courses et objectifs.',
     emptyAction: 'Ouvrir Courses et objectifs',
+    noGoalYear: (year: number) => `Aucun objectif fixé pour ${year}`,
     back: 'Progression',
     prevYear: 'Année précédente',
     nextYear: 'Année suivante',
@@ -1929,6 +1930,10 @@ export const fr = {
       otherTraining: (time: string) => `${time} d’autres activités`,
       restingHr: (bpm: number, change: string) => `FC repos ${bpm} (${change})`,
       focus: (focus: string) => `Cette semaine : ${focus}`,
+    },
+    goalYear: {
+      title: (year: number) => `Aucun objectif fixé pour ${year}`,
+      body: 'Fixe-le dans Réglages → Courses et objectifs pour garder le point du vendredi sur ton objectif.',
     },
     weeklyGoal: {
       title: 'Point hebdo sur ton objectif',
