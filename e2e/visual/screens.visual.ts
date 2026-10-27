@@ -5,7 +5,11 @@ import { FIXED_NOW } from './fixedNow'
 
 const FREEZE = `*, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important; }`
 
+/** A run's place comes from OpenStreetMap when the runner can reach it, and late or not at all when it cannot. */
+const offline = (page: Page) => page.context().route(/^https?:\/\/(?!localhost[:/]|127\.0\.0\.1[:/])/, (route) => route.abort())
+
 test.beforeEach(async ({ page, colorScheme }) => {
+  await offline(page)
   await page.clock.setFixedTime(new Date(FIXED_NOW))
   await page.addInitScript((theme) => {
     try {
