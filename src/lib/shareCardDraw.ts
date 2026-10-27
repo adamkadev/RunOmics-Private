@@ -374,24 +374,6 @@ function drawRepsLegend(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, 
   ctx.fillText(label, x + 7 + BAR_W + 5, mid)
 }
 
-function drawsBasemap({ design, activity, mapImage, mapPoints }: ShareCardScene): boolean {
-  return design === 'route' && (activity.route?.length ?? 0) > 1 && !!mapImage && (mapPoints?.length ?? 0) > 1
-}
-
-const CREDIT_SIZE = 7
-const CREDIT_BASELINE = H - 5
-
-/** MapTiler's and OpenStreetMap's terms ask for the credit on any image made from their tiles. */
-function drawMapCredit(ctx: Ctx, { palette, fonts }: ShareCardScene) {
-  ctx.save()
-  ctx.font = `500 ${CREDIT_SIZE}px ${fonts.text}`
-  ctx.textAlign = 'right'
-  ctx.textBaseline = 'alphabetic'
-  ctx.fillStyle = palette.mu
-  ctx.fillText(fit(ctx, t.pages.map.attribution, RIGHT - PAD_X), RIGHT, CREDIT_BASELINE)
-  ctx.restore()
-}
-
 function hasReps(scene: ShareCardScene): boolean {
   return (scene.activity.reps?.windows.length ?? 0) > 0
 }
@@ -406,9 +388,9 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const route = activity.route
   if (!route || route.length < 2) return
   let pts: [number, number][]
-  if (drawsBasemap(scene)) {
-    ctx.drawImage(mapImage!, 0, 0, W, H)
-    pts = mapPoints!
+  if (mapImage && mapPoints && mapPoints.length > 1) {
+    ctx.drawImage(mapImage, 0, 0, W, H)
+    pts = mapPoints
   } else {
     pts = projectRoute(route, W, H, layout.routeFrame)
   }
@@ -922,5 +904,4 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   if (layout.hero) drawHero(ctx, scene, layout.hero, layout.heroTop, ink)
   if (layout.repDetail) drawRepDetail(ctx, scene, layout.repDetail, layout.repDetailTop, ink)
   drawStats(ctx, scene, layout.statsTop, ink)
-  if (drawsBasemap(scene)) drawMapCredit(ctx, scene)
 }

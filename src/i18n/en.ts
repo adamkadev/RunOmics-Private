@@ -1289,8 +1289,6 @@ export const en = {
       repsLegend: 'Reps',
       // The switch on an interval session: off, the card is an easy run's.
       showReps: 'Rep pace',
-      // Off, the card leaves out the first and last 250 m, where the run starts and ends.
-      showFullRoute: 'Show full route',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
       photoHint: 'This frame is the exact crop',

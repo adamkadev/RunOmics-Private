@@ -131,7 +131,7 @@ describe('the phase card', () => {
     expect(card.textContent).toContain(`${weekOf.before} 1 ${weekOf.after}`)
     // Sep 9 to Nov 29 is 81 days: 12 weeks.
     expect(card.textContent).toContain(t.plan.phase.raceInWeeks('10K', 12))
-    expect(card.getAttribute('href')).toBeNull()
+    expect(within(card).queryByRole('link')).toBeNull()
   })
 
   it('draws a segment per week of the phase, the weeks so far in the accent', () => {
@@ -151,7 +151,7 @@ describe('the phase card', () => {
     // Aug 31 to the block's end on Oct 4: five weeks, this the second.
     const weekOf = t.plan.phase.weekOf(5)
     expect(card.textContent).toBe(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 2 ${weekOf.after}`)
-    expect(card.getAttribute('href')).toBe('/plan/checkpoint')
+    expect(within(card).getByRole('link').getAttribute('href')).toBe('/plan/checkpoint')
   })
 
   it("reads Garmin's phases and next race without coaching", () => {
@@ -548,6 +548,7 @@ describe('the coach’s words', () => {
   afterEach(() => {
     forgetCoachWords()
     vi.unstubAllGlobals()
+    vi.restoreAllMocks()
   })
 
   it('names general preparation after the coach’s block and adds the week’s focus', async () => {
@@ -558,6 +559,21 @@ describe('the coach’s words', () => {
     expect(await within(card).findByText('Reprise en douceur')).toBeInTheDocument()
     expect(within(card).getByRole('heading').textContent).not.toContain(t.plan.weekPurpose.generalPreparation)
     expect(within(card).getByTestId('phase-focus').textContent).toBe('On démarre doucement.')
+  })
+
+  it('folds a long week focus to one line, its toggle outside the checkpoint link', async () => {
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(60)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(20)
+    serve(WORDS)
+    renderWeek({ coaching: overview({ coachingPlan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined } }) })
+
+    const card = screen.getByTestId('phase-line')
+    await within(card).findByTestId('phase-focus')
+    const toggle = within(card).getByRole('button', { name: t.plan.session.coachNote })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(toggle.closest('a')).toBeNull()
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('keeps a race block’s phase name, with the week’s focus under it', async () => {

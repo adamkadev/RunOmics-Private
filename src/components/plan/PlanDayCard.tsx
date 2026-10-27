@@ -15,6 +15,7 @@ import { sessionLabel } from '@/lib/activityTitle'
 import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { ButtonLink } from '@/components/ui/Button'
+import { CollapsibleNote } from '@/components/ui/CollapsibleNote'
 import type { PrescriptionDisplayState } from '@/application/coaching/GetCoachingView'
 import type { CoachSessionWords } from '@/application/coaching/GetCoachWords'
 import { exploreRouteHref, planRouteKm } from '@/components/explore/exploreHref'
@@ -55,14 +56,16 @@ function CoachNote({ words }: { words: CoachSessionWords }) {
   return (
     <div className="mt-2.5 flex flex-col gap-1 rounded-[14px] bg-[var(--background)] px-3 py-2.5" data-testid="coach-note">
       <span className="text-[11px] text-muted-foreground">{t.plan.session.coachNote}</span>
-      {words.description && <p className="text-sm leading-snug text-foreground text-pretty">{words.description}</p>}
-      {words.notes.length > 0 && (
-        <ul className="flex flex-col gap-0.5 text-[13px] leading-snug text-[var(--text-2)]">
-          {words.notes.map((note, i) => (
-            <li key={i} className="text-pretty">{note}</li>
-          ))}
-        </ul>
-      )}
+      <CollapsibleNote label={t.plan.session.coachNote} className={`flex flex-col gap-0.5 leading-snug ${words.description ? 'text-sm' : 'text-[13px]'}`}>
+        {words.description && <p className="text-sm leading-snug text-foreground text-pretty">{words.description}</p>}
+        {words.notes.length > 0 && (
+          <ul className="flex flex-col gap-0.5 text-[13px] leading-snug text-[var(--text-2)]">
+            {words.notes.map((note, i) => (
+              <li key={i} className="text-pretty">{note}</li>
+            ))}
+          </ul>
+        )}
+      </CollapsibleNote>
     </div>
   )
 }
