@@ -627,6 +627,8 @@ function clockLabel(seconds) {
   return `${Math.floor(seconds / 60)}:${pad(Math.round(seconds % 60), 2)}`
 }
 
+const PREVIOUS_PLAN_MAX_WEEKS = 5
+
 /** The block before the current one, kept under superseded/ as bootstrap --replace keeps it. */
 function buildPreviousPlan(controlled, start, provenance) {
   const { runs, guide } = controlled
@@ -658,9 +660,12 @@ function buildPreviousPlan(controlled, start, provenance) {
       provenance,
     }
   })
-  const first = new Date(`${runs[0].date}T00:00:00Z`)
-  const monday = addDays(first, -((first.getUTCDay() + 6) % 7))
+  const mondayOf = (date) => addDays(date, -((date.getUTCDay() + 6) % 7))
   const lastDay = isoDate(addDays(new Date(`${start}T00:00:00Z`), -1))
+  // A plan holds at most five weeks, and on some weekdays the runs reach back into a sixth.
+  const earliest = addDays(mondayOf(new Date(`${lastDay}T00:00:00Z`)), -7 * (PREVIOUS_PLAN_MAX_WEEKS - 1))
+  const firstMonday = mondayOf(new Date(`${runs[0].date}T00:00:00Z`))
+  const monday = firstMonday < earliest ? earliest : firstMonday
   const weeks = []
   for (let weekStart = monday, index = 1; isoDate(weekStart) <= lastDay; weekStart = addDays(weekStart, 7), index++) {
     const startDate = isoDate(weekStart)

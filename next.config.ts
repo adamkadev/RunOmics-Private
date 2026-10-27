@@ -1,12 +1,18 @@
 import type { NextConfig } from "next";
 import { readFileSync } from "node:fs";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { assertNoTestFlagsOnDeployment } from "./src/lib/testOnlyFlags";
 
 const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { version: string };
 
-// Set only by the screenshot build, whose emulator sign-in needs an iframe and fetches.
+assertNoTestFlagsOnDeployment(process.env);
+
+// Set only by the e2e and screenshot builds, whose emulator sign-in needs an iframe and fetches.
 const authEmulator = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
   ? ` http://${process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST}`
+  : "";
+const firestoreEmulator = process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST
+  ? ` http://${process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST}`
   : "";
 
 const csp = [
@@ -17,7 +23,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://api.maptiler.com",
   "font-src 'self' data:",
-  `connect-src 'self' https://api.maptiler.com https://nominatim.openstreetmap.org https://*.googleapis.com https://apis.google.com${authEmulator}`,
+  `connect-src 'self' https://api.maptiler.com https://nominatim.openstreetmap.org https://*.googleapis.com https://apis.google.com${authEmulator}${firestoreEmulator}`,
   "worker-src 'self' blob:",
   `frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com${authEmulator}`,
   "object-src 'none'",

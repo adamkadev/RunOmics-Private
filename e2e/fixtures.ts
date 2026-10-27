@@ -16,6 +16,8 @@ const EXPECTED_CONSOLE_NOISE: RegExp[] = [
   /\/e2e-glyphs\//,
   // The e2e runner may have no route to OpenStreetMap for the Activity header's reverse geocoding.
   /nominatim\.openstreetmap\.org/i,
+  // The e2e server has no FIREBASE_PROJECT_ID, so an owner-only route answers 503 to the emulator's owner.
+  /status of 503 .*\/api\/athlete\/body/,
   // Vercel Analytics and Speed Insights scripts 404 under `next start`.
   /\/_vercel\/(insights|speed-insights)\/script\.js/,
 ]

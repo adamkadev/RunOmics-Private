@@ -31,6 +31,10 @@
     ".next/dev/types/**/*.ts",
     ".next-e2e-sparse/types/**/*.ts",
     ".next-e2e-sparse/dev/types/**/*.ts",
+    ".next-visual/types/**/*.ts",
+    ".next-visual/dev/types/**/*.ts",
+    ".next-visual-sparse/types/**/*.ts",
+    ".next-visual-sparse/dev/types/**/*.ts",
     "**/*.mts"
   ],
   "exclude": ["node_modules"]

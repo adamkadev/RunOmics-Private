@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { E2E_DATA_DIRNAME, E2E_DATA_DIRNAMES, prepareE2eData } from '../prepare-e2e-data.mjs'
+import { E2E_DATA_DIRNAME, E2E_DATA_DIRNAMES, prepareE2eData, VISUAL_DATA_DIRNAMES } from '../prepare-e2e-data.mjs'
 import { prepareData } from '../prepare-data.mjs'
 
 const temporaryRoots: string[] = []
@@ -43,6 +43,15 @@ describe('prepare-e2e-data', () => {
     expect(dataDir).toBe(path.join(root, E2E_DATA_DIRNAMES.sparse))
     expect(JSON.parse(fs.readFileSync(path.join(dataDir, 'athlete.json'), 'utf8')).deviceName).toBe('Forerunner 55')
     expect(fs.existsSync(path.join(root, E2E_DATA_DIRNAME))).toBe(false)
+  })
+
+  it('keeps the visual suite’s workspace apart from the e2e one', () => {
+    const root = temporaryRoot()
+
+    const dataDir = prepareE2eData({ root, profile: 'sparse', suite: 'visual', writeDemo: (dir: string) => writeActivityIndex(dir) })
+
+    expect(dataDir).toBe(path.join(root, VISUAL_DATA_DIRNAMES.sparse))
+    expect(fs.existsSync(path.join(root, E2E_DATA_DIRNAMES.sparse))).toBe(false)
   })
 
   it('resets stale state from a previous run', () => {

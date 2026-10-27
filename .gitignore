@@ -27,6 +27,8 @@
 # next.js
 /.next/
 /.next-e2e-sparse/
+/.next-visual/
+/.next-visual-sparse/
 /out/
 
 # production
@@ -64,6 +66,8 @@
 # Playwright build - never a real dataset, never worth committing.
 /.e2e-data/
 /.e2e-data-sparse/
+/.visual-data/
+/.visual-data-sparse/
 
 # the optimistic-concurrency marker fetch_private_data.mjs writes beside a data
 # workspace (see scripts/private_data_revision.mjs) - workspace state, never

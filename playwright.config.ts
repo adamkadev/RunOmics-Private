@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import type { AppOptions } from './e2e/fixtures'
+import { EMULATORS_COMMAND, FIRESTORE_EMULATOR_HOST } from './e2e/owner'
 
 const PORT = process.env.PORT ?? '3000'
 const SPARSE_PORT = String(Number(PORT) + 1)
@@ -28,6 +29,13 @@ export default defineConfig<AppOptions>({
     },
   ],
   webServer: [
+    // The owner's sign-in and Firestore, for owner.spec and the owner's other flows (e2e/owner.ts); needs Java.
+    {
+      command: EMULATORS_COMMAND,
+      url: `http://${FIRESTORE_EMULATOR_HOST}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
     {
       command: 'npm run e2e:build && npm run e2e:start',
       url: `http://localhost:${PORT}`,

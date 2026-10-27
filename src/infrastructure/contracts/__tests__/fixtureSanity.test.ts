@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { generateDemoDataset, Z5_PACE_FLOOR_SEC } from '../../../../scripts/generate_demo_data.mjs'
+import { MAX_BOOTSTRAP_WEEKS } from '@/domain/coaching/weekWindows'
 
 /** Every rule the screens read the data by, checked on the dataset the screenshots capture. */
 
@@ -120,5 +121,11 @@ describe('e2e fixture sanity', () => {
     expect(current?.phase).not.toBe('BASE')
     expect(coaching.macrocycleStartDate < today).toBe(true)
     expect(coaching.targetEvent.date).toBe(race.date)
+  })
+
+  it.each([0, 1, 2, 3, 4, 5, 6])('archives a previous plan the app can read, generated %i days on', (offset) => {
+    const later = generateDemoDataset({ now: new Date(NOW.getTime() + offset * 86_400_000) }) as Record<string, unknown>
+    const previous = later['coaching/superseded/demo-previous-plan.json'] as { weeks: unknown[] } | undefined
+    if (previous) expect(previous.weeks.length).toBeLessThanOrEqual(MAX_BOOTSTRAP_WEEKS)
   })
 })

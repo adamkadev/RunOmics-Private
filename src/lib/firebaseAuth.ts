@@ -12,7 +12,7 @@ import { getClientApp } from './firebaseApp'
 
 // Apart from lib/firebase: the owner check runs on every page, and Firestore is 168 KB it does not use.
 
-// Set only by the screenshot build, to sign in without a real Google account; dead code elsewhere.
+// Set only by the e2e and screenshot builds, to sign in without a real Google account; refused on Vercel.
 const AUTH_EMULATOR_HOST = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
 let clientAuth: Auth | undefined
 

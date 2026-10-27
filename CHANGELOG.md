@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Owner e2e, visual checks and project rules (E3, E10, E11). The e2e build signs
+  in a made-up owner through the Firebase Auth emulator and writes to the
+  Firestore emulator, both started by Playwright (Java 21; `e2e/owner.ts`), so
+  the morning check-in, a note with a tag, the HR-unreliable switch, the
+  notification switches and a skipped day (« Sautée », in French) run against
+  the real Firestore rules. Explore's spots to avoid go to that Firestore too,
+  and the in-memory store the e2e build used for them is gone.
+  `next.config.ts` refuses the emulator and blank-map flags on Vercel. A
+  `toHaveScreenshot` suite (`npm run test:visual`, Actions → Visual) checks
+  Today, Analytics' Load and Performance, the Activities and Plan weeks, a
+  run's Charts and Same route, and the share card at 3x, for both athletes in
+  both themes, on a fixed day; `e2e/visual/README.md` says how to update its
+  baselines. A `project-rules` skill gives cloud sessions the repository's
+  standing rules. The demo data no longer archives a six-week plan when
+  generated on a Wednesday, which failed the e2e build that day.
 - Explore fixes and maps in tests (F7, E2). The dark warning for a later
   day's plan is timed at the athlete's usual start hour that day, not now,
   and the session and the dark now reach the worker's ranking at all. A

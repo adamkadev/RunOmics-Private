@@ -14,7 +14,7 @@ const spots = vi.hoisted(() => ({
   setReason: vi.fn(async () => {}),
   setRadius: vi.fn(async () => {}),
 }))
-vi.mock('@/lib/avoidSpots', () => ({ firestoreAvoidSpots: spots, memoryAvoidSpots: () => ({}) }))
+vi.mock('@/lib/avoidSpots', () => ({ firestoreAvoidSpots: spots }))
 
 const AREA: ExploreAreaRef = { id: 'test-area', name: 'Test', version: 'v1', bbox: [-150.05, -0.05, -149.95, 0.05] }
 const CLUSTER = { labelPoint: [-150, 0] as [number, number], center: [-150, 0] as [number, number] }

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import type { Page } from '@playwright/test'
 import { test, expect } from './fixtures'
+import { clearCollection, listDocuments, signInAsOwner } from './owner'
 
 // The e2e build has no MapTiler or OpenRouteService key, so these walk the DOM paths and mock the routing proxy.
 test.use({ viewport: { width: 393, height: 852 } })
@@ -140,6 +141,8 @@ test('a tap on the map sets the loop’s start there', async ({ page }) => {
 })
 
 test('Mark a spot, then a tap on the map adds its row, and the row offers its size', async ({ page }) => {
+  await signInAsOwner(page)
+  await clearCollection('avoidSpots')
   await mockLoops(page)
   await page.goto('/activities?view=map&explore=route&km=8')
   const panel = page.getByTestId('route-generator')
@@ -159,6 +162,11 @@ test('Mark a spot, then a tap on the map adds its row, and the row offers its si
   await expect(sizes.getByRole('button', { name: '80 m' })).toHaveAttribute('aria-pressed', 'true')
   await sizes.getByRole('button', { name: '150 m' }).click()
   await expect(sizes.getByRole('button', { name: '150 m' })).toHaveAttribute('aria-pressed', 'true')
+
+  await expect.poll(async () => (await listDocuments('avoidSpots')).map((spot) => spot.fields.radiusM?.integerValue)).toEqual(['150'])
+  await page.reload()
+  await panel.getByRole('button', { name: /^Route options/ }).click()
+  await expect(panel.getByTestId('route-avoid-spot')).toHaveCount(1)
 })
 
 test('a tap on a quartier opens its sheet', async ({ page }) => {
