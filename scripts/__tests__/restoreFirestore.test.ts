@@ -7,12 +7,14 @@ import { COLLECTIONS, describePlan, planRestore, readBackup } from '../restore_f
 const byName = (name: string) => COLLECTIONS.find((c) => c.name === name)!
 
 describe('restore_firestore', () => {
-  it('covers notes, check-ins, route names and avoid spots, from the files the nightly sync commits', () => {
+  it('covers notes, check-ins, route names, avoid spots and shoe picks, from the files the nightly sync commits', () => {
     expect(COLLECTIONS.map((c) => [c.name, c.file])).toEqual([
       ['activityNotes', 'activity_notes.json'],
       ['wellness', 'wellness.json'],
       ['routeNames', 'route_names.json'],
       ['avoidSpots', 'avoid_spots.json'],
+      ['runShoes', 'shoe_choices.json'],
+      ['shoeSettings', 'shoe_choices.json'],
     ])
   })
 
@@ -46,6 +48,8 @@ describe('restore_firestore', () => {
     )
     expect((spots.create as [string, unknown][]).map(([id]) => id)).toEqual(['ok', 'dried'])
     expect(spots.invalid).toBe(2)
+    expect(planRestore(byName('runShoes'), { 1: { gearId: 'a1' }, 2: { gearId: 'not/an id' } }, new Map()).invalid).toBe(1)
+    expect(planRestore(byName('shoeSettings'), { default: { gearId: 'a1' }, other: { gearId: 'a1' } }, new Map()).invalid).toBe(1)
   })
 
   it('reports counts only, never a document', () => {

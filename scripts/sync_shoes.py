@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -14,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from data_directory import get_data_dir
 from garmin.client import GarminAuthError, GarminClient
 from garmin.gear import fetch_shoe_gear, write_shoes_json
+from repository.history_file import HistoryFileError, read_history, write_history
 
 
 def main() -> int:
@@ -31,6 +33,9 @@ def main() -> int:
     except GarminAuthError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+
+    if not args.dry_run:
+        _record_checked()
 
     if not shoes:
         print("No shoe gear found on Garmin Connect.")
@@ -55,6 +60,17 @@ def main() -> int:
         print(f"\n{output_path} already up to date.")
 
     return 0
+
+
+def _record_checked() -> None:
+    """In sync_meta.json, not shoes.json: a nightly date there would commit the shoe list every night."""
+    path = get_data_dir() / "sync_meta.json"
+    try:
+        meta = read_history(path)
+    except HistoryFileError:
+        return
+    if meta:
+        write_history(path, {**meta, "shoesCheckedAt": datetime.now(timezone.utc).isoformat()})
 
 
 def _parse_args() -> argparse.Namespace:

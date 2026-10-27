@@ -33,6 +33,7 @@ from typing import Any
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from .step_warnings import warn
 from repository.history_file import read_history, write_history
 
 _OUT_PATH = get_data_dir() / "vo2max_history.json"
@@ -108,7 +109,7 @@ def _fetch_months(client: GarminClient, start: date, today: date) -> dict[str, d
                 client.get_max_met_monthly, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
-            print(f"  Warning: VO2max {window_start:%Y-%m}…{window_end:%Y-%m} failed: {exc}")
+            warn("VO2max history", f"VO2max {window_start:%Y-%m}…{window_end:%Y-%m} failed: {exc}")
             continue
         months.update(normalize_max_met(payload))
 
@@ -123,7 +124,7 @@ def _fetch_days(client: GarminClient, today: date) -> dict[str, dict[str, Any]]:
             lambda: client.get_max_met_daily(start.isoformat(), today.isoformat())
         )
     except GarminAPIError as exc:
-        print(f"  Warning: daily VO2max fetch failed: {exc}")
+        warn("VO2max history", f"daily VO2max fetch failed: {exc}")
         return {}
 
     return {sample["date"]: sample for sample in normalize_max_met(payload).values()}

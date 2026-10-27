@@ -500,6 +500,24 @@ export const fr = {
         idleNights: (nights: number) => `rien d’écrit depuis ${nights} nuit${nights > 1 ? 's' : ''}`,
         closed: (model: string, reason: string) => `${model} fermé : ${reason}`,
       },
+      garminSeries: {
+        title: 'Données Garmin : dernier relevé par série',
+        allCurrent: 'Toutes à jour',
+        stopped: (count: number) => `${count} à l’arrêt`,
+        never: 'Jamais reçue',
+        newest: (date: string) => `Dernier relevé le ${date}`,
+        staleSince: (date: string) => `Rien de nouveau depuis le ${date}`,
+        warnings: (count: number, steps: string) => `Dernière synchro complète : ${count} requête${count > 1 ? 's' : ''} Garmin en échec (${steps})`,
+        names: {
+          trainingStatus: 'Statut d’entraînement',
+          loadBalance: 'Équilibre de charge',
+          restingHr: 'FC au repos',
+          racePredictions: 'Prédictions de course',
+          vo2max: 'VO2max',
+          fitnessAge: 'Âge physique',
+          threshold: 'Seuil',
+        },
+      },
     },
     sync: {
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
@@ -1329,6 +1347,11 @@ export const fr = {
       add: 'Ajouter la chaussure',
       changeInGarmin: (name: string) => `${name} - modifier dans l’app de ta montre`,
       addInGarmin: 'Choisir la chaussure dans l’app de ta montre',
+      change: (name: string) => `${name} - changer de chaussure`,
+      sheetTitle: 'Chaussure de cette sortie',
+      clearPick: 'Reprendre la chaussure de Garmin',
+      countsAfterSync: 'Le kilométrage de la chaussure en tient compte après la prochaine synchro.',
+      saved: 'Enregistré. Le kilométrage suit après la prochaine synchro.',
     },
     weather: {
       conditions: {
@@ -1540,6 +1563,13 @@ export const fr = {
   },
 
   shoes: {
+    defaultShoe: {
+      label: 'Chaussure par défaut',
+      none: 'Aucune',
+      hint: 'Compte chaque sortie sans chaussure côté Garmin, dès la première utilisation de la paire. Le kilométrage suit après la prochaine synchro.',
+      saved: 'Enregistré. Le kilométrage suit après la prochaine synchro.',
+    },
+    listCheckedAt: (date: string) => `Liste des chaussures mise à jour depuis Garmin le ${date}`,
     tracked: (km: string) => `${km} km au compteur`,
     addLabel: 'Ajouter une paire dans l’app de ta montre',
     edit: 'Modifier la paire',

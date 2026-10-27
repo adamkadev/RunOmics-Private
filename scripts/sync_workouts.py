@@ -15,6 +15,7 @@ import httpx
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
 from garmin.retry import retry_transient
+from garmin.step_warnings import warn
 from data_directory import get_data_dir
 from processing.garmin_workout import (
     build_workout_steps,
@@ -319,7 +320,7 @@ def _collect_scheduled(
         try:
             data = retry_transient(client.get_calendar_month, year, month)
         except (GarminAPIError, httpx.HTTPError) as exc:
-            print(f"  Warning: calendar {year}-{month:02d} failed: {exc}")
+            warn("planned workouts", f"calendar {year}-{month:02d} failed: {exc}")
             continue
 
         fetched_months.add((year, month))
@@ -387,7 +388,7 @@ def _build_entries(
                 details_cache[workout_id] = retry_transient(fetch, workout_id)
                 time.sleep(_RATE_LIMIT_PAUSE)
             except (GarminAPIError, httpx.HTTPError) as exc:
-                print(f"  Warning: workout {workout_id} detail failed: {exc}")
+                warn("planned workouts", f"workout {workout_id} detail failed: {exc}")
                 details_cache[workout_id] = None
 
         detail = details_cache[workout_id]

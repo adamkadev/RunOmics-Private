@@ -23,6 +23,7 @@ import { GlowRow } from './GlowRow'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { RecentErrors } from './RecentErrors'
 import { ScheduledJobs } from './ScheduledJobs'
+import { GarminSeriesStatus, type GarminSeriesProps } from './GarminSeriesStatus'
 import { ConnectedMark, GarminTile } from './GarminMark'
 import { NotificationsForm } from './NotificationsForm'
 import { BuildInfo } from './BuildInfo'
@@ -46,11 +47,12 @@ interface Props {
   device?: SyncDevice
   zones?: Zones
   privateSite?: boolean
+  garminSeries?: GarminSeriesProps
 }
 
 export const ATHLETE_HREF = '/athlete'
 
-export function SettingsClient({ lastSyncedAt, activityCount, device, zones, privateSite = false }: Props) {
+export function SettingsClient({ lastSyncedAt, activityCount, device, zones, privateSite = false, garminSeries }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
   // Signed out from the first render (no Firebase), a page cached hours ago would not hydrate on a relative time.
   const mounted = useMounted()
@@ -175,6 +177,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, zones, pri
       <Section title={t.settings.sections.diagnostics}>
         <RecentErrors user={user} />
         <ScheduledJobs user={user} />
+        {garminSeries && <GarminSeriesStatus {...garminSeries} />}
       </Section>
 
       <button
