@@ -40,7 +40,7 @@ export function CollapsibleNote({ label, className, testId, children }: { label:
           aria-controls={id}
           aria-label={label}
           onClick={() => setOpen((was) => !was)}
-          className={cn(className, 'absolute inset-0 flex cursor-pointer items-start justify-end rounded-[inherit] text-muted-foreground')}
+          className={cn(className, 'absolute inset-0 flex flex-row cursor-pointer items-start justify-end rounded-[inherit] text-muted-foreground')}
           data-testid="note-toggle"
         >
           <ChevronDown size={14} aria-hidden className={cn('mt-[calc((1lh-14px)/2)] shrink-0 transition-transform', open && 'rotate-180')} />
