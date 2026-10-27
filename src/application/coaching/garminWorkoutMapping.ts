@@ -1,5 +1,6 @@
 import type {
   CoachingPlan,
+  CoachingWorkoutType,
   NumberRange,
   TargetEvent,
   WorkoutBlock,
@@ -164,6 +165,33 @@ function applyEndCondition(step: GarminExecutableStep, target: WorkoutTarget): v
   step.endConditionValue = null
 }
 
+const EASY_TYPES: ReadonlySet<CoachingWorkoutType> = new Set(['easy', 'recovery', 'long_run'])
+
+const HEART_RATE_TEXT = /\b(?:heart[- ]rate|HR|FC|bpm|cardio)\b|fréquence cardiaque|\bz(?:one)?\s*(?:FC\s*)?[1-5]\b/i
+
+const withoutHeartRateText = (lines: readonly string[]) => lines.filter((line) => !HEART_RATE_TEXT.test(line))
+
+/** An HR-only step keeps its zone: it is the step's one target, as a return to running prescribes it. */
+function easySegment(segment: WorkoutSegment): WorkoutSegment {
+  const target = { ...segment.target }
+  if (target.paceSecPerKm) {
+    delete target.hrBpm
+    delete target.hrZone
+  }
+  return { ...segment, target, ...(segment.notes ? { notes: withoutHeartRateText(segment.notes) } : {}) }
+}
+
+/** Each HR line is one more screen to scroll on the watch, for a run the pace already guides. */
+export function withoutEasyHeartRate(workout: WorkoutPrescription): WorkoutPrescription {
+  if (!EASY_TYPES.has(workout.type)) return workout
+  return {
+    ...workout,
+    description: withoutHeartRateText([workout.description])[0] ?? '',
+    ...(workout.notes ? { notes: withoutHeartRateText(workout.notes) } : {}),
+    blocks: workout.blocks.map((block) => block.kind === 'repeat' ? { ...block, steps: block.steps.map(easySegment) } : easySegment(block)),
+  }
+}
+
 function stepDescription(segment: WorkoutSegment): string {
   const notes = [...(segment.notes ?? [])]
   if (segment.target.paceSecPerKm && segment.target.hrBpm) {
@@ -227,7 +255,8 @@ export function garminWorkoutName(title: string): string {
   return title.replaceAll('′', "'").replaceAll('″', '"')
 }
 
-export function toGarminWorkoutPayload(workout: WorkoutPrescription): GarminWorkoutPayload {
+export function toGarminWorkoutPayload(prescription: WorkoutPrescription): GarminWorkoutPayload {
+  const workout = withoutEasyHeartRate(prescription)
   const steps: GarminWorkoutStep[] = []
   let order = 1
   for (const block of workout.blocks) {

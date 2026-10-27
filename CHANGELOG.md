@@ -25,6 +25,8 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   (a bare date), or the run warns.
 - To send operator alerts to the operator: `OPS_PUSH_URL` and `OPS_PUSH_SECRET` on the second deployment, and the
   same `OPS_PUSH_SECRET` on the owner's. Unset, they go to the deployment's own devices as before.
+- **Needs** `npm run coach:sync-garmin -- --apply` and `npm run coach:sync-garmin:lamiaa -- --apply`, to replace
+  the easy runs already on the watches with ones carrying no heart rate.
 - A data repository's Vercel build now fails unless the site is private with a 32-character `SESSION_SECRET`.
 - Optional: `GEMINI_BACKFILL_MODEL` replaces the backfill pool (`GEMINI_MODEL` now replaces the main pool only);
   `RUNOMICS_DATA_SOURCE=github` reads the data repository at run time.
@@ -197,6 +199,11 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   description, and the talk test goes in the week's focus.
 - **No stop signals.** When the guidance says "no stop signals", the planner writes no stop rule, and a draft, a
   weekly review's ADJUST or REPLAN, or a run's evaluation carrying a stop rule or a symptom warning is refused.
+- **Easy runs on the watch carry no heart rate.** An easy, recovery or long run sent to Garmin keeps its pace
+  target and steps but drops the "HR zone 2" step note, a heart-rate target riding on a paced step, and any line
+  of its description or notes naming a heart rate or zone. Quality sessions and the Plan Heart rate tile are
+  unchanged. **Needs** `npm run coach:sync-garmin -- --apply` (and `coach:sync-garmin:lamiaa -- --apply`) to
+  replace the easy runs already on the watch.
 - Controlled-threshold heart rates come from each athlete's LTHR; without one, no controlled threshold session
   is written.
 - Bootstrap reads `coaching/guidance.md` from the data workspace and records its hash, and takes `--days`,
