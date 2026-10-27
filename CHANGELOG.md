@@ -20,6 +20,12 @@ All notable changes to this project are documented in this file.
   now with a mouse drag too; a swipe that starts on a map or a sideways
   scroller is left to it, and a vertical scroll or the sheet's drag-down never
   pages.
+- Explore's route generator always allows trails: the "Trails OK" switch
+  (« Sentiers OK ») is gone from the route options, and in daylight forest
+  paths, dirt and grass cost nothing on any day, a quality day and the day
+  before one included. After dark loops still keep to streets; the climb
+  budgets (flat for the reps, 12 m/km the day before a quality session, 20
+  on an easy run) are unchanged.
 - Easy runs on the watch carry no heart rate. An easy, recovery or long run sent
   to Garmin keeps its pace target and steps but drops the "HR zone 2" step note,
   a heart-rate target riding on a paced step, and any line of its description or
@@ -449,12 +455,11 @@ All notable changes to this project are documented in this file.
 - Monday's digest sends the coach's focus whole, on its own line, instead
   of cutting it at 60 characters.
 
-- Explore's loops keep to runnable ground: mud, dirt, grass, steps and
-  forest paths cost more than new streets can earn, steep climbs count on
+- Explore's loops keep to runnable ground: steep climbs count on
   every loop, and each session has a climb budget (flat for reps, 12 m/km
   the day before them and on a recovery run, 15 on a long run, 20 on an
-  easy one). A loop that would finish after dusk keeps to streets, and
-  the panel names the sunset. "Trails OK" opens the trails in daylight.
+  easy one). A loop that would finish after dusk keeps off mud, dirt, grass,
+  steps and forest paths, and the panel names the sunset.
   The panel shows the budget, each loop's climb against it and its share
   on trails. The owner can mark spots to avoid (a fallen tree, a flooded
   path), which ORS is asked to route around (those within reach, and not

@@ -363,7 +363,7 @@ describe('scoreRoutes, routeStart and routePlan', () => {
     descentM: null,
     waytypes: [],
   })
-  const prefs = { avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false, trailsOk: false }
+  const prefs = { avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false }
 
   it('measures new ground against every run, best first', async () => {
     const { send } = await loaded()

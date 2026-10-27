@@ -152,12 +152,10 @@ it, on a public one only the owner, 12 batches a minute per caller. Each request
 first") or 0.15, `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully and
 other roads half, and `wClimb` 0.25. Trail share counts steps, soft ground on any way (unpaved, dirt,
 ground or mud, sand, grass, ice) and paths or tracks without a paved surface (gravel half); `wTrail` is
-1.5, 0 with **Trails OK** (off by default; it does not apply on a quality day or the day before one), and
-6 more whenever the run would start before sunrise or end after sunset less 15 min (NOAA's solar
+0 in daylight, on any day, and 6 whenever the run would start before sunrise or end after sunset less 15 min (NOAA's solar
 equations at the start, the run timed from now at the easy pace, 6:00/km without one; for a later
 day's plan, from the athlete's usual start hour that day, the median of the last 20 runs' starts within
-the part of the day Garmin scheduled), which Trails OK
-never lifts. Steep share counts climbs of 7-10 % half and steeper ones in full, and descents too on a
+the part of the day Garmin scheduled). Steep share counts climbs of 7-10 % half and steeper ones in full, and descents too on a
 long run. The climb budget comes from the day's session (see
 [Explore loops](coaching-and-metrics.md#explore-loops)). "Flat for the reps", on by default when the
 day's session is a quality one, makes `wClimb` 0.5 and adds `0.4·(1 − traffic-free share)`, traffic-free

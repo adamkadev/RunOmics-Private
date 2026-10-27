@@ -136,7 +136,7 @@ describe('createExploreEngine', () => {
     await engine.loadArea(REF)
     const adding = engine.addTracks(REF, tracks(['a']))
     const one = engine.coverage(REF, { home: null })
-    const two = engine.scoreRoutes(REF, { candidates: [], targetM: 5000, prefs: { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false, trailsOk: false } })
+    const two = engine.scoreRoutes(REF, { candidates: [], targetM: 5000, prefs: { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false } })
     await flush()
     expect(engine.unsent(REF, ['a'])).toEqual([])
 
@@ -237,7 +237,7 @@ describe('addTracks', () => {
 describe('coverage, scoreRoutes and routeStart', () => {
   it('pass their options through, after the area is loaded', async () => {
     const { engine, workers } = setup()
-    const prefs = { avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false, trailsOk: false }
+    const prefs = { avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false }
 
     await engine.coverage(REF, { activityIds: ['a'], home: [1, 2], homeFromTracks: false })
     await engine.scoreRoutes(REF, { candidates: [], targetM: 8000, prefs })
