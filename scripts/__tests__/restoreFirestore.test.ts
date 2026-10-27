@@ -7,7 +7,7 @@ import { COLLECTIONS, describePlan, planRestore, readBackup } from '../restore_f
 const byName = (name: string) => COLLECTIONS.find((c) => c.name === name)!
 
 describe('restore_firestore', () => {
-  it('covers notes, check-ins, route names, avoid spots and shoe picks, from the files the nightly sync commits', () => {
+  it('covers notes, check-ins, route names, avoid spots, shoe picks, races and goals, from the files the nightly sync commits', () => {
     expect(COLLECTIONS.map((c) => [c.name, c.file])).toEqual([
       ['activityNotes', 'activity_notes.json'],
       ['wellness', 'wellness.json'],
@@ -15,7 +15,21 @@ describe('restore_firestore', () => {
       ['avoidSpots', 'avoid_spots.json'],
       ['runShoes', 'shoe_choices.json'],
       ['shoeSettings', 'shoe_choices.json'],
+      ['raceEntries', 'race_entries.json'],
+      ['goalEntries', 'goal_entries.json'],
     ])
+  })
+
+  it('restores a race, a hidden Garmin race and a season, and skips one the rules would refuse', () => {
+    const races = planRestore(byName('raceEntries'), {
+      a: { name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'A', targetSeconds: 2700 },
+      'garmin-uuid-1': { garminKey: 'uuid-1', removed: true },
+      bad: { name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'D' },
+    }, new Map())
+    expect([(races.create as [string, unknown][]).map(([id]) => id), races.invalid]).toEqual([['a', 'garmin-uuid-1'], 1])
+
+    const goals = planRestore(byName('goalEntries'), { 2027: { targets: { '10k': 2700 } }, 2026: { removed: true }, next: { targets: {} } }, new Map())
+    expect([(goals.create as [string, unknown][]).map(([id]) => id).sort(), goals.invalid]).toEqual([['2026', '2027'], 1])
   })
 
   it('writes what Firestore lacks or holds differently, and leaves alone what it has and the backup does not', () => {

@@ -52,6 +52,21 @@ export const COLLECTIONS = [
     key: 'settings',
     valid: (id, doc) => id === 'default' && isGearId(doc.gearId),
   },
+  {
+    name: 'raceEntries',
+    file: 'race_entries.json',
+    key: 'races',
+    valid: (_id, doc) =>
+      (doc.removed === true && typeof doc.garminKey === 'string') ||
+      (typeof doc.name === 'string' && doc.name.length > 0 && doc.name.length <= 80 && DATE.test(doc.date) &&
+        isFiniteNumber(doc.distanceKm) && doc.distanceKm >= 1 && doc.distanceKm <= 250 && ['A', 'B', 'C'].includes(doc.priority)),
+  },
+  {
+    name: 'goalEntries',
+    file: 'goal_entries.json',
+    key: 'goals',
+    valid: (id, doc) => /^20\d{2}$/.test(id) && (doc.removed === true || isObject(doc.targets)),
+  },
 ]
 
 function canonical(value) {
