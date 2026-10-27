@@ -73,13 +73,3 @@ export function parseWorkoutStructure(name: string, durationSecs?: number): Work
 
   return null
 }
-
-export const EFFORT_ZONE_BY_TYPE: Partial<Record<ActivityType, string>> = {
-  Base: 'Z2',
-  Tempo: 'Z3',
-  Threshold: 'Z4',
-  VO2Max: 'Z5',
-  Anaerobic: 'Z5',
-  Sprint: 'Z5',
-  Race: 'Z4-Z5',
-}

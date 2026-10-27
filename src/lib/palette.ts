@@ -140,8 +140,6 @@ export const HUE = {
   sheetInk:      '#0e1612',
 } as const
 
-export type Hue = keyof typeof HUE
-
 export function rgbTriplet(hex: string): [number, number, number] {
   const h = hex.replace('#', '')
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h

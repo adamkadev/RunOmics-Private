@@ -3,7 +3,6 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { Pill } from '@/components/ui/Pill'
-import { ChartCardHead } from '@/components/ui/ChartCard'
 import { BackButton } from '@/components/ui/BackButton'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { ShareButton } from '@/components/activity/ShareButton'
@@ -32,12 +31,6 @@ describe('the 44 pt hit area', () => {
 
     expect(screen.getByRole('button', { name: 'Filter' }).className).toContain('hit-44')
     expect(screen.getByText('Label').className).not.toContain('hit-44')
-  })
-
-  it('wraps the ⓘ in a chart head', () => {
-    render(<ChartCardHead title="Load" footnote="How load is counted." />)
-
-    expect(screen.getByRole('button', { name: t.analytics.aboutChart }).className).toContain('hit-44')
   })
 
   it('wraps the back link, Share and Save', () => {

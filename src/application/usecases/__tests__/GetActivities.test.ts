@@ -26,7 +26,6 @@ function activity(overrides: Partial<Activity> = {}): Activity {
       [2.3, 48.8],
       [2.31, 48.81],
     ],
-    polyline: 'encoded',
     paceSamples: [300, 305],
     hrSamples: [148, 152],
     cadenceSamples: [170, 172],
@@ -77,7 +76,7 @@ describe('getActivitySummaries', () => {
     getAllActivities.mockReturnValue([activity()])
     const summary = getActivitySummaries()[0]!
 
-    for (const key of ['route', 'polyline', 'paceSamples', 'hrSamples', 'cadenceSamples', 'elevationProfile', 'splits']) {
+    for (const key of ['route', 'paceSamples', 'hrSamples', 'cadenceSamples', 'elevationProfile', 'splits']) {
       expect(summary).not.toHaveProperty(key)
     }
   })

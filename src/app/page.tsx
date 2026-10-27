@@ -35,7 +35,7 @@ export default async function DashboardPage() {
   await loadData()
   // One date for the whole render, in the athlete's zone when one is set: the server's UTC date is off around midnight.
   const today = appTodayIso()
-  const data = getDashboardData(today)
+  const data = getDashboardData()
   const athlete = getAthleteProfile()
   const lastSyncedAt = getLastSyncedAt()
   const trainingStatus = await getTrainingStatus()

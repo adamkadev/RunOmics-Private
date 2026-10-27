@@ -127,8 +127,7 @@ not counted in the tally.
 
 ## The Plan's single workout shape
 
-The Plan has exactly one workout presentation (`PlannedWorkoutRow` and
-`PlannedWorkoutSheet`) and it must not care where a session came from. A Garmin planned
+The Plan has exactly one workout presentation (`PlannedWorkoutCard`) and it must not care where a session came from. A Garmin planned
 workout, a coach prescription, and a coach prescription already synchronised to Garmin are
 the same thing to an athlete looking at their week, so all three are normalised through
 `planWorkoutView` and rendered identically.
@@ -189,7 +188,7 @@ declined to rate are left out.
   `GetShoeWearAlerts`, `GetOverreachingAlerts`, `GetStaleSyncAlert`) — there is nothing to
   compare against yet, so the first call only bootstraps the stored state.
 - **`QueryActivities` maps down to `ActivitySummary`** so neither the SSR page nor the
-  paginated API response ever ships per-sample arrays to the client. `activitySummary()` drops
+  paginated API response ever ships per-sample arrays to the client. `toActivitySummary()` drops
   the route, sample and split arrays that make up most of an activity's weight; anything
   crossing the server/client boundary for a list row or card should go through it first.
 - **Other training is never an `Activity`.** Strength, cycling and the rest are
@@ -198,7 +197,7 @@ declined to rate are left out.
   heart rate and load stay on the server); the coach gets `otherTraining`, the minutes of the
   last 7 and 28 days and each session of the 28, which is null without one, so a context with
   none reads and hashes as before. The Monday digest adds last week's time to its volume line.
-- **`raceDistances` lives in the domain**, not beside its use case, because the charts need
+- **`RACE_DISTANCE_KM` lives in the domain** (`src/domain/race/distances.ts`), not beside a use case, because the charts need
   the kilometre table at render time and importing it from the use case would drag the
   `fs`-backed repository into the client bundle.
 
@@ -334,7 +333,7 @@ There is no fallback in either direction: neither key ever stands in for the oth
 | | `GEMINI_API_KEY` | `GEMINI_COACH_API_KEY` |
 |---|---|---|
 | What it powers | The deployed AI surfaces — Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The coaching CLI's `--advisor gemini` (`npm run coach`), which runs locally; the default manual path needs no key |
-| `.env.local` | yes | only for `--advisor gemini` |
+| Local env file | yes, in `.env.local` | only for `--advisor gemini`, in the coach's `.env.<profile>.local` |
 | Vercel | **yes** — the surfaces are server-rendered and the cron routes call Gemini | **no** — nothing deployed calls the coach |
 | GitHub Actions | not directly: the workflows only `curl` the deployed `/api/internal/*` routes, which use the deployment's own key | **no** — no workflow runs a coaching generation |
 
@@ -491,7 +490,7 @@ kept once *per worker per build* — and Query Insights recorded 163 executions 
 `collection("aiInsights").get()`, about 360 documents each, roughly 59k reads against a 50k/day
 free tier. A direct `doc(id).get()` costs one read per page instead of the whole collection per
 worker, and correctness no longer depends on memory being shared by processes that do not share
-it. `listCachedHashes` needs the hash rather than mere presence — an entry written from facts
+it. `listCachedKeys` needs the hash rather than mere presence — an entry written from facts
 that have since changed is one the pages already ignore, so the backfill must pick it up again
 rather than skip it forever — and scopes itself to a document-ID range over the surface prefix,
 since document IDs are `<surface>_<locale>` and already indexed. The locale sits at the end, so

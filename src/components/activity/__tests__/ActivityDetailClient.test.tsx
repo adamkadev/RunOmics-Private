@@ -186,6 +186,19 @@ describe('ActivityDetailClient', () => {
     }
   })
 
+  it('opens the Overview with the best efforts when the run holds a ranked one, and ends it with them otherwise', () => {
+    const activity = { ...ACTIVITY, bestEfforts: { '5k': 1_200 } } as ActivityDetailView
+    const extras = <div data-testid="extras" />
+    const before = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+    const { unmount } = renderDetail({ activity, extras, qualifiedEfforts: [{ key: '5k', label: '5K', rank: 2 }] })
+    expect(before(screen.getByTestId('best-efforts'), screen.getByTestId('extras'))).toBe(true)
+    unmount()
+
+    renderDetail({ activity, extras, qualifiedEfforts: [] })
+    expect(before(screen.getByTestId('extras'), screen.getByTestId('best-efforts'))).toBe(true)
+  })
+
   it('opens on the tab the URL names', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
     renderDetail()

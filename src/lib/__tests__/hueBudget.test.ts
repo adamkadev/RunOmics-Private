@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ACTIVITY_TYPES, type ActivityType } from '@/domain/activity/types'
-import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
-import { CHART_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
+import { CHART_COLORS, TRAINING_STATUS_COLORS, sessionZone, zoneColor } from '@/lib/colors'
 import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT } from '@/lib/accent'
 import { rgbTriplet } from '@/lib/palette'
 import { TOKEN_BLOCKS } from '@/lib/themeTokens'
@@ -38,7 +37,7 @@ function hueFamily(hex: string): string {
 }
 
 const TYPES = ACTIVITY_TYPES
-const typeHue = (type: ActivityType) => ACTIVITY_TYPE_STYLE[type].chartColor
+const typeHue = (type: ActivityType) => zoneColor(sessionZone({ type }))
 
 describe('activity type hue budget', () => {
   it('spends the zone families, and no other, across the seven types', () => {

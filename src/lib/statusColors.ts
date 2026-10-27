@@ -36,9 +36,3 @@ export const STATUS = {
   silver: { text: 'text-[#c3ccd6]', dot: 'bg-[#c3ccd6]' },
   bronze: { text: 'text-[#b06a3b]', dot: 'bg-[#b06a3b]' },
 } as const
-
-export const PROJECTION_TONE: Record<'ahead' | 'on_track' | 'behind', string> = {
-  ahead:    STATUS.success.text,
-  on_track: STATUS.progress.text,
-  behind:   STATUS.warning.text,
-}

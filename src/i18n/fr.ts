@@ -719,7 +719,6 @@ export const fr = {
   analytics: {
     title: 'Analyses',
 
-    aboutChart: 'Ce que mesure ce graphique',
     // « Forme » reste réservé à la TSB ; l’onglet de la charge s’appelle Charge.
     tabs: {
       fitness: 'Charge',
@@ -1229,9 +1228,6 @@ export const fr = {
       } as Record<string, string>,
       prBadge: 'RP',
       rankBadge: (rank: number) => `#${rank}`,
-    },
-    achievements: {
-      title: 'Exploits de cette sortie',
     },
     newGround: {
       title: 'Nouveau terrain',
@@ -2091,12 +2087,6 @@ export const fr = {
       pace: (range: string) => `${range} /km`,
       recovery: (clock: string) => `${clock} récup`,
       walk: (clock: string) => `${clock} marche`,
-    },
-    raceFooter: {
-      targetTime: (clock: string) => `cible ${clock}`,
-      primaryTarget: 'principal',
-      tuneUp: 'préparation',
-      blockEndsHere: 'fin de bloc',
     },
     weekPurpose: {
       prePlan: 'Avant le plan',

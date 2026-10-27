@@ -966,7 +966,6 @@ def _activity(date: str, description: str) -> ActivityData:
         avg_heart_rate=150,
         rpe=None,
         comment="",
-        polyline=None,
         route=None,
         elevation_gain=None,
         aer_training_effect=None,

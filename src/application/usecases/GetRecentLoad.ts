@@ -23,7 +23,7 @@ export interface RecentLoadDay {
 
 /**
  * The seven-day load against the watch's safe range, from the same pair
- * Analytics' Load card reads (`getLoadPairs`).
+ * Analytics' Load card reads (`getLoadSeries`).
  */
 export interface LoadReading {
   acute: number

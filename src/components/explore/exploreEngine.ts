@@ -4,7 +4,6 @@ import { selectTracks } from './trackBuffers'
 import {
   areaKey,
   type AddedTracks,
-  type ClusterTrackRef,
   type CoverageOptions,
   type ExploreRequestType,
   type ExploreResponse,
@@ -31,7 +30,6 @@ export interface ExploreEngine {
    */
   addTracks(ref: ExploreAreaRef, tracks: TrackBuffers): Promise<AddedTracks>
   /** The worker fetches the cluster's tracks itself and adds the runs of `index`. */
-  fetchClusterTracks(ref: ExploreAreaRef, clusterId: string, index: readonly ClusterTrackRef[]): Promise<AddedTracks>
   coverage(ref: ExploreAreaRef, options: CoverageOptions): Promise<AreaCoverage>
   /** Best first; new ground is measured against every run sent, whatever the filters. */
   scoreRoutes(ref: ExploreAreaRef, request: ScoreRoutesRequest): Promise<ScoredRoute[]>
@@ -167,24 +165,6 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
     }
   }
 
-  async function fetchClusterTracks(
-    ref: ExploreAreaRef,
-    clusterId: string,
-    index: readonly ClusterTrackRef[],
-  ): Promise<AddedTracks> {
-    await loadArea(ref)
-    const key = areaKey(ref)
-    const known = sentTo(key)
-    const wanted = index.filter((r) => !known.has(r.id)).map(({ routeIdx, id, date }) => ({ routeIdx, id, date }))
-    if (wanted.length === 0) return { added: [] }
-
-    const result = await call<'fetchClusterTracks'>({ type: 'fetchClusterTracks', areaKey: key, clusterId, index: wanted })
-    // Runs without a track in this cluster (treadmill, other places) are
-    // settled too: asking again would download the cluster again for nothing.
-    for (const { id } of wanted) known.add(id)
-    return result
-  }
-
   async function coverage(ref: ExploreAreaRef, options: CoverageOptions): Promise<AreaCoverage> {
     await loadArea(ref)
     const { activityIds, home, homeFromTracks } = options
@@ -222,7 +202,6 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
   return {
     loadArea,
     addTracks,
-    fetchClusterTracks,
     coverage,
     scoreRoutes,
     routeStart,

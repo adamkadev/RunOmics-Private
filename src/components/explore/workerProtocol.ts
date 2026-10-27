@@ -21,14 +21,6 @@ export function areaKey(ref: Pick<ExploreAreaRef, 'id' | 'version'>): string {
   return `${ref.id}:${ref.version}`
 }
 
-/** `/api/map/routes` keys its tracks by route index, which shifts with every new run; the activity id never does. */
-export interface ClusterTrackRef {
-  routeIdx: number
-  id: string
-  /** 'YYYY-MM-DD', or an ISO timestamp (only its first 10 characters are kept). */
-  date: string
-}
-
 /** Two flat buffers, so the tracks cross to the worker by transfer instead of as 200 000 small arrays to clone. */
 export interface TrackBuffers {
   ids: string[]
@@ -76,7 +68,6 @@ export interface RoutePlanRequest {
 export type ExploreRequestBody =
   | { type: 'loadArea'; ref: ExploreAreaRef }
   | ({ type: 'addTracks'; areaKey: string } & TrackBuffers)
-  | { type: 'fetchClusterTracks'; areaKey: string; clusterId: string; index: ClusterTrackRef[] }
   | ({ type: 'coverage'; areaKey: string } & CoverageOptions)
   | ({ type: 'scoreRoutes'; areaKey: string } & ScoreRoutesRequest)
   | ({ type: 'routeStart'; areaKey: string } & RouteStartRequest)
@@ -97,7 +88,6 @@ export interface ExploreResults {
   /** The main thread needs the shapes for MapLibre. */
   loadArea: ExploreAreaFile
   addTracks: AddedTracks
-  fetchClusterTracks: AddedTracks
   coverage: AreaCoverage
   /** Best first. */
   scoreRoutes: ScoredRoute[]

@@ -246,7 +246,7 @@ function guideRows(generatedAt: Date): RowData[] {
     { section: 'Usage', item: 'intended_audience', description: 'Athlete, running coach, or LLM-based training analysis' },
     { section: 'Usage', item: 'missing_values', description: 'Blank cells mean the source did not provide a reliable value.' },
     { section: 'Usage', item: 'units', description: 'Units are included in column names. Pace and finish times remain numeric seconds for analysis.' },
-    { section: 'Privacy', item: 'location_data', description: 'Route coordinates and encoded polylines are intentionally excluded.' },
+    { section: 'Privacy', item: 'location_data', description: 'Route coordinates are intentionally excluded.' },
     { section: 'Privacy', item: 'raw_samples', description: 'Raw heart-rate, pace, cadence, and elevation arrays are excluded; useful summaries are exported instead.' },
     { section: 'Notes', item: 'comment_and_tags', description: 'comment and tags are the notes and tags typed on each activity in the app. notes_status is "included" on every row of a complete export; "unavailable" means the notes store could not be read, so a blank comment does not mean there was no note: export again.' },
     { section: 'Caveat', item: 'daily_plan_completion', description: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.' },
