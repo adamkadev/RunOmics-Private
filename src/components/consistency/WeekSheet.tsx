@@ -1,15 +1,16 @@
 'use client'
 
-import type { CSSProperties } from 'react'
-import { Check } from 'lucide-react'
+import { useState, type CSSProperties } from 'react'
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { Sheet as BottomSheet } from '@/components/ui/Sheet'
 import { CrossTrainingList } from '@/components/crossTraining/CrossTraining'
+import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { mondayOf, weekSheet, type ConsistencyView, type SheetDay, type SheetRow, type WeekSheet as Sheet } from './consistencyView'
+import { mondayOf, sheetMonths, shiftMonth, weekSheet, type ConsistencyView, type SheetDay, type SheetRow, type WeekSheet as Sheet } from './consistencyView'
 
 function dayStyle(day: SheetDay): CSSProperties {
   if (day.runs > 0) return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
@@ -41,63 +42,107 @@ function weekRangeLabel(start: string): string {
   return formatDateRange(start, isoDate(addDays(new Date(`${start}T00:00:00`), 6)), { year: 'never' })
 }
 
-function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
+const MONTH_BUTTON =
+  'hit-44 flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40'
+
+interface MonthPaging {
+  onPrev: () => void
+  onNext: () => void
+  canPrev: boolean
+  canNext: boolean
+  direction: 'forward' | 'backward' | null
+}
+
+function Calendar({ sheet, target, paging }: { sheet: Sheet; target: number; paging: MonthPaging }) {
   const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
   const columns = 'grid grid-cols-[repeat(7,minmax(0,1fr))_44px] items-center'
+  const s = t.consistency.sheet
+  const swipe = useSwipeNavigation(paging.onPrev, paging.onNext, { canPrev: paging.canPrev, canNext: paging.canNext })
   return (
     // A fill, never a card or glass; its corner is concentric with the sheet's (47 - 22).
-    <div className="flex flex-col gap-0.5 rounded-[25px] bg-[var(--fill-4)] px-3 py-2" data-testid="week-calendar">
-      <div className={cn(columns, 'text-center text-[11px] text-subtle')} aria-hidden>
-        {Array.from({ length: 7 }, (_, i) => (
-          <span key={i}>{narrow.format(new Date(Date.UTC(2024, 0, 1 + i)))}</span>
-        ))}
-        <span>{t.consistency.sheet.runsColumn}</span>
+    <div className="flex flex-col gap-0.5 overflow-hidden rounded-[25px] bg-[var(--fill-4)] px-3 py-2" data-testid="week-calendar" data-month={sheet.month} {...swipe}>
+      <div className="flex items-center justify-between gap-2 pb-0.5">
+        <button type="button" aria-label={s.prevMonth} onClick={paging.onPrev} disabled={!paging.canPrev} className={MONTH_BUTTON}>
+          <ChevronLeft size={16} aria-hidden />
+        </button>
+        <span className="text-[13px] font-semibold text-foreground" aria-live="polite" data-testid="week-calendar-month">
+          {formatDate(`${sheet.month}-01`, { precision: 'month', style: 'full', year: 'auto' })}
+        </span>
+        <button type="button" aria-label={s.nextMonth} onClick={paging.onNext} disabled={!paging.canNext} className={MONTH_BUTTON}>
+          <ChevronRight size={16} aria-hidden />
+        </button>
       </div>
-      {sheet.rows.map((row) => (
-        <div
-          key={row.start}
-          className={cn(columns, 'h-9 rounded-full', row.selected && 'bg-[var(--fill-3)]')}
-          data-testid="calendar-row"
-          data-selected={row.selected || undefined}
-          aria-label={weekRangeLabel(row.start)}
-        >
-          {row.days.map((day) => (
-            <span key={day.date} className={cn('flex items-center justify-center', !day.inMonth && 'opacity-50')}>
-              <span
-                className={cn(
-                  'relative box-border flex size-[30px] items-center justify-center rounded-full text-[11.5px] tabular-nums',
-                  day.runs > 0 || day.others > 0 || day.today ? 'font-semibold' : 'text-muted-foreground',
-                  day.today && 'state-today',
-                )}
-                style={dayStyle(day)}
-                data-runs={day.runs || undefined}
-                data-others={day.others || undefined}
-                data-today={day.today || undefined}
-                data-planned={day.planned || undefined}
-              >
-                {day.day}
-                {day.others > 0 && (
-                  <span
-                    aria-hidden
-                    className="absolute bottom-[3px] left-1/2 size-[5px] -translate-x-1/2 rounded-full"
-                    style={{ background: day.runs > 0 ? 'var(--accent-foreground)' : 'var(--zone-1)' }}
-                  />
-                )}
-              </span>
-            </span>
+      <div
+        key={sheet.month}
+        className="flex flex-col gap-0.5"
+        style={paging.direction ? { animation: `var(--animate-cal-${paging.direction})` } : undefined}
+      >
+        <div className={cn(columns, 'text-center text-[11px] text-subtle')} aria-hidden>
+          {Array.from({ length: 7 }, (_, i) => (
+            <span key={i}>{narrow.format(new Date(Date.UTC(2024, 0, 1 + i)))}</span>
           ))}
-          <RunsChip row={row} target={target} />
+          <span>{t.consistency.sheet.runsColumn}</span>
         </div>
-      ))}
+        {sheet.rows.map((row) => (
+          <div
+            key={row.start}
+            className={cn(columns, 'h-9 rounded-full', row.selected && 'bg-[var(--fill-3)]')}
+            data-testid="calendar-row"
+            data-selected={row.selected || undefined}
+            aria-label={weekRangeLabel(row.start)}
+          >
+            {row.days.map((day) => (
+              <span key={day.date} className={cn('flex items-center justify-center', !day.inMonth && 'opacity-50')}>
+                <span
+                  className={cn(
+                    'relative box-border flex size-[30px] items-center justify-center rounded-full text-[11.5px] tabular-nums',
+                    day.runs > 0 || day.others > 0 || day.today ? 'font-semibold' : 'text-muted-foreground',
+                    day.today && 'state-today',
+                  )}
+                  style={dayStyle(day)}
+                  data-runs={day.runs || undefined}
+                  data-others={day.others || undefined}
+                  data-today={day.today || undefined}
+                  data-planned={day.planned || undefined}
+                >
+                  {day.day}
+                  {day.others > 0 && (
+                    <span
+                      aria-hidden
+                      className="absolute bottom-[3px] left-1/2 size-[5px] -translate-x-1/2 rounded-full"
+                      style={{ background: day.runs > 0 ? 'var(--accent-foreground)' : 'var(--zone-1)' }}
+                    />
+                  )}
+                </span>
+              </span>
+            ))}
+            <RunsChip row={row} target={target} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
 export function WeekSheet({ view, weekStart, today, onClose }: { view: ConsistencyView; weekStart: string; today: string; onClose: () => void }) {
   const s = t.consistency.sheet
-  const sheet = weekSheet(view, weekStart, today)
+  const [paged, setPaged] = useState<{ month: string; direction: 'forward' | 'backward' } | null>(null)
+  const sheet = weekSheet(view, weekStart, today, paged?.month)
+  const months = sheetMonths(view, today)
 
-  if (!sheet) return null
+  if (!sheet || !months) return null
+  const page = (delta: number) => {
+    const month = shiftMonth(sheet.month, delta)
+    if (month < months.first || month > months.last) return
+    setPaged({ month, direction: delta > 0 ? 'forward' : 'backward' })
+  }
+  const paging: MonthPaging = {
+    onPrev: () => page(-1),
+    onNext: () => page(1),
+    canPrev: sheet.month > months.first,
+    canNext: sheet.month < months.last,
+    direction: paged?.direction ?? null,
+  }
   const { week } = sheet
   const title = s.title(formatDate(week.start, { style: 'bare' }))
   const hit = sheet.status === 'hit'
@@ -124,7 +169,7 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
             {hit ? s.hit : sheet.status === 'under' ? s.under : s.current}
           </span>
         </div>
-        <Calendar sheet={sheet} target={view.target} />
+        <Calendar sheet={sheet} target={view.target} paging={paging} />
         {others.length > 0 && (
           <div className="flex flex-col gap-0.5 px-1" data-testid="week-cross-training">
             <p className="flex items-baseline justify-between gap-3 text-[13px]">

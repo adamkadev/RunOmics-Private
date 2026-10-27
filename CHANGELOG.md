@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Swipe between months. The week sheet opened from Progress → Consistency gets
+  a month header with arrows (« Mois précédent », « Mois suivant ») and pages
+  with a left or right swipe, from the first week shown to this month, the week
+  staying picked out where it falls. Plan's Month and Week swipe the same way,
+  now with a mouse drag too; a swipe that starts on a map or a sideways
+  scroller is left to it, and a vertical scroll or the sheet's drag-down never
+  pages.
 - Explore's route generator always allows trails: the "Trails OK" switch
   (« Sentiers OK ») is gone from the route options, and in daylight forest
   paths, dirt and grass cost nothing on any day, a quality day and the day

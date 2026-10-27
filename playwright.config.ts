@@ -20,12 +20,12 @@ export default defineConfig<AppOptions>({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(layout|sparse|a11y)\.spec\.ts/ },
     // Safari at the athlete's phone, where text past an edge shows first; reduced motion skips waiting for animations.
-    { name: 'iphone', use: iphone, testMatch: /layout\.spec\.ts/ },
+    { name: 'iphone', use: iphone, testMatch: /(layout|swipe)\.spec\.ts/ },
     // The second athlete's deployment: French, a Forerunner 55's sparse data and a run/walk return, on her phone.
     {
       name: 'sparse-fr',
       use: { ...iphone, baseURL: `http://localhost:${SPARSE_PORT}`, locale: 'fr-FR', appLocale: 'fr' },
-      testMatch: /(layout|dashboard|plan|analytics|sparse|a11y)\.spec\.ts/,
+      testMatch: /(layout|dashboard|plan|analytics|sparse|a11y|swipe)\.spec\.ts/,
     },
   ],
   webServer: [

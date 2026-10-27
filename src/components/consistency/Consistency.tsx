@@ -313,7 +313,7 @@ export function Consistency({ views, today }: { views: Record<ConsistencyRange, 
           </>
         )}
       </div>
-      {week && <WeekSheet view={view} weekStart={week} today={today} onClose={() => setWeek(null)} />}
+      {week && <WeekSheet key={week} view={view} weekStart={week} today={today} onClose={() => setWeek(null)} />}
     </>
   )
 }

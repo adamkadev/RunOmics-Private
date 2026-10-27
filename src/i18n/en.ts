@@ -181,6 +181,8 @@ export const en = {
       current: 'In progress',
       runsColumn: 'runs',
       seeRuns: (runs: number) => (runs === 1 ? 'See the run in Activities' : `See the ${runs} runs in Activities`),
+      prevMonth: 'Previous month',
+      nextMonth: 'Next month',
       close: 'Close',
     },
     empty: 'No runs yet.',
