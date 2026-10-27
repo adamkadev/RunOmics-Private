@@ -558,7 +558,7 @@ describe('a change to the live plan', () => {
       value: { outcome: 'KEEP', reasonCodes: ['ON_PLAN'], summary: 'The plan stands.', evidence: [], changes: [] },
     })
 
-    await new GeminiCoachingAdvisor().reviewWeek({ context: context() })
+    await new GeminiCoachingAdvisor().reviewWeek({ context: context(), effectiveDate: '2026-09-07' })
 
     const request = gemini.generateStructuredJson.mock.calls.at(-1)?.[0] as { systemInstruction: string }
     expect(request.systemInstruction).toContain('Name every workout you add or rewrite by these rules')

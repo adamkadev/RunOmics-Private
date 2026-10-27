@@ -72,7 +72,7 @@ describe('coaching CLI', { timeout: 20_000 }, () => {
     fs.rmSync(path.join(root, 'coaching'), { recursive: true, force: true })
     const output = path.join(root, 'previews')
 
-    const result = spawnSync(process.execPath, nodeArgs('bootstrap', '--days', 'tue,thu,sat,sun', '--runs-per-week', '4', '--data-dir', root, '--out', output), {
+    const result = spawnSync(process.execPath, nodeArgs('bootstrap', '--days', 'tue,thu,sat,sun', '--runs-per-week', '4', '--advisor', 'gemini', '--data-dir', root, '--out', output), {
       cwd: projectRoot,
       encoding: 'utf-8',
       env: { ...process.env, GEMINI_API_KEY: 'general-key', GEMINI_COACH_API_KEY: '', RUNOMICS_DATA_REPO_URL: '' },
@@ -82,6 +82,55 @@ describe('coaching CLI', { timeout: 20_000 }, () => {
     expect(result.stderr).toContain('GEMINI_COACH_API_KEY is not configured')
     expect(fs.existsSync(path.join(root, 'coaching'))).toBe(false)
     expect(fs.existsSync(output)).toBe(false)
+  })
+
+  it('writes the prompt for Claude Code by default, with no API key, and builds the review from the saved reply', () => {
+    const root = workspace()
+    const output = path.join(root, 'previews')
+    const env = { ...process.env, GEMINI_COACH_API_KEY: '', RUNOMICS_DATA_REPO_URL: '' }
+    const referenceDate = new JsonCoachingRepository(root).getCurrentPlan()!.block.startDate
+
+    let result = spawnSync(process.execPath, nodeArgs('weekly-review', '--reference-date', referenceDate, '--data-dir', root, '--out', output), { cwd: projectRoot, encoding: 'utf-8', env })
+
+    expect(result.status).toBe(0)
+    expect(result.stdout).toContain('Hand it to Claude Code')
+    expect(fs.readFileSync(path.join(output, 'coach-prompt.md'), 'utf-8')).toContain('Review the rolling running plan')
+
+    const answer = path.join(root, 'answer.json')
+    fs.writeFileSync(answer, JSON.stringify({ outcome: 'KEEP', reasonCodes: ['ON_PLAN'], summary: 'The plan stands.', evidence: [], changes: [] }))
+    result = spawnSync(process.execPath, nodeArgs('weekly-review', '--reference-date', referenceDate, '--data-dir', root, '--out', output, '--from-answer', answer), { cwd: projectRoot, encoding: 'utf-8', env })
+
+    expect(result.status).toBe(0)
+    expect(result.stdout).toContain('KEEP: The plan stands.')
+    const preview = fs.readdirSync(output).find((file) => file.endsWith('.json'))!
+    expect(JSON.parse(fs.readFileSync(path.join(output, preview), 'utf-8'))).toMatchObject({ kind: 'weekly_review', decision: { provenance: { source: 'manual' } } })
+  })
+
+  it('asks Gemini for a review only when told to', () => {
+    const root = workspace()
+    const output = path.join(root, 'previews')
+
+    const result = spawnSync(process.execPath, nodeArgs('weekly-review', '--advisor', 'gemini', '--data-dir', root, '--out', output), {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+      env: { ...process.env, GEMINI_COACH_API_KEY: '', RUNOMICS_DATA_REPO_URL: '' },
+    })
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain('GEMINI_COACH_API_KEY is not configured')
+    expect(fs.existsSync(path.join(output, 'coach-prompt.md'))).toBe(false)
+  })
+
+  it('refuses an advisor it does not know, and a prompt file alongside Gemini', () => {
+    const root = workspace()
+    const run = (...args: string[]) => spawnSync(process.execPath, nodeArgs('weekly-review', '--data-dir', root, ...args), {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+      env: { ...process.env, RUNOMICS_DATA_REPO_URL: '' },
+    })
+
+    expect(run('--advisor', 'openai').stderr).toContain('Unknown --advisor openai')
+    expect(run('--advisor', 'gemini', '--from-answer', 'answer.json').stderr).toContain('drop --prompt-out and --from-answer')
   })
 
   it('tells bootstrap the guidance kept in the data workspace when no guidance file is given', () => {

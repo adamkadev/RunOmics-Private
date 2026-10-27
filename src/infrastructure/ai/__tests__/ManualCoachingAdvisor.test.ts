@@ -2,9 +2,12 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { BootstrapRequest } from '@/application/ports/CoachingAdvisor'
+import type { Activity } from '@/domain/activity/types'
+import type { BootstrapRequest, WeeklyReviewRequest } from '@/application/ports/CoachingAdvisor'
 import { buildCoachingContext } from '@/application/coaching/context'
-import { ManualCoachingAdvisor, renderManualPrompt } from '../ManualCoachingAdvisor'
+import { plan } from '@/domain/coaching/__tests__/fixtures'
+import { ADAPTATION_READING_INSTRUCTION } from '../coachingRules.generated'
+import { ManualCoachingAdvisor, renderManualPrompt, renderReviewPrompt } from '../ManualCoachingAdvisor'
 
 let workspace: string
 
@@ -18,6 +21,29 @@ afterEach(() => {
 
 const promptPath = () => path.join(workspace, 'coach-prompt.md')
 const answerPath = () => path.join(workspace, 'answer.json')
+
+function context(activities: Activity[] = [], current = plan()) {
+  return buildCoachingContext({
+    activities,
+    plan: current,
+    athlete: {},
+    trainingStatus: null,
+    loadBalance: null,
+    trainingZones: null, trajectories: null,
+    latestVo2max: null,
+    racePredictions: null,
+    goals: [],
+    personalBests: [],
+    upcomingRaces: [],
+    officialResults: [],
+  }, '2026-09-28')
+}
+
+function review(guidance?: string): WeeklyReviewRequest {
+  return { context: context(), effectiveDate: '2026-09-28', ...(guidance ? { guidance } : {}) }
+}
+
+const KEEP = { outcome: 'KEEP', reasonCodes: ['ON_PLAN'], summary: 'The plan stands.', evidence: [], changes: [] }
 
 function request(guidance?: string): BootstrapRequest {
   return {
@@ -131,10 +157,62 @@ describe('ManualCoachingAdvisor', () => {
     expect(fs.readFileSync(promptPath(), 'utf-8')).toContain('too timid')
   })
 
-  it('covers bootstrap only', async () => {
+  it('writes a weekly review prompt and reads the reply back as a recommendation', async () => {
     const advisor = new ManualCoachingAdvisor(promptPath(), answerPath())
+    await expect(advisor.reviewWeek(review())).rejects.toThrow(/answer\.json does not exist/)
 
-    await expect(advisor.evaluateActivity()).rejects.toThrow(/bootstrap only/)
-    await expect(advisor.reviewWeek()).rejects.toThrow(/bootstrap only/)
+    await expect(new ManualCoachingAdvisor(promptPath(), undefined).reviewWeek(review())).rejects.toThrow(/coach-prompt\.md/)
+    fs.writeFileSync(answerPath(), JSON.stringify(KEEP))
+
+    expect(fs.readFileSync(promptPath(), 'utf-8')).toContain('Review the rolling running plan')
+    await expect(advisor.reviewWeek(review())).resolves.toEqual(KEEP)
+  })
+
+  it('asks for a corrected review on disk once the first reply is rejected', async () => {
+    fs.writeFileSync(answerPath(), JSON.stringify(KEEP))
+    const advisor = new ManualCoachingAdvisor(promptPath(), answerPath())
+    await advisor.reviewWeek(review())
+
+    await expect(advisor.reviewWeek(review('Your previous answer was rejected: week past the block'))).rejects.toThrow(/coach-prompt\.md/)
+    expect(fs.readFileSync(promptPath(), 'utf-8')).toContain('week past the block')
+  })
+
+  it('evaluates a run through the same files', async () => {
+    const run = { id: 'run-1', date: '2026-09-27', type: 'Base', distanceKm: 8, durationSeconds: 2_880, paceSecPerKm: 360, avgHeartRate: 140, rpe: 3, splits: null } as Activity
+    const evaluation = { ...review(), context: context([run]), activity: run, prescription: null }
+
+    await expect(new ManualCoachingAdvisor(promptPath(), undefined).evaluateActivity(evaluation)).rejects.toThrow(/coach-prompt\.md/)
+    expect(fs.readFileSync(promptPath(), 'utf-8')).toContain('Completed activity: {"id":"run-1"')
+
+    fs.writeFileSync(answerPath(), JSON.stringify(KEEP))
+    await expect(new ManualCoachingAdvisor(promptPath(), answerPath()).evaluateActivity(evaluation)).resolves.toMatchObject({ outcome: 'KEEP' })
+  })
+})
+
+describe('renderReviewPrompt', () => {
+  it('gives the weeks left in the block rather than a four-week horizon', () => {
+    const prompt = renderReviewPrompt(review())
+
+    expect(prompt).not.toContain('output horizon at four weeks')
+    expect(prompt).toContain('The block ends 2026-10-04')
+    expect(prompt).toContain('[{"startDate":"2026-09-28","endDate":"2026-10-04"}]')
+  })
+
+  it('carries the rules on notes, check-ins and returning to running', () => {
+    const prompt = renderReviewPrompt(review())
+
+    expect(prompt).toContain(ADAPTATION_READING_INSTRUCTION)
+    expect(prompt).toContain('context.wellness carries the athlete\'s morning check-ins')
+  })
+
+  it('answers KEEP once the block has no week left', () => {
+    expect(renderReviewPrompt({ ...review(), effectiveDate: '2026-10-05' })).toContain('The block has no week left, so answer KEEP')
+  })
+
+  it('states the recommendation schema in the dialect a chat reads', () => {
+    const prompt = renderReviewPrompt(review())
+    const schema = JSON.parse(prompt.slice(prompt.indexOf('{', prompt.indexOf('validate against this schema'))))
+
+    expect(schema).toMatchObject({ type: 'object', properties: { outcome: { enum: ['KEEP', 'ADJUST', 'REPLAN'] } } })
   })
 })
