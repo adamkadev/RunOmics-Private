@@ -65,6 +65,7 @@ test('a note with a tag and the HR-unreliable switch save to Firestore, and the 
   expect(saved.hrUnreliable?.booleanValue).toBe(true)
 
   await page.reload()
+  await expect(page.getByTestId('note-row')).toHaveText(t.activity.noteRow.label)
   await page.getByTestId('note-row').click()
   const text = page.getByTestId('note-text')
   await expect(text).toContainText('Strap slipped at 3 km.')

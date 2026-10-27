@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { parseEnv } from 'node:util'
 import { defineConfig, devices } from '@playwright/test'
-import { EMULATORS_COMMAND, FIRESTORE_EMULATOR_HOST } from './e2e/owner'
+import { EMULATORS_COMMAND, AUTH_EMULATOR_HOST } from './e2e/owner'
 
 const PROVISIONED_CHROMIUM = '/opt/pw-browsers/chromium'
 const executablePath =
@@ -50,7 +50,8 @@ export default defineConfig({
           // For the owner Settings capture (e2e/owner.ts).
           {
             command: EMULATORS_COMMAND,
-            url: `http://${FIRESTORE_EMULATOR_HOST}`,
+            url: `http://${AUTH_EMULATOR_HOST}`,
+            wait: { stdout: /All emulators ready/ },
             reuseExistingServer: true,
             timeout: 120_000,
           },

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import type { AppOptions } from './e2e/fixtures'
-import { EMULATORS_COMMAND, FIRESTORE_EMULATOR_HOST } from './e2e/owner'
+import { EMULATORS_COMMAND, AUTH_EMULATOR_HOST } from './e2e/owner'
 
 const PORT = process.env.PORT ?? '3000'
 const SPARSE_PORT = String(Number(PORT) + 1)
@@ -29,10 +29,12 @@ export default defineConfig<AppOptions>({
     },
   ],
   webServer: [
-    // The owner's sign-in and Firestore, for owner.spec and the owner's other flows (e2e/owner.ts); needs Java.
+    // The owner's sign-in and Firestore (e2e/owner.ts); needs Java. A Firestore emulator left over from a killed run
+    // holds its port without Auth: checking Auth's makes the next start fail on that port rather than reuse half of it.
     {
       command: EMULATORS_COMMAND,
-      url: `http://${FIRESTORE_EMULATOR_HOST}`,
+      url: `http://${AUTH_EMULATOR_HOST}`,
+      wait: { stdout: /All emulators ready/ },
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },
