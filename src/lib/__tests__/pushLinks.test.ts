@@ -7,12 +7,12 @@ describe('push links', () => {
   })
 
   it('prefers APP_URL to Vercel’s production domain, and keeps only its https origin', () => {
-    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'runomics.vercel.app')
+    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'demo-project.example.com')
     vi.stubEnv('APP_URL', 'https://run.example.com/')
     expect(appOrigin()).toBe('https://run.example.com')
 
     vi.stubEnv('APP_URL', '')
-    expect(appOrigin()).toBe('https://runomics.vercel.app')
+    expect(appOrigin()).toBe('https://demo-project.example.com')
 
     vi.stubEnv('APP_URL', 'http://localhost:3000')
     expect(appOrigin()).toBeNull()

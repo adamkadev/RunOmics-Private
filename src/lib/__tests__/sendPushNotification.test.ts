@@ -142,11 +142,11 @@ describe('sendPush links and tags', () => {
 
   it('builds the link from Vercel’s production domain when APP_URL is unset', async () => {
     vi.stubEnv('APP_URL', '')
-    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'runomics.vercel.app')
+    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'demo-project.example.com')
 
     await sendPush('training', { title: 'Plan', body: 'Easy run', link: '/plan' })
 
-    expect(message().webpush).toEqual({ fcmOptions: { link: 'https://runomics.vercel.app/plan' } })
+    expect(message().webpush).toEqual({ fcmOptions: { link: 'https://demo-project.example.com/plan' } })
   })
 
   it('sends no link FCM would refuse, and still sends the push', async () => {
