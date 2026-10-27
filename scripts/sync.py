@@ -24,6 +24,7 @@ from garmin.cross_training import sync_cross_training
 from garmin.errors import GarminAPIError, GarminAuthError, GarminTokenExpired
 from garmin.personal_api import KEY_PAGE, PersonalApiClient
 from garmin.fitness_age_history import sync_fitness_age_history
+from garmin.listing_reconcile import Removal, refresh_names, remove_missing_runs
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
 from garmin.recovery_history import sync_recovery_history
@@ -32,10 +33,11 @@ from garmin.threshold_history import sync_threshold_history
 from garmin.training_status import sync_load_balance, sync_training_status
 from garmin.vo2max_history import newest_carried_vo2max, sync_vo2max_from_runs, sync_vo2max_history
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
-from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, write_planned_workouts
+from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, planned_description, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import extract_gear_id, local_start_time, map_activity, parse_hr_zones
+from processing.activity_type import TypeContext, infer_type_with_source
 from processing.type_context import load_type_context
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
@@ -124,16 +126,24 @@ def main() -> int:
         else:
             source = "the Personal API" if personal else "Garmin Connect"
             print(f"Fetching activity list from {source}…")
-            starts = client.get_activity_starts(running_only=not args.all_types)
-            all_ids = list(starts)
+            rows = client.get_activity_rows(running_only=not args.all_types)
+            all_ids = list(rows)
             if not args.dry_run:
                 timed = sum(
                     store.set_start_time(aid, start)
-                    for aid, raw in starts.items()
-                    if (start := local_start_time(raw))
+                    for aid, row in rows.items()
+                    if (start := local_start_time(row.get("startTimeLocal")))
                 )
                 if timed:
                     print(f"Start time filled in on {timed} stored activit{'y' if timed == 1 else 'ies'}.")
+                renamed = refresh_names(
+                    store,
+                    rows,
+                    describe=lambda name, day: planned_description(name, day, planned_store),
+                    retype=lambda run: _retype(run, type_context),
+                )
+                if renamed:
+                    print(f"Name refreshed on {renamed} stored activit{'y' if renamed == 1 else 'ies'}.")
 
             if args.force:
                 new_ids = list(all_ids)
@@ -142,6 +152,7 @@ def main() -> int:
             if args.limit:
                 new_ids = new_ids[: args.limit]
 
+        removal = Removal()
         added = updated = failed = 0
         # Runs the key read whose gear Connect did not answer: stored with the
         # shoe on file, offered to the gear refresh below, and the night counts
@@ -213,6 +224,12 @@ def main() -> int:
         if gear_unanswered:
             failed_steps.append(f"gear of {len(gear_unanswered)} run(s)")
 
+        # Only a whole, unfiltered list says a run is gone; one cut by --limit or --id would read as deletions.
+        if not args.id and not args.limit and not args.dry_run:
+            removal = remove_missing_runs(client, store, rows)
+            if removal.problem:
+                failed_steps.append(removal.problem)
+
         regeared = 0
         if connect and not args.force and not args.id:
             regeared = _refresh_recent_gear(connect, store, skip=set(new_ids) - set(gear_unanswered))
@@ -225,7 +242,9 @@ def main() -> int:
             print(f"\nDry run: {added} would be added, {failed} would fail.")
 
         if not args.dry_run and not args.id:
-            failed_steps += _run_isolated(_post_save_steps(connect, personal, store))
+            failed_steps += _run_isolated(
+                _post_save_steps(connect, personal, store, cross_since=removal.retyped_since())
+            )
 
         if not args.dry_run:
             _write_sync_meta()
@@ -337,7 +356,11 @@ def _run_isolated(steps: list[Step]) -> list[str]:
 
 
 def _post_save_steps(
-    connect: GarminClient | None, personal: PersonalApiClient | None, store: JsonActivityStore
+    connect: GarminClient | None,
+    personal: PersonalApiClient | None,
+    store: JsonActivityStore,
+    *,
+    cross_since: date | None = None,
 ) -> list[Step]:
     """The steps after the activities, each from the API that serves it.
 
@@ -347,7 +370,9 @@ def _post_save_steps(
     own FIT readings carry on.
     """
     recovery_source: ActivitySource = personal or connect
-    cross: list[Step] = [("cross-training", lambda: sync_cross_training(recovery_source, store.get_existing_ids()))]
+    cross: list[Step] = [
+        ("cross-training", lambda: sync_cross_training(recovery_source, store.get_existing_ids(), since=cross_since))
+    ]
     athlete: list[Step] = [("athlete metrics", lambda: _sync_athlete_metrics(connect, personal))]
     recovery: list[Step] = [("recovery history", lambda: sync_recovery_history(recovery_source))]
     if connect is None:
@@ -378,6 +403,23 @@ def _post_save_steps(
         ("load balance", lambda: sync_load_balance(client)),
         ("training plan", lambda: sync_training_plan(client)),
     ]
+
+
+def _retype(run: dict, type_context: TypeContext) -> dict | None:
+    """Without its cached FIT a run keeps its type: inferring from the summary alone would drop Garmin's race flag."""
+    fit_path = _FIT_DIR / f"{run['id']}.fit"
+    parsed = parse_fit(fit_path.read_bytes()) if fit_path.exists() else None
+    if not parsed or not parsed.has_data:
+        return None
+    inference = infer_type_with_source(
+        run.get("description", ""),
+        parsed,
+        hr_zones=run.get("hrZones") or [],
+        duration_seconds=run.get("durationSeconds"),
+        date=run.get("date"),
+        context=type_context,
+    )
+    return {"type": inference.activity_type, "typeSource": inference.source}
 
 
 def _sync_planned_workouts(client: GarminClient, planned_store: PlannedWorkoutStore) -> None:

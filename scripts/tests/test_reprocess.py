@@ -2,11 +2,13 @@
 
 import json
 import sys
+from datetime import datetime
 
 import pytest
 
 import reprocess
 from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap
+from processing.mapper import map_activity, stored_fit_fields
 from repository.json_store import JsonActivityStore
 
 ACTIVITY_ID = "24249913094"
@@ -154,3 +156,43 @@ class TestReprocessVo2max:
         )
 
         assert activity["vo2maxGarmin"] == 48.0
+
+
+def rich_fit():
+    return ParsedFit(
+        route=[[6.1, 49.6], [6.11, 49.61]],
+        heart_rates=list(range(100, 400)),
+        elevation_samples=[float(i % 40) for i in range(300)],
+        elevation_gain_m=42.5,
+        start_time_local=datetime(2026, 9, 5, 7, 30),
+        duration_seconds=1_800,
+        distance_m=5_250.0,
+        aer_training_effect=3.14,
+        ana_training_effect=1.06,
+        calories=410,
+        cadence_spm=172.4,
+        ground_contact_ms=241.0,
+        vertical_oscillation_mm=82.0,
+        vertical_ratio_pct=7.9,
+        stride_length_m=1.02,
+        best_efforts={"1k": 318.0},
+        duration_bests={"60": 290.0},
+        pace_samples=[340.0 + i % 9 for i in range(300)],
+        gap_factor=1.02,
+        gap_samples=[335.0 + i % 7 for i in range(300)],
+        vo2max_garmin=52.0,
+        avg_temperature=18,
+        cadence_samples=[170.0 + i % 5 for i in range(300)],
+        splits=interval_splits(),
+    )
+
+
+def test_reprocess_stores_every_fit_field_as_the_sync_maps_it(reprocess_run):
+    parsed = rich_fit()
+    mapped = map_activity({"activityId": ACTIVITY_ID}, parsed).to_dict()
+
+    activity = reprocess_run(parsed, stored={"paceSecPerKm": mapped["paceSecPerKm"]})
+
+    keys = stored_fit_fields(parsed, mapped["paceSecPerKm"]).keys()
+    assert {"route", "elevationGain", "splits", "gapSamples"} <= set(keys)
+    assert {key: activity[key] for key in keys} == {key: mapped[key] for key in keys}

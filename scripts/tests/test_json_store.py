@@ -205,6 +205,31 @@ class TestJsonActivityStoreSmoke:
         assert june.stat().st_mtime_ns == before
         assert json.loads((tmp_path / "2026-07.json").read_text())["activities"][0]["id"] == "3"
 
+    def test_a_run_refetched_into_another_month_leaves_the_old_one(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        store.upsert(activity_factory("1", "2026-06-30"))
+        store.upsert(activity_factory("2", "2026-06-10"))
+        store.save()
+
+        reloaded = JsonActivityStore(tmp_path)
+        reloaded.upsert(activity_factory("1", "2026-07-01"))
+        reloaded.save()
+
+        assert [a["id"] for a in json.loads((tmp_path / "2026-06.json").read_text())["activities"]] == ["2"]
+        assert [a["id"] for a in json.loads((tmp_path / "2026-07.json").read_text())["activities"]] == ["1"]
+        assert JsonActivityStore(tmp_path).count() == 2
+
+    def test_a_month_left_empty_is_deleted_and_dropped_from_the_index(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        store.upsert(activity_factory("1", "2026-06-30"))
+        store.save()
+
+        store.upsert(activity_factory("1", "2026-07-01"))
+        store.save()
+
+        assert not (tmp_path / "2026-06.json").exists()
+        assert json.loads((tmp_path / "index.json").read_text())["months"] == ["2026-07"]
+
     def test_months_of_the_same_year_land_in_separate_files(self, tmp_path, activity_factory):
         store = JsonActivityStore(tmp_path)
         store.upsert(activity_factory("1", "2026-01-05"))
@@ -281,6 +306,13 @@ class TestUnreadableFilesStopTheStore:
 
         with pytest.raises(HistoryFileError):
             PlannedWorkoutStore(tmp_path)
+
+    def test_one_id_in_two_month_files_is_refused(self, tmp_path):
+        (tmp_path / "2026-06.json").write_text(json.dumps({"activities": [{"id": "1", "date": "2026-06-30"}]}))
+        (tmp_path / "2026-07.json").write_text(json.dumps({"activities": [{"id": "1", "date": "2026-07-01"}]}))
+
+        with pytest.raises(HistoryFileError, match="2026-06.json and 2026-07.json"):
+            JsonActivityStore(tmp_path)
 
     def test_an_absent_directory_is_an_empty_start(self, tmp_path):
         assert JsonActivityStore(tmp_path / "activities").count() == 0

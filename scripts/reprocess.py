@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from data_directory import get_data_dir, get_fit_cache_dir
 from processing.fit_parser import parse_fit
 from processing.activity_type import infer_type_with_source
-from processing.mapper import _decimate_list, _MAX_CHART_POINTS, grade_adjusted
+from processing.mapper import stored_fit_fields
 from processing.type_context import load_type_context
 from repository.json_store import JsonActivityStore
 
@@ -49,28 +49,7 @@ def main() -> int:
         )
         a["type"] = type_inference.activity_type
         a["typeSource"] = type_inference.source
-        if parsed.route:
-            a["route"] = parsed.route
-        a["aerTrainingEffect"] = round(parsed.aer_training_effect, 1) if parsed.aer_training_effect is not None else None
-        a["anaTrainingEffect"] = round(parsed.ana_training_effect, 1) if parsed.ana_training_effect is not None else None
-        a["hrSamples"] = _decimate_list(parsed.heart_rates, _MAX_CHART_POINTS) if parsed.heart_rates else None
-        a["elevationProfile"] = _decimate_list(parsed.elevation_samples, _MAX_CHART_POINTS) if parsed.elevation_samples else None
-        a["calories"] = parsed.calories
-        a["cadenceSpm"] = parsed.cadence_spm
-        a["groundContactMs"] = parsed.ground_contact_ms
-        a["verticalOscillationMm"] = parsed.vertical_oscillation_mm
-        a["verticalRatioPct"] = parsed.vertical_ratio_pct
-        a["strideLengthM"] = parsed.stride_length_m
-        a["bestEfforts"] = parsed.best_efforts or None
-        a["durationBests"] = parsed.duration_bests or None
-        a["paceSamples"] = _decimate_list(parsed.pace_samples, _MAX_CHART_POINTS) if parsed.pace_samples else None
-        a["gapSecPerKm"], a["gapSamples"] = grade_adjusted(parsed, a.get("paceSecPerKm"))
-        a["vo2maxGarmin"] = parsed.vo2max_garmin
-        a["avgTemperature"] = parsed.avg_temperature
-        a["cadenceSamples"] = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS) if parsed.cadence_samples else None
-        a["splits"] = [s.to_dict() for s in parsed.splits] if parsed.splits else None
-        if parsed.elevation_gain_m > 0:
-            a["elevationGain"] = parsed.elevation_gain_m
+        a.update(stored_fit_fields(parsed, a.get("paceSecPerKm")))
         store.touch(a["id"])
         updated += 1
 

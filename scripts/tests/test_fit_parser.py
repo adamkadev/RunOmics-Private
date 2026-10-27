@@ -71,6 +71,14 @@ class TestBestEfforts:
 
         assert efforts["1k"] == 240.0
 
+    def test_a_gps_jump_is_capped_as_duration_bests_cap_it(self):
+        dists, times = constant_speed_samples(3000.0, 300.0)
+        jump = len(dists) // 2
+        dists = dists[:jump] + [d + 400.0 for d in dists[jump:]]
+        efforts = _best_efforts(dists, times)
+
+        assert efforts["1k"] == 295.8
+
     def test_empty_or_single_sample_returns_nothing(self):
         assert _best_efforts([], []) == {}
         assert _best_efforts([0.0], [0.0]) == {}

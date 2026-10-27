@@ -22,11 +22,9 @@ _NOISE_HALF_SPAN_M = 50.0
 _MAX_ALTITUDE_NOISE_M = 1.0
 
 
-def duration_bests(dists: Sequence[float], times: Sequence[float]) -> dict[str, float]:
-    """Most metres covered in each of DURATIONS_S, keyed by its seconds; `times` is the moving clock."""
+def jump_capped(dists: Sequence[float], times: Sequence[float]) -> tuple[list[float], list[float]]:
+    """Distance from the start with each GPS jump capped at _MAX_SPEED_MS, and the clock made non-decreasing."""
     n = len(dists)
-    if n < 2:
-        return {}
     # A record logged inside a timer pause can sit later on the moving clock than the one after the restart.
     clock = list(times)
     for i in range(1, n):
@@ -35,6 +33,14 @@ def duration_bests(dists: Sequence[float], times: Sequence[float]) -> dict[str, 
     for i in range(1, n):
         step = max(0.0, dists[i] - dists[i - 1])
         capped[i] = capped[i - 1] + min(step, _MAX_SPEED_MS * (clock[i] - clock[i - 1]))
+    return capped, clock
+
+
+def duration_bests(dists: Sequence[float], times: Sequence[float]) -> dict[str, float]:
+    """Most metres covered in each of DURATIONS_S, keyed by its seconds; `times` is the moving clock."""
+    if len(dists) < 2:
+        return {}
+    capped, clock = jump_capped(dists, times)
     out: dict[str, float] = {}
     for window in DURATIONS_S:
         best = _best_distance(capped, clock, window)

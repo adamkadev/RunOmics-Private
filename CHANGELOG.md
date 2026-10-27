@@ -15,6 +15,16 @@ All notable changes to this project are documented in this file.
   its FCM token when it changed or was saved over 30 days ago, keeping its
   switches; Settings says when the device could not be registered. The server
   drops tokens not saved in 270 days.
+- Runs deleted, re-typed or renamed in Garmin Connect follow in the app (R17).
+  After a complete listing, a stored run missing from it moves to
+  `removed_activities.json` (at most 5 a night; a list that looks cut short
+  removes nothing and makes the night partial), a run re-typed to walking
+  lands in Other training, and stored names follow Connect's. Sync data guards
+  (R10): a push validates the data contract first, a run that changes month
+  leaves its old month file, one id in two month files stops the sync, best
+  efforts cap GPS jumps as duration bests do, and the mapper and reprocess
+  share `fit_derived_fields()`. The Forerunner 55 profile stops re-asking
+  Garmin for 18 empty training-status windows every night (G9).
 - The coach's own words reach the app (F1). Plan's phase card names the
   coach's block ("Reprise en douceur") instead of « Préparation générale » and
   adds the week's focus; a planned session's card carries the coach's note,
