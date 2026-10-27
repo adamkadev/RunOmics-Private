@@ -17,7 +17,7 @@ import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import { officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { MIN_REP_SECONDS, repStats, sessionExecution } from '@/domain/activity/sessionExecution'
 import { groupSessions, mainPart, mergeSession } from '@/domain/activity/sessions'
-import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
+import { trimp, hrBoundsOf, type HrBounds } from '@/domain/training/trimp'
 import { loadSeries } from '@/domain/training/loadSeries'
 import { prescriptionsByDate } from '@/application/coaching/autoregulation'
 import { round } from '@/lib/math'
@@ -935,10 +935,7 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
   workbook.subject = 'Training data export for coaching and analysis'
   workbook.title = 'Runomics Training Export'
 
-  const athleteHrBounds: HrBounds = {
-    maxHr: data.athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
-    restingHr: data.athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
-  }
+  const athleteHrBounds = hrBoundsOf(data.athlete)
 
   addDataSheet(workbook, 'Guide', columns(
     { key: 'section', width: 14 }, { key: 'item', width: 28 }, { key: 'description', width: 80, wrap: true },
@@ -1069,10 +1066,7 @@ function csvCell(value: Primitive | undefined): string {
 
 /** Starts with a UTF-8 BOM: without one, Numbers and Excel on a Mac read the file as Mac Roman. */
 export function buildActivitiesCsv(data: TrainingWorkbookData): string {
-  const athleteHrBounds: HrBounds = {
-    maxHr: data.athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
-    restingHr: data.athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
-  }
+  const athleteHrBounds = hrBoundsOf(data.athlete)
   const keys = ACTIVITY_COLUMNS.map((column) => column.key)
   const lines = [keys.join(',')]
   for (const row of activityRows(data, athleteHrBounds)) lines.push(keys.map((key) => csvCell(row[key])).join(','))

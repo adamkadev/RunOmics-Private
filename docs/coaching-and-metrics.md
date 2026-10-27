@@ -166,6 +166,11 @@ declined to rate are left out.
   reflected — VO₂max is not perfectly linear with race time. The reference point is found by
   date, not by counting entries back: the series is sampled monthly and a sample is missing
   for any month with no reading, so its index says nothing about how long ago it was.
+- **TRIMP follows the athlete's sex.** Banister's TRIMP weights heart-rate reserve by
+  0.64·e^(1.92·HRR) for men and 0.86·e^(1.67·HRR) for women, whose lactate rises less steeply
+  with effort. `athlete.json` `sex: "female"` picks the second through `HrBounds`; anything else,
+  or no `sex`, keeps the first. Every load built from TRIMP (fitness, fatigue, form, ACWR,
+  the planned-session estimates and the workbook) moves with it.
 - **Load risk.** Foster monotony = mean(daily load, 7d) / stdev(daily load, 7d), null when
   undefined. Strain has no direction of its own and inherits the worse of ACWR/monotony.
   Garmin's own verdict on its ratio beats re-testing the number against our generic

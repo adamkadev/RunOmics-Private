@@ -69,8 +69,9 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
         {yearData ? (
           <YearView key={yearData.year} yearData={yearData} today={today} block={block} />
         ) : (
-          <section className={cardClass({ className: 'py-12 text-center' })}>
-            <p className="text-sm text-subtle">{t.goals.empty}</p>
+          <section className={cardClass({ className: 'flex flex-col gap-2 py-10 text-center' })} data-testid="goals-empty">
+            <p className="text-sm font-semibold text-foreground">{t.goals.empty}</p>
+            <p className="text-sm text-subtle text-pretty">{t.goals.emptyHow}</p>
           </section>
         )}
       </div>
