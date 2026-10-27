@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
   note's button rather than around it. The share card is back to its state
   before R8: no "Show full route" switch, the whole route drawn, and no map
   credit on the image.
+- E2E's WebKit install gives each of its three apt tries 3 minutes of its own (the step 10, the job 20):
+  one 3-minute budget for all three let a slow mirror fail the job before any retry, red on main since #343.
 - Plan truth (F4). A session's distance counts an untargeted warm-up, cool-down
   or recovery at the athlete's easy pace (their pace zone, else the plan's easy
   range) unless its notes or pace say it is walked, on Plan, Today, the month
