@@ -99,46 +99,21 @@ function nextSession() {
   return { block: plan.block.name, upcoming }
 }
 
-test('Plan names the coach’s block and shows its words, none of them in the page’s HTML', async ({ page, request, t }) => {
+test('Plan names the coach’s block, out of the page’s HTML, and leaves the coach’s words off the session', async ({ page, request, t }) => {
   const { block, upcoming } = nextSession()
   await page.goto('/plan')
   const phase = page.getByTestId('phase-line')
   await expect(phase.getByRole('heading')).toHaveText(block)
   await expect(phase).not.toContainText(t.plan.weekPurpose.generalPreparation)
-  await expect(page.getByTestId('phase-focus')).toBeVisible()
 
   await page.goto(`/plan?date=${upcoming.date}`)
   const card = page.getByTestId(`plan-workout-${upcoming.id}`)
-  await expect(card.getByTestId('coach-note')).toContainText(upcoming.description)
   await expect(card.getByTestId('workout-steps')).toContainText(t.plan.row.walk('1:00'))
+  await expect(card).not.toContainText(upcoming.description)
 
   const html = await (await request.get(`/plan?date=${upcoming.date}`)).text()
   expect(html).not.toContain(block)
   expect(html).not.toContain('minutes de course')
-})
-
-test('Plan folds the coach’s words to their first line, a tap opening and closing each', async ({ page, t }) => {
-  const { upcoming } = nextSession()
-  await page.goto(`/plan?date=${upcoming.date}`)
-  const note = page.getByTestId(`plan-workout-${upcoming.id}`).getByTestId('coach-note')
-  const toggle = note.getByRole('button', { name: t.plan.session.coachNote })
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-  const folded = (await note.boundingBox())!.height
-  const phaseTop = (await page.getByTestId('phase-line').boundingBox())!.y
-
-  await toggle.click()
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-  expect((await note.boundingBox())!.height).toBeGreaterThan(folded)
-  expect((await page.getByTestId('phase-line').boundingBox())!.y).toBe(phaseTop)
-
-  await toggle.click()
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-  expect((await note.boundingBox())!.height).toBe(folded)
-
-  const focus = page.getByTestId('phase-line').getByRole('button', { name: t.plan.session.coachNote })
-  await focus.click()
-  await expect(focus).toHaveAttribute('aria-expanded', 'true')
-  await expect(page).toHaveURL(/\/plan\?/)
 })
 
 test('Today’s session card carries one line of the coach’s words', async ({ page }) => {
@@ -183,15 +158,11 @@ test('Goals with no goal or race says so and points to the editor in Settings', 
   await expect(page).toHaveURL(/\/settings#goals-races$/)
 })
 
-test('Plan says on the session which Run/Walk and pace alerts the watch takes, and no heart rate', async ({ page, t }) => {
-  const plan = read('coaching/current_plan.json') as { weeks: { workouts: { id: string; date: string; structure: { repMinutes: number } }[] }[] }
-  const today = new Date().toLocaleDateString('sv-SE')
-  const upcoming = plan.weeks.flatMap((week) => week.workouts).find((workout) => workout.date > today)!
+test('Plan’s run/walk session carries no watch line and no heart rate', async ({ page, t }) => {
+  const { upcoming } = nextSession()
   await page.goto(`/plan?date=${upcoming.date}`)
   const card = page.getByTestId(`plan-workout-${upcoming.id}`)
-  const s = t.plan.session
-  await expect(card.getByTestId('watch-alerts')).toHaveText(
-    `${s.watchAlerts} ${s.runWalkAlert(`${upcoming.structure.repMinutes}:00`, '1:00')} · ${s.paceAlert(`7:50–8:45 ${t.units.perKm}`)}`,
-  )
+  await expect(card.getByTestId('workout-steps')).toBeVisible()
   await expect(card).not.toContainText(t.units.bpm)
+  await expect(card).not.toContainText('Montre')
 })

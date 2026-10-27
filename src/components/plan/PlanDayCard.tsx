@@ -15,16 +15,13 @@ import { sessionLabel } from '@/lib/activityTitle'
 import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { ButtonLink } from '@/components/ui/Button'
-import { CollapsibleNote } from '@/components/ui/CollapsibleNote'
 import type { PrescriptionDisplayState } from '@/application/coaching/GetCoachingView'
-import type { CoachSessionWords } from '@/application/coaching/GetCoachWords'
 import { exploreRouteHref, planRouteKm } from '@/components/explore/exploreHref'
 import { planPaceSecPerKm } from './planPace'
 import type { PlanWorkoutView } from './planWorkoutView'
 import { kindLabel, type DayKind } from './sessionKind'
 import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
 import { paceLabel, workoutSummary } from './workoutSummary'
-import { watchAlerts, watchAlertsLine } from './watchAlerts'
 
 const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
@@ -53,24 +50,6 @@ function Title({ children }: { children: ReactNode }) {
   return <h2 className="mt-1.5 break-words text-[25px] font-bold leading-tight tracking-[-0.01em] text-foreground text-pretty">{children}</h2>
 }
 
-function CoachNote({ words }: { words: CoachSessionWords }) {
-  return (
-    <div className="mt-2.5 flex flex-col gap-1 rounded-[14px] bg-[var(--background)] px-3 py-2.5" data-testid="coach-note">
-      <span className="text-[11px] text-muted-foreground">{t.plan.session.coachNote}</span>
-      <CollapsibleNote label={t.plan.session.coachNote} className={`flex flex-col gap-0.5 leading-snug ${words.description ? 'text-sm' : 'text-[13px]'}`}>
-        {words.description && <p className="text-sm leading-snug text-foreground text-pretty">{words.description}</p>}
-        {words.notes.length > 0 && (
-          <ul className="flex flex-col gap-0.5 text-[13px] leading-snug text-[var(--text-2)]">
-            {words.notes.map((note, i) => (
-              <li key={i} className="text-pretty">{note}</li>
-            ))}
-          </ul>
-        )}
-      </CollapsibleNote>
-    </div>
-  )
-}
-
 function TargetTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-[3px] rounded-[14px] bg-[var(--background)] px-3 py-2.5" data-testid="plan-target">
@@ -89,14 +68,11 @@ export function PlannedWorkoutCard({
   kind,
   hrZoneBoundsBpm = null,
   exploreAvailable = false,
-  words = null,
 }: {
   workout: PlanWorkoutView
   kind: DayKind
   hrZoneBoundsBpm?: readonly number[] | null
   exploreAvailable?: boolean
-  /** Fetched after load, so the coach's text stays out of the page's HTML. */
-  words?: CoachSessionWords | null
 }) {
   const s = t.plan.session
   const summary = workoutSummary(workout)
@@ -116,7 +92,6 @@ export function PlannedWorkoutCard({
   const hrCap = sessionHrCapBpm(workout.hr, hrZoneBoundsBpm)
   const hrZone = workout.hr?.zone ?? null
   const routeHref = exploreAvailable && kind.type !== 'Race' ? findRouteHref(workout) : null
-  const alerts = structured ? watchAlerts(workout.structure, kind.kind) : null
 
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
@@ -143,13 +118,6 @@ export function PlannedWorkoutCard({
           )}
         </div>
       )}
-      {alerts && (
-        <p className="mt-1 text-[13px] text-[var(--text-2)]" data-testid="watch-alerts">
-          <span className="text-muted-foreground">{s.watchAlerts}</span>{' '}
-          <span className="tabular-nums">{watchAlertsLine(alerts)}</span>
-        </p>
-      )}
-      {words && <CoachNote words={words} />}
       {structured && (
         <div aria-hidden data-testid="intensity-profile" className="mt-2.5 flex h-[44px] items-end gap-[3px]">
           {blocks.map((block, i) => (

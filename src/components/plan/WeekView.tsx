@@ -11,7 +11,6 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { cardClass } from '@/components/ui/Card'
-import { CollapsibleNote } from '@/components/ui/CollapsibleNote'
 import { CHECKPOINT_HREF } from '@/components/checkpoint/checkpointHref'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
@@ -30,13 +29,13 @@ import { blockFitTally, dayFit, type FitTally } from './dayFit'
 import { sessionLabel } from '@/lib/activityTitle'
 import { BlockFinishedCard, ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 import { blockCovers, blockLifecycle } from './blockLifecycle'
-import { sessionWords, useCoachWords, weekFocus } from '@/components/coaching/useCoachWords'
+import { useCoachWords } from '@/components/coaching/useCoachWords'
 import { useSkippedDays } from '@/lib/skippedDays'
 
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
-function PhaseCard({ name, week, total, race, href, focus = null, note = null, tally = null }: { name: string; week: number; total: number; race: string | null; href?: string; focus?: string | null; note?: string | null; tally?: FitTally | null }) {
+function PhaseCard({ name, week, total, race, href, note = null, tally = null }: { name: string; week: number; total: number; race: string | null; href?: string; note?: string | null; tally?: FitTally | null }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
@@ -60,7 +59,6 @@ function PhaseCard({ name, week, total, race, href, focus = null, note = null, t
           <span key={i} data-done={i < week || undefined} className={cn('h-[5px] flex-1 rounded-full', i < week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
         ))}
       </div>
-      {focus && <CollapsibleNote label={t.plan.session.coachNote} className="text-[13px] leading-snug text-[var(--text-2)] text-pretty" testId="phase-focus">{focus}</CollapsibleNote>}
       {tally && <p className="text-xs text-muted-foreground" data-testid="phase-tally">{p.asPlanned(tally.asPlanned, tally.of)}</p>}
       {note && <p className="text-xs text-muted-foreground" data-testid="phase-note">{note}</p>}
     </section>
@@ -206,7 +204,6 @@ export function WeekView({
   const phase = useMemo(() => phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay), [coaching, planPhaseRanges, firstDay])
   const words = useCoachWords(coaching !== null)
   const blockName = phase?.span.key === 'general' ? words?.block.name || null : null
-  const focus = weekFocus(words, firstDay) ?? (blockCovers(block, firstDay) ? words?.block.focus || null : null)
   const race = useMemo(() => {
     const next = planRace(coaching, nextRace, today)
     return next ? raceCountdown(next, today) : null
@@ -273,7 +270,6 @@ export function WeekView({
             kind={kind}
             hrZoneBoundsBpm={hrZoneBoundsBpm}
             exploreAvailable={exploreAvailable}
-            words={workout.state ? sessionWords(words, workout.key, workout.title) : null}
           />
         ))}
       </div>
@@ -306,7 +302,6 @@ export function WeekView({
           total={phase.total}
           race={race}
           href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined}
-          focus={focus}
           note={blockEnds}
           tally={tally}
         />

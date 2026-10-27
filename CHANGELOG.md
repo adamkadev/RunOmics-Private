@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Plan shows less of the coach's text. The phase card keeps its name, week,
+  progress bar and "N of M sessions as planned" without the week's focus under
+  them; a session's card drops its "Coach's note" (« Mot du coach ») and the
+  "Watch: … · Pace …/km" line (« Montre : … »). The coach's words and Today are
+  unchanged.
 - Owner e2e, visual checks and project rules (E3, E10, E11). The e2e build signs
   in a made-up owner through the Firebase Auth emulator and writes to the
   Firestore emulator, both started by Playwright (Java 21; `e2e/owner.ts`), so
