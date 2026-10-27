@@ -16,14 +16,13 @@ export default async function SettingsPage() {
   await loadData()
   const lastSyncedAt = getLastSyncedAt()
   const activityCount = getAllActivities().length
-  const { deviceName, heightCm, weightKg, lthrBpm, maxHrBpm } = getAthleteProfile()
+  const { deviceName, lthrBpm, maxHrBpm } = getAthleteProfile()
 
   return (
     <SettingsClient
       lastSyncedAt={lastSyncedAt}
       activityCount={activityCount}
       device={deviceName ? { name: deviceName } : undefined}
-      body={{ heightCm, weightKg }}
       zones={{ lthrBpm, maxHrBpm }}
       privateSite={isSitePrivate(process.env)}
     />

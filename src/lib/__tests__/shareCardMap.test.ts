@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTE_INSET, bandFencePoints, projectRoute, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { ROUTE_INSET, SHARE_TRIM_M, bandFencePoints, metresBetween, projectRoute, routeFencePoints, simplifyRoute, trimRouteEnds, trimShareRoute, type LngLat } from '@/lib/shareCardMap'
+import type { ShareActivity } from '@/lib/shareCardStats'
 
 /** The widest end marker the card draws, as a radius: the loop's, at the card's 0.85. */
 const MARKER_RADIUS = (11 + 1.5) * 0.85
@@ -88,5 +89,61 @@ describe('the label fences (redesign, Oct 2026)', () => {
   it('runs a line across the card at each band edge', () => {
     const pts = bandFencePoints(32, [80, 300], 16)
     expect(pts).toEqual([[0, 80], [16, 80], [32, 80], [0, 300], [16, 300], [32, 300]])
+  })
+})
+
+describe('trimRouteEnds', () => {
+  const east = (n: number, step = 0.001): LngLat[] => Array.from({ length: n }, (_, i) => [2.35 + i * step, 48.85])
+  const loop: LngLat[] = [...east(30), ...east(30).reverse()]
+
+  it('starts and ends the drawn line at least 250 m from the recorded start and finish', () => {
+    for (const route of [east(40), loop, east(400, 0.00005)]) {
+      const { route: drawn } = trimRouteEnds(route)
+      expect(metresBetween(drawn[0]!, route[0]!)).toBeGreaterThanOrEqual(SHARE_TRIM_M)
+      expect(metresBetween(drawn.at(-1)!, route.at(-1)!)).toBeGreaterThanOrEqual(SHARE_TRIM_M)
+      expect(drawn.length).toBeGreaterThan(1)
+    }
+  })
+
+  it('cuts at the circle, not at the next recorded point', () => {
+    const { route: drawn } = trimRouteEnds(east(40))
+    expect(metresBetween(drawn[0]!, [2.35, 48.85])).toBeLessThan(SHARE_TRIM_M + 1)
+  })
+
+  it('keeps the outer half of a run that never gets 250 m from its start', () => {
+    const short = east(5, 0.0005)
+    const reach = metresBetween(short[0]!, short.at(-1)!)
+    const { route: drawn } = trimRouteEnds(short)
+    expect(metresBetween(drawn[0]!, short[0]!)).toBeGreaterThanOrEqual(reach / 2 - 0.01)
+    expect(drawn.length).toBeGreaterThan(1)
+  })
+
+  it('reports the kept part as shares of the recorded length', () => {
+    const { from, to } = trimRouteEnds(east(41))
+    const total = metresBetween([2.35, 48.85], [2.39, 48.85])
+    expect(from).toBeCloseTo(SHARE_TRIM_M / total, 2)
+    expect(to).toBeCloseTo(1 - SHARE_TRIM_M / total, 2)
+  })
+})
+
+describe('trimShareRoute', () => {
+  const route: LngLat[] = Array.from({ length: 41 }, (_, i) => [2.35 + i * 0.001, 48.85])
+  const run: ShareActivity = {
+    id: '1', date: '2026-09-26', dayOfWeek: 'Saturday', description: 'Strides', distanceKm: 2.9, durationSeconds: 900,
+    paceSecPerKm: 310, avgHeartRate: 150, elevationGain: 10, hrZones: [], route,
+    reps: { count: 2, repSeconds: 60, paceSecPerKm: 250, paces: [250, 250], target: null, windows: [[0.02, 0.04], [0.4, 0.6]] },
+  }
+
+  it('moves each rep onto the trimmed line and drops one run inside the cut', () => {
+    const trimmed = trimShareRoute(run)
+    const { from, to } = trimRouteEnds(route)
+    expect(trimmed.route).toEqual(trimRouteEnds(route).route)
+    expect(trimmed.reps!.windows).toHaveLength(1)
+    expect(trimmed.reps!.windows[0]![0]).toBeCloseTo((0.4 - from) / (to - from))
+  })
+
+  it('leaves a run without GPS as it is', () => {
+    const still = { ...run, route: null }
+    expect(trimShareRoute(still)).toBe(still)
   })
 })

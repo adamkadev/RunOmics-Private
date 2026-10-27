@@ -412,6 +412,23 @@ jobs:
           mv "$RUNNER_TEMP/wellness.json" data/wellness.json
           echo "Backed up $(jq '.entries | length' data/wellness.json) check-in(s)."
 
+      # Explore's avoid spots say where the athlete runs: the log gets counts only.
+      - name: Back up route names and avoid spots
+        if: inputs.dry_run != true
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          set -euo pipefail
+          printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 30 "$APP_URL/api/internal/route-data" -H @- > "$RUNNER_TEMP/route_data.json"
+          jq -e '(.names | type == "object") and (.spots | type == "object")' "$RUNNER_TEMP/route_data.json" > /dev/null
+          jq -S --indent 2 '{names}' "$RUNNER_TEMP/route_data.json" > data/route_names.json
+          jq -S --indent 2 '{spots}' "$RUNNER_TEMP/route_data.json" > data/avoid_spots.json
+          rm "$RUNNER_TEMP/route_data.json"
+          echo "Backed up $(jq '.names | length' data/route_names.json) route name(s) and $(jq '.spots | length' data/avoid_spots.json) avoid spot(s)."
+
       - name: Commit updated data
         id: commit
         env:

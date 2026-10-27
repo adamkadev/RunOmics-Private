@@ -8,10 +8,12 @@ export function useShareCardPrefs(appTheme: ThemeMode, hasRoute: boolean) {
   const [design, setDesign] = useState<ShareDesign>(hasRoute ? 'route' : 'stats')
   const [chosenTheme, setChosenTheme] = useState<ThemeMode | null>(null)
   const [showReps, setShowReps] = useState(true)
+  const [showFullRoute, setShowFullRoute] = useState(false)
   return {
     design, setDesign,
     theme: chosenTheme ?? appTheme,
     setTheme: setChosenTheme,
     showReps, setShowReps,
+    showFullRoute, setShowFullRoute,
   }
 }

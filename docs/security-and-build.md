@@ -38,6 +38,33 @@ own words (the block's name and focus, each week's focus, each session's descrip
 stay out of it: Plan and Today fetch them from `/api/coaching/words` after load, behind the same
 gate as the run notes (`/api/activities/[id]/note`), with `private, no-store`.
 
+Height and weight stay out of the HTML too: Settings fetches them from `/api/athlete/body`, which
+answers the owner only. On a private site, signing out (`DELETE /api/session`) also sends
+`Clear-Site-Data: "cache"`, so the HTTP cache no longer holds pages from the session on a shared
+device. It is only `"cache"`: `"storage"` would also unregister the service worker, and with it the
+phone's pushes. Browsers ignore the header over plain http.
+
+### Owner and viewer
+
+The owner holds the `owner` claim. A viewer is a Google account listed in `RUNOMICS_VIEWERS`. On a
+public site, anyone who is not signed in sees what a viewer sees.
+
+| | Viewer | Owner |
+|---|---|---|
+| Every page, the runs, the maps, records, analytics | Yes | Yes |
+| Run notes and tags (`/api/activities/[id]/note`) | Reads them | Reads and edits them |
+| The coach's words (`/api/coaching/words`) | Yes | Yes |
+| Share cards | Yes, trimmed by default (see [Share card](interface.md#share-card)) | Yes |
+| Explore: generate a loop | Yes, without avoid spots | Yes, around their avoid spots |
+| Route names | The geocoded place only | Their own names, and renames them |
+| Morning check-ins, niggles (`wellness`) | No: the rules refuse the read | Yes |
+| Avoid spots | No: the rules refuse the read | Yes |
+| Height and weight (`/api/athlete/body`) | No | Yes, in Settings |
+| Settings, Sync, the data export, job trace, phone errors | No | Yes |
+| Push notifications | No: only the owner writes a token | Yes |
+
+`/api/session` and `/api/internal/*` are outside the gate; each internal route checks its own secret.
+
 `isSitePrivate()` defaults to off, so the demo builds without any setup. To make sure a real
 athlete's site is never public by mistake, `npm run validate:data` (run by `prebuild`) fails
 any Vercel build (`VERCEL=1`) that has `RUNOMICS_DATA_REPO_URL` set but is missing
@@ -96,6 +123,35 @@ are lockdowns with no exceptions; keep them that way.
 A run's place name asks Nominatim about its first point rounded to 0.01° (about a kilometre),
 never the point itself. Today's forecast is fetched by the server from Open-Meteo, at the runs'
 median start rounded to 0.1°, so it needs no browser allowance, and its URL is never logged.
+
+## Third parties
+
+What leaves the app, and from where:
+
+- **Google Gemini** (server only, `src/lib/gemini.ts`). The nightly insight pass sends a run's figures:
+  distance, time, pace, heart rate and zones, reps and splits, RPE, training effect, elevation and
+  weather. It also sends the planned session and the coach's words, an official result if there is
+  one, and **the athlete's note on the run (its first 300 characters) and its tags**. The coaching CLI
+  sends Gemini its whole coaching context, and only with `--advisor gemini`. That context holds the
+  last 28 days of runs, notes and tags, **check-ins and niggles, weight, height, age and sex**, the
+  injury history, goals, PBs and races. Without the flag, the CLI writes the prompt to a file. No
+  coordinates or routes go to Gemini.
+- **MapTiler** (browser). Styles, tiles, terrain, glyphs and sprites for every map and for the share
+  card's basemap. The token is public (`NEXT_PUBLIC_MAPTILER_TOKEN`), so MapTiler sees which tiles
+  are fetched, that is, the areas being viewed. Reverse geocoding for route and cluster names sends
+  a point rounded to 4 decimals (about 11 m). The name is cached in the browser.
+- **OpenStreetMap Nominatim** (browser). The share card's place name, from the run's first point
+  rounded to 0.01°.
+- **OpenRouteService** (server only, `OpenRouteServiceGateway.ts`). Explore's loop requests: the
+  start point as picked, any via points, the loop length and seed, and the avoid spots near the loop
+  as polygons. Its logs replace every coordinate with `#`.
+- **Firebase** (Google). Auth handles the Google sign-in. Firestore holds what the athletes write
+  (`activityNotes`, `wellness`, `routeNames`, `avoidSpots`), the push tokens and the server's own
+  records (`jobEvents`, `aiInsights`, `aiBudget`, `clientErrors`, `notifications`). FCM delivers the
+  pushes: a title and a body, such as today's session, a run's name and distance, a shoe's
+  kilometres, a PR, form or a Gemini verdict. On the second athlete's deployment, ops pushes are
+  forwarded to the owner's deployment.
+- **Open-Meteo** (server only). Today's forecast, at the runs' median start rounded to 0.1°.
 
 ## Build configuration
 

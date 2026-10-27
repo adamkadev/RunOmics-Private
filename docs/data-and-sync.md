@@ -135,6 +135,25 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   and `GET /api/internal/wellness`, sorted so the commit changes only where an entry did, and
   logs a count, never an entry. The coach falls back to both when Firestore does not answer.
   Neither step can fail the sync.
+- **Route names and avoid spots** (`route_names.json`, `avoid_spots.json`). Also only in Firestore
+  otherwise: one `GET /api/internal/route-data` returns both, sorted by id, and the step writes one
+  file each and logs the two counts. Nothing in the app reads them back; they are there to restore.
+- **Restoring from the backups** (`scripts/restore_firestore.mjs`). Puts `activityNotes`, `wellness`,
+  `routeNames` and `avoidSpots` back from those four files, with the Admin SDK. It is a dry run by
+  default: it reads each collection and reports, per collection, how many documents are missing, how
+  many differ from the backup and how many already match. `--apply` writes the missing and differing
+  ones (a whole-document `set`). It only upserts: a document that is in Firestore but not in the backup
+  stays. A document the rules would refuse is skipped and counted, a missing file is skipped, and a file
+  without its key stops the run. It prints counts only. Run it against one deployment at a time, from a
+  checkout of that athlete's data repository:
+
+  ```sh
+  dotenv -e .env.local -- node scripts/restore_firestore.mjs <data dir>          # dry run
+  dotenv -e .env.local -- node scripts/restore_firestore.mjs <data dir> --apply
+  ```
+
+  The env file needs that project's `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and
+  `FIREBASE_PRIVATE_KEY`; with `FIRESTORE_EMULATOR_HOST` set it writes to the emulator instead.
 - **Duration bests** (`durationBests` on each run, `scripts/processing/pace_profile.py`): the
   most metres covered in 30 s, 1, 2, 3, 5, 10, 20, 30, 60, 90 and 120 min, on the moving clock
   and from the full-resolution records. A step faster than 8 m/s (2:05/km) is capped as a GPS

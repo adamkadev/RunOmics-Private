@@ -3,11 +3,15 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import { t } from '@/i18n'
+import { SHARE_TRIM_M, metresBetween } from '@/lib/shareCardMap'
 import { ShareCardModal } from '../ShareCardModal'
 
 const theme = vi.hoisted(() => ({ resolved: 'dark' }))
 vi.mock('next-themes', () => ({ useTheme: () => ({ resolvedTheme: theme.resolved }) }))
-vi.mock('@/lib/useShareCardMap', () => ({ useShareCardMap: () => ({ image: null, points: null, failed: false }) }))
+const mapped = vi.hoisted(() => ({ routes: [] as unknown[] }))
+vi.mock('@/lib/useShareCardMap', () => ({
+  useShareCardMap: ({ route }: { route: unknown }) => { mapped.routes.push(route); return { image: null, points: null, failed: false } },
+}))
 vi.mock('@/lib/useShareCardGeocode', () => ({ useShareCardGeocode: () => ({ locationName: null }) }))
 // jsdom decodes no image: a chosen photo loads as soon as it is picked.
 // Each draw's run is kept, to see which card the preview drew.
@@ -41,6 +45,7 @@ const checked = (group: string) =>
 
 beforeEach(() => {
   drawn.runs = []
+  mapped.routes = []
   localStorage.clear()
   theme.resolved = 'dark'
   URL.createObjectURL = () => 'blob:photo'
@@ -70,7 +75,7 @@ describe('ShareCardModal', () => {
 
   it('has no accent picker, light-mode switch or thumbnails left', () => {
     open()
-    expect(screen.queryByRole('switch')).toBeNull()
+    expect(screen.getAllByRole('switch')).toEqual([screen.getByRole('switch', { name: t.activity.shareCard.showFullRoute })])
     expect(screen.queryByText('Accent')).toBeNull()
     expect(document.querySelectorAll('canvas')).toHaveLength(1)
   })
@@ -143,7 +148,8 @@ describe('ShareCardModal', () => {
     expect(sheet.className).toContain('max-h-full')
     expect(sheet.className).not.toMatch(/(^|\s)h-full/)
     expect(sheet.className).toContain('rounded-t-[var(--radius-sheet-large)]')
-    expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
+    expect(screen.getByTestId('share-options').nextElementSibling).toBe(screen.getByTestId('share-full-route'))
+    expect(screen.getByTestId('share-full-route').nextElementSibling?.textContent).toContain('Share')
   })
 
   it('is the sheets\' glass, the scroll inside it, the card opaque', () => {
@@ -197,7 +203,7 @@ describe('ShareCardModal', () => {
 
   it('offers no VO₂max badge', () => {
     open()
-    expect(screen.queryByRole('switch')).toBeNull()
+    expect(screen.queryByRole('switch', { name: /VO₂max/ })).toBeNull()
     expect(screen.getByTestId('share-sheet').textContent).not.toContain('VO₂max')
   })
 
@@ -210,8 +216,9 @@ describe('ShareCardModal', () => {
 
     await userEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-checked', 'false')
+    const route = drawn.runs.at(0) as ShareActivity
     expect(lastDrawn().reps).toBeNull()
-    expect(lastDrawn().route).toEqual(REP_RUN.route)
+    expect(lastDrawn().route).toEqual(route.route)
 
     // Still there, and still off, on Stats and Photo, which draw the rep pace too.
     await userEvent.click(screen.getByRole('radio', { name: 'Stats' }))
@@ -234,5 +241,32 @@ describe('ShareCardModal', () => {
     open()
     expect(screen.queryByRole('switch', { name: 'Rep pace' })).toBeNull()
     expect(screen.queryByTestId('share-reps')).toBeNull()
+  })
+
+  it('leaves the first and last 250 m off the map and the drawn route until "Show full route" is on', async () => {
+    open()
+    const start = RUN.route![0]!
+    const finish = RUN.route!.at(-1)!
+    const toggle = screen.getByRole('switch', { name: t.activity.shareCard.showFullRoute })
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    for (const route of [mapped.routes.at(-1), lastDrawn().route] as [number, number][][]) {
+      expect(metresBetween(route[0]!, start)).toBeGreaterThanOrEqual(SHARE_TRIM_M)
+      expect(metresBetween(route.at(-1)!, finish)).toBeGreaterThanOrEqual(SHARE_TRIM_M)
+    }
+
+    await userEvent.click(toggle)
+    expect(mapped.routes.at(-1)).toEqual(RUN.route)
+    expect(lastDrawn().route).toEqual(RUN.route)
+  })
+
+  it('opens trimmed every time, and offers no route switch on a run without GPS', async () => {
+    const first = open()
+    await userEvent.click(screen.getByRole('switch', { name: t.activity.shareCard.showFullRoute }))
+    first.unmount()
+    const again = open()
+    expect(screen.getByRole('switch', { name: t.activity.shareCard.showFullRoute })).toHaveAttribute('aria-checked', 'false')
+    again.unmount()
+    open({ activity: { ...RUN, route: null } })
+    expect(screen.queryByTestId('share-full-route')).toBeNull()
   })
 })

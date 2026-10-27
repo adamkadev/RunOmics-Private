@@ -12,6 +12,7 @@ import {
 import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
 import { useShareCardPrefs } from '@/lib/useShareCardPrefs'
 import { useShareCardMap } from '@/lib/useShareCardMap'
+import { trimShareRoute } from '@/lib/shareCardMap'
 import { useShareCardGeocode } from '@/lib/useShareCardGeocode'
 import { useAccent } from '@/lib/useAccent'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
@@ -56,11 +57,14 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const hasRoute = (activity.route?.length ?? 0) > 1
   const designs = hasRoute ? SHARE_DESIGNS : SHARE_DESIGNS.filter((d) => d !== 'route')
 
-  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps } = useShareCardPrefs(appTheme, hasRoute)
+  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, showFullRoute, setShowFullRoute } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   // Without its reps the card is an easy run's: one colour on the route, the
   // average pace back in the stats.
-  const card = useMemo(() => (showReps || !activity.reps ? activity : { ...activity, reps: null }), [activity, showReps])
+  const card = useMemo(() => {
+    const shown = showReps || !activity.reps ? activity : { ...activity, reps: null }
+    return showFullRoute ? shown : trimShareRoute(shown)
+  }, [activity, showReps, showFullRoute])
   const { locationName } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
   // Measured again once Geist has loaded: the title's lines set the stats'
@@ -68,7 +72,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(card, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints, labels: mapLabels } = useShareCardMap({
-    route: activity.route,
+    route: card.route,
     theme,
     width: W,
     height: H,
@@ -299,6 +303,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               </>
             )}
           </div>
+
+          {hasRoute && (
+            <div data-testid="share-full-route" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
+              <span className="text-foreground" style={{ fontSize: 17 }}>{s.showFullRoute}</span>
+              <Toggle checked={showFullRoute} onChange={setShowFullRoute} label={s.showFullRoute} />
+            </div>
+          )}
 
           {activity.reps && (
             <div data-testid="share-reps" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>

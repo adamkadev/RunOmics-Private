@@ -63,7 +63,10 @@ export async function POST(req: NextRequest) {
 
 /** The answer says whether the site is private, for the page to send the reader to /sign-in. */
 export async function DELETE(req: NextRequest) {
-  const response = NextResponse.json({ private: isSitePrivate(process.env) })
+  const privateSite = isSitePrivate(process.env)
+  // "cache" only: "storage" would also unregister the service worker, and with it the phone's pushes.
+  const headers = privateSite ? { 'Clear-Site-Data': '"cache"' } : undefined
+  const response = NextResponse.json({ private: privateSite }, { headers })
   response.cookies.set(SESSION_COOKIE, '', cookieOptions(req, 0))
   return response
 }
