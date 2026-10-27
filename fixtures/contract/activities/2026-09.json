@@ -55,6 +55,7 @@
       "cadenceSamples": [170.0,172.0,174.0],
       "longestContinuousRunSec": 2650,
       "longestContinuousRunM": 7310.5,
+      "runningSec": 2690,
       "splits": [
         {
           "type": "lap",

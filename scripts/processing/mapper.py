@@ -73,6 +73,7 @@ class ActivityData:
     hr_source: str | None = None
     longest_continuous_run_sec: int | None = None
     longest_continuous_run_m: float | None = None
+    running_sec: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -115,6 +116,7 @@ class ActivityData:
             "cadenceSamples": self.cadence_samples,
             "longestContinuousRunSec": self.longest_continuous_run_sec,
             "longestContinuousRunM": self.longest_continuous_run_m,
+            "runningSec": self.running_sec,
             "splits": [s.to_dict() for s in self.splits] if self.splits else None,
             "gearId": self.gear_id,
             "weather": self.weather,
@@ -191,6 +193,7 @@ def fit_derived_fields(parsed: ParsedFit | None, pace_sec_per_km: float | None) 
         "hr_source": parsed.hr_source,
         "longest_continuous_run_sec": parsed.longest_continuous_run_sec,
         "longest_continuous_run_m": parsed.longest_continuous_run_m,
+        "running_sec": parsed.running_sec,
     }
     if parsed.route:
         fields["route"] = parsed.route
@@ -204,6 +207,7 @@ _FIT_FIELDS = (
     "ground_contact_ms", "vertical_oscillation_mm", "vertical_ratio_pct", "stride_length_m", "best_efforts",
     "duration_bests", "pace_samples", "vo2max_garmin", "avg_temperature", "cadence_samples", "splits",
     "gap_sec_per_km", "gap_samples", "hr_source", "longest_continuous_run_sec", "longest_continuous_run_m",
+    "running_sec",
 )
 
 

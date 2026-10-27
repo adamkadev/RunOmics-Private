@@ -120,7 +120,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   }
 
   function setHrUnreliable(unreliable: boolean) {
-    setDraft(({ hrUnreliable: _, ...rest }) => (unreliable ? { ...rest, hrUnreliable: true } : rest))
+    setDraft((d) => (unreliable ? { ...d, hrUnreliable: true } : { note: d.note, tags: d.tags }))
     setSaveState('idle')
   }
 

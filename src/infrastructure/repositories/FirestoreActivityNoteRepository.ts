@@ -1,6 +1,6 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { withTimeout } from '../withTimeout'
-import { isEmptyNote } from './JsonActivityNoteRepository'
+import { isEmptyNote } from '@/domain/activity/activityNote'
 
 const COLLECTION = 'activityNotes'
 

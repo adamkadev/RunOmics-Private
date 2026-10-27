@@ -202,10 +202,10 @@ class TestReprocessReturnFields:
     def test_hr_source_and_longest_continuous_run_are_filled_in(self, reprocess_run, capsys):
         activity = reprocess_run(ParsedFit(
             duration_seconds=1_800, distance_m=4_000.0, heart_rates=[140], hr_source="external",
-            longest_continuous_run_sec=900, longest_continuous_run_m=2_010.0,
+            longest_continuous_run_sec=900, longest_continuous_run_m=2_010.0, running_sec=1_500,
         ))
 
-        assert (activity["hrSource"], activity["longestContinuousRunSec"], activity["longestContinuousRunM"]) == (
-            "external", 900, 2_010.0,
-        )
+        assert (
+            activity["hrSource"], activity["longestContinuousRunSec"], activity["longestContinuousRunM"], activity["runningSec"]
+        ) == ("external", 900, 2_010.0, 1_500)
         assert "Heart rate by sensor: external 1" in capsys.readouterr().out

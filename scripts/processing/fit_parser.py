@@ -112,6 +112,7 @@ class ParsedFit:
     hr_source: str | None = None
     longest_continuous_run_sec: int | None = None
     longest_continuous_run_m: float | None = None
+    running_sec: int | None = None
 
     @property
     def has_data(self) -> bool:
@@ -272,9 +273,7 @@ def parse_fit(content: bytes) -> ParsedFit:
 
     result.splits = _extract_splits(messages)
     result.hr_source = _hr_source(messages.get("device_info_mesgs", []), has_hr=bool(heart_rates or result.avg_heart_rate))
-    bout = _longest_continuous_run(gait) or _longest_running_splits(result.splits)
-    if bout:
-        result.longest_continuous_run_sec, result.longest_continuous_run_m = bout
+    _add_running_time(result, gait)
     _add_pace_profile(result, records, messages.get("event_mesgs", []))
 
     return result
@@ -345,13 +344,13 @@ def _hr_source(device_infos: list[dict], *, has_hr: bool) -> str | None:
     return "wrist"
 
 
-def _longest_continuous_run(samples: list[tuple[float, float, float | None, float | None]]) -> tuple[int, float] | None:
-    """(seconds, metres) of the longest stretch run without a walk or a stop, by cadence, or by speed without one."""
+def _running_bouts(samples: list[tuple[float, float, float | None, float | None]]) -> list[tuple[float, float]] | None:
+    """(seconds, metres) of each stretch run without a walk or a stop, by cadence, or by speed without one."""
     by_cadence = any(cadence for _, _, cadence, _ in samples)
     if not by_cadence and not any(speed is not None for *_, speed in samples):
         return None
 
-    best = (0, 0.0)
+    bouts: list[tuple[float, float]] = []
     start: tuple[float, float] | None = None
     last: tuple[float, float] | None = None
     previous: tuple[float, float, bool] | None = None
@@ -364,23 +363,43 @@ def _longest_continuous_run(samples: list[tuple[float, float, float | None, floa
                 and (d - previous[1]) / (t - previous[0]) >= _RUNNING_SPEED_MS
             )
             if start is None or last is None or (t - last[0] > _WALK_TOLERANCE_S and not ran_through):
+                if start is not None and last is not None:
+                    bouts.append((last[0] - start[0], last[1] - start[1]))
                 start = (t, d)
             last = (t, d)
-            if last[0] - start[0] > best[0]:
-                best = (last[0] - start[0], last[1] - start[1])
         previous = (t, d, running)
-    return int(round(best[0])), round(max(0.0, best[1]), 1)
+    if start is not None and last is not None:
+        bouts.append((last[0] - start[0], last[1] - start[1]))
+    return bouts
 
 
-def _longest_running_splits(splits: list[ActivitySplit]) -> tuple[int, float] | None:
+def _split_bouts(splits: list[ActivitySplit]) -> list[tuple[float, float]] | None:
     if not splits:
         return None
-    best = current = (0, 0.0)
+    bouts: list[tuple[float, float]] = []
+    current: tuple[float, float] | None = None
     for split in splits:
-        running = split.type in _RUNNING_SPLIT_TYPES
-        current = (current[0] + split.duration_sec, current[1] + split.distance_m) if running else (0, 0.0)
-        best = max(best, current)
-    return best[0], round(best[1], 1)
+        if split.type in _RUNNING_SPLIT_TYPES:
+            current = (current or (0, 0.0))
+            current = (current[0] + split.duration_sec, current[1] + split.distance_m)
+        elif current is not None:
+            bouts.append(current)
+            current = None
+    if current is not None:
+        bouts.append(current)
+    return bouts
+
+
+def _add_running_time(result: ParsedFit, samples: list[tuple[float, float, float | None, float | None]]) -> None:
+    bouts = _running_bouts(samples)
+    if bouts is None:
+        bouts = _split_bouts(result.splits)
+    if bouts is None:
+        return
+    seconds, metres = max(bouts, default=(0, 0.0))
+    result.longest_continuous_run_sec = int(round(seconds))
+    result.longest_continuous_run_m = round(max(0.0, metres), 1)
+    result.running_sec = int(round(sum(bout[0] for bout in bouts)))
 
 
 def _parse_laps(raw_laps: list[dict]) -> list[dict]:

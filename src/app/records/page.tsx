@@ -3,6 +3,7 @@ import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getRacePredictions } from '@/application/usecases/GetRacePredictions'
 import { getMilestones, getNextMilestones } from '@/application/usecases/GetMilestones'
 import { getRecurringRoutes } from '@/application/usecases/GetRecurringRoutes'
+import { getReturnProgress } from '@/application/usecases/GetReturnProgress'
 import { RecordsClient } from '@/components/records/RecordsClient'
 import { appTodayIso } from '@/lib/calendarDate'
 import { EFFORT_LIST_MAX } from '@/components/records/recordsView'
@@ -40,6 +41,7 @@ export default async function RecordsPage() {
         milestones={milestones}
         nextMilestones={nextMilestones}
         recurringRoutes={recurringRoutes}
+        returnProgress={getReturnProgress(today)}
         today={today}
       />
     </div>

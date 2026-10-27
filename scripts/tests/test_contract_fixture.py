@@ -63,6 +63,7 @@ def _parsed() -> ParsedFit:
         hr_source="external",
         longest_continuous_run_sec=2650,
         longest_continuous_run_m=7310.5,
+        running_sec=2690,
     )
 
 

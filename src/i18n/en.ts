@@ -1918,6 +1918,34 @@ export const en = {
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
   },
 
+  // Progress since the end of the latest long break in athlete.json (trainingBreaks).
+  returnProgress: {
+    milestones: {
+      continuous10: 'First 10 minutes non-stop',
+      continuous20: 'First 20 minutes non-stop',
+      continuous30: 'First 30 minutes non-stop',
+      nonstop3k: 'First 3 km without walking',
+      nonstop5k: 'First 5 km without walking',
+      blockCompleted: 'First block completed',
+    },
+    tab: 'Comeback',
+    since: (date: string) => `Since your return on ${date}`,
+    longest: 'Longest non-stop run',
+    reached: 'Reached',
+    next: 'Still ahead',
+    cardTitle: 'Your return',
+    runningPerWeek: 'Minutes running per week',
+    // A bar's label: the week's Monday.
+    weekOf: (date: string) => `Week of ${date}`,
+    minutes: (n: number) => `${n} min`,
+    nothingYet: 'No run since the return yet.',
+    celebration: 'Since your return',
+    push: {
+      title: 'A milestone since your return',
+      body: (label: string) => `${label}!`,
+    },
+  },
+
   pbAlerts: {
     off: (diff: string) => `${diff} off your PR`,
   },

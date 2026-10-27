@@ -97,6 +97,8 @@ export interface Activity {
   /** The longest stretch run without walking or stopping; absent until a reprocess. */
   longestContinuousRunSec?: number | null
   longestContinuousRunM?: number | null
+  /** Time spent running, walk breaks and stops left out; absent until a reprocess. */
+  runningSec?: number | null
   gearId: string | null
   gearPending?: true
   weather: ActivityWeather | null

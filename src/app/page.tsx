@@ -22,6 +22,7 @@ import { TodayBoard } from '@/components/dashboard/TodayBoard'
 import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { ThisWeekCard } from '@/components/dashboard/ThisWeekCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
+import { getReturnProgress } from '@/application/usecases/GetReturnProgress'
 import { findNextSession, sessionCard } from '@/components/dashboard/nextSession'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
@@ -74,7 +75,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <CelebrationOverlay record={mostRecentRecord} aiTake={celebrationTake} />
+      <CelebrationOverlay record={mostRecentRecord} milestone={getReturnProgress(today)?.milestones.at(-1) ?? null} aiTake={celebrationTake} />
 
       <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} today={today} />
       <StaleSyncBanner lastSyncedAt={lastSyncedAt} />

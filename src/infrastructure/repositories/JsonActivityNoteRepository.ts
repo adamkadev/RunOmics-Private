@@ -1,10 +1,7 @@
 import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
 import type { ActivityNote } from './FirestoreActivityNoteRepository'
-
-export function isEmptyNote(note: ActivityNote): boolean {
-  return note.note === '' && note.tags.length === 0 && !note.hrUnreliable
-}
+import { isEmptyNote } from '@/domain/activity/activityNote'
 
 function readNote(raw: unknown): ActivityNote | null {
   if (typeof raw !== 'object' || raw === null) return null

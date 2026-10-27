@@ -32,6 +32,7 @@ const NULLABLE_NUMBERS = [
   'paceSecPerKm', 'avgHeartRate', 'rpe', 'elevationGain', 'aerTrainingEffect', 'anaTrainingEffect',
   'calories', 'cadenceSpm', 'groundContactMs', 'verticalOscillationMm', 'verticalRatioPct',
   'strideLengthM', 'vo2maxGarmin', 'avgTemperature', 'gapSecPerKm', 'longestContinuousRunSec', 'longestContinuousRunM',
+  'runningSec',
 ]
 const NULLABLE_NUMBER_ARRAYS = ['hrSamples', 'elevationProfile', 'paceSamples', 'cadenceSamples', 'gapSamples']
 

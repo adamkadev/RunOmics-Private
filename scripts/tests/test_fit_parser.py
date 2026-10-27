@@ -16,8 +16,8 @@ from processing.fit_parser import (
     _extract_splits,
     _extract_vo2max,
     _hr_source,
-    _longest_continuous_run,
-    _longest_running_splits,
+    _add_running_time,
+    _running_bouts,
     _local_start_time,
     _pace_samples,
     _perpendicular_distance,
@@ -522,47 +522,67 @@ def _gait(segments, *, step=1.0):
     return samples
 
 
-class TestLongestContinuousRun:
+def _longest(samples):
+    return max(_running_bouts(samples))
+
+
+class TestRunningBouts:
     def test_walk_breaks_split_the_bouts_by_cadence(self):
         samples = _gait([(300, 160, 2.2), (60, 110, 1.4), (600, 158, 2.1), (60, 112, 1.3), (240, 162, 2.2)])
 
-        seconds, metres = _longest_continuous_run(samples)
+        seconds, metres = _longest(samples)
 
         assert seconds == pytest.approx(600, abs=2)
         assert metres == pytest.approx(600 * 2.1, abs=5)
+        assert len(_running_bouts(samples)) == 3
 
     def test_a_short_cadence_dropout_does_not_end_the_bout(self):
         samples = _gait([(300, 160, 2.2), (5, 0, 2.2), (300, 160, 2.2)])
 
-        assert _longest_continuous_run(samples)[0] == pytest.approx(605, abs=2)
+        assert _longest(samples)[0] == pytest.approx(605, abs=2)
 
     def test_a_timer_pause_ends_the_bout(self):
         before = _gait([(300, 160, 2.2)])
         after = [(t + 400, d + 700, c, s) for t, d, c, s in _gait([(200, 160, 2.2)])]
 
-        assert _longest_continuous_run(before + after)[0] == pytest.approx(300, abs=2)
+        assert _longest(before + after)[0] == pytest.approx(300, abs=2)
 
     def test_a_smart_recording_gap_covered_at_running_speed_does_not_end_the_bout(self):
         samples = _gait([(300, 160, 2.2)], step=15.0)
 
-        assert _longest_continuous_run(samples)[0] == pytest.approx(285, abs=1)
+        assert _longest(samples)[0] == pytest.approx(285, abs=1)
 
     def test_speed_decides_without_cadence(self):
         samples = _gait([(400, None, 2.1), (90, None, 1.4), (200, None, 2.1)])
 
-        assert _longest_continuous_run(samples)[0] == pytest.approx(400, abs=2)
+        assert _longest(samples)[0] == pytest.approx(400, abs=2)
 
     def test_no_cadence_or_speed_answers_nothing(self):
-        assert _longest_continuous_run([(0.0, 0.0, None, None), (1.0, 2.0, None, None)]) is None
+        assert _running_bouts([(0.0, 0.0, None, None), (1.0, 2.0, None, None)]) is None
 
-    def test_splits_answer_without_records(self):
-        splits = [
+
+class TestRunningTime:
+    def test_the_longest_bout_and_the_time_spent_running(self):
+        parsed = ParsedFit()
+        _add_running_time(parsed, _gait([(300, 160, 2.2), (60, 110, 1.4), (600, 158, 2.1)]))
+
+        assert parsed.longest_continuous_run_sec == pytest.approx(600, abs=2)
+        assert parsed.running_sec == pytest.approx(900, abs=3)
+
+    def test_interval_splits_answer_without_records(self):
+        parsed = ParsedFit(splits=[
             ActivitySplit("interval_warmup", 300, 500.0, 1.6, None),
             ActivitySplit("interval_active", 180, 400.0, 2.2, None),
             ActivitySplit("interval_active", 120, 260.0, 2.2, None),
             ActivitySplit("interval_recovery", 60, 80.0, 1.3, None),
             ActivitySplit("interval_active", 240, 520.0, 2.2, None),
-        ]
+        ])
+        _add_running_time(parsed, [])
 
-        assert _longest_running_splits(splits) == (300, 660.0)
-        assert _longest_running_splits([]) is None
+        assert (parsed.longest_continuous_run_sec, parsed.longest_continuous_run_m, parsed.running_sec) == (300, 660.0, 540)
+
+    def test_nothing_to_read_leaves_the_fields_empty(self):
+        parsed = ParsedFit()
+        _add_running_time(parsed, [])
+
+        assert (parsed.longest_continuous_run_sec, parsed.running_sec) == (None, None)
