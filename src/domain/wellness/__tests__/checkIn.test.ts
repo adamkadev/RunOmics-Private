@@ -7,6 +7,12 @@ describe('readCheckIn', () => {
       .toEqual({ sleep: 4, ill: true, niggle: { site: 'calf', pain: 3 } })
     expect(readCheckIn({ niggle: { site: 'elbow', pain: 3 } })).toBeNull()
   })
+
+  it('keeps a day’s skipped session and its reason, alone or beside the answers', () => {
+    expect(readCheckIn({ skipped: 'ill' })).toEqual({ skipped: 'ill' })
+    expect(readCheckIn({ sleep: 3, skipped: 'life' })).toEqual({ sleep: 3, skipped: 'life' })
+    expect(readCheckIn({ skipped: 'tired' })).toBeNull()
+  })
 })
 
 describe('readCheckInConcerns', () => {

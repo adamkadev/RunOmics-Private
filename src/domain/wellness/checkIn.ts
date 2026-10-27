@@ -21,6 +21,9 @@ export interface Niggle {
   changesRun?: boolean
 }
 
+export const SKIP_REASONS = ['ill', 'rest', 'life'] as const
+export type SkipReason = (typeof SKIP_REASONS)[number]
+
 /** One morning's answers, any of them left out. Every score is 1 worst to 5 best, as in McLean's wellness questionnaire. */
 export interface CheckIn {
   sleep?: number
@@ -30,6 +33,12 @@ export interface CheckIn {
   ill?: boolean
   travel?: boolean
   niggle?: Niggle
+  /** The day's planned session, marked skipped on Plan and why. */
+  skipped?: SkipReason
+}
+
+export function isSkipReason(value: unknown): value is SkipReason {
+  return (SKIP_REASONS as readonly unknown[]).includes(value)
 }
 
 export const WELLNESS_COLLECTION = 'wellness'
@@ -67,11 +76,12 @@ export function readCheckIn(raw: unknown): CheckIn | null {
   if (data.travel === true) entry.travel = true
   const niggle = readNiggle(data.niggle)
   if (niggle) entry.niggle = niggle
+  if (isSkipReason(data.skipped)) entry.skipped = data.skipped
   return isEmptyCheckIn(entry) ? null : entry
 }
 
 export function isEmptyCheckIn(entry: CheckIn): boolean {
-  return CHECK_IN_SCORES.every((field) => entry[field] === undefined) && !entry.ill && !entry.travel && !entry.niggle
+  return CHECK_IN_SCORES.every((field) => entry[field] === undefined) && !entry.ill && !entry.travel && !entry.niggle && !entry.skipped
 }
 
 export function isCompleteCheckIn(entry: CheckIn | null): boolean {

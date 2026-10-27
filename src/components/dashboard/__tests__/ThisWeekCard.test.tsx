@@ -2,7 +2,11 @@ import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { weekTarget, type WeekTargetDay } from '@/domain/training/weekTarget'
 import { t } from '@/i18n'
+import type { SkipReason } from '@/domain/wellness/checkIn'
 import { ThisWeekCard, thisWeekBars } from '../ThisWeekCard'
+
+const skipped = new Map<string, SkipReason>()
+vi.mock('@/lib/skippedDays', () => ({ useSkippedDays: () => skipped }))
 
 const TODAY = '2026-10-20'
 const day = (date: string, d: Partial<WeekTargetDay> = {}): WeekTargetDay => ({ date, ranKm: 0, runs: 0, plannedKm: null, plannedSessions: 0, ...d })
@@ -76,12 +80,21 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
   })
 
   it('draws a day skipped in Plan as a rest stub, and stops counting it', () => {
-    localStorage.setItem('runomics-skipped-days', JSON.stringify(['2026-10-19']))
+    skipped.set('2026-10-19', 'ill')
     render(<ThisWeekCard target={MISSED} today={TODAY} load={null} />)
     expect(screen.getAllByTestId('week-bar')[0]!.dataset.state).toBe('rest')
     expect(screen.queryByTestId('legend-missed')).toBeNull()
     expect(screen.queryByTestId('missed-bar-link')).toBeNull()
-    localStorage.removeItem('runomics-skipped-days')
+    skipped.clear()
+  })
+
+  it('draws a session run the next day as done, its km on the day it was run', () => {
+    const moved = weekTarget([
+      day('2026-10-19', { plannedKm: 10, plannedSessions: 1, type: 'Base' }),
+      day('2026-10-20', { ranKm: 9.5, runs: 1, type: 'Base' }),
+    ], TODAY, null)
+    const bars = thisWeekBars(moved, TODAY, {})
+    expect(bars.map((b) => [b.day.state, b.label])).toEqual([['done', null], ['done', '9.5']])
   })
 
   it('hides the missed key when nothing is missed', () => {

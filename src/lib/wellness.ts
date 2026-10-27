@@ -1,4 +1,4 @@
-import { isCheckInDate, readCheckIn, WELLNESS_COLLECTION, type CheckIn } from '@/domain/wellness/checkIn'
+import { isCheckInDate, isSkipReason, readCheckIn, SKIP_REASONS, WELLNESS_COLLECTION, type CheckIn, type SkipReason } from '@/domain/wellness/checkIn'
 
 /** Loaded on first use: only the owner reads or writes a check-in, so the SDK stays out of everyone's first load. */
 async function store() {
@@ -30,4 +30,22 @@ export async function writeCheckInDay(date: string, entry: CheckIn | null): Prom
   const ref = doc(db, WELLNESS_COLLECTION, date)
   if (entry) await setDoc(ref, entry)
   else await deleteDoc(ref)
+}
+
+/** Every day marked skipped, whatever its age: the Month view pages back as far as the athlete likes. */
+export async function readSkippedDays(): Promise<Map<string, SkipReason>> {
+  const { firestore: { collection, getDocs, query, where }, db } = await store()
+  const snapshot = await getDocs(query(collection(db, WELLNESS_COLLECTION), where('skipped', 'in', [...SKIP_REASONS])))
+  const days = new Map<string, SkipReason>()
+  snapshot.forEach((day) => {
+    const reason = day.get('skipped')
+    if (isCheckInDate(day.id) && isSkipReason(reason)) days.set(day.id, reason)
+  })
+  return days
+}
+
+/** Merged, so the morning's check-in on the same day stays as it was. */
+export async function writeSkippedDay(date: string, reason: SkipReason | null): Promise<void> {
+  const { firestore: { deleteField, doc, setDoc }, db } = await store()
+  await setDoc(doc(db, WELLNESS_COLLECTION, date), { skipped: reason ?? deleteField() }, { merge: true })
 }

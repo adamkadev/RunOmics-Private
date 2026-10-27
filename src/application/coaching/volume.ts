@@ -1,7 +1,8 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import type { BootstrapWeekDraft, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { TrainingHistory } from '@/domain/training/trainingHistory'
-import type { WorkoutBlock, WorkoutSegment } from '@/domain/coaching/types'
+import type { NumberRange, WorkoutBlock, WorkoutSegment } from '@/domain/coaching/types'
+import { blocksMeters, planEasyPace } from '@/domain/coaching/sessionDistance'
 
 // A non-taper week should hold what the athlete just ran; the tolerance is for rounding a week's
 // sessions, not for easing off without saying so.
@@ -61,19 +62,11 @@ export function segments(blocks: WorkoutBlock[]): { segment: WorkoutSegment; rep
     : [{ segment: block, repetitions: 1 }])
 }
 
-/** Threshold work is usually prescribed by time, so counting `distanceMeters` alone can read a week 20 km light. */
-export function segmentMeters(segment: WorkoutSegment): number {
-  const { distanceMeters, durationSeconds, paceSecPerKm } = segment.target
-  if (distanceMeters !== undefined) return distanceMeters
-  if (durationSeconds !== undefined && paceSecPerKm !== undefined) {
-    return (durationSeconds * 2_000) / (paceSecPerKm.min + paceSecPerKm.max)
-  }
-  return 0
-}
+export { segmentMeters } from '@/domain/coaching/sessionDistance'
 
-export function weekKm(week: BootstrapWeekDraft): number {
-  const meters = week.workouts.reduce((total, workout) => total
-    + segments(workout.blocks).reduce((sum, { segment, repetitions }) => sum + segmentMeters(segment) * repetitions, 0), 0)
+/** Timed threshold work and pace-less warm-ups are run too: counting `distanceMeters` alone reads a week light. */
+export function weekKm(week: BootstrapWeekDraft, easyPace: NumberRange | null = planEasyPace(week.workouts)): number {
+  const meters = week.workouts.reduce((total, workout) => total + blocksMeters(workout.blocks, easyPace), 0)
   return Math.round(meters) / 1_000
 }
 
@@ -100,7 +93,7 @@ function focusContradictsPrescription(week: BootstrapWeekDraft, km: number): num
   return null
 }
 
-function longestSession(week: BootstrapWeekDraft, weekTotalKm: number, share: number, band: VolumeBand): void {
+function longestSession(week: BootstrapWeekDraft, weekTotalKm: number, share: number, band: VolumeBand, easyPace: NumberRange | null): void {
   // Against a whole week's worth, not this week's total: a Friday-to-Sunday
   // tail holds two runs, and one of them being most of it is arithmetic.
   const shareBound = (weekTotalKm / share) * LONG_RUN_SHARE
@@ -108,7 +101,7 @@ function longestSession(week: BootstrapWeekDraft, weekTotalKm: number, share: nu
   const limit = Math.max(Math.min(shareBound, recentBound), LONG_RUN_ALLOWANCE_KM)
 
   for (const workout of week.workouts) {
-    const km = round(segments(workout.blocks).reduce((sum, { segment, repetitions }) => sum + segmentMeters(segment) * repetitions, 0) / 1_000)
+    const km = round(blocksMeters(workout.blocks, easyPace) / 1_000)
     if (km <= limit) continue
 
     const reason = recentBound < shareBound
@@ -132,7 +125,9 @@ export function validateDraftVolume(
   if (!(band.baselineKm > 0)) return
 
   const adapting = before !== undefined
-  const previousKm = new Map(before?.weeks.map((week) => [week.startDate, weekKm(week)]))
+  // A return writes every walk as a bare duration, so there an untargeted step is walked, not run.
+  const easyPaceOf = (week: BootstrapWeekDraft) => (returning ? null : planEasyPace(week.workouts))
+  const previousKm = new Map(before?.weeks.map((week) => [week.startDate, weekKm(week, easyPaceOf(week))]))
 
   // The one week per block that may sit under the floor, and only after the
   // arithmetic below agrees it is genuinely reduced.
@@ -148,7 +143,7 @@ export function validateDraftVolume(
 
     const floorKm = round(band.baselineKm * share * FLOOR_RATIO)
     const ceilingKm = round(band.capacityKm * share * CEILING_RATIO + CEILING_ALLOWANCE_KM)
-    const km = weekKm(week)
+    const km = weekKm(week, easyPaceOf(week))
     // Nothing carried a distance, or a duration with a pace: an under-specified week is frequency's business.
     if (km === 0) continue
     const judged = !adapting || km > (previousKm.get(week.startDate) ?? 0)
@@ -181,7 +176,7 @@ export function validateDraftVolume(
       reducedWeek = week.startDate
     }
 
-    if (judged) longestSession(week, km, share, band)
+    if (judged) longestSession(week, km, share, band, easyPaceOf(week))
 
     if (judged && km > peakKm * RAMP_RATIO + RAMP_ALLOWANCE_KM) {
       throw new Error(`Week ${week.startDate} jumps from ${round(peakKm)} km to ${km} km; increase weekly volume gradually`)

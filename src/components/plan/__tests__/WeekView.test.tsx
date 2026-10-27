@@ -27,6 +27,7 @@ function activity(overrides: Partial<PlanRun> & Pick<PlanRun, 'id' | 'date' | 't
     paceSecPerKm: 300,
     avgHeartRate: 160,
     zonePercents: [],
+    shownType: overrides.type,
     ...overrides,
   }
 }
@@ -110,6 +111,17 @@ const day = (date: string) => screen.getByTestId(`day-${date}`)
 const bar = (date: string) => day(date).querySelector<HTMLElement>('[data-bar-state]')!
 
 describe('the phase card', () => {
+  it('counts the block’s sessions so far run as planned', () => {
+    const threshold = (distanceKm: number) => activity({ id: 'a-threshold', date: TODAY, type: 'Threshold', distanceKm, durationSeconds: distanceKm * 360 })
+    const { unmount } = renderWeek({ coaching: overview({ coachingPlan: blockPlan() }), activities: [threshold(10)] })
+    expect(screen.getByTestId('phase-tally').textContent).toBe(t.plan.phase.asPlanned(1, 1))
+    unmount()
+
+    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }), activities: [threshold(6)] })
+    expect(screen.getByTestId('phase-tally').textContent).toBe(t.plan.phase.asPlanned(0, 1))
+  })
+
+
   it('names the phase, the week in it and the race it builds to', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
@@ -332,6 +344,49 @@ describe('a day that is over', () => {
     expect(done).toContain(`4.8 ${t.units.km} · 5:00 /km · Z3 68%`)
     expect(within(card).getByRole('img', { name: t.plan.dayCard.asPlanned })).toBeInTheDocument()
     expect(within(card).getByRole('link', { name: t.plan.dayCard.viewActivity }).getAttribute('href')).toBe('/activities/a-tempo')
+  })
+
+  it('says how a run fell short of its session instead of calling it as planned', async () => {
+    const user = userEvent.setup()
+    renderWeek({
+      activities: [activity({ ...TEMPO, distanceKm: 3.2 })],
+      planned: [{ date: '2026-09-07', name: 'Tempo', type: 'Tempo', distanceM: 5_000 }],
+    })
+
+    await user.click(day('2026-09-07'))
+    const card = screen.getByTestId('plan-day-done-2026-09-07')
+    expect(within(card).queryByRole('img', { name: t.plan.dayCard.asPlanned })).toBeNull()
+    expect(within(card).getByTestId('plan-fit').textContent).toBe(t.plan.dayCard.fit.shorter)
+  })
+
+  it('calls a quality run on an easy day harder than planned', async () => {
+    const user = userEvent.setup()
+    renderWeek({
+      activities: [activity({ ...TEMPO, distanceKm: 5 })],
+      planned: [{ date: '2026-09-07', name: 'Easy', type: 'Base', distanceM: 5_000 }],
+    })
+
+    await user.click(day('2026-09-07'))
+    expect(within(screen.getByTestId('plan-day-done-2026-09-07')).getByTestId('plan-fit').textContent).toBe(t.plan.dayCard.fit.harder)
+  })
+
+  it('reads a session run the next day as done on both days', async () => {
+    const user = userEvent.setup()
+    renderWeek({
+      activities: [activity({ id: 'a-moved', date: '2026-09-08', type: 'Base', distanceKm: 8 })],
+      planned: [{ date: '2026-09-07', name: 'Easy', type: 'Base', distanceM: 8_000 }],
+    })
+
+    expect(bar('2026-09-07').getAttribute('data-bar-state')).toBe('done')
+    await user.click(day('2026-09-07'))
+    const planned = screen.getByTestId('plan-day-done-2026-09-07')
+    expect(within(planned).getByTestId('done-line').textContent).toBe(`${t.plan.dayCard.done}${t.plan.dayCard.ranOn('Tue 8')}`)
+    expect(within(planned).queryByTestId('skip-toggle')).toBeNull()
+
+    await user.click(day('2026-09-08'))
+    const ran = screen.getByTestId('plan-day-done-2026-09-08')
+    expect(within(ran).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}${t.plan.dayCard.standsFor('Mon 7')} · 8 ${t.units.km} · Easy`)
+    expect(within(ran).getByRole('img', { name: t.plan.dayCard.asPlanned })).toBeInTheDocument()
   })
 
   it("names a run by its session's set once, the plan's line its amount alone", async () => {

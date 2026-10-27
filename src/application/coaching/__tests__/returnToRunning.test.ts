@@ -73,6 +73,19 @@ const returnBlock = (run = PACE, walk: WorkoutTarget = {}): CoachingPlanDraft =>
   ],
 })
 
+const walksNoted = (draft: CoachingPlanDraft): CoachingPlanDraft => ({
+  ...draft,
+  weeks: draft.weeks.map((week) => ({
+    ...week,
+    workouts: week.workouts.map((workout) => ({
+      ...workout,
+      blocks: workout.blocks.map((block) => block.kind === 'repeat'
+        ? { ...block, steps: block.steps.map((step) => (step.kind === 'recovery' ? { ...step, notes: ['Walk.'] } : step)) }
+        : { ...block, notes: ['Brisk walk.'] }),
+    })),
+  })),
+})
+
 const validate = (athlete: AthleteProfile, draft = returnBlock(), guidance?: string) => () => validateBootstrapDraft(draft, {
   availableWeekdays: [3, 5, 0],
   runsPerWeek: 3,
@@ -112,7 +125,12 @@ describe('a return to running', () => {
     expect(athlete.controlledThreshold).toBeNull()
     expect(athlete).not.toHaveProperty('autoregulation')
     expect(validate({ trainingBreaks: [injury] })).not.toThrow()
-    expect(validate({})).toThrow(/against a recent/)
+    expect(validate({}, walksNoted(returnBlock()))).toThrow(/against a recent/)
+  })
+
+  it('counts an untargeted step as run outside a return, unless its notes say it is walked', () => {
+    expect(validate({})).not.toThrow(/against a recent/)
+    expect(validate({}, walksNoted(returnBlock()))).toThrow(/against a recent/)
   })
 
   const watchTargets = (draft: CoachingPlanDraft) => {

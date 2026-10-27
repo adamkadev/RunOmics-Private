@@ -82,14 +82,15 @@ service cloud.firestore {
     function isWellFormedCheckIn(date) {
       let data = request.resource.data;
       return date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && data.keys().hasOnly(['sleep', 'soreness', 'stress', 'mood', 'ill', 'travel', 'niggle'])
+        && data.keys().hasOnly(['sleep', 'soreness', 'stress', 'mood', 'ill', 'travel', 'niggle', 'skipped'])
         && isScore(data, 'sleep') && isScore(data, 'soreness') && isScore(data, 'stress') && isScore(data, 'mood')
         && (!('ill' in data) || data.ill is bool)
         && (!('travel' in data) || data.travel is bool)
+        && (!('skipped' in data) || data.skipped in ['ill', 'rest', 'life'])
         && isWellFormedNiggle(data);
     }
 
-    // The morning check-in, one document per local date. Health data: the owner's alone, the server reads it as admin.
+    // The morning check-in and the day's skipped session, one document per local date. Health data: the owner's alone, the server reads it as admin.
     match /wellness/{date} {
       allow get: if isOwner();
       allow list: if isOwner();

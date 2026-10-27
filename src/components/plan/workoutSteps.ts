@@ -1,4 +1,5 @@
 import type { ActivityType, WorkoutStep } from '@/domain/activity/types'
+import { WALK_PACE_FLOOR_SEC_PER_KM } from '@/domain/coaching/sessionDistance'
 import { WORKOUT_SEGMENT_COLORS, sessionZone, zoneColor } from '@/lib/colors'
 import { formatClock, formatDurationWords } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -23,8 +24,6 @@ export interface StepRow {
 }
 
 const EASE_FILL = WORKOUT_SEGMENT_COLORS.warmup
-/** Slower than 10:30 /km is walking: a run/walk return jogs near 10:00 /km and walks at 11–14. */
-const WALK_PACE_FLOOR_SEC_PER_KM = 630
 /** Strides draw in Z5, as Today's bar draws them. */
 const STRIDE_FILL = zoneColor(5)
 
