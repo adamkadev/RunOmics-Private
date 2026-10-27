@@ -10,6 +10,7 @@ from data_directory import get_data_dir
 from repository.atomic_write import write_text_atomic
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from .step_warnings import warn
 
 _PATH = get_data_dir() / "training_plan.json"
 
@@ -58,7 +59,7 @@ def sync_training_plan(client: GarminClient, today: date | None = None) -> bool:
     try:
         plans = retry_transient(lambda: client.get_training_plans()).get("trainingPlanList") or []
     except GarminAPIError as exc:
-        print(f"  Warning: training plans fetch failed: {exc}")
+        warn("training plan", f"training plans fetch failed: {exc}")
         return False
 
     summary = current_plan_summary(plans, today)
@@ -72,7 +73,7 @@ def sync_training_plan(client: GarminClient, today: date | None = None) -> bool:
     try:
         detail = retry_transient(lambda: client.get_training_plan_detail(plan_id))
     except GarminAPIError as exc:
-        print(f"  Warning: training plan {plan_id} detail failed: {exc}")
+        warn("training plan", f"training plan {plan_id} detail failed: {exc}")
         return False
 
     normalized = normalize_plan(summary, detail)

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value)
+const isGearId = (value) => typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value)
 
 /** Each backup the nightly sync commits, the key holding its documents, and the shape firestore.rules accepts. */
 export const COLLECTIONS = [
@@ -36,7 +37,20 @@ export const COLLECTIONS = [
     key: 'spots',
     valid: (_id, doc) =>
       isFiniteNumber(doc.lon) && isFiniteNumber(doc.lat) && Math.abs(doc.lon) <= 180 && Math.abs(doc.lat) <= 90 &&
-      Number.isInteger(doc.radiusM) && doc.radiusM >= 20 && doc.radiusM <= 250 && typeof doc.createdAt === 'string',
+      Number.isInteger(doc.radiusM) && doc.radiusM >= 20 && doc.radiusM <= 250 && typeof doc.createdAt === 'string' &&
+      (doc.expiresOn === undefined || (typeof doc.expiresOn === 'string' && DATE.test(doc.expiresOn))),
+  },
+  {
+    name: 'runShoes',
+    file: 'shoe_choices.json',
+    key: 'runs',
+    valid: (_id, doc) => isGearId(doc.gearId),
+  },
+  {
+    name: 'shoeSettings',
+    file: 'shoe_choices.json',
+    key: 'settings',
+    valid: (id, doc) => id === 'default' && isGearId(doc.gearId),
   },
   {
     name: 'raceEntries',

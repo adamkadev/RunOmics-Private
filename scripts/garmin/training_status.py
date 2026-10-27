@@ -14,6 +14,7 @@ from typing import Any
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from .step_warnings import warn
 from repository.history_file import read_history, write_history
 
 _DATA_DIR = get_data_dir()
@@ -217,7 +218,7 @@ def _fetch_days(
                 client.get_training_status_daily, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
-            print(f"  Warning: training status {window_start}…{window_end} failed: {exc}")
+            warn("training status", f"training status {window_start}…{window_end} failed: {exc}")
             continue
 
         days.update(normalize_status_report(payload))
@@ -236,7 +237,7 @@ def _fetch_weeks(client: GarminClient, windows: list[tuple[date, date]]) -> dict
                 client.get_training_status_weekly, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
-            print(f"  Warning: weekly training status {window_start}…{window_end} failed: {exc}")
+            warn("training status", f"weekly training status {window_start}…{window_end} failed: {exc}")
             continue
 
         weeks.update(normalize_status_report(payload))
@@ -279,7 +280,7 @@ def sync_load_balance(client: GarminClient, today: date | None = None) -> bool:
     try:
         payload = retry_transient(lambda: client.get_training_load_balance(iso))
     except GarminAPIError as exc:
-        print(f"  Warning: training load balance fetch failed: {exc}")
+        warn("load balance", f"training load balance fetch failed: {exc}")
         return False
 
     balance = normalize_load_balance(payload)

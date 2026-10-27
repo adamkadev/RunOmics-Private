@@ -6,6 +6,7 @@ from typing import Any
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from .step_warnings import warn
 from .vo2max_history import monthly_windows
 from repository.history_file import read_history_section, write_history
 
@@ -39,7 +40,7 @@ def _fetch_metric(client: GarminClient, metric: str, start: date, today: date) -
                 client.get_biometric_stat, metric, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
-            print(f"  Warning: {metric} {window_start:%Y-%m}…{window_end:%Y-%m} failed: {exc}")
+            warn("threshold history", f"{metric} {window_start:%Y-%m}…{window_end:%Y-%m} failed: {exc}")
             continue
         samples.update(normalize_stat(payload))
 

@@ -150,6 +150,7 @@ def workspace(tmp_path, monkeypatch):
     # Resolved when sync.py was imported, so re-pointed by hand.
     monkeypatch.setattr(sync, "_FIT_DIR", tmp_path / "fit-cache")
     monkeypatch.setattr(sync, "_SYNC_META_PATH", tmp_path / "sync_meta.json")
+    monkeypatch.setattr(sync, "_DATA_DIR", tmp_path)
     monkeypatch.setattr(sync, "_ATHLETE_PATH", tmp_path / "athlete.json")
     # Rate-limit pauses and retry backoff are real seconds.
     monkeypatch.setattr(sync.time, "sleep", lambda _seconds: None)
@@ -742,3 +743,54 @@ class TestRunsChangedInConnect:
 
         stored_runs = {a["id"]: a for a in JsonActivityStore(stored / "activities").all_activities()}
         assert stored_runs["101"]["description"] == "Sortie longue"
+
+
+class TestSyncMeta:
+    def test_the_warnings_a_step_read_around_are_written_with_the_nights_series_freshness(
+        self, workspace, garmin, steps, monkeypatch
+    ):
+        def flaky_predictions(_client):
+            sync.step_warnings.warn("race predictions", "race predictions fetch failed: HTTP 500")
+            return 0
+
+        monkeypatch.setattr(sync, "sync_race_predictions", flaky_predictions)
+        (workspace / "recovery_history.json").write_text('{"days": {"2026-10-20": {"restingHr": 48}}}')
+
+        assert _run(monkeypatch) == 0
+
+        meta = json.loads((workspace / "sync_meta.json").read_text())
+        assert meta["warnings"] == [{"step": "race predictions", "message": "race predictions fetch failed: HTTP 500"}]
+        assert meta["warningsAt"] == meta["lastSyncedAt"]
+        assert meta["seriesFreshness"]["restingHr"] == "2026-10-20"
+        assert meta["seriesFreshness"]["trainingStatus"] is None
+
+    def test_a_clean_night_clears_the_last_ones(self, workspace, garmin, steps, monkeypatch):
+        (workspace / "sync_meta.json").write_text(
+            '{"lastSyncedAt": "2026-10-20T03:00:00+00:00", "warnings": [{"step": "training plan", "message": "x"}]}'
+        )
+
+        assert _run(monkeypatch) == 0
+
+        assert json.loads((workspace / "sync_meta.json").read_text())["warnings"] == []
+
+    def test_a_quick_sync_keeps_the_last_full_nights_warnings(self, workspace, personal, steps, monkeypatch):
+        night = {"step": "training status", "message": "training status 2026-10-01…2026-10-20 failed: HTTP 500"}
+        (workspace / "sync_meta.json").write_text(json.dumps(
+            {"lastSyncedAt": "2026-10-20T03:00:00+00:00", "warnings": [night], "warningsAt": "2026-10-20T03:00:00+00:00"}
+        ))
+
+        assert _run(monkeypatch, "--quick") == 0
+
+        meta = json.loads((workspace / "sync_meta.json").read_text())
+        assert meta["warnings"] == [night]
+        assert meta["warningsAt"] == "2026-10-20T03:00:00+00:00"
+        assert meta["lastSyncedAt"] != "2026-10-20T03:00:00+00:00"
+
+    def test_the_shoe_lists_date_survives_the_rewrite(self, workspace, garmin, steps, monkeypatch):
+        (workspace / "sync_meta.json").write_text(
+            '{"lastSyncedAt": "2026-10-20T03:00:00+00:00", "shoesCheckedAt": "2026-10-20T03:05:00+00:00"}'
+        )
+
+        assert _run(monkeypatch) == 0
+
+        assert json.loads((workspace / "sync_meta.json").read_text())["shoesCheckedAt"] == "2026-10-20T03:05:00+00:00"

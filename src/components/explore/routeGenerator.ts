@@ -3,6 +3,7 @@ import { climbPerKm, type ExploreSession, type SessionDay } from '@/domain/explo
 import type { ScoredRoute } from '@/domain/explore/types'
 import type { NavigationOrigin } from '@/lib/navigation'
 import type { LngLatBounds } from '@/lib/routeFrame'
+import { appTodayIso, wallClockHour, wallClockMs } from '@/lib/calendarDate'
 import { median } from '@/lib/math'
 import { ROUTE_KM_MAX, ROUTE_KM_MIN, stepKm, type ExploreFrom, type ExploreRouteParams } from './exploreHref'
 
@@ -29,6 +30,8 @@ export interface ExplorePlan {
   paceSecPerKm: number | null
   /** A quality session (reps or a tempo) wants a flat loop clear of crossings. */
   session: ExploreSession
+  /** The hour the athlete usually sets off, within Garmin's scheduled part of the day; null with no run to go by. */
+  hour: number | null
 }
 
 /**
@@ -51,6 +54,17 @@ export function generatorDay(plans: readonly ExplorePlan[], plan: ExplorePlan | 
   if (!day) return { session: plan?.session ?? null, beforeQuality: false }
   const next = new Date(Date.parse(`${day}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10)
   return { session: plan?.session ?? null, beforeQuality: plans.some((p) => p.date === next && p.session === 'quality') }
+}
+
+/**
+ * Today's loop is run now; a later day's at the athlete's usual hour, or at this hour of the day without one. Read on
+ * the athlete's clock, as the panel's sunset is.
+ */
+export function runStart(plan: Pick<ExplorePlan, 'date' | 'hour'> | null, today: string | null, now: number): { date: string; now: number } {
+  const day = today ?? appTodayIso(new Date(now))
+  if (!plan || plan.date <= day) return { date: day, now }
+  const timeZone = process.env.NEXT_PUBLIC_TIME_ZONE || 'Europe/Paris'
+  return { date: plan.date, now: wallClockMs(plan.date, plan.hour ?? wallClockHour(now, timeZone), timeZone) }
 }
 
 export interface GeneratorTarget {

@@ -295,6 +295,7 @@ export const en = {
       exitFullscreen: 'Exit fullscreen',
       less: 'Rare',
       more: 'Frequent',
+      tracksFailed: 'Your runs couldn’t load.',
       noRoutes: 'No routes for this filter',
       loadFailed: 'The map couldn’t load.',
       mapUnavailable: 'Map unavailable - no map token configured',
@@ -428,6 +429,12 @@ export const en = {
           markPrompt: 'Tap the map where loops must not go.',
           // A spot's row. `date` is "26 Oct".
           marked: (date: string) => `Marked ${date}`,
+          // A spot whose reason wears off: "Marked 26 Oct · until 16 Nov".
+          markedUntil: (date: string, until: string) => `Marked ${date} · until ${until}`,
+          locate: (date: string) => `Show the spot marked ${date} on the map`,
+          radius: 'Size',
+          radiusM: (m: string) => `${m} m`,
+          full: (max: number) => `${max} spots is the most. Remove one to mark another.`,
           reason: 'Reason',
           reasons: { none: 'No reason', blocked: 'Blocked', mud: 'Muddy', unsafe: 'Unsafe' },
           remove: 'Remove spot',
@@ -448,6 +455,7 @@ export const en = {
         retry: 'Try again',
         errors: {
           notConfigured: 'Route generation isn’t set up on this deployment.',
+          tracks: 'Your runs couldn’t load, so no loop can be scored.',
           auth: 'Sign in as the owner to plan routes.',
           rateLimited: 'Too many requests. Try again in a minute.',
           dailyQuota: 'Today’s route quota is used up.',
@@ -579,6 +587,24 @@ export const en = {
         counts: (generated: number, missed: number) => `${generated} written · ${missed} left`,
         idleNights: (nights: number) => `nothing written for ${nights} night${nights === 1 ? '' : 's'}`,
         closed: (model: string, reason: string) => `${model} closed: ${reason}`,
+      },
+      garminSeries: {
+        title: 'Garmin data: newest sample per series',
+        allCurrent: 'All current',
+        stopped: (count: number) => `${count} stopped`,
+        never: 'Never received',
+        newest: (date: string) => `Last sample ${date}`,
+        staleSince: (date: string) => `Nothing new since ${date}`,
+        warnings: (count: number, steps: string) => `Last full sync: ${count} Garmin request${count === 1 ? '' : 's'} failed (${steps})`,
+        names: {
+          trainingStatus: 'Training status',
+          loadBalance: 'Load balance',
+          restingHr: 'Resting HR',
+          racePredictions: 'Race predictions',
+          vo2max: 'VO2max',
+          fitnessAge: 'Fitness age',
+          threshold: 'Threshold',
+        },
       },
     },
     sync: {
@@ -1475,6 +1501,11 @@ export const en = {
       // One way out to the watch's own app; the brand lives in the URL alone.
       changeInGarmin: (name: string) => `${name} - edit in your watch app`,
       addInGarmin: 'Set the shoe in your watch app',
+      change: (name: string) => `${name} - change shoe`,
+      sheetTitle: 'Shoe for this run',
+      clearPick: 'Use the shoe from Garmin',
+      countsAfterSync: 'The shoe’s mileage counts the change after the next sync.',
+      saved: 'Saved. Mileage updates after the next sync.',
     },
     weather: {
       conditions: {
@@ -1714,6 +1745,13 @@ export const en = {
   },
 
   shoes: {
+    defaultShoe: {
+      label: 'Default shoe',
+      none: 'None',
+      hint: 'Counts every run Garmin gives no shoe, from the pair’s first use. Mileage follows after the next sync.',
+      saved: 'Saved. Mileage updates after the next sync.',
+    },
+    listCheckedAt: (date: string) => `Shoe list last refreshed from Garmin on ${date}`,
     tracked: (km: string) => `${km} km tracked`,
     addLabel: 'Add a pair in your watch app',
     edit: 'Edit shoe',

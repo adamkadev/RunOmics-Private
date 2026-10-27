@@ -11,6 +11,7 @@ export function districtsCardContent(
   eyebrow: string,
   { coverage, status }: { coverage: AreaCoverage | null; status: DistrictsStatus },
   onPlanRun?: (unitId: string) => void,
+  onRetry?: () => void,
 ): TerritoryCardContent {
   const d = t.pages.map.districts
   const next = coverage?.nextId ? (coverage.units.find((u) => u.id === coverage.nextId) ?? null) : null
@@ -38,7 +39,12 @@ export function districtsCardContent(
       },
       { label: d.nextStat, value: distance ?? NO_VALUE, unit: distance ? t.units.km : undefined },
     ],
-    action: next && onPlanRun ? { label: d.planRunIn(next.name), onClick: () => onPlanRun(next.id) } : undefined,
+    action:
+      next && onPlanRun
+        ? { label: d.planRunIn(next.name), onClick: () => onPlanRun(next.id) }
+        : !coverage && status === 'error' && onRetry
+          ? { label: t.pages.error.retry, onClick: onRetry }
+          : undefined,
     ...(coverage ? {} : { pending: true }),
   }
 }

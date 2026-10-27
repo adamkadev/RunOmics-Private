@@ -12,6 +12,8 @@ const EXPECTED_CONSOLE_NOISE: RegExp[] = [
   /firestore\.googleapis\.com|Could not reach Cloud Firestore backend|FirebaseError: \[code=(unavailable|permission-denied)\]/i,
   // NEXT_PUBLIC_MAPTILER_TOKEN is deliberately unset for e2e, so tile requests are refused.
   /api\.maptiler\.com/i,
+  // The blank style the e2e build draws its maps on names glyphs that are not there.
+  /\/e2e-glyphs\//,
   // The e2e runner may have no route to OpenStreetMap for the Activity header's reverse geocoding.
   /nominatim\.openstreetmap\.org/i,
   // Vercel Analytics and Speed Insights scripts 404 under `next start`.

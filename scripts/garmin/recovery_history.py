@@ -28,6 +28,7 @@ from .client import GarminClient
 from .errors import GarminAPIError
 from .personal_api import PersonalApiClient
 from .retry import retry_transient
+from .step_warnings import warn
 from .training_status import dates_to_fetch, fetch_windows
 from repository.history_file import read_history, write_history
 
@@ -102,7 +103,7 @@ def _fetch_resting_hr(client: GarminClient | PersonalApiClient, window_start: da
             return normalize_daily_summaries(retry_transient(client.get_daily_summaries, start, end))
         return normalize_resting_hr(retry_transient(client.get_resting_hr_range, start, end))
     except GarminAPIError as exc:
-        print(f"  Warning: resting HR {window_start}…{window_end} failed: {exc}")
+        warn("recovery history", f"resting HR {window_start}…{window_end} failed: {exc}")
         return None
 
 

@@ -40,6 +40,8 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       const db = context.firestore()
       await setDoc(doc(db, 'activityNotes', '101'), { note: 'Felt sick', tags: ['illness'] })
       await setDoc(doc(db, 'routeNames', 'route-1'), { name: 'Moselle riverside loop' })
+      await setDoc(doc(db, 'runShoes', '101'), { gearId: 'shoe1' })
+      await setDoc(doc(db, 'shoeSettings', 'default'), { gearId: 'shoe1' })
       await setDoc(doc(db, 'avoidSpots', 'spot-1'), { lon: -150, lat: 0, radiusM: 80, createdAt: '2026-10-25' })
       await setDoc(doc(db, 'wellness', '2026-10-24'), { sleep: 2, soreness: 4, ill: true })
       await setDoc(doc(db, 'pushTokens', 'token-1'), { token: 'token-1', userAgent: 'iPhone' })
@@ -123,6 +125,54 @@ describe.skipIf(!emulator)('firestore.rules', () => {
     })
   })
 
+  describe('runShoes', () => {
+    it('lets only the owner read and list the picks', async () => {
+      await assertFails(getDoc(doc(visitor(), 'runShoes', '101')))
+      await assertFails(getDoc(doc(stranger(), 'runShoes', '101')))
+      await assertFails(getDocs(collection(stranger(), 'runShoes')))
+      await assertSucceeds(getDoc(doc(owner(), 'runShoes', '101')))
+      await assertSucceeds(getDocs(collection(owner(), 'runShoes')))
+    })
+
+    it('only lets the owner pick a shoe, and only by a well-formed gear id', async () => {
+      await assertFails(setDoc(doc(visitor(), 'runShoes', '102'), { gearId: 'shoe2' }))
+      await assertFails(setDoc(doc(stranger(), 'runShoes', '102'), { gearId: 'shoe2' }))
+      await assertSucceeds(setDoc(doc(owner(), 'runShoes', '102'), { gearId: 'shoe2' }))
+
+      const db = owner()
+      await assertFails(setDoc(doc(db, 'runShoes', '103'), { gearId: '' }))
+      await assertFails(setDoc(doc(db, 'runShoes', '103'), { gearId: 'x'.repeat(65) }))
+      await assertFails(setDoc(doc(db, 'runShoes', '103'), { gearId: 'shoe/2' }))
+      await assertFails(setDoc(doc(db, 'runShoes', '103'), { gearId: 7 }))
+      await assertFails(setDoc(doc(db, 'runShoes', '103'), { gearId: 'shoe2', km: 10 }))
+    })
+
+    it('only lets the owner clear a pick', async () => {
+      await assertFails(deleteDoc(doc(stranger(), 'runShoes', '101')))
+      await assertSucceeds(deleteDoc(doc(owner(), 'runShoes', '101')))
+    })
+  })
+
+  describe('shoeSettings', () => {
+    it('lets only the owner read the default shoe', async () => {
+      await assertFails(getDoc(doc(visitor(), 'shoeSettings', 'default')))
+      await assertFails(getDoc(doc(stranger(), 'shoeSettings', 'default')))
+      await assertSucceeds(getDoc(doc(owner(), 'shoeSettings', 'default')))
+    })
+
+    it('only lets the owner set it, under the one id the app uses', async () => {
+      await assertFails(setDoc(doc(stranger(), 'shoeSettings', 'default'), { gearId: 'shoe2' }))
+      await assertSucceeds(setDoc(doc(owner(), 'shoeSettings', 'default'), { gearId: 'shoe2' }))
+      await assertFails(setDoc(doc(owner(), 'shoeSettings', 'other'), { gearId: 'shoe2' }))
+      await assertFails(setDoc(doc(owner(), 'shoeSettings', 'default'), { gearId: 'shoe 2' }))
+    })
+
+    it('only lets the owner clear it', async () => {
+      await assertFails(deleteDoc(doc(stranger(), 'shoeSettings', 'default')))
+      await assertSucceeds(deleteDoc(doc(owner(), 'shoeSettings', 'default')))
+    })
+  })
+
   describe('avoidSpots', () => {
     const spot = { lon: -150.01, lat: 0.01, radiusM: 80, createdAt: '2026-10-26', reason: 'blocked' }
 
@@ -146,6 +196,16 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, createdAt: 'yesterday' }))
       await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, note: 'x' }))
       await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { lon: -150, lat: 0, radiusM: 80 }))
+    })
+
+    it('takes an expiry date on a spot, and only a date', async () => {
+      const db = owner()
+      await assertSucceeds(setDoc(doc(db, 'avoidSpots', 'spot-4'), { ...spot, reason: 'mud', expiresOn: '2026-11-16' }))
+      await assertSucceeds(updateDoc(doc(db, 'avoidSpots', 'spot-4'), { reason: 'unsafe', expiresOn: deleteField() }))
+      await assertSucceeds(updateDoc(doc(db, 'avoidSpots', 'spot-4'), { radiusM: 150 }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-5'), { ...spot, expiresOn: 'in three weeks' }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-5'), { ...spot, expiresOn: 20261116 }))
+      await assertFails(setDoc(doc(stranger(), 'avoidSpots', 'spot-5'), { ...spot, expiresOn: '2026-11-16' }))
     })
 
     it('only lets the owner delete one', async () => {

@@ -23,6 +23,25 @@ export function maptilerStyle(isDark: boolean, token: string): StyleSpecificatio
   return withLanguage(style, MAP_LANGUAGE)
 }
 
+/** Set by the e2e build alone: with no token the map still builds, on a blank style, so a test can tap it. */
+export const TEST_MAPS = process.env.NEXT_PUBLIC_E2E_MAPS === '1'
+
+/** Same-origin glyphs that 404: a label then draws nothing instead of failing the layer it is on. */
+export function emptyStyle(isDark: boolean): StyleSpecification {
+  return {
+    version: 8,
+    glyphs: '/e2e-glyphs/{fontstack}/{range}.pbf',
+    sources: {},
+    layers: [{ id: 'background', type: 'background', paint: { 'background-color': isDark ? '#0e1211' : '#eef0ef' } }],
+  }
+}
+
+/** The MapTiler style, the blank one in a test build without a token, or null: no map. */
+export function basemapStyle(isDark: boolean, token: string | undefined = process.env.NEXT_PUBLIC_MAPTILER_TOKEN): StyleSpecification | null {
+  if (token) return maptilerStyle(isDark, token)
+  return TEST_MAPS ? emptyStyle(isDark) : null
+}
+
 /** Near-greys, so the routes carry the only colour. */
 export const HEAT_BASEMAP = {
   light: { land: '#eef0ef', park: '#e2eae3', water: '#dde6ea', road: '#ffffff' },

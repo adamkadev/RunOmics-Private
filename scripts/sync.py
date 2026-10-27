@@ -28,6 +28,8 @@ from garmin.listing_reconcile import Removal, refresh_names, remove_missing_runs
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
 from garmin.recovery_history import sync_recovery_history
+from garmin.series_freshness import series_freshness
+from garmin import step_warnings
 from garmin.training_plan import sync_training_plan
 from garmin.threshold_history import sync_threshold_history
 from garmin.training_status import sync_load_balance, sync_training_status
@@ -62,6 +64,7 @@ ActivitySource = PersonalApiClient | GarminClient
 
 def main() -> int:
     args = _parse_args()
+    step_warnings.reset()
 
     # The Personal API key reads the activities, resting HR and the athlete's
     # zones. GARMIN_SECRET (garth) adds what only Connect's private API
@@ -247,7 +250,8 @@ def main() -> int:
             )
 
         if not args.dry_run:
-            _write_sync_meta()
+            # A quick or single-run sync reads none of Connect's series: the last full night's warnings stand.
+            _write_sync_meta(None if quick or args.id else step_warnings.collected())
 
     if failed_steps:
         print(f"\n{len(failed_steps)} step(s) failed: {', '.join(failed_steps)}.")
@@ -463,8 +467,22 @@ def _first_activity_date(store: JsonActivityStore) -> date | None:
     return date.fromisoformat(min(dates)) if dates else None
 
 
-def _write_sync_meta() -> None:
-    write_history(_SYNC_META_PATH, {"lastSyncedAt": datetime.now(timezone.utc).isoformat()})
+def _write_sync_meta(warnings: list[dict[str, str]] | None) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    previous = _read_sync_meta()
+    kept = ("shoesCheckedAt", "warnings", "warningsAt") if warnings is None else ("shoesCheckedAt",)
+    meta: dict = {"lastSyncedAt": now, **{key: previous[key] for key in kept if key in previous}}
+    if warnings is not None:
+        meta.update({"warnings": warnings, "warningsAt": now})
+    meta["seriesFreshness"] = series_freshness(_DATA_DIR)
+    write_history(_SYNC_META_PATH, meta)
+
+
+def _read_sync_meta() -> dict:
+    try:
+        return read_history(_SYNC_META_PATH)
+    except HistoryFileError:
+        return {}
 
 
 def _merge_athlete_metrics(metrics: dict) -> None:

@@ -89,9 +89,15 @@ export default async function ActivityDetailPage({
   const aiVerdict = await getRunVerdictInsight(activity)
   const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
-  const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
+  const shoeRegistry = getShoeRegistry()
+  const registeredShoe = activity.gearId ? shoeRegistry[activity.gearId] : undefined
+  const shoeOptions = Object.entries(shoeRegistry)
+    .filter(([gearId, info]) => !info.retired || gearId === activity.gearId)
+    .map(([gearId, info]) => ({ gearId, name: info.name, dotColor: info.dotColor }))
   const newGround = getRunExploreGain(id)
-  const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
+  const shoe = registeredShoe && activity.gearId
+    ? { gearId: activity.gearId, name: registeredShoe.name, dotColor: registeredShoe.dotColor, source: activity.gearSource }
+    : null
   // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
   const session = sessionForRun(activity, runSessions())
   const controlledRun = controlledRunView(activity, session)
@@ -119,6 +125,7 @@ export default async function ActivityDetailPage({
         share={<ShareButton activity={shareActivity(activity, session, aiVerdict, plannedForDay)} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         shoe={shoe}
+        shoeOptions={shoeOptions}
         similarRuns={similarRuns}
         extras={
           officialResult || newGround || controlledRun ? (

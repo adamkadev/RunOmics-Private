@@ -1,14 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { AVOID_LIMITS, type AvoidReason, type AvoidSpot } from '@/domain/explore/avoidSpots'
-import { addAvoidSpot, deleteAvoidSpot, readAvoidSpots, setAvoidSpotReason } from '@/lib/avoidSpots'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AVOID_LIMITS, AVOID_SPOT_RADIUS_M, expiryFor, isExpired, type AvoidReason, type AvoidSpot } from '@/domain/explore/avoidSpots'
+import { appTodayIso } from '@/lib/calendarDate'
+import { firestoreAvoidSpots, memoryAvoidSpots, type AvoidSpotStore } from '@/lib/avoidSpots'
+import { TEST_MAPS } from '@/lib/maptiler'
 import { reportClientError } from '@/lib/reportClientError'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 
 export interface AvoidSpots {
-  /** Only the owner marks spots: Firestore refuses anyone else. */
+  /** Only the owner marks spots, Firestore refuses anyone else; the e2e build keeps its own in memory. */
   enabled: boolean
+  /** None past its expiry: those are removed as they are read. */
   spots: readonly AvoidSpot[]
   /** The next tap on the map marks a spot instead of a start. */
   marking: boolean
@@ -16,6 +19,14 @@ export interface AvoidSpots {
   mark: (lngLat: [number, number]) => void
   remove: (id: string) => void
   setReason: (id: string, reason: AvoidReason | null) => void
+  setRadius: (id: string, radiusM: number) => void
+  /** The row tapped last: the map flies to it, and its row shows the radius. */
+  selectedId: string | null
+  /** A new value on every tap, the same row's included, so the map flies back to it after a pan. */
+  located: { spot: AvoidSpot; tap: number } | null
+  locate: (id: string) => void
+  /** At the cap: Mark is off until one is removed. */
+  full: boolean
   /** The last write did not reach Firestore. */
   failed: boolean
 }
@@ -27,33 +38,43 @@ function failedWith(err: unknown) {
   reportClientError('route', err)
 }
 
-export function useAvoidSpots(active: boolean): AvoidSpots {
+const DEFAULT_STORE = TEST_MAPS ? memoryAvoidSpots() : firestoreAvoidSpots
+
+export function useAvoidSpots(active: boolean, today: string = appTodayIso(), store: AvoidSpotStore = DEFAULT_STORE): AvoidSpots {
   const owner = useOwnerAuth()
-  const enabled = active && owner.isOwner
+  const enabled = active && (owner.isOwner || store !== firestoreAvoidSpots)
   const [spots, setSpots] = useState<readonly AvoidSpot[]>(NONE)
   const [marking, setMarkingState] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [located, setLocated] = useState<{ id: string; tap: number } | null>(null)
 
   useEffect(() => {
     if (!enabled) return
     let live = true
-    readAvoidSpots()
+    store
+      .read()
       .then((read) => {
-        if (live) setSpots(read)
+        if (!live) return
+        const expired = read.filter((spot) => isExpired(spot, today))
+        setSpots(read.filter((spot) => !isExpired(spot, today)))
+        for (const spot of expired) store.remove(spot.id).catch(failedWith)
       })
       .catch(failedWith)
     return () => {
       live = false
     }
-  }, [enabled])
+  }, [enabled, today, store])
 
   const setMarking = useCallback((on: boolean) => setMarkingState(on), [])
+
+  const full = spots.length >= AVOID_LIMITS.stored
 
   const mark = useCallback(
     (lngLat: [number, number]) => {
       setMarkingState(false)
-      if (spots.length >= AVOID_LIMITS.stored) return setFailed(true)
-      addAvoidSpot(lngLat)
+      if (full) return
+      store
+        .add(lngLat, AVOID_SPOT_RADIUS_M)
         .then((spot) => {
           setFailed(false)
           setSpots((held) => [...held, spot])
@@ -63,24 +84,61 @@ export function useAvoidSpots(active: boolean): AvoidSpots {
           failedWith(err)
         })
     },
-    [spots.length],
+    [full, store],
   )
 
-  const remove = useCallback((id: string) => {
-    setSpots((held) => held.filter((spot) => spot.id !== id))
-    deleteAvoidSpot(id).catch((err) => {
-      setFailed(true)
-      failedWith(err)
-    })
+  const failWrite = useCallback((err: unknown) => {
+    setFailed(true)
+    failedWith(err)
   }, [])
 
-  const setReason = useCallback((id: string, reason: AvoidReason | null) => {
-    setSpots((held) => held.map((spot) => (spot.id === id ? { ...spot, reason } : spot)))
-    setAvoidSpotReason(id, reason).catch((err) => {
-      setFailed(true)
-      failedWith(err)
-    })
-  }, [])
+  const remove = useCallback(
+    (id: string) => {
+      setSpots((held) => held.filter((spot) => spot.id !== id))
+      setLocated((at) => (at?.id === id ? null : at))
+      store.remove(id).catch(failWrite)
+    },
+    [store, failWrite],
+  )
 
-  return { enabled, spots: enabled ? spots : NONE, marking: enabled && marking, setMarking, mark, remove, setReason, failed }
+  const setReason = useCallback(
+    (id: string, reason: AvoidReason | null) => {
+      const expiresOn = expiryFor(reason, today)
+      setSpots((held) => held.map((spot) => (spot.id === id ? { ...spot, reason, expiresOn } : spot)))
+      store.setReason(id, reason, today).catch(failWrite)
+    },
+    [today, store, failWrite],
+  )
+
+  const setRadius = useCallback(
+    (id: string, radiusM: number) => {
+      setSpots((held) => held.map((spot) => (spot.id === id ? { ...spot, radiusM } : spot)))
+      store.setRadius(id, radiusM).catch(failWrite)
+    },
+    [store, failWrite],
+  )
+
+  const locate = useCallback((id: string) => setLocated((at) => ({ id, tap: (at?.tap ?? 0) + 1 })), [])
+
+  const shown = enabled ? spots : NONE
+  const locatedSpot = useMemo(() => {
+    const spot = located ? shown.find((s) => s.id === located.id) : undefined
+    return spot && located ? { spot, tap: located.tap } : null
+  }, [located, shown])
+
+  return {
+    enabled,
+    spots: shown,
+    marking: enabled && marking,
+    setMarking,
+    mark,
+    remove,
+    setReason,
+    setRadius,
+    selectedId: locatedSpot?.spot.id ?? null,
+    located: locatedSpot,
+    locate,
+    full: enabled && full,
+    failed,
+  }
 }
