@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-10-27
+
 - Owner e2e, visual checks and project rules (E3, E10, E11). The e2e build signs
   in a made-up owner through the Firebase Auth emulator and writes to the
   Firestore emulator, both started by Playwright (Java 21; `e2e/owner.ts`), so
