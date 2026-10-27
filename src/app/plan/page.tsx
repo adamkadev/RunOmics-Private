@@ -9,6 +9,8 @@ import { getExploreHome } from '@/application/usecases/GetExploreAreas'
 import { getCrossTrainingEntries } from '@/application/usecases/GetCrossTraining'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planRun } from '@/components/plan/planRun'
+import { shownType } from '@/components/activity/activityViews'
+import { sessionForRun } from '@/domain/coaching/sessionForRun'
 import { planCoachingView } from '@/components/plan/planCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
 import { loadData } from '@/application/usecases/LoadData'
@@ -18,12 +20,13 @@ export const revalidate = 3600
 export default async function PlanPage() {
   await loadData()
   const today = appTodayIso()
-  const activities = getActivities().map(planRun)
+  const coaching = getCoachingOverview(today)
+  const sessions = coaching?.workouts ?? []
+  const activities = getActivities().map((activity) => planRun(activity, shownType(activity, sessionForRun(activity, sessions))))
   const plannedWorkouts = await getPlannedWorkouts()
   const nextRace = await getNextRace(today)
   const trainingZones = await getTrainingZones()
   const trainingPlan = getTrainingPlan()
-  const coaching = getCoachingOverview(today)
   const athlete = getAthleteProfile()
 
   return (

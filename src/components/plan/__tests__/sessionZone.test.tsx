@@ -12,7 +12,7 @@ import { WeekView } from '../WeekView'
 const TODAY = '2026-09-09'
 
 function activity(overrides: Partial<PlanRun> & Pick<PlanRun, 'id' | 'date' | 'type'>): PlanRun {
-  return { description: '', distanceKm: 8, durationSeconds: 2_400, paceSecPerKm: 300, avgHeartRate: 160, zonePercents: [], ...overrides }
+  return { description: '', distanceKm: 8, durationSeconds: 2_400, paceSecPerKm: 300, avgHeartRate: 160, zonePercents: [], shownType: overrides.type, ...overrides }
 }
 
 // A Garmin workout named after one type and typed as another.

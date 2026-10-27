@@ -7,7 +7,6 @@ import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from './planRun'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { CrossTrainingList } from '@/components/crossTraining/CrossTraining'
-import { weekTarget } from '@/domain/training/weekTarget'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
@@ -21,11 +20,12 @@ import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { sessionTitle } from './sessionTitle'
 import { dayKind, kindLetter } from './sessionKind'
-import { formatWeekKm, weekPlanDays } from './weekPlanDays'
+import { formatWeekKm, planWeekTarget } from './weekPlanDays'
 import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
+import { blockFitTally, dayFit, type FitTally } from './dayFit'
 import { sessionLabel } from '@/lib/activityTitle'
 import { BlockFinishedCard, ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 import { blockCovers, blockLifecycle } from './blockLifecycle'
@@ -34,7 +34,7 @@ import { sessionWords, useCoachWords, weekFocus } from '@/components/coaching/us
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
-function PhaseCard({ name, week, total, race, href, focus = null, note = null }: { name: string; week: number; total: number; race: string | null; href?: string; focus?: string | null; note?: string | null }) {
+function PhaseCard({ name, week, total, race, href, focus = null, note = null, tally = null }: { name: string; week: number; total: number; race: string | null; href?: string; focus?: string | null; note?: string | null; tally?: FitTally | null }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   const className = cardClass({ padding: 'none', clickable: !!href, className: 'flex flex-col gap-2.5 px-3.5 py-3' })
@@ -56,6 +56,7 @@ function PhaseCard({ name, week, total, race, href, focus = null, note = null }:
         ))}
       </div>
       {focus && <p className="text-[13px] leading-snug text-[var(--text-2)] text-pretty" data-testid="phase-focus">{focus}</p>}
+      {tally && <p className="text-xs text-muted-foreground" data-testid="phase-tally">{p.asPlanned(tally.asPlanned, tally.of)}</p>}
       {note && <p className="text-xs text-muted-foreground" data-testid="phase-note">{note}</p>}
     </>
   )
@@ -175,7 +176,7 @@ export function WeekView({
   const selected = dates.includes(selectedDate) ? selectedDate : (dates.find((d) => d === today) ?? firstDay)
 
   const target = useMemo(
-    () => weekTarget(weekPlanDays(dates, { byDate, byDatePlanned, byDateCoach: byDateCoach ?? new Map() }), today, null),
+    () => planWeekTarget(dates, { byDate, byDatePlanned, byDateCoach: byDateCoach ?? new Map() }, today, null),
     [dates, byDate, byDatePlanned, byDateCoach, today]
   )
 
@@ -186,7 +187,7 @@ export function WeekView({
         return {
           date: day.date,
           state: day.state,
-          km: day.state === 'done' ? day.ranKm : day.plannedKm,
+          km: day.state === 'done' ? (day.runs > 0 ? day.ranKm : null) : day.plannedKm,
           color: kind?.color ?? null,
           letter: kind && day.state !== 'rest' ? kindLetter(kind.type, kind.kind) : null,
           isToday: day.date === today,
@@ -210,10 +211,20 @@ export function WeekView({
     return next ? raceCountdown(next, today) : null
   }, [coaching, nextRace, today])
 
+  const tally = useMemo(() => {
+    if (!block) return null
+    const sessions = (coaching?.workouts ?? [])
+      .filter((view) => view.state !== 'cancelled' && view.prescription.date >= block.startDate && view.prescription.date <= block.endDate)
+      .map((view) => coachWorkoutView(view, trainingZones))
+    return blockFitTally(sessions, byDate, today, hrZoneBoundsBpm)
+  }, [block, coaching, byDate, today, trainingZones, hrZoneBoundsBpm])
+
   const acts = byDate.get(selected) ?? []
   const others = byDateOther?.get(selected) ?? []
   const kind = dayKind(selected, acts, byDatePlanned, byDateCoach)
   const workouts = selectedWorkouts(selected, byDatePlanned, byDateCoach, trainingZones)
+  const { ranOn = null, standsFor = null } = target.days.find((day) => day.date === selected) ?? {}
+  const fitWorkouts = workouts.length > 0 || !standsFor ? workouts : selectedWorkouts(standsFor, byDatePlanned, byDateCoach, trainingZones)
 
   function activityTitle(a: PlanRun): string {
     if (a.description && a.description !== t.activityTypes[a.type]) return a.description
@@ -238,14 +249,17 @@ export function WeekView({
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
     const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).title)
+    const session = fitWorkouts[0] ?? null
+    const planned = session ? plannedText(session, title) : null
     dayCard = (
       <DoneDayCard
         date={selected}
         kind={kind}
         title={title}
-        planned={workouts[0] ? plannedText(workouts[0], title) : null}
+        planned={session && workouts.length === 0 && standsFor ? [t.plan.dayCard.standsFor(formatWeekday(standsFor, true)), planned].filter(Boolean).join(' · ') : planned}
         acts={acts}
-        onPlan={workouts.length > 0}
+        fit={dayFit(acts, session, hrZoneBoundsBpm)}
+        ranOn={ranOn}
       />
     )
   } else if (workouts.length > 0 && kind) {
@@ -293,6 +307,7 @@ export function WeekView({
           href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined}
           focus={focus}
           note={blockEnds}
+          tally={tally}
         />
       )}
 

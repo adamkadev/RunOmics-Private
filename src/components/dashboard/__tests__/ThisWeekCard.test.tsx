@@ -84,6 +84,15 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     localStorage.removeItem('runomics-skipped-days')
   })
 
+  it('draws a session run the next day as done, its km on the day it was run', () => {
+    const moved = weekTarget([
+      day('2026-10-19', { plannedKm: 10, plannedSessions: 1, type: 'Base' }),
+      day('2026-10-20', { ranKm: 9.5, runs: 1, type: 'Base' }),
+    ], TODAY, null)
+    const bars = thisWeekBars(moved, TODAY, {})
+    expect(bars.map((b) => [b.day.state, b.label])).toEqual([['done', null], ['done', '9.5']])
+  })
+
   it('hides the missed key when nothing is missed', () => {
     render(<ThisWeekCard target={WEEK} today={TODAY} load={null} />)
     expect(screen.queryByTestId('legend-missed')).toBeNull()

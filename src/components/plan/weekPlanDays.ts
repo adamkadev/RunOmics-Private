@@ -109,9 +109,16 @@ export function weekPlanDays(
   })
 }
 
+/** With the day either side, so a session moved across the week's edge is matched as the Month view matches it. */
+export function planWeekTarget(dates: readonly string[], maps: PlanMaps, today: string, goalKm: number | null): WeekTarget {
+  const first = new Date(`${dates[0]}T00:00:00`)
+  const last = new Date(`${dates[dates.length - 1]}T00:00:00`)
+  const edges = weekPlanDays([isoDate(addDays(first, -1)), isoDate(addDays(last, 1))], maps)
+  return weekTarget(weekPlanDays(dates, maps), today, goalKm, edges)
+}
+
 export function currentWeekTarget(maps: PlanMaps, today: string, goalKm: number | null): WeekTarget {
-  const monday = startOfWeek(new Date(`${today}T00:00:00`))
-  return weekTarget(weekPlanDays(weekDates(monday), maps), today, goalKm)
+  return planWeekTarget(weekDates(startOfWeek(new Date(`${today}T00:00:00`))), maps, today, goalKm)
 }
 
 export function formatWeekKm(km: number): string {

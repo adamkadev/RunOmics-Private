@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import type { PlanRun } from './planRun'
 import { sessionZone } from '@/lib/colors'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
+import type { PlanFit } from '@/domain/training/planFit'
 import { sessionLabel } from '@/lib/activityTitle'
 import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -254,13 +255,35 @@ function MissedLine({ date }: { date: string }) {
   )
 }
 
+function FitMark({ fit }: { fit: PlanFit }) {
+  if (fit === 'asPlanned') {
+    return (
+      <Check
+        size={13}
+        strokeWidth={3}
+        role="img"
+        aria-label={t.plan.dayCard.asPlanned}
+        className="ml-1.5 inline-block shrink-0 align-[-2px] text-[var(--pos)]"
+        data-testid="plan-fit"
+        data-fit={fit}
+      />
+    )
+  }
+  return (
+    <span className="ml-1.5 text-[13px] font-medium text-[var(--tone-caution)]" data-testid="plan-fit" data-fit={fit}>
+      {t.plan.dayCard.fit[fit]}
+    </span>
+  )
+}
+
 export function DoneDayCard({
   date,
   kind,
   title,
   planned,
   acts,
-  onPlan,
+  fit,
+  ranOn = null,
 }: {
   date: string
   kind: DayKind | null
@@ -268,7 +291,10 @@ export function DoneDayCard({
   /** "10 km · Easy run". */
   planned: string | null
   acts: PlanRun[]
-  onPlan: boolean
+  /** The day's runs against its session; null when nothing was planned. */
+  fit: PlanFit | null
+  /** The day the session was run instead, a day either side. */
+  ranOn?: string | null
 }) {
   const zone = sessionZone({ type: kind?.type })
   return (
@@ -279,10 +305,14 @@ export function DoneDayCard({
         <Line label={t.plan.dayCard.planned} testId="planned-line">
           {planned ?? <span className="text-muted-foreground">{t.plan.dayCard.notPlanned}</span>}
         </Line>
-        {acts.length === 0 ? (
+        {acts.length === 0 && ranOn ? (
+          <Line label={t.plan.dayCard.done} testId="done-line">
+            <span className="font-semibold text-[var(--pos)]">{t.plan.dayCard.ranOn(formatWeekday(ranOn, true))}</span>
+          </Line>
+        ) : acts.length === 0 ? (
           <MissedLine date={date} />
         ) : (
-          acts.map((a) => {
+          acts.map((a, i) => {
             const share = a.zonePercents[zone - 1] ?? undefined
             return (
               <Line key={a.id} label={t.plan.dayCard.done} testId="done-line">
@@ -294,15 +324,7 @@ export function DoneDayCard({
                   .filter(Boolean)
                   .map((part) => ` · ${part}`)
                   .join('')}
-                {onPlan && (
-                  <Check
-                    size={13}
-                    strokeWidth={3}
-                    role="img"
-                    aria-label={t.plan.dayCard.asPlanned}
-                    className="ml-1.5 inline-block shrink-0 align-[-2px] text-[var(--pos)]"
-                  />
-                )}
+                {fit && i === acts.length - 1 && <FitMark fit={fit} />}
               </Line>
             )
           })

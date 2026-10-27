@@ -51,7 +51,7 @@ export interface WeekStripDay {
   letter: string
   state: WeekDayState
   isToday: boolean
-  /** Run km on a day run, planned km on a day to come or missed; null on rest or when the plan gave none. */
+  /** Run km on a day run, planned km on a day to come or missed; null on rest, a session run on another day, or none given. */
   km: number | null
   /** The km as the circle writes it: "12.8" run, "13" planned. */
   kmText: string | null
@@ -66,7 +66,7 @@ export interface WeekStripDay {
 /** From the same WeekTarget as the week's km total, so the circles and the total agree. */
 export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Record<string, string>): WeekStripDay[] {
   return days.map((day, i) => {
-    const km = day.state === 'done' ? day.ranKm : day.state === 'rest' ? null : day.plannedKm
+    const km = day.state === 'done' ? (day.runs > 0 ? day.ranKm : null) : day.state === 'rest' ? null : day.plannedKm
     // A run day says what was run when it was not what was planned.
     const kind =
       day.state === 'rest'

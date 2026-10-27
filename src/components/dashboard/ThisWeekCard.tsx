@@ -34,7 +34,7 @@ export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<st
   return target.days.map((source, i) => {
     const day = strip[i]!
     if (day.state === 'rest') return { day, height: 3, label: null }
-    if (day.state === 'done') return { day, height: px(source.ranKm), label: formatWeekKm(source.ranKm) }
+    if (day.state === 'done') return source.runs > 0 ? { day, height: px(source.ranKm), label: formatWeekKm(source.ranKm) } : { day, height: 3, label: null }
     const km = source.plannedKm ?? 0
     // A missed day keeps its km over the amber bar, so it says what was missed.
     return { day, height: px(km), label: km > 0 ? formatWeekKm(km) : null }
