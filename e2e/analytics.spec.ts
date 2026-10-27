@@ -41,3 +41,15 @@ test('the period control keeps its place whichever period is picked', async ({ p
     expect(Math.abs(place.x - places[0]!.x)).toBeLessThan(1)
   }
 })
+
+test('a link opens the tab and period it names, and Back returns to them', async ({ page, t }) => {
+  await page.goto('/analytics?tab=volume&period=1y')
+  await expect(page.getByRole('tab', { name: t.analytics.tabs.volume })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('radio', { name: t.analytics.cards.period.words['1y']!, exact: true })).toHaveAttribute('aria-checked', 'true')
+
+  await page.getByRole('tab', { name: t.analytics.tabs.performance }).click()
+  await expect(page).toHaveURL(/\/analytics\?tab=performance$/)
+  await page.goto('/records')
+  await page.goBack()
+  await expect(page.getByRole('tab', { name: t.analytics.tabs.performance })).toHaveAttribute('aria-selected', 'true')
+})

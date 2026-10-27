@@ -63,12 +63,17 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
 - `pushTokens/{token}`: the document's id is its token, with a `userAgent`, an `updatedAt` and
   optional `categories`, a map of `training`, `shoes` and `records` to booleans. Create, update
   and delete only; nothing on a phone reads the list.
+- `jobEvents`: the server jobs' trace (see [Job trace](#job-trace)). The owner reads it; no client writes it.
+- `aiStatus/lastPass`: the last AI insight pass. No rule matches it, so only the server (Admin SDK) reads or writes it.
 
 **The rules are deployed by hand,** never with the app: after any change, run
 `firebase deploy --only firestore:rules --project <id>` once per Firebase project (each
 deployment has its own). Until then the old rules refuse the new writes: a check-in, or a phone
 saving its push categories. `npm run test:rules` runs `src/infrastructure/__tests__/firestoreRules.test.ts`
 against the Firestore emulator (Java 21), and CI runs it on every push and pull request.
+Health reports the live ruleset's SHA-256 (`firestoreRulesHash`, read with the Admin SDK's
+security rules API, which needs the Firebase Rules Viewer role) and the nightly sync warns when
+it is not the hash of the repository's `firestore.rules`.
 
 ## Content Security Policy
 
@@ -128,17 +133,16 @@ exempts every hook written in that file later, which is exactly the code most wo
 linting; the directive expires with the line it is attached to, and ESLint reports it as
 an unused directive once the effect no longer needs it.
 
-- **`react-hooks/set-state-in-effect`** — `ActivityListClient`, `AnalyticsClient` and
-  `FirstLaunchHint` restore state from `localStorage`/`sessionStorage` once after mount. It
-  has to be an effect rather than a state initializer: an initializer would differ from the
-  server-rendered markup and trip a hydration mismatch. `ActivityListClient` additionally
-  guards with a `hasRestored` ref and merges only into still-default values, so a restore
-  can never clobber a user edit.
-- **`react-hooks/exhaustive-deps`** — `AnalyticsClient` (one-time mount effect),
-  `CelebrationOverlay`, `useMapRoutes` and `useShareCardMap` deliberately narrow their
-  dependency arrays. These effects own imperative MapLibre/canvas resources whose teardown
-  and rebuild is expensive; re-running them on every referenced value would recreate the map
-  or the render on each parent render.
+- **`react-hooks/set-state-in-effect`** — `ActivityListClient` restores its search from
+  `sessionStorage` once after mount. It has to be an effect rather than a state initializer:
+  an initializer would differ from the server-rendered markup and trip a hydration mismatch.
+  It merges only into a still-empty field, so a restore can never clobber a user edit.
+- **`react-hooks/exhaustive-deps`** — `useMapRoutes` and `useShareCardMap` deliberately narrow
+  their dependency arrays: these effects own imperative MapLibre/canvas resources whose
+  teardown and rebuild is expensive, so re-running them on every referenced value would
+  recreate the map or the render on each parent render. `useRunPlace` keys its lookup on the
+  run rather than on its first point's array, and `SyncNowCard` resumes a sync's polling once
+  per mount, not once per signed-in identity.
 
 `ThemeToggle`, `AccentPicker` and `ThemeSegmented` needed no suppression at all: their
 "have we hydrated yet?" flag is `useMounted` (`src/lib/useMounted.ts`), a
@@ -247,6 +251,17 @@ them under Settings → Diagnostics (`GET`, owner only). Each nightly sync calls
 `POST /api/internal/client-error-check`, which pushes one digest of the errors since the last one
 announced (Firestore `notifications/lastClientErrors`), never a push per error, since anyone may post one.
 
+## Job trace
+
+Vercel keeps a function's log for about 30 minutes and Vercel Cron never retries, so every
+`scheduledRoute` run and every 5xx from another internal route (the health probe aside) is also kept
+in Firestore `jobEvents`: time, route, trigger (`cron`, `manual` or `sync`), outcome (`sent`,
+`skipped` or `error`), HTTP status and the thrown error's class name. No token, message or body is
+stored. The last 200 are kept. Settings → Diagnostics shows each route's last run
+(`GET /api/job-events`, owner only), and the nightly error digest counts server errors with the phone's.
+`firestore.rules` lets the owner read the collection and no client write it; the server writes with
+the Admin SDK.
+
 ## Service worker
 
 `public/sw.js` provides the offline app shell and push notifications.
@@ -262,6 +277,8 @@ Push events display FCM webpush payloads (`{ notification: { title, body } }`) d
 `sw.js`. A non-JSON push falls through to the
 generic notification.
 
-Bump `VERSION` to invalidate every cache on deploy of a breaking change.
+Each deploy registers the worker as `/sw.js?v=<version>-<commit>` (`SERVICE_WORKER_URL`), and
+`sw.js` names its caches after `v`, so every deploy drops the last one's caches: there is no
+version to bump by hand.
 
 Made with love

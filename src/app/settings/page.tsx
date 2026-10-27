@@ -6,6 +6,8 @@ import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
 import { isSitePrivate } from '@/lib/siteAccess'
 
+export const revalidate = 3600
+
 export const metadata = {
   title: t.pages.settings.title,
 }

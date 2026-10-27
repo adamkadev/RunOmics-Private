@@ -3,6 +3,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { trimp, type HrBounds } from './GetTrainingLoad'
+import { hrBoundsOf } from '@/domain/training/trimp'
 import { appTodayIso, isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
@@ -92,7 +93,7 @@ export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
   const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
-      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
+      ? hrBoundsOf(athlete)
       : undefined
 
   const { byType, overall } = buildTypeLoadStats(activities, hrBounds)

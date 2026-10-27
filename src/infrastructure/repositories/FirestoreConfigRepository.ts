@@ -30,7 +30,8 @@ export type ActivitySyncState = { knownIds: string[] }
 /** `areaId` and `announced`: the one-area shape written before, read until the next save replaces it. */
 export type ExploreMilestoneState = { areas?: Record<string, string[]>; areaId?: string; announced?: string[] }
 
-export type ClientErrorAlertState = { lastAt: string }
+/** `jobErrorAt` is the newest server error announced; a state saved before server errors were digested has none. */
+export type ClientErrorAlertState = { lastAt: string | null; jobErrorAt?: string | null }
 
 export const { read: getLastPrState, write: saveLastPrState } =
   notificationDocument<PrState>('lastPrs')

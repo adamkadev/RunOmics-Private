@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const { sendEachForMulticast, deleted, devices } = vi.hoisted(() => ({
   sendEachForMulticast: vi.fn(),
   deleted: [] as string[],
-  devices: { list: [{ id: 'phone-token', categories: undefined as unknown }] },
+  devices: { list: [{ id: 'phone-token', categories: undefined as unknown }] as { id: string; categories: unknown; updatedAt?: Date }[] },
 }))
 
 vi.mock('firebase-admin/messaging', () => ({ getMessaging: () => ({ sendEachForMulticast }) }))
@@ -11,7 +11,13 @@ vi.mock('@/lib/firebase-admin', () => ({
   getAdminApp: () => ({}),
   getAdminFirestore: () => ({
     collection: () => ({
-      get: async () => ({ docs: devices.list.map(({ id, categories }) => ({ id, get: () => categories })) }),
+      get: async () => ({
+        docs: devices.list.map(({ id, categories, updatedAt }) => ({
+          id,
+          get: (field: string) => (field === 'updatedAt' ? (updatedAt && { toMillis: () => updatedAt.getTime() }) : categories),
+          ref: { delete: async () => void deleted.push(id) },
+        })),
+      }),
       doc: (id: string) => ({ delete: async () => void deleted.push(id) }),
     }),
   }),
@@ -68,6 +74,20 @@ describe('sendPush', () => {
       responses: tokens.map(() => ({ success: true })),
     }))
     deleted.length = 0
+  })
+
+  it('prunes a device whose token was last saved over 270 days ago, and keeps one with no date', async () => {
+    const day = 24 * 60 * 60 * 1000
+    devices.list = [
+      { id: 'abandoned', categories: undefined, updatedAt: new Date(Date.now() - 271 * day) },
+      { id: 'refreshed', categories: undefined, updatedAt: new Date(Date.now() - 20 * day) },
+      { id: 'undated', categories: undefined },
+    ]
+
+    await sendPush('always', { title: 'x', body: 'y' })
+
+    expect(deleted).toEqual(['abandoned'])
+    expect(sendEachForMulticast.mock.lastCall![0].tokens).toEqual(['refreshed', 'undated'])
   })
 
   it('reaches only the devices that kept the category on, and every device for a failure', async () => {

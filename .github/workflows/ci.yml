@@ -171,6 +171,58 @@ jobs:
       - name: Check import cycles
         run: npm run check:cycles
 
+      # A report, not a gate: each finding is a lead to confirm with a whole-repo grep before deleting.
+      - name: Report unused files and exports
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: |
+          npx -y knip@5.88.1 --no-progress > "$RUNNER_TEMP/knip.txt" 2>&1 || status=$?
+          cat "$RUNNER_TEMP/knip.txt"
+          { echo '### Unused code (knip)'; echo '```'; cat "$RUNNER_TEMP/knip.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "${status:-0}"
+
+  # E2E builds on main alone, so without this a pull request that breaks `next build` merges unbuilt.
+  build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      # Shared with E2E under the same key: a hit skips `npm ci`.
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # E2E saves this cache from main; the paths must be E2E's, as they are part of the cache's version.
+      - name: Restore the Next.js build cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .next/cache
+            .next-e2e-sparse/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Build against the E2E data
+        run: npm run e2e:build
+
   # Two shards beside verify, each with a worker per core: vitest's default leaves one core idle.
   unit-tests:
     runs-on: ubuntu-latest
@@ -209,7 +261,7 @@ jobs:
 
       - name: Test, with coverage
         if: github.event_name != 'push' && github.event_name != 'pull_request'
-        run: npx vitest run --maxWorkers=100% --coverage --coverage.reporter=text-summary --coverage.reporter=json-summary
+        run: npm run test:coverage -- --maxWorkers=100% --coverage.reporter=text-summary --coverage.reporter=json-summary
 
       - name: Coverage summary
         if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}

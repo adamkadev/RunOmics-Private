@@ -1,5 +1,5 @@
 import 'server-only'
-import { dailyBudget, quotaDay, spacingMs, spendField } from '@/domain/ai/budget'
+import { dailyBudget, poolOverride, quotaDay, spacingMs, spendField } from '@/domain/ai/budget'
 import { getSpend, recordSpend } from '@/infrastructure/repositories/FirestoreBudgetRepository'
 import { CALL_TIMEOUT_MS } from '@/lib/gemini'
 
@@ -9,7 +9,8 @@ const CALL_COST_MS = CALL_TIMEOUT_MS + 3_000
 
 export interface Spender {
   reserve(pool: string[]): Promise<string | null>
-  exhaust(model: string): void
+  /** A model Google answered 429 or 404, with that answer. */
+  exhaust(model: string, reason: string): void
   report(): Record<string, number>
 }
 
@@ -24,8 +25,6 @@ export async function openSpender(now = new Date()): Promise<Spender> {
   const lastCallAt: Record<string, number> = {}
   const exhausted = new Set<string>()
 
-  const override = process.env.GEMINI_MODEL
-
   function waitFor(model: string, from: number): number {
     const previous = lastCallAt[spendField(model)]
     return previous ? Math.max(0, spacingMs(model) - (from - previous)) : 0
@@ -34,6 +33,7 @@ export async function openSpender(now = new Date()): Promise<Spender> {
   return {
     async reserve(pool) {
       const now = Date.now()
+      const override = poolOverride(pool, process.env)
       const candidates = (override ? [override] : pool)
         .filter((model) => {
           const field = spendField(model)

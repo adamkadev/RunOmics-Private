@@ -6,6 +6,22 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { hoursSinceSync, STALE_SYNC_HOURS } from '@/domain/sync/staleness'
 import { integrationStatus } from '@/infrastructure/integrations'
 import { dataVersion, loadData } from '@/application/usecases/LoadData'
+import { lastAiPass } from '@/application/usecases/AiPassStatus'
+import { liveFirestoreRulesHash } from '@/infrastructure/firestoreRulesHash'
+import { withTimeout } from '@/infrastructure/withTimeout'
+
+const FIRESTORE_TIMEOUT_MS = 3_000
+
+/** The sync polls this probe for minutes: a slow or refused read answers null rather than hold it up. */
+async function optional<T>(name: string, read: () => Promise<T>): Promise<T | null> {
+  if (!integrationStatus().firebaseAdmin) return null
+  try {
+    return await withTimeout(read(), FIRESTORE_TIMEOUT_MS, null)
+  } catch (error) {
+    console.warn(`[internal:health] ${name} could not be read:`, error)
+    return null
+  }
+}
 
 export async function GET(req: NextRequest) {
   return handleInternalRoute('health', req, async () => {
@@ -24,6 +40,7 @@ export async function GET(req: NextRequest) {
     const hours = lastSyncedAt ? hoursSinceSync(lastSyncedAt, now) : null
     // A training break leaves the last run old and the sync healthy, so only the sync's own time decides.
     const stale = !(hours !== null && hours < STALE_SYNC_HOURS)
+    const [ai, firestoreRulesHash] = await Promise.all([optional('ai', lastAiPass), optional('firestore rules', liveFirestoreRulesHash)])
 
     return NextResponse.json(
       {
@@ -36,8 +53,10 @@ export async function GET(req: NextRequest) {
         ...dataVersion(),
         version: process.env.NEXT_PUBLIC_APP_VERSION ?? null,
         integrations: integrationStatus(),
+        ai,
+        firestoreRulesHash,
       },
       { status: stale ? 503 : 200 }
     )
-  })
+  }, undefined, { probe: true })
 }

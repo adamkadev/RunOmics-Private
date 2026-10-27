@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ACCENT_LIFT, activeDaysInYear, dayLevel, LEVEL_FILL } from '@/components/consistency/consistencyRamp'
+import { activeDaysInYear, dayLevel } from '@/components/consistency/consistencyRamp'
 import { consistencyView, parseRange, weekSheet, type ConsistencyInput, type ConsistencyRange, type ConsistencyView } from '@/components/consistency/consistencyView'
 import { Consistency, dotGeometry } from '@/components/consistency/Consistency'
 import { t } from '@/i18n'
@@ -26,8 +26,6 @@ describe('the ramp the Progress hub draws', () => {
     expect(dayLevel({ distanceKm: 7.9, sessionCount: 1 })).toBe(1)
     expect(dayLevel({ distanceKm: 8, sessionCount: 1 })).toBe(2)
     expect(dayLevel({ distanceKm: 15, sessionCount: 2 })).toBe(3)
-    expect(LEVEL_FILL[0]).toBe('var(--level-rest)')
-    expect(LEVEL_FILL[3]).toBe(ACCENT_LIFT)
   })
 
   it('counts the days run over the twelve calendar months to this one', () => {

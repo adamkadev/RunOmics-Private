@@ -254,7 +254,3 @@ export function removeRouteLayers(map: MapLibreMap): void {
   for (const id of ROUTE_SOURCES) if (map.getSource(id)) map.removeSource(id)
   if (map.hasImage(ROUTE_START_IMAGE)) map.removeImage(ROUTE_START_IMAGE)
 }
-
-export function hasRouteLayers(map: MapLibreMap): boolean {
-  return !!map.getSource(ROUTE_SOURCE)
-}

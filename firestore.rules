@@ -113,5 +113,11 @@ service cloud.firestore {
       allow create, update: if isOwner() && isWellFormedPushToken(token);
       allow delete: if isOwner();
     }
+
+    // Each scheduled run and internal 5xx, written by the server (Admin SDK) alone.
+    match /jobEvents/{eventId} {
+      allow get, list: if isOwner();
+      allow write: if false;
+    }
   }
 }

@@ -44,6 +44,7 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       await setDoc(doc(db, 'wellness', '2026-10-24'), { sleep: 2, soreness: 4, ill: true })
       await setDoc(doc(db, 'pushTokens', 'token-1'), { token: 'token-1', userAgent: 'iPhone' })
       await setDoc(doc(db, 'aiInsights', 'today'), { text: 'x' })
+      await setDoc(doc(db, 'jobEvents', 'event-1'), { at: '2026-10-27T06:00:01.000Z', route: 'daily-session', trigger: 'cron', outcome: 'sent', status: 200 })
     })
   })
 
@@ -214,6 +215,25 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       await assertFails(getDoc(doc(visitor(), 'pushTokens', 'token-1')))
       await assertFails(getDoc(doc(owner(), 'pushTokens', 'token-1')))
       await assertFails(getDocs(collection(owner(), 'pushTokens')))
+    })
+  })
+
+  describe('jobEvents', () => {
+    const event = { at: '2026-10-27T07:00:01.000Z', route: 'daily-session', trigger: 'cron', outcome: 'error', status: 500, error: 'TypeError' }
+
+    it('lets only the owner read the runs', async () => {
+      await assertFails(getDoc(doc(visitor(), 'jobEvents', 'event-1')))
+      await assertFails(getDoc(doc(stranger(), 'jobEvents', 'event-1')))
+      await assertFails(getDocs(collection(stranger(), 'jobEvents')))
+      await assertSucceeds(getDoc(doc(owner(), 'jobEvents', 'event-1')))
+      await assertSucceeds(getDocs(collection(owner(), 'jobEvents')))
+    })
+
+    it('lets no client write a run, owner included', async () => {
+      await assertFails(setDoc(doc(visitor(), 'jobEvents', 'event-2'), event))
+      await assertFails(setDoc(doc(owner(), 'jobEvents', 'event-2'), event))
+      await assertFails(setDoc(doc(owner(), 'jobEvents', 'event-1'), event))
+      await assertFails(deleteDoc(doc(owner(), 'jobEvents', 'event-1')))
     })
   })
 

@@ -14,8 +14,8 @@ import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances'
 import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
-import { yearOverYear } from '@/lib/yearOverYear'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
+import { analyticsYtd } from '../_data/analyticsYtd'
 import { getLoadSeries, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 import { loadData } from '@/application/usecases/LoadData'
 import { getPaceBests } from '@/application/usecases/GetPaceCurve'
@@ -32,7 +32,6 @@ export default async function AnalyticsPage() {
   const plan = await loadPlanWeeks(getCoachingOverview(today), today)
   const yearData = goals.byYear[year] ?? null
   const spotlight = goals.nextRace
-  const goalKm = yearData?.goals && yearData.goals.annualDistanceKm > 0 ? yearData.goals.annualDistanceKm : null
 
   const threshold = getThresholdHistory()?.points ?? []
   const loads = getLoadSeries()
@@ -63,13 +62,7 @@ export default async function AnalyticsPage() {
     balance: getLoadBalance(),
     paceBests: getPaceBests(),
     weeklyAvgKm: weeklyAverageKm(activities, today),
-    // Goals' own figures: Volume summarises them and links there.
-    ytd: {
-      km: yearData?.totalDistanceKm ?? 0,
-      vsLastYear: yearOverYear(activities, today),
-      goalKm,
-      projection: yearData?.projection ? { projectedYearKm: yearData.projection.projectedYearKm } : null,
-    },
+    ytd: analyticsYtd(activities, yearData, today),
   }
 
   return <AnalyticsClient data={board} today={today} />

@@ -1,11 +1,9 @@
 'use client'
 
 import { useMemo, useSyncExternalStore } from 'react'
-import { useTheme } from 'next-themes'
 import {
   ACCENT_CHANGE_EVENT,
   ACCENT_STORAGE_KEY,
-  accentColor,
   parseAccent,
   type AccentId,
 } from '@/lib/accent'
@@ -36,10 +34,4 @@ function storedAccent(): string | null {
 export function useAccent(): AccentId {
   const stored = useSyncExternalStore(subscribe, storedAccent, () => null)
   return useMemo(() => parseAccent(stored), [stored])
-}
-
-export function useAccentUiColor(): string {
-  const accent = useAccent()
-  const { resolvedTheme } = useTheme()
-  return accentColor(accent, resolvedTheme === 'light' ? 'light' : 'dark')
 }

@@ -508,6 +508,18 @@ export const en = {
       loading: 'Loading…',
       none: 'No errors recorded.',
       loadFailed: 'The errors couldn’t be loaded.',
+      // Each server job's latest run, kept in Firestore: Vercel's own log lasts half an hour.
+      scheduledJobs: 'Scheduled jobs: last run and outcome',
+      jobsNone: 'No run recorded yet.',
+      jobsLoadFailed: 'The runs couldn’t be loaded.',
+      outcome: { sent: 'Done', skipped: 'Nothing to do', error: 'Failed' },
+      trigger: { cron: 'cron', manual: 'by hand', sync: 'sync' },
+      ai: {
+        title: 'Last AI pass',
+        counts: (generated: number, missed: number) => `${generated} written · ${missed} left`,
+        idleNights: (nights: number) => `nothing written for ${nights} night${nights === 1 ? '' : 's'}`,
+        closed: (model: string, reason: string) => `${model} closed: ${reason}`,
+      },
     },
     sync: {
       subtitle: 'Pull in today’s runs without waiting for tonight.',
@@ -623,6 +635,8 @@ export const en = {
     },
     notifications: {
       error: 'Could not update notification settings, please retry.',
+      // The app's start-up refresh of this device's push token failed: the switches may be on while nothing arrives.
+      notRegistered: 'Not registered on this device. Turn a switch off and on again to retry.',
       // The daily reminder's time beside its switch: "08:00".
       at: (hour: number, minute: string) => `${String(hour).padStart(2, '0')}:${minute}`,
       types: {
@@ -757,7 +771,6 @@ export const en = {
   analytics: {
     title: 'Analytics',
 
-    aboutChart: 'What this chart measures',
     // Named for what each tab holds, in whole words.
     tabs: {
       fitness: 'Load',
@@ -1308,9 +1321,6 @@ export const en = {
       prBadge: 'PR',
       rankBadge: (rank: number) => `#${rank}`,
     },
-    achievements: {
-      title: 'Achievements from this run',
-    },
     // The home area's quartiers this run reached into first.
     newGround: {
       title: 'New ground',
@@ -1534,6 +1544,7 @@ export const en = {
     // The compact top bar's, short enough to sit beside the ‹ 2026 › stepper.
     barTitle: 'Goals',
     empty: 'No goals configured yet.',
+    emptyHow: 'Goals are set in goals.json in the data repository: add the year with its annualDistanceKm and, if you like, a target time per race distance.',
     back: 'Progress',
     // The ‹ 2026 › stepper's arrows.
     prevYear: 'Previous year',
@@ -1774,6 +1785,14 @@ export const en = {
       shortAtPace: (km: string) => `${km} km short at this pace`,
       overAtPace: (km: string) => `${km} km over at this pace`,
       noRace: 'No race planned',
+      // The race card's stand-in while no race is planned: the coach's block.
+      currentBlock: 'Current block',
+      blockWeek: (week: number, total: number) => `Week ${week} of ${total}`,
+      blockSessions: (done: number, planned: number) => `${done} of ${planned} sessions done`,
+      // The year card without a goal: it opens the years, not an empty Goals.
+      thisYear: 'This year',
+      athleteZones: 'Athlete & zones',
+      athleteZonesDetail: 'Heart-rate and pace zones, VO₂ max',
       noRecords: 'No records yet',
       onPace: 'On pace for the goal.',
       // The tiles under the records.
@@ -1950,14 +1969,26 @@ export const en = {
       title: (workflow: string) => `${workflow} failed`,
       body: (runUrl: string) => `Open the run: ${runUrl}`,
     },
-    // The nightly digest of what failed on a phone, never one push per error: anyone may post an error.
+    // The nightly digest of what failed on a phone or in a server job, never one push per error: anyone may post an error.
     clientErrors: {
-      title: (count: number) => `${count} error${count === 1 ? '' : 's'} on your phone`,
+      title: (phone: number, server: number) =>
+        [
+          phone > 0 ? `${phone} error${phone === 1 ? '' : 's'} on your phone` : null,
+          server > 0 ? `${server} server error${server === 1 ? '' : 's'}` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       body: (message: string) => `Latest: ${message}. Settings → Diagnostics has them all.`,
+      serverError: (route: string, error: string) => `${route} failed (${error})`,
     },
     exploreComplete: {
       title: (name: string) => `${name} explored`,
       body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
+    },
+    aiIdle: {
+      title: (nights: number) => `No AI copy written for ${nights} nights`,
+      body: (closed: string) =>
+        closed ? `Gemini closed ${closed}. The app shows rule-based copy until a model answers again.` : 'Every pass left its work undone. The app shows rule-based copy until a model answers again.',
     },
     syncDispatchRefused: {
       title: 'Nightly sync did not start',
@@ -2253,12 +2284,6 @@ export const en = {
       pace: (range: string) => `${range} /km`,
       recovery: (clock: string) => `${clock} rec`,
       walk: (clock: string) => `${clock} walk`,
-    },
-    raceFooter: {
-      targetTime: (clock: string) => `target ${clock}`,
-      primaryTarget: 'primary',
-      tuneUp: 'tune-up',
-      blockEndsHere: 'block end',
     },
     weekPurpose: {
       prePlan: 'Pre-plan',

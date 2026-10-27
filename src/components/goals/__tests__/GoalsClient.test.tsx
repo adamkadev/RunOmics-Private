@@ -48,6 +48,12 @@ describe('defaultGoalsYear', () => {
 })
 
 describe('GoalsClient', () => {
+  it('says where a goal is set when there is none', () => {
+    render(<GoalsClient data={{ years: [], byYear: {}, history: [], nextRace: null }} today={TODAY} />)
+    expect(screen.getByTestId('goals-empty').textContent).toBe(`${t.goals.empty}${t.goals.emptyHow}`)
+    expect(t.goals.emptyHow).toContain('goals.json')
+  })
+
   it('puts the year stepper in the button row, the title on its own row', () => {
     render(<GoalsClient data={data()} today={TODAY} back={<button type="button">Back</button>} />)
     const title = screen.getByRole('heading', { level: 1 })

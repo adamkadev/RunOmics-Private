@@ -17,16 +17,6 @@ export function bracketForAge(age: number): AgeBracket {
   return AGE_BRACKETS[index] ?? '20-29'
 }
 
-export type Vo2maxBand = 'building' | 'solid' | 'strong' | 'elite'
-
-export function vo2maxBand(vo2max: number, age: number, sex: 'male' | 'female', norms: Vo2maxNorms): Vo2maxBand {
-  const t = norms[sex][bracketForAge(age)]
-  if (vo2max >= t.superior) return 'elite'
-  if (vo2max >= t.excellent) return 'strong'
-  if (vo2max >= t.good) return 'solid'
-  return 'building'
-}
-
 export function vo2maxTopPercent(vo2max: number, age: number, sex: 'male' | 'female', norms: Vo2maxNorms): number {
   const t = norms[sex][bracketForAge(age)]
   const anchors: [number, number][] = [[0, 1], [40, t.fair], [60, t.good], [80, t.excellent], [95, t.superior]]

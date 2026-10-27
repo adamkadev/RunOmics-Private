@@ -20,8 +20,6 @@ export type VO2maxSeries = Record<VO2maxRange, VO2maxPoint[]>
 const MONTHS_IN_RANGE: Record<Exclude<VO2maxRange, '4w'>, number> = { '6m': 6, '1y': 12 }
 const RECENT_DAYS = 28
 
-export type VO2maxTrend = 'up' | 'down' | 'stable'
-
 export function getLatestVO2max(): number | null {
   const profileVo2max = getAthleteProfile().vo2maxMlKgMin
   if (profileVo2max) return profileVo2max

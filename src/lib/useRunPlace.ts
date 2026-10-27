@@ -29,10 +29,6 @@ export function runPlace(address: NominatimAddress | undefined): RunPlace {
   return { town: town ?? quartier, quartier: quartier && quartier !== town ? quartier : null }
 }
 
-export function placeName(address: NominatimAddress | undefined): string | null {
-  return runPlace(address).town
-}
-
 const cacheKey = (id: string) => `ro_runplace_${id}`
 
 function readCache(id: string): RunPlace | null {

@@ -58,7 +58,6 @@ def activity_factory():
             avg_heart_rate=None,
             rpe=None,
             comment="",
-            polyline=None,
             route=None,
             elevation_gain=None,
             aer_training_effect=None,

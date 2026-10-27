@@ -56,8 +56,8 @@ deterministic demo dataset in an unconfigured clone. Both locations sit outside
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/adamkadev/RunOmics
-cd RunOmics
+git clone https://github.com/adamkadev/RunOmics-Private runomics-private
+cd runomics-private
 
 # Frontend dependencies
 npm install
@@ -74,7 +74,7 @@ yourself, on [Garmin Connect's Personal API page](https://connect.garmin.com/app
 create a key. Garmin shows it once; copy it as
 `GARMIN_PERSONAL_API_KEY`. Choose the longest lifetime offered (a year at most)
 and note its expiry date as `GARMIN_PERSONAL_API_KEY_EXPIRES` (see
-[Set environment variables](#3-set-environment-variables)) so the nightly sync warns two weeks
+[Configure environment variables](#3-configure-environment-variables)) so the nightly sync warns two weeks
 ahead: an expired key fails the night with a message saying so
 (with `GARMIN_SECRET` also set, garth reads the runs meanwhile and the night is
 reported as a partial one), and a new key from the same page is all it takes.
@@ -114,78 +114,12 @@ night - the runs sync and the night is reported as a partial one.
 
 ### 3. Configure environment variables
 
-Create a `.env.local` file at the root:
+Copy `.env.example` to `.env.local` and fill in what you use. It is the one list of every
+variable RunOmics reads, with what each is for and where it has to be set; at least set
+`GARMIN_PERSONAL_API_KEY`, `RUNOMICS_DATA_DIR` and `NEXT_PUBLIC_MAPTILER_TOKEN`.
 
-```env
-# Garmin Personal API key (https://connect.garmin.com/app/settings/personalApiToken) - used only by
-# scripts/sync.py, never on Vercel
-GARMIN_PERSONAL_API_KEY=GCDC_...
-# Optional: garth token (from get_secret.py) for gear, the calendar and Connect's metrics
-# GARMIN_SECRET=eyJ...
-
-# Canonical local dataset (a sibling private checkout)
-RUNOMICS_DATA_DIR=../runomics-data-adam/data
-
-# MapTiler API key (for route maps)
-NEXT_PUBLIC_MAPTILER_TOKEN=your_maptiler_key
-
-# Firebase Admin (server-side: notification dedup state in Firestore, push notifications)
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@your-project-id.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-
-# Firebase client SDK (browser: auth, push notification tokens, activity notes)
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
-
-# Google account granted the "owner" custom claim by `npm run set-owner-claim`.
-# NOTE: this is provisioning input only. Both the UI gate and the Firestore
-# security rules (firestore.rules at the repo root) authorize on the claim
-# itself, never on this email, so changing it here grants nothing until the
-# script is re-run. Deploy rule changes with
-# `firebase deploy --only firestore:rules`.
-NEXT_PUBLIC_OWNER_EMAIL=you@example.com
-
-# Shared secret for /api/internal/*: the sync workflow's calls and a scheduled route run by hand
-INTERNAL_NOTIFY_SECRET=any-random-string
-
-# UI language: 'en' (default) or 'fr'. Picked at build time.
-NEXT_PUBLIC_LOCALE=en
-
-# Optional: the IANA time zone "today" is read in (e.g. Europe/Luxembourg), on
-# the server that prerenders a page and in the browser that shows it. Unset,
-# each uses its own local date. An unknown zone fails the build.
-# NEXT_PUBLIC_TIME_ZONE=Europe/Luxembourg
-
-# Gemini API keys (optional). Get them at https://aistudio.google.com/apikey.
-#
-# GEMINI_API_KEY writes the verdicts and insight cards on Today, the shoes and
-# each activity - without it every card falls back to its rules-based copy.
-# GEMINI_COACH_API_KEY is optional and read only by `npm run coach ... --advisor
-# gemini`; the coach itself runs through Claude Code with no key. It belongs to a
-# separate Google project: coaching never falls back to GEMINI_API_KEY and
-# GEMINI_API_KEY never falls back to it, so the two free-tier quotas stay
-# independent. Nothing deployed reads it, so it goes in .env.local only.
-#
-# Free-tier quotas are counted per model, so there are two pools: the read
-# surfaces draw from the Flash pool, and the per-activity verdict backfill from
-# the Flash Lite pool, which never eats into the dashboard hero's budget.
-# GEMINI_MODEL replaces whichever pool is being drawn from, for when Google
-# retires a model - check the live list first:
-# https://generativelanguage.googleapis.com/v1beta/models
-# GEMINI_API_KEY=...          # general AI surfaces
-# GEMINI_COACH_API_KEY=...    # only for the coach's --advisor gemini, separate project
-# GEMINI_MODEL=
-# GEMINI_COACH_MODEL= # optional coaching-specific override
-
-# OpenRouteService key (optional) for Explore's route generator, server-side
-# only. Free "Standard" plan at https://account.heigit.org: 2000 directions a
-# day, 40 a minute. Without it the generator says it isn't set up.
-# ORS_API_KEY=...
+```bash
+cp .env.example .env.local
 ```
 
 > `.env.local` is gitignored. Never commit your secrets.
@@ -245,8 +179,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Annual goals, official personal bests, and your athlete profile (HR zones, threshold
 pace, etc.) are **not** in Firestore - they're hand-edited JSON files in the private
-`RunOmics-data` repository, fetched into `data/` and read server-side. Editing one
-takes effect on the next deploy.
+`RunOmics-data` repository, fetched into `data/` and read server-side. An edit pushed to
+that repository is served like a sync's (see [Sync and deploy](#5-sync-and-deploy)), with
+no rebuild.
 (Upcoming races are the similar exception: synced from Garmin Connect into
 `upcoming_races.json` by `scripts/sync_upcoming_races.py` - see that file's
 docstring.)
@@ -294,7 +229,6 @@ Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"
 // data/athlete.json - training zones used across Analytics and Profile
 {
   "displayName": "Adam",
-  "thresholdPowerWatts": null,
   "lthrBpm": 177,
   "thresholdPaceSecPerKm": 254,
   "hrZoneBoundsBpm": [142, 158, 168, 177],
@@ -309,13 +243,8 @@ Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"
 `vmaKmh` and `lastUpdate` are fetched from Garmin Connect and merged in automatically
 by every `scripts/sync.py` run (see `scripts/garmin/athlete.py`) - existing values are
 preserved if a field can't be fetched, and `maxHrBpm` only ever ratchets up.
-`displayName` and `thresholdPowerWatts` have no Garmin equivalent and are edited by
-hand. Set any field to `null` to clear it (the app falls back to a population-average
+`displayName` has no Garmin equivalent and is edited by hand. Set any field to `null` to clear it (the app falls back to a population-average
 default where one exists, e.g. training load).
-
-### `public/events/` - Race photos
-
-Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/` and it will appear as the cover image on the PB card for that activity.
 
 ## Adaptive coach
 
@@ -331,7 +260,7 @@ ready to answer again; an in-app change and a new block both get that repair loo
 `--advisor gemini` asks Gemini instead, with `GEMINI_COACH_API_KEY` and nothing else:
 without it the command fails rather than borrowing the general `GEMINI_API_KEY` quota,
 which stays the app's, for its verdicts and insight cards. Nothing deployed calls the
-coach, so the coach key stays in `.env.local` and is needed neither on Vercel nor in GitHub
+coach, so the coach key stays in the coach's `.env.<profile>.local` and is needed neither on Vercel nor in GitHub
 Actions. Garmin-scheduled sessions under `data/planned_workouts/` remain a separate,
 observed schedule signal; applying a coach proposal does not publish anything to
 Garmin or trigger a deployment.
@@ -365,18 +294,16 @@ its end date, and may replan only those: a new block comes from `bootstrap`.
 The coach reads the notes and tags written in the app from Firestore `activityNotes`, live,
 at the moment it builds its context, and morning check-ins the same way from Firestore
 `wellness`. When Firestore does not answer, it falls back to the nightly copies,
-`activity_notes.json` and `wellness.json`, at most a day old. That read needs the Firebase **Admin** credentials, and `.env.local` points at the dev project,
-where those notes are not. Put the production admin trio (`FIREBASE_PROJECT_ID`,
-`FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) in a gitignored `.env.prod`; `npm run coach`
-layers it over `.env.local`, and dotenv gives the first `-e` file precedence for a key it
-defines, so `.env.prod` need hold only those three and everything else still comes from
-`.env.local`. Without that file dotenv carries on, and the coach warns that it read the
-nightly copies instead, or, with no copy either, that it is building the plan without notes -
-the whole failure mode, because a plan built blind looks exactly like one built with the tags
-the athlete wrote. There was a separate
-`coach:prod` for this and it only ever meant the plain command was the degraded one. The
-coaching path only ever reads that collection, but the service account itself is not
-read-only, so treat `.env.prod` as the production credential it is.
+`activity_notes.json` and `wellness.json`, at most a day old. That read needs the production
+Firebase **Admin** credentials (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`,
+`FIREBASE_PRIVATE_KEY`). The coach commands load one gitignored file per athlete,
+`.env.adam.local` for `npm run coach` and `.env.lamiaa.local` for `npm run coach:lamiaa`,
+with `dotenv -o`: that file alone, its values winning over the shell's, so it holds
+everything the coach reads, the production admin trio included. Without them the coach warns
+that it read the nightly copies instead, or, with no copy either, that it is building the plan
+without notes - the whole failure mode, because a plan built blind looks exactly like one built
+with the tags the athlete wrote. The coaching path only ever reads that collection, but the
+service account itself is not read-only, so treat that file as the production credential it is.
 
 With private-repository credentials configured, apply fetches the latest data into a
 temporary workspace, rejects stale context or plan revisions, writes the coaching
@@ -480,7 +407,11 @@ not a broken sync. Data that will not load answers `unloaded`, also with 503.
 Its `integrations` field says which server integrations the deployment has
 credentials for (`firebaseAdmin`, `gemini`, `syncButton`, `cron`) and whether it
 is private (`privateSite`), by name only, and the nightly sync warns when one the
-post-sync checks need is missing.
+post-sync checks need is missing. `ai` is the last AI insight pass (see
+[AI insight generation](docs/coaching-and-metrics.md#ai-insight-generation)), and
+`firestoreRulesHash` the SHA-256 of the ruleset Firestore enforces now: the nightly
+sync warns when it differs from `firestore.rules` in the repository, or when health
+cannot read it (the service account needs the *Firebase Rules Viewer* role).
 
 Every other alert is sent by the deployment it watches, so one that is down, or
 has lost its Firebase or cron credentials, cannot report itself. The *Deployment
@@ -539,7 +470,7 @@ A deployment whose Firestore is elsewhere should pick the Vercel region nearest 
 ### 3. Set environment variables
 
 In your Vercel project → **Settings** → **Environment Variables**, add every variable
-from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
+from your `.env.local` *except* the Garmin ones, `RUNOMICS_DATA_DIR` and `GEMINI_COACH_API_KEY`:
 
 | Variable | Used for |
 |----------|----------|
@@ -554,7 +485,7 @@ from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `
 | `RUNOMICS_PRIVATE`, `SESSION_SECRET`, `RUNOMICS_VIEWERS` | `RUNOMICS_PRIVATE=1` puts every page behind sign-in; `SESSION_SECRET` (32 characters or more) signs the session cookie; `RUNOMICS_VIEWERS` lists the Google accounts invited to view, comma-separated |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](docs/interface.md#date-handling) |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_BACKFILL_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts. `GEMINI_MODEL` replaces the Flash pool, `GEMINI_BACKFILL_MODEL` the Flash-Lite pool that backfills older run verdicts; unset, each pool keeps its own models |
 | `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService loops) - see [Explore](docs/interface.md#explore) |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | The private data repository the build clones; a fine-grained token with Contents: Read only |
 | `RUNOMICS_DATA_SOURCE` | `github`: reads that repository at run time. The sync never rebuilds a deployment, so without it a deployment keeps the data of its last build - see [Reading the data at run time](docs/data-and-sync.md#reading-the-data-at-run-time) |
@@ -593,7 +524,10 @@ project, or the phones' writes are refused:
 firebase deploy --only firestore:rules --project <firebase-project-id>
 ```
 
-`npm run test:rules` checks the rules against the emulator first.
+`npm run test:rules` checks the rules against the emulator first. The nightly sync compares
+the deployed ruleset with the repository's and warns in its run when a project was left behind;
+for that, grant the Firebase Admin service account the **Firebase Rules Viewer** role
+(Google Cloud console → IAM) on each project.
 
 ### 5. Sync and deploy
 

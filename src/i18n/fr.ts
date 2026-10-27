@@ -481,6 +481,17 @@ export const fr = {
       loading: 'Chargement…',
       none: 'Aucune erreur enregistrée.',
       loadFailed: 'Impossible de charger les erreurs.',
+      scheduledJobs: 'Tâches planifiées : dernière exécution et résultat',
+      jobsNone: 'Aucune exécution enregistrée.',
+      jobsLoadFailed: 'Impossible de charger les exécutions.',
+      outcome: { sent: 'Fait', skipped: 'Rien à faire', error: 'Échec' },
+      trigger: { cron: 'cron', manual: 'à la main', sync: 'synchro' },
+      ai: {
+        title: 'Dernière passe IA',
+        counts: (generated: number, missed: number) => `${generated} écrit${generated > 1 ? 's' : ''} · ${missed} en attente`,
+        idleNights: (nights: number) => `rien d’écrit depuis ${nights} nuit${nights > 1 ? 's' : ''}`,
+        closed: (model: string, reason: string) => `${model} fermé : ${reason}`,
+      },
     },
     sync: {
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
@@ -589,6 +600,7 @@ export const fr = {
     },
     notifications: {
       error: 'Impossible de mettre à jour les réglages de notification, réessaie.',
+      notRegistered: 'Cet appareil n’est pas enregistré pour les notifications. Désactive puis réactive une option pour réessayer.',
       // « 8 h 00 », the French way of writing a time.
       at: (hour: number, minute: string) => `${hour} h ${minute}`,
       types: {
@@ -713,7 +725,6 @@ export const fr = {
   analytics: {
     title: 'Analyses',
 
-    aboutChart: 'Ce que mesure ce graphique',
     // « Forme » reste réservé à la TSB ; l’onglet de la charge s’appelle Charge.
     tabs: {
       fitness: 'Charge',
@@ -1224,9 +1235,6 @@ export const fr = {
       prBadge: 'RP',
       rankBadge: (rank: number) => `#${rank}`,
     },
-    achievements: {
-      title: 'Exploits de cette sortie',
-    },
     newGround: {
       title: 'Nouveau terrain',
       cells: (n: number) => `${n} nouvelle${n > 1 ? 's' : ''} case${n > 1 ? 's' : ''}`,
@@ -1429,6 +1437,7 @@ export const fr = {
     title: 'Objectifs et saison',
     barTitle: 'Objectifs',
     empty: 'Aucun objectif configuré pour le moment.',
+    emptyHow: 'Les objectifs se fixent dans goals.json, dans le dépôt de données : ajoute l’année avec son annualDistanceKm et, si tu veux, un temps visé par distance de course.',
     back: 'Progression',
     prevYear: 'Année précédente',
     nextYear: 'Année suivante',
@@ -1638,6 +1647,12 @@ export const fr = {
       shortAtPace: (km: string) => `${km} km de retard à ce rythme`,
       overAtPace: (km: string) => `${km} km d'avance à ce rythme`,
       noRace: 'Aucune course prévue',
+      currentBlock: 'Bloc en cours',
+      blockWeek: (week: number, total: number) => `Semaine ${week} sur ${total}`,
+      blockSessions: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} faite${done > 1 ? 's' : ''} sur ${planned}`,
+      thisYear: 'Cette année',
+      athleteZones: 'Athlète et zones',
+      athleteZonesDetail: 'Zones de fréquence cardiaque et d’allure, VO₂ max',
       noRecords: 'Pas encore de record',
       onPace: 'Dans les temps pour l’objectif.',
       vo2max: 'VO₂ max',
@@ -1800,12 +1815,24 @@ export const fr = {
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,
     },
     clientErrors: {
-      title: (count: number) => `${count} erreur${count > 1 ? 's' : ''} sur ton téléphone`,
+      title: (phone: number, server: number) =>
+        [
+          phone > 0 ? `${phone} erreur${phone > 1 ? 's' : ''} sur ton téléphone` : null,
+          server > 0 ? `${server} erreur${server > 1 ? 's' : ''} serveur` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       body: (message: string) => `Dernière : ${message}. Tout est dans Réglages → Diagnostic.`,
+      serverError: (route: string, error: string) => `échec de ${route} (${error})`,
     },
     exploreComplete: {
       title: (name: string) => `${name} exploré`,
       body: (pct: string, done: number, total: number) => `${pct} de ses rues parcourues. ${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}.`,
+    },
+    aiIdle: {
+      title: (nights: number) => `Aucun texte IA écrit depuis ${nights} nuits`,
+      body: (closed: string) =>
+        closed ? `Gemini a fermé ${closed}. L’app affiche les textes à base de règles jusqu’à ce qu’un modèle réponde.` : 'Chaque passe a laissé son travail en plan. L’app affiche les textes à base de règles jusqu’à ce qu’un modèle réponde.',
     },
     syncDispatchRefused: {
       title: 'La synchro de nuit n’a pas démarré',
@@ -2084,12 +2111,6 @@ export const fr = {
       pace: (range: string) => `${range} /km`,
       recovery: (clock: string) => `${clock} récup`,
       walk: (clock: string) => `${clock} marche`,
-    },
-    raceFooter: {
-      targetTime: (clock: string) => `cible ${clock}`,
-      primaryTarget: 'principal',
-      tuneUp: 'préparation',
-      blockEndsHere: 'fin de bloc',
     },
     weekPurpose: {
       prePlan: 'Avant le plan',

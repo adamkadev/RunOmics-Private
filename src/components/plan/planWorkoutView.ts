@@ -13,7 +13,6 @@ import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
 import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
 import type { SessionHrTarget } from '@/domain/training/hrTarget'
 import {
-  isKeyPrescription,
   prescriptionDuration,
   prescriptionEffortPace,
   prescriptionPace,
@@ -21,7 +20,7 @@ import {
   prescriptionStructure,
 } from '@/components/coaching/presentation'
 import { pickDefined } from '@/components/pickDefined'
-import { formatDurationWords, formatPaceRange } from '@/lib/formatters'
+import { formatPaceRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { sessionTitle } from './sessionTitle'
 
@@ -44,10 +43,7 @@ export interface PlanWorkoutView {
   /** The coach's state; absent for a session only the watch planned. */
   state?: PrescriptionDisplayState
   activityId: string | null
-  isKey: boolean
 }
-
-const KEY_SESSION_TYPES = new Set<ActivityType>(['Threshold', 'Sprint', 'Tempo'])
 
 function zoneFor(type: ActivityType | undefined, zones: TrainingZonesData | null): TrainingZone | null {
   const key = paceZoneKeyFor(type)
@@ -57,11 +53,6 @@ function zoneFor(type: ActivityType | undefined, zones: TrainingZonesData | null
 function effortBand(type: ActivityType | undefined, zone: TrainingZone | null): string | null {
   if (zone) return zone.key === 'easy' ? t.plan.easyEffortLabel : zone.label
   return type ? t.activityTypes[type] : null
-}
-
-export function formatPlanDuration(duration: PlanWorkoutView['duration']): string | null {
-  if (!duration) return null
-  return formatDurationWords(duration.seconds)
 }
 
 export function plannedWorkoutView(
@@ -93,7 +84,6 @@ export function plannedWorkoutView(
     hr: null,
     statusLabel: t.plan.planned,
     activityId: null,
-    isKey: type ? KEY_SESSION_TYPES.has(type) : false,
   }
 }
 
@@ -138,7 +128,6 @@ export function coachWorkoutView(
     statusLabel: t.coaching.states[view.state],
     state: view.state,
     activityId: view.activityId,
-    isKey: isKeyPrescription(workout),
   }
 }
 

@@ -15,6 +15,10 @@ import { generateInsight } from '@/lib/gemini'
 import { sendPush } from '@/lib/sendPushNotification'
 import { pushPaths } from '@/lib/pushLinks'
 import { loadData } from '@/application/usecases/LoadData'
+import { recordAiPass } from '@/application/usecases/AiPassStatus'
+import { IDLE_NIGHTS_BEFORE_ALERT } from '@/domain/ai/passStatus'
+import { integrationStatus } from '@/infrastructure/integrations'
+import { opsStrings, sendOpsPush } from '@/lib/opsPush'
 
 export const maxDuration = 300
 
@@ -38,12 +42,28 @@ export async function POST(req: NextRequest) {
       now: () => new Date(),
     }
 
+    const limit = requestedLimit(req)
     const report = await runInsightPass(deps, insightSurfaces(), {
-      limit: requestedLimit(req),
+      limit,
       ignoreHorizon: req.nextUrl.searchParams.get('all') === '1',
     })
+    // A limit of 0 only counts the backlog: it is not a night's attempt.
+    if (limit > 0 && integrationStatus().firebaseAdmin) await keepPassStatus(report)
     return NextResponse.json(report)
   })
+}
+
+/** The pass's work is saved already, so a status or alert that fails is logged and never fails it. */
+async function keepPassStatus(report: Awaited<ReturnType<typeof runInsightPass>>): Promise<void> {
+  try {
+    const { status, alert } = await recordAiPass(report)
+    if (!alert) return
+    const n = opsStrings.aiIdle
+    const closed = status.closedModels.map((model) => model.model).join(', ')
+    await sendOpsPush({ title: n.title(IDLE_NIGHTS_BEFORE_ALERT), body: n.body(closed), link: pushPaths.settings, tag: 'ai-idle' })
+  } catch (error) {
+    console.error('[ai-insights] could not keep the pass status', error)
+  }
 }
 
 export function requestedLimit(req: NextRequest): number {

@@ -127,8 +127,7 @@ not counted in the tally.
 
 ## The Plan's single workout shape
 
-The Plan has exactly one workout presentation (`PlannedWorkoutRow` and
-`PlannedWorkoutSheet`) and it must not care where a session came from. A Garmin planned
+The Plan has exactly one workout presentation (`PlannedWorkoutCard`) and it must not care where a session came from. A Garmin planned
 workout, a coach prescription, and a coach prescription already synchronised to Garmin are
 the same thing to an athlete looking at their week, so all three are normalised through
 `planWorkoutView` and rendered identically.
@@ -167,6 +166,11 @@ declined to rate are left out.
   reflected — VO₂max is not perfectly linear with race time. The reference point is found by
   date, not by counting entries back: the series is sampled monthly and a sample is missing
   for any month with no reading, so its index says nothing about how long ago it was.
+- **TRIMP follows the athlete's sex.** Banister's TRIMP weights heart-rate reserve by
+  0.64·e^(1.92·HRR) for men and 0.86·e^(1.67·HRR) for women, whose lactate rises less steeply
+  with effort. `athlete.json` `sex: "female"` picks the second through `HrBounds`; anything else,
+  or no `sex`, keeps the first. Every load built from TRIMP (fitness, fatigue, form, ACWR,
+  the planned-session estimates and the workbook) moves with it.
 - **Load risk.** Foster monotony = mean(daily load, 7d) / stdev(daily load, 7d), null when
   undefined. Strain has no direction of its own and inherits the worse of ACWR/monotony.
   Garmin's own verdict on its ratio beats re-testing the number against our generic
@@ -189,7 +193,7 @@ declined to rate are left out.
   `GetShoeWearAlerts`, `GetOverreachingAlerts`, `GetStaleSyncAlert`) — there is nothing to
   compare against yet, so the first call only bootstraps the stored state.
 - **`QueryActivities` maps down to `ActivitySummary`** so neither the SSR page nor the
-  paginated API response ever ships per-sample arrays to the client. `activitySummary()` drops
+  paginated API response ever ships per-sample arrays to the client. `toActivitySummary()` drops
   the route, sample and split arrays that make up most of an activity's weight; anything
   crossing the server/client boundary for a list row or card should go through it first.
 - **Other training is never an `Activity`.** Strength, cycling and the rest are
@@ -198,7 +202,7 @@ declined to rate are left out.
   heart rate and load stay on the server); the coach gets `otherTraining`, the minutes of the
   last 7 and 28 days and each session of the 28, which is null without one, so a context with
   none reads and hashes as before. The Monday digest adds last week's time to its volume line.
-- **`raceDistances` lives in the domain**, not beside its use case, because the charts need
+- **`RACE_DISTANCE_KM` lives in the domain** (`src/domain/race/distances.ts`), not beside a use case, because the charts need
   the kilometre table at render time and importing it from the use case would drag the
   `fs`-backed repository into the client bundle.
 
@@ -340,7 +344,7 @@ There is no fallback in either direction: neither key ever stands in for the oth
 | | `GEMINI_API_KEY` | `GEMINI_COACH_API_KEY` |
 |---|---|---|
 | What it powers | The deployed AI surfaces — Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The coaching CLI's `--advisor gemini` (`npm run coach`), which runs locally; the default manual path needs no key |
-| `.env.local` | yes | only for `--advisor gemini` |
+| Local env file | yes, in `.env.local` | only for `--advisor gemini`, in the coach's `.env.<profile>.local` |
 | Vercel | **yes** — the surfaces are server-rendered and the cron routes call Gemini | **no** — nothing deployed calls the coach |
 | GitHub Actions | not directly: the workflows only `curl` the deployed `/api/internal/*` routes, which use the deployment's own key | **no** — no workflow runs a coaching generation |
 
@@ -392,8 +396,10 @@ per call, so one reservation is one request against the day's quota.
 out from under us. Both mean stop asking and take the next in the pool. `reserve()` returning
 null is ambiguous on its own — spent for the day, or out of this invocation's clock — so the
 daily ledger is read back to let a stuck verdict name which. `GEMINI_MODEL` replaces the
-*pool*, not the request, so what gets counted stays what gets called; overriding at the
-transport layer would bill one model's ledger for another's call.
+main *pool* and `GEMINI_BACKFILL_MODEL` the backfill one, not the request, so what gets counted
+stays what gets called; overriding at the transport layer would bill one model's ledger for
+another's call. They are separate because the pools are: one Flash model standing in for the
+Lite pool would spend its 20 requests a day on the backfill.
 
 **Two pools, sized from the demand.** Free-tier quotas are per model, and Flash and Flash Lite
 are not in the same league: Flash allows 20 requests a day, Lite 500. `MODEL_POOL` carries the
@@ -412,11 +418,11 @@ the one after it brought no new activity, so nothing asked again. Now every sync
 anything - the timestamp alone included - runs the AI passes; with no new data it skips the
 wait for the new deployment and the other checks, and a pass with nothing left to do costs a
 few Firestore reads.
-Four Flash models give it 72, five times its worst night: 3.8 and 3.6 Flash first, then 3 Flash
-and 2.5 Flash, which joined in Oct 2026 with a free quota of their own and none of it used, after
-a day Google answered 3.8 and 3.6 with nothing but 503s and a run's verdict had nowhere else to
-go. 2.5 sets its thinking by a token budget (512, about what `'low'` spends here) where 3.x takes
-a level. The pool also held 3.7 Flash, until Google retired it into 3.8: asked under
+Three Flash models give it 54, nearly four times its worst night: 3.8 and 3.6 Flash first, then
+3 Flash, which joined in Oct 2026 with a free quota of its own and none of it used, after a day
+Google answered 3.8 and 3.6 with nothing but 503s and a run's verdict had nowhere else to go. 2.5
+Flash joined with it and left again: Google serves it only to accounts that used it before, and
+answers others with a 404. The pool also held 3.7 Flash, until Google retired it into 3.8: asked under
 its old name it was 3.8 asked twice, paced and budgeted as if it were another model, so the
 second ask came inside 3.8's minute and drew on its day.
 
@@ -429,6 +435,15 @@ spacing that is roughly two dozen verdicts, which is what `DEFAULT_RUN_VERDICTS_
 is set to.
 Five passes clear the 100 with room to spare. The pools share one ledger and one spender, so a
 verdict backfill can never starve the dashboard even when it is churning through a rebuild.
+
+**A retired model is not silent.** Every pass but a `?limit=0` one keeps its status in Firestore
+`aiStatus/lastPass`: when it ran, how much it wrote, how much it left (`missed`: a surface or a
+verdict it tried and could not write), and each model Google closed during it (429 or 404) with
+its answer. Health reports it as `ai` and Settings → Diagnostics shows it above the scheduled
+jobs. A pass that writes nothing while it missed something adds its UTC date to `idleDays`; any
+pass that writes something, or finds nothing left to write, clears it. On the third idle night
+the route sends one operator push (`sendOpsPush`, tag `ai-idle`) naming the closed models, and
+no other until a pass writes again: until then every card shows its rule-based copy.
 
 **Ordering.** Verdicts for runs that just landed are written before any other surface — behind
 the other ten, the one insight the athlete is waiting for is the first thing the quota or the
@@ -497,7 +512,7 @@ kept once *per worker per build* — and Query Insights recorded 163 executions 
 `collection("aiInsights").get()`, about 360 documents each, roughly 59k reads against a 50k/day
 free tier. A direct `doc(id).get()` costs one read per page instead of the whole collection per
 worker, and correctness no longer depends on memory being shared by processes that do not share
-it. `listCachedHashes` needs the hash rather than mere presence — an entry written from facts
+it. `listCachedKeys` needs the hash rather than mere presence — an entry written from facts
 that have since changed is one the pages already ignore, so the backfill must pick it up again
 rather than skip it forever — and scopes itself to a document-ID range over the surface prefix,
 since document IDs are `<surface>_<locale>` and already indexed. The locale sits at the end, so

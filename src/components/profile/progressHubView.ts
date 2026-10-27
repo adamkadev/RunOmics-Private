@@ -11,6 +11,8 @@ import { isRaceDistanceKey } from '@/domain/race/distances'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
+import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
+import { phaseWeek, planPhaseSpans } from '@/components/plan/planPhaseSpans'
 
 export interface ProgressHubView {
   year: number
@@ -35,6 +37,9 @@ export interface ProgressHubView {
     /** /race opens only the standard distances; another race's card opens Goals. */
     hasPage: boolean
   } | null
+  /** The coach's current block, drawn in the race card's place while no race is planned. */
+  /** `general`: a block toward no race, which the coach's own name replaces once the signed-in client reads it. */
+  block: { name: string; general: boolean; week: number; total: number; done: number; planned: number } | null
   vo2max: {
     value: number
     delta: number | null
@@ -120,6 +125,7 @@ export interface HubInput {
   heatmapDays: HeatmapDay[]
   streakWeeks: number
   shoes: ShoeStats[]
+  coaching?: CoachingOverview | null
 }
 
 function runsThisWeek(activities: HubInput['activities'], today: string): number {
@@ -179,6 +185,22 @@ export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
   )
 }
 
+/** Named and counted as Plan's phase card does. */
+export function currentBlock(coaching: CoachingOverview | null | undefined, today: string): ProgressHubView['block'] {
+  if (!coaching || today > coaching.plan.block.endDate) return null
+  const phase = phaseWeek(planPhaseSpans(coaching, []), isoDate(startOfWeek(new Date(`${today}T00:00:00`))))
+  if (!phase) return null
+  const sessions = coaching.workouts.filter((w) => w.state !== 'cancelled')
+  return {
+    name: phase.span.name,
+    general: phase.span.key === 'general',
+    week: phase.week,
+    total: phase.total,
+    done: sessions.filter((w) => w.state === 'completed').length,
+    planned: sessions.length,
+  }
+}
+
 export function progressHubView(input: HubInput): ProgressHubView {
   const year = Number(input.today.slice(0, 4))
   const today = dayOfYear(input.today)
@@ -231,6 +253,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
           hasPage: isRaceDistanceKey(DISTANCE_KEY[spotlight.race.distance] ?? ''),
         }
       : null,
+    block: spotlight ? null : currentBlock(input.coaching, input.today),
     vo2max:
       vo2Value !== null
         ? {

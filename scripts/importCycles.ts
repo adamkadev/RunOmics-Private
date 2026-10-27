@@ -120,3 +120,14 @@ export function entryPointsWithoutLoadData(graph: Map<string, string[]>, root = 
     .filter((file) => !/\bawait loadData\(\)/.test(fs.readFileSync(path.join(root, file), 'utf-8')))
     .sort()
 }
+
+/** Pages that await loadData() without an ISR window, which Next would otherwise render on every request. */
+export function pagesWithoutRevalidate(graph: Map<string, string[]>, root = process.cwd()): string[] {
+  return [...graph.keys()]
+    .filter((file) => /^src\/app\/(?:.+\/)?page\.tsx?$/.test(file))
+    .filter((file) => {
+      const text = fs.readFileSync(path.join(root, file), 'utf-8')
+      return /\bawait loadData\(\)/.test(text) && !/^export const revalidate = \d+/m.test(text)
+    })
+    .sort()
+}

@@ -23,14 +23,6 @@ function copyPoints(route: readonly unknown[], into: Float64Array, at: number): 
   return k
 }
 
-/** `route` is `[lon, lat][]` from JSON, unchecked. */
-export function flattenRoute(route: unknown): Float64Array {
-  if (!Array.isArray(route)) return new Float64Array(0)
-  const coords = new Float64Array(2 * countPoints(route))
-  copyPoints(route, coords, 0)
-  return coords
-}
-
 /** `routes` and `meta` are sparse, indexed by global route index. */
 export function flattenTracks(
   routes: readonly ([number, number][] | undefined)[],
