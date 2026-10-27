@@ -371,9 +371,9 @@ before merging a change that could break the build.
 ### End-to-end tests
 
 Playwright drives a real production build (`next build && next start`). No Firebase
-project or secrets are needed: every page the current specs cover (dashboard,
-activities list → detail, analytics, records, goals, map, shoes, plan, progress) is
-built from the generated demo dataset. Read-only, no risk of touching anything. The
+project or secrets are needed: every page (dashboard, activities list → detail,
+analytics, records, goals, map, shoes, plan, progress) is built from the generated demo
+dataset, and the owner's writes go to local emulators (below). The
 `iphone` project walks every page in WebKit at the iPhone 16 Pro's size, with reduced
 motion, for text that runs past an edge. The `sparse-fr` project builds a second app,
 French and from a sparse Forerunner 55 profile (`npm run demo:generate -- --profile sparse`),
@@ -394,18 +394,31 @@ ever writes to `.e2e-data/`, so no configured workspace can be reset by accident
 `prepare-data` run that follows then sees a populated explicit workspace and leaves it
 alone, exactly as it would a real one. `.e2e-data/` is gitignored.
 
-`.env.e2e` also carries the non-secret Firebase client config (still needed for the app
-to boot, even though these specs don't exercise sign-in-gated flows) and pins `PORT` to
+`.env.e2e` also carries the non-secret Firebase client config and pins `PORT` to
 3100, so a dev server on 3000 does not collide with the suite's own. It sets
 `NEXT_PUBLIC_E2E_MAPS=1`, a test build's flag only: with no MapTiler token, MapLibre
 still builds the heat map and a run's map on a blank inline style, so the specs can tap
-the map (a start point, a spot to avoid, a quartier). Under the same flag, Explore's
-spots to avoid live in the page's memory instead of the owner's Firestore, since the
-suite has no owner to sign in. Never set it on a deployment.
+the map (a start point, a spot to avoid, a quartier).
 
-The first e2e batch covers read-only golden paths. Sign-in-gated flows (Settings,
-activity notes editing) aren't covered yet - Google's OAuth popup isn't something
-Playwright can drive without a test-only auth bypass, which is its own follow-up.
+**The owner.** Playwright starts the Firebase Auth and Firestore emulators (ports 9099
+and 8080, through a pinned `firebase-tools`; they need Java 21), and `.env.e2e` points
+the build at them (`NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST`,
+`NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST`). `signInAsOwner` in `e2e/owner.ts` makes a
+made-up Google account with the `owner` claim and hands the page the session the
+emulator issues, as the Auth SDK keeps a returning user's: Google's popup loads its
+script from apis.google.com even against the emulator. The Firestore rules apply as
+they do in production.
+`owner.spec.ts` covers the morning check-in, a note with a tag and the HR-unreliable
+switch, and the notification switches; `sparse.spec.ts` marks a missed session
+« Sautée » in French; `explore.spec.ts` marks spots to avoid in the owner's Firestore.
+Each test clears the documents it writes, since the emulator outlives a local run and
+both builds share it. `next.config.ts` refuses all three test flags on Vercel, so none
+can reach a deployment.
+
+**Visual checks.** `npm run test:visual` (or Actions → Visual) compares key screens of both
+athletes, in both themes, with baselines drawn on a fixed day. Run it before a perf or
+visual pull request; [`e2e/visual/README.md`](e2e/visual/README.md) says how to update
+the baselines.
 
 ### Monitoring
 

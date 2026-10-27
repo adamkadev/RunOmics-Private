@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AVOID_LIMITS, AVOID_SPOT_RADIUS_M, expiryFor, isExpired, type AvoidReason, type AvoidSpot } from '@/domain/explore/avoidSpots'
 import { appTodayIso } from '@/lib/calendarDate'
-import { firestoreAvoidSpots, memoryAvoidSpots, type AvoidSpotStore } from '@/lib/avoidSpots'
-import { TEST_MAPS } from '@/lib/maptiler'
+import { firestoreAvoidSpots, type AvoidSpotStore } from '@/lib/avoidSpots'
 import { reportClientError } from '@/lib/reportClientError'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 
 export interface AvoidSpots {
-  /** Only the owner marks spots, Firestore refuses anyone else; the e2e build keeps its own in memory. */
+  /** Only the owner marks spots: Firestore refuses anyone else. */
   enabled: boolean
   /** None past its expiry: those are removed as they are read. */
   spots: readonly AvoidSpot[]
@@ -38,9 +37,7 @@ function failedWith(err: unknown) {
   reportClientError('route', err)
 }
 
-const DEFAULT_STORE = TEST_MAPS ? memoryAvoidSpots() : firestoreAvoidSpots
-
-export function useAvoidSpots(active: boolean, today: string = appTodayIso(), store: AvoidSpotStore = DEFAULT_STORE): AvoidSpots {
+export function useAvoidSpots(active: boolean, today: string = appTodayIso(), store: AvoidSpotStore = firestoreAvoidSpots): AvoidSpots {
   const owner = useOwnerAuth()
   const enabled = active && (owner.isOwner || store !== firestoreAvoidSpots)
   const [spots, setSpots] = useState<readonly AvoidSpot[]>(NONE)

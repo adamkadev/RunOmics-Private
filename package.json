@@ -37,6 +37,7 @@
     "e2e:build": "npm run e2e:data && dotenv -e .env.e2e -- node scripts/prepare-data.mjs && dotenv -e .env.e2e -- node --import tsx scripts/validate-data.ts && npm run maplibre:worker && dotenv -e .env.e2e -- next build",
     "e2e:start": "dotenv -e .env.e2e -- next start",
     "test:e2e": "dotenv -e .env.e2e -- playwright test",
+    "test:visual": "dotenv -e .env.e2e -- playwright test --config playwright.visual.config.ts",
     "screenshots": "dotenv -e .env.e2e -- playwright test --config playwright.screenshots.config.ts",
     "screenshots:clean": "rm -rf screenshots/output screenshots/.pw-artifacts",
     "set-owner-claim": "dotenv -e .env.local -- node scripts/set_owner_claim.mjs",

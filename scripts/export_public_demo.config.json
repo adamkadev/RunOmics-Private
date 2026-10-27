@@ -121,8 +121,7 @@
     {"path": ".env.e2e", "key": "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", "value": "", "reason": "The private dev Firebase project; left unset, the e2e build runs as the demo does, without Firebase"}
   ],
   "replacements": [
-    {"path": "playwright.screenshots.config.ts", "from": "runomics-dev", "to": "demo-runomics", "reason": "The auth emulator's project must match .env.e2e"},
-    {"path": "screenshots/owner.ts", "from": "runomics-dev", "to": "demo-runomics", "reason": "The auth emulator's project must match .env.e2e"},
+    {"path": "e2e/owner.ts", "from": "runomics-dev", "to": "demo-runomics", "reason": "The emulators' project must match .env.e2e"},
     {"path": ".env.example", "from": "runomics-data-adam", "to": "runomics-data-you", "reason": "The owner's private data repository"},
     {"path": ".env.example", "from": "GITHUB_SYNC_PROFILE=adam", "to": "GITHUB_SYNC_PROFILE=you", "reason": "The owner's sync profile"},
     {"path": ".env.example", "from": ".env.<profile>.local", "to": ".env.local", "reason": "The public coach scripts read .env.local, as packageJson.scriptReplacements makes them"},

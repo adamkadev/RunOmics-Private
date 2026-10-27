@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './fixtures'
+import { deleteDocument, readDocument, signInAsOwner } from './owner'
 
 const DATA = path.resolve('.e2e-data-sparse')
 const read = (file: string) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'))
@@ -36,6 +37,28 @@ test('a session with no run reads as missed', async ({ page, t }) => {
   const { missed } = returnBlock()
   await page.goto(`/plan?date=${missed}`)
   await expect(page.getByTestId(`plan-day-done-${missed}`)).toContainText(t.sessionState.missed)
+})
+
+test('the owner marks a missed session skipped, which Firestore keeps, and takes it back', async ({ page, t }) => {
+  const { missed } = returnBlock()
+  await signInAsOwner(page, { openSettings: false })
+  await deleteDocument(`wellness/${missed}`)
+  const s = t.plan.dayCard
+
+  await page.goto(`/plan?date=${missed}`)
+  const day = page.getByTestId(`plan-day-done-${missed}`)
+  await day.getByRole('button', { name: s.markSkipped }).click()
+  await day.getByRole('button', { name: s.skipReasons.ill }).click()
+  await expect(day.getByTestId('skipped-mark')).toHaveText(s.skippedFor(s.skipReasons.ill))
+  await expect.poll(async () => (await readDocument(`wellness/${missed}`))?.skipped?.stringValue).toBe('ill')
+
+  const later = await page.context().newPage()
+  await later.goto(`/plan?date=${missed}`)
+  const sameDay = later.getByTestId(`plan-day-done-${missed}`)
+  await expect(sameDay.getByTestId('skipped-mark')).toHaveText(s.skippedFor(s.skipReasons.ill))
+  await sameDay.getByRole('button', { name: s.undoSkip }).click()
+  await expect(sameDay).toContainText(t.sessionState.missed)
+  await expect.poll(async () => (await readDocument(`wellness/${missed}`))?.skipped).toBeUndefined()
 })
 
 test('a run the watch typed VO2 max is named as its easy session', async ({ page, t }) => {

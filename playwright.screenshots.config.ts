@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { parseEnv } from 'node:util'
 import { defineConfig, devices } from '@playwright/test'
-import { AUTH_EMULATOR_HOST } from './screenshots/owner'
+import { EMULATORS_COMMAND, AUTH_EMULATOR_HOST } from './e2e/owner'
 
 const PROVISIONED_CHROMIUM = '/opt/pw-browsers/chromium'
 const executablePath =
@@ -47,10 +47,11 @@ export default defineConfig({
     ? {}
     : {
         webServer: [
-          // For the owner Settings capture (screenshots/owner.ts).
+          // For the owner Settings capture (e2e/owner.ts).
           {
-            command: 'firebase emulators:start --only auth --project runomics-dev',
+            command: EMULATORS_COMMAND,
             url: `http://${AUTH_EMULATOR_HOST}`,
+            wait: { stdout: /All emulators ready/ },
             reuseExistingServer: true,
             timeout: 120_000,
           },
@@ -59,11 +60,8 @@ export default defineConfig({
             url: baseURL,
             reuseExistingServer: true,
             timeout: 300_000,
-            // Inlined at build time; dotenv won't override them.
-            env: {
-              NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: AUTH_EMULATOR_HOST,
-              ...(mapTilerToken ? { NEXT_PUBLIC_MAPTILER_TOKEN: mapTilerToken } : {}),
-            },
+            // Inlined at build time; dotenv won't override it.
+            env: mapTilerToken ? { NEXT_PUBLIC_MAPTILER_TOKEN: mapTilerToken } : {},
           },
         ],
       }),

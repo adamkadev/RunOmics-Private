@@ -135,12 +135,11 @@ until its text is illegible, and a phone screen is what the app is judged on.
   phone or in the iOS Simulator, not here.
 - **Settings** is captured twice: `settings` is the signed-out view, and
   `settings-owner` is signed in as the owner through the **Firebase Auth
-  emulator**. The run starts it (`firebase emulators:start --only auth`, port
-  9099; needs the Firebase CLI and Java), creates a made-up Google account with
-  the `owner` claim, and signs in through Settings' own button and the
-  emulator's popup. The screenshot build sets
-  `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST` for that; no other build does. No
-  real account and no Firestore rule are involved. Skipped when
+  emulator**, as the e2e suite's owner is. The run starts the Auth and
+  Firestore emulators (ports 9099 and 8080; needs Java), creates a made-up
+  Google account with the `owner` claim, and opens the page with the session
+  the emulator issues (`e2e/owner.ts`). `.env.e2e` points the
+  build at both emulators; no real account is involved. Skipped when
   `SCREENSHOT_BASE_URL` points at a deployment.
 - **The activity map** is shot once its route is drawn: the page marks the
   map `data-route-drawn`, and the run emulates reduced motion, so the route

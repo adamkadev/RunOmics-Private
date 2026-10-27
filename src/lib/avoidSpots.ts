@@ -82,15 +82,3 @@ export const firestoreAvoidSpots: AvoidSpotStore = {
   setRadius: setAvoidSpotRadius,
   remove: deleteAvoidSpot,
 }
-
-/** The e2e build's, which has no owner to sign in: spots last as long as the page. */
-export function memoryAvoidSpots(): AvoidSpotStore {
-  let next = 0
-  return {
-    read: async () => [],
-    add: async ([lon, lat], radiusM) => ({ id: `e2e-${++next}`, lon, lat, radiusM, createdAt: appTodayIso(), reason: null, expiresOn: null }),
-    setReason: async () => {},
-    setRadius: async () => {},
-    remove: async () => {},
-  }
-}
