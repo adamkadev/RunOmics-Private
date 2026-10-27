@@ -19,9 +19,10 @@ test('Today holds its reading while building back, naming no form band', async (
   await expect(page.getByTestId('this-week-link')).not.toContainText(`/ 0 ${t.units.km}`)
 })
 
-test('a week of timed run/walk sessions has no plan km of 0', async ({ page }) => {
+test('a week of timed run/walk sessions has no plan km of 0', async ({ page, t }) => {
   await page.goto('/plan')
-  await expect(page.getByTestId('week-summary')).not.toContainText('/')
+  await expect(page.getByTestId('week-summary')).toBeVisible()
+  await expect(page.getByTestId('week-summary')).not.toContainText(`/ 0 ${t.units.km}`)
 })
 
 test('a run the watch typed VO2 max counts as its easy session done', async ({ page, t }) => {
@@ -157,4 +158,17 @@ test('Goals with no goal or race says so and points to the editor in Settings', 
   await expect(page.getByTestId('goals-empty')).toContainText(t.goals.emptyHow)
   await page.getByTestId('goals-empty-action').click()
   await expect(page).toHaveURL(/\/settings#goals-races$/)
+})
+
+test('Plan says on the session which Run/Walk and pace alerts the watch takes, and no heart rate', async ({ page, t }) => {
+  const plan = read('coaching/current_plan.json') as { weeks: { workouts: { id: string; date: string; structure: { repMinutes: number } }[] }[] }
+  const today = new Date().toLocaleDateString('sv-SE')
+  const upcoming = plan.weeks.flatMap((week) => week.workouts).find((workout) => workout.date > today)!
+  await page.goto(`/plan?date=${upcoming.date}`)
+  const card = page.getByTestId(`plan-workout-${upcoming.id}`)
+  const s = t.plan.session
+  await expect(card.getByTestId('watch-alerts')).toHaveText(
+    `${s.watchAlerts} ${s.runWalkAlert(`${upcoming.structure.repMinutes}:00`, '1:00')} · ${s.paceAlert(`7:50–8:45 ${t.units.perKm}`)}`,
+  )
+  await expect(card).not.toContainText(t.units.bpm)
 })
