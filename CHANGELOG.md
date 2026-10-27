@@ -10,7 +10,7 @@ All notable changes to this project are documented in this file.
   it read 0 km without a goals, PBs or races file, and every 1 January until
   `goals.json` had the new year; the goal and projection still come from Goals.
 - Progress without a race (F5) shows the current block in the race card's place
-  (Plan's phase name, week n of N, sessions done of planned); a year card without
+  (the coach's block name as on Plan, week n of N, sessions done of planned); a year card without
   a goal opens All time; a new "Athlete & zones" row opens the athlete page; and
   Goals with nothing configured says how to set a goal in `goals.json`.
 - TRIMP uses Banister's female weighting, 0.86·e^(1.67·HRR), when `athlete.json`
@@ -19,6 +19,14 @@ All notable changes to this project are documented in this file.
   fatigue (ATL) and the planned-session load estimates step up once on the first
   deploy; form (TSB) and ACWR, being differences and ratios, barely move.
 
+- The coach's own words reach the app (F1). Plan's phase card names the
+  coach's block ("Reprise en douceur") instead of « Préparation générale » and
+  adds the week's focus; a planned session's card carries the coach's note,
+  its description and notes; Today's session card gives the description's
+  first sentence. The text comes from a new route, `/api/coaching/words`,
+  behind the private site's sign-in gate, never in a page's HTML. In the step
+  list, a warm-up, cool-down or break at a walking pace, or with no target in
+  an easy session, reads "walk" (« marche ») instead of "1:00 rec".
 - The sync survives garth's token dying (G1). A 401 on the token exchange is
   `GarminTokenExpired`: the sync writes `connect_status.json`, carries on
   through the Personal API with exit 0, stops marking new runs gear-pending

@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
@@ -12,6 +12,8 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { CoachingPlan } from '@/domain/coaching/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
+import type { CoachWords } from '@/application/coaching/GetCoachWords'
+import { forgetCoachWords } from '@/components/coaching/useCoachWords'
 import { WeekView } from '../WeekView'
 
 const TODAY = '2026-09-09'
@@ -472,5 +474,65 @@ describe('other training', () => {
     expect(within(day('2026-09-07')).queryByTestId('day-cross-training')).toBeNull()
     expect(bar('2026-09-08').dataset.barState).toBe('done')
     expect(within(screen.getByTestId('plan-cross-training')).getByTestId('cross-training-row').textContent).toContain(t.crossTraining.sets(12))
+  })
+})
+
+describe('the coach’s words', () => {
+  const WORDS: CoachWords = {
+    block: { name: 'Reprise en douceur', focus: 'Cinq semaines pour te réhabituer à courir.' },
+    weeks: [{ startDate: '2026-09-07', endDate: '2026-09-13', focus: 'On démarre doucement.' }],
+    sessions: { 'workout-threshold': { description: 'Course très lente, 1 minute de marche.', notes: ['Passe à la marche au moindre doute.'] } },
+  }
+  const serve = (words: CoachWords | null) => {
+    const fetch = vi.fn(async () => Response.json(words ? { available: true, ...words } : { available: false }))
+    vi.stubGlobal('fetch', fetch)
+    return fetch
+  }
+
+  beforeEach(forgetCoachWords)
+  afterEach(() => {
+    forgetCoachWords()
+    vi.unstubAllGlobals()
+  })
+
+  it('names general preparation after the coach’s block and adds the week’s focus', async () => {
+    serve(WORDS)
+    renderWeek({ coaching: overview({ coachingPlan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined } }) })
+
+    const card = screen.getByTestId('phase-line')
+    expect(await within(card).findByText('Reprise en douceur')).toBeInTheDocument()
+    expect(within(card).getByRole('heading').textContent).not.toContain(t.plan.weekPurpose.generalPreparation)
+    expect(within(card).getByTestId('phase-focus').textContent).toBe('On démarre doucement.')
+  })
+
+  it('keeps a race block’s phase name, with the week’s focus under it', async () => {
+    serve(WORDS)
+    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
+
+    const card = screen.getByTestId('phase-line')
+    expect(await within(card).findByTestId('phase-focus')).toHaveTextContent('On démarre doucement.')
+    expect(within(card).getByRole('heading').textContent).toBe(t.plan.weekPurpose.planPhase.base)
+  })
+
+  it('puts the session’s description and notes on its card', async () => {
+    serve(WORDS)
+    renderWeek({ coaching: overview() })
+
+    const note = await within(screen.getByTestId('plan-workout-workout-threshold')).findByTestId('coach-note')
+    expect(note).toHaveTextContent(t.plan.session.coachNote)
+    expect(note).toHaveTextContent('Course très lente, 1 minute de marche.')
+    expect(note).toHaveTextContent('Passe à la marche au moindre doute.')
+  })
+
+  it('asks for nothing without a coach plan, and draws nothing when the server has none', async () => {
+    const fetch = serve(null)
+    renderWeek({ planPhaseRanges: [{ phase: 'build', startDate: '2026-09-07', endDate: '2026-10-04' }] })
+    expect(fetch).not.toHaveBeenCalled()
+
+    forgetCoachWords()
+    renderWeek({ coaching: overview() })
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
+    expect(screen.queryByTestId('coach-note')).toBeNull()
+    expect(screen.queryByTestId('phase-focus')).toBeNull()
   })
 })

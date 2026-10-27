@@ -13,6 +13,7 @@ import type { WearStatus } from '@/domain/shoe/wearStatus'
 import type { ProgressHubView } from './progressHubView'
 import { shortDist } from '@/components/goals/shortDistance'
 import { WEAR_COLOR } from '@/components/shoes/shoeWear'
+import { CoachBlockName } from './CoachBlockName'
 
 const TITLE = 'text-headline text-foreground'
 const LINK_CARD = 'text-left transition-transform duration-100 ease-out active:scale-[0.98]'
@@ -100,7 +101,7 @@ function BlockCard({ block }: { block: NonNullable<ProgressHubView['block']> }) 
       <div className="flex items-baseline justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-[3px]">
           <span className={cn(EYEBROW_CLASS, 'text-accent-text')}>{h.currentBlock}</span>
-          <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="block-name">{block.name}</p>
+          <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="block-name"><CoachBlockName fallback={block.name} general={block.general} /></p>
         </div>
         <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" data-testid="block-week">
           {h.blockWeek(block.week, block.total)}

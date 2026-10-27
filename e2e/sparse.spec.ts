@@ -55,10 +55,45 @@ test('Analytics counts the year from the runs without a goals file', async ({ pa
   await expect(page.getByTestId('ytd-km')).not.toContainText(/·\s0\s/)
 })
 
-test('Progress shows the current block where a race would be, and Athlete & zones', async ({ page, t }) => {
+test('Progress shows the coach’s current block where a race would be, and Athlete & zones', async ({ page, request, t }) => {
   await page.goto('/profile')
   await expect(page.getByTestId('block-tile')).toHaveAttribute('href', '/plan')
+  await expect(page.getByTestId('block-name')).toHaveText(nextSession().block)
   await expect(page.getByTestId('race-tile')).toHaveCount(0)
   await expect(page.getByTestId('year-hero')).toHaveAttribute('href', '/all-time')
   await expect(page.getByTestId('athlete-row')).toContainText(t.profile.hub.athleteZones)
+  expect(await (await request.get('/profile')).text()).not.toContain(nextSession().block)
+})
+
+function nextSession() {
+  const plan = read('coaching/current_plan.json') as {
+    block: { name: string }
+    weeks: { workouts: { id: string; date: string; description: string }[] }[]
+  }
+  const today = new Date().toLocaleDateString('sv-SE')
+  const upcoming = plan.weeks.flatMap((week) => week.workouts).find((workout) => workout.date > today)!
+  return { block: plan.block.name, upcoming }
+}
+
+test('Plan names the coach’s block and shows its words, none of them in the page’s HTML', async ({ page, request, t }) => {
+  const { block, upcoming } = nextSession()
+  await page.goto('/plan')
+  const phase = page.getByTestId('phase-line')
+  await expect(phase.getByRole('heading')).toHaveText(block)
+  await expect(phase).not.toContainText(t.plan.weekPurpose.generalPreparation)
+  await expect(page.getByTestId('phase-focus')).toBeVisible()
+
+  await page.goto(`/plan?date=${upcoming.date}`)
+  const card = page.getByTestId(`plan-workout-${upcoming.id}`)
+  await expect(card.getByTestId('coach-note')).toContainText(upcoming.description)
+  await expect(card.getByTestId('workout-steps')).toContainText(t.plan.row.walk('1:00'))
+
+  const html = await (await request.get(`/plan?date=${upcoming.date}`)).text()
+  expect(html).not.toContain(block)
+  expect(html).not.toContain('minutes de course')
+})
+
+test('Today’s session card carries one line of the coach’s words', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('session-card').getByTestId('session-coach-line')).toContainText('minutes de course')
 })

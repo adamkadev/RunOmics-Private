@@ -2174,6 +2174,8 @@ export const en = {
       hrCap: (bpm: number) => `≤ ${bpm}`,
       // Opens the map's route generator with the session's distance.
       findRoute: 'Find a route',
+      // Above the session's description and notes, in the coach's own words.
+      coachNote: 'Coach’s note',
     },
     // The rest day on one line, then the week's sessions still to come.
     restCard: {
@@ -2229,6 +2231,8 @@ export const en = {
       warmup: 'Warm-up',
       cooldown: 'Cool-down',
       easy: 'easy',
+      // A warm-up, cool-down or break walked, not jogged.
+      walk: 'walk',
       minutes: (m: number) => `${m}′`,
       reps: (n: number, rep: string, kind: string) => `${n} × ${rep} ${kind}`,
       strides: (n: number, rep: string) => `${n} × ${rep} strides`,
@@ -2250,6 +2254,7 @@ export const en = {
     row: {
       pace: (range: string) => `${range} /km`,
       recovery: (clock: string) => `${clock} rec`,
+      walk: (clock: string) => `${clock} walk`,
     },
     raceFooter: {
       targetTime: (clock: string) => `target ${clock}`,

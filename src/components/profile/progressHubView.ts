@@ -38,7 +38,8 @@ export interface ProgressHubView {
     hasPage: boolean
   } | null
   /** The coach's current block, drawn in the race card's place while no race is planned. */
-  block: { name: string; week: number; total: number; done: number; planned: number } | null
+  /** `general`: a block toward no race, which the coach's own name replaces once the signed-in client reads it. */
+  block: { name: string; general: boolean; week: number; total: number; done: number; planned: number } | null
   vo2max: {
     value: number
     delta: number | null
@@ -184,7 +185,7 @@ export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
   )
 }
 
-/** Named and counted as Plan's phase card does, not by the coach's own block name, which stays out of prerendered pages. */
+/** Named and counted as Plan's phase card does. */
 export function currentBlock(coaching: CoachingOverview | null | undefined, today: string): ProgressHubView['block'] {
   if (!coaching || today > coaching.plan.block.endDate) return null
   const phase = phaseWeek(planPhaseSpans(coaching, []), isoDate(startOfWeek(new Date(`${today}T00:00:00`))))
@@ -192,6 +193,7 @@ export function currentBlock(coaching: CoachingOverview | null | undefined, toda
   const sessions = coaching.workouts.filter((w) => w.state !== 'cancelled')
   return {
     name: phase.span.name,
+    general: phase.span.key === 'general',
     week: phase.week,
     total: phase.total,
     done: sessions.filter((w) => w.state === 'completed').length,
