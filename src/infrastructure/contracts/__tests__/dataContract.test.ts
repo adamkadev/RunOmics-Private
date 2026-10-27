@@ -141,6 +141,14 @@ describe('the data contract', () => {
     expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.hrReliableFrom' })])
   })
 
+  it('refuses a maxWeeklyKm that is not a positive number, since it caps every block', () => {
+    write('athlete.json', { maxWeeklyKm: 70 })
+    expect(checkDataDirectory(dir)).toEqual([])
+
+    write('athlete.json', { maxWeeklyKm: '70' })
+    expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.maxWeeklyKm' })])
+  })
+
   it('accepts the heart-rate source and continuous-run fields, and only warns on unknown values', () => {
     activities(
       activity({ hrSource: 'external', longestContinuousRunSec: 900, longestContinuousRunM: 2010.5 }),

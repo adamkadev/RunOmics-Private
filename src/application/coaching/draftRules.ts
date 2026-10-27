@@ -12,7 +12,7 @@ import { blockGuideProposals } from './autoregulation'
 import { validateBootstrapDraftSemantics, type BootstrapEvents } from './bootstrapValidation'
 import { validateDraftFrequency } from './frequency'
 import { intensityBand, validateDraftIntensity } from './intensity'
-import { validateDraftVolume, volumeBand } from './volume'
+import { blockWeekTargets, validateDraftVolume, volumeBand, type WeekTarget } from './volume'
 import { validateDraftNames, validateWorkoutName } from './workoutNames'
 
 /** The one place that judges a plan, so an API reply, a pasted chat reply and a live-plan change answer to the same rules. */
@@ -186,12 +186,31 @@ export function validateProposalsNamed(draft: CoachingPlanDraft, context: Coachi
   throw new Error(`plan.focus: name the open pace-guide proposal (${named.join('; ')}) so the athlete can accept it, without stating a pace`)
 }
 
+/** Only a general block for an athlete with controlled threshold facts is written to the 3 + 1 targets. */
+export function draftWeekTargets(
+  weeks: Pick<CoachingPlanDraft['weeks'][number], 'startDate' | 'endDate'>[],
+  context: CoachingContext,
+  primary: unknown,
+  availableWeekdays: number[],
+): (WeekTarget | null)[] | undefined {
+  const block = context.controlledThreshold?.block
+  if (!block || primary || context.returnToRunning) return undefined
+  return blockWeekTargets(block.weekKmTargets, weeks, availableWeekdays)
+}
+
 export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: BootstrapRules): void {
   draft.weeks.forEach((week, weekIndex) => week.workouts.forEach((workout, workoutIndex) =>
     validateWorkoutDraft(workout, `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`)
   ))
   validateDraftFrequency(draft, rules.runsPerWeek)
-  validateDraftVolume(draft, volumeBand(rules.context.trainingHistory), rules.availableWeekdays, undefined, rules.context.returnToRunning !== undefined)
+  validateDraftVolume(
+    draft,
+    volumeBand(rules.context.trainingHistory, rules.context.athlete.maxWeeklyKm),
+    rules.availableWeekdays,
+    undefined,
+    rules.context.returnToRunning !== undefined,
+    draftWeekTargets(draft.weeks, rules.context, rules.events.primary, rules.availableWeekdays),
+  )
   validateDraftIntensity(draft, intensityBand(rules.context.athlete.thresholdPaceSecPerKm), rules.availableWeekdays)
   validateBootstrapDraftSemantics(draft, rules.events, rules.context)
   if (rules.context.returnToRunning) validateReturnTargets(draft)
@@ -252,7 +271,7 @@ export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, co
 
   const draft = asDraft(after)
   const prior = asDraft(before)
-  validateDraftVolume(draft, volumeBand(context.trainingHistory), weekdays, prior)
+  validateDraftVolume(draft, volumeBand(context.trainingHistory, context.athlete.maxWeeklyKm), weekdays, prior)
   validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), weekdays, prior, options)
 
   // A title the plan already held keeps the rules it was written under, wherever its session moved.

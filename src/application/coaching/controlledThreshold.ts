@@ -10,16 +10,21 @@ export const CONTROLLED_THRESHOLD = {
   },
   /** The week the dose stops growing at: two sessions, in about the volume sustained over four weeks. */
   fullWeek: { sessions: 2, sessionMinutes: 30, kmEitherSide: 1 },
-  /** Between blocks, never inside one: a block completed without a break lets the next full week grow this much. */
-  blockGrowth: {
-    ratio: 1.05,
+  /** A general block is three rising weeks and a lighter fourth; how fast they rise follows the athlete's signals. */
+  block: {
+    weeklyRise: { green: 0.05, yellow: 0.02 },
     /** A block run for less than this was replaced, not completed. */
     minBlockDays: 21,
-    /** This many days without a run inside the block is a gap. */
+    /** This many days without a run is a gap. */
     gapDays: 7,
-    /** A week counts as full at this share of the dose, so a rounded repetition still reaches it. */
+    /** A week holds the dose at this share of it, so a rounded repetition still reaches it. */
     fullDoseShare: 0.9,
+    /** An easy run this far above the recent normal is yellow; fatigue.hrAboveNormalBpm is red. */
+    easyHrAboveNormalBpm: 3,
+    poorCheckIns: { lookbackDays: 14, count: 3, worstScore: 2 },
     niggle: { lookbackDays: 28, daysReported: 3, pain: 4 },
+    /** A week matches its target within this, a partial one too: rounding its sessions is the same job. */
+    targetToleranceKm: 1,
   },
   /** Short repetitions are guided in the band of this width that holds threshold pace. */
   shortGuideBandSecPerKm: 5,
@@ -94,56 +99,52 @@ export function repLengthClass(seconds: number): RepLengthClass {
   return 'short'
 }
 
-export type GrowthHoldReason =
-  | 'returning'
-  | 'short_block'
-  | 'illness'
-  | 'injury'
-  | 'gap'
-  | 'check_ins_unread'
-  | 'niggle'
-  | 'fatigue'
-  | 'ceiling'
-  | 'ramp'
-  | 'long_run'
+export type BlockSignal = 'green' | 'yellow' | 'red'
 
-/** baseline: no earlier controlled threshold block reached the full week, so the full week is the best four weeks. */
-export type FullWeekGrowth =
-  | { status: 'baseline' }
-  | { status: 'grown'; previousWeekKm: number; weekKm: number }
-  | { status: 'held'; previousWeekKm: number; weekKm: number; reason: GrowthHoldReason; detail: string }
+/** Whole weeks: three rising and a lighter fourth. A partial week takes its share of the week it starts. */
+export interface BlockTargets {
+  signal: BlockSignal
+  /** What set the colour, in plain words for the plan focus. */
+  reasons: string[]
+  weeklyRisePct: number
+  /** Week 1 of the block being renewed, or null when no earlier block held the full dose. */
+  previousWeek1Km: number | null
+  weekKmTargets: number[]
+  /** The bounds that held a target down, empty when none did. */
+  heldBy: string[]
+}
 
 export interface ControlledThresholdFacts {
   heartRate: ControlledThresholdHr & { lthrBpm: number }
-  fullWeek: { sessions: number; minutesPerSession: number; weekKm: NumberRange | null; growth: FullWeekGrowth }
+  fullWeek: { sessions: number; minutesPerSession: number; weekKm: NumberRange | null }
+  /** For a general block; absent while returning, when the return rules set every week. */
+  block?: BlockTargets
   shortRepetitionGuideSecPerKm: NumberRange | null
 }
-
-const tenth = (km: number) => Math.round(km * 10) / 10
 
 /** This athlete's numbers for the planner, from their own data, so no athlete's prompt carries another's. */
 export function controlledThresholdFacts(
   lthrBpm: number | null | undefined,
   thresholdPaceSecPerKm: number | null | undefined,
   best4WeekAverageKm: number,
-  growth: FullWeekGrowth = { status: 'baseline' },
-  maxWeekKm = Infinity,
+  block?: BlockTargets,
 ): ControlledThresholdFacts | null {
   const heartRate = controlledThresholdHr(lthrBpm)
   if (!heartRate) return null
   const { fullWeek, shortGuideBandSecPerKm: band } = CONTROLLED_THRESHOLD
-  const km = growth.status === 'baseline' ? Math.round(best4WeekAverageKm) : growth.weekKm
+  const km = Math.round(best4WeekAverageKm)
+  const loading = block?.weekKmTargets.slice(0, 3)
   const fastest = thresholdPaceSecPerKm ? Math.floor(thresholdPaceSecPerKm / band) * band : null
   return {
     heartRate,
     fullWeek: {
       sessions: fullWeek.sessions,
       minutesPerSession: fullWeek.sessionMinutes,
-      weekKm: km > fullWeek.kmEitherSide
-        ? { min: tenth(km - fullWeek.kmEitherSide), max: tenth(Math.min(km + fullWeek.kmEitherSide, maxWeekKm)) }
-        : null,
-      growth,
+      weekKm: loading
+        ? { min: Math.min(...loading), max: Math.max(...loading) }
+        : km > fullWeek.kmEitherSide ? { min: km - fullWeek.kmEitherSide, max: km + fullWeek.kmEitherSide } : null,
     },
+    ...(block ? { block } : {}),
     shortRepetitionGuideSecPerKm: fastest === null ? null : { min: fastest, max: fastest + band },
   }
 }

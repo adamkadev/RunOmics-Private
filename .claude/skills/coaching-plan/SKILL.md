@@ -68,14 +68,13 @@ the athlete to. What a new block is told comes from the athlete's own data, in
 at about the best four-week average, and the short-repetition guide in the
 5 s/km band that holds threshold pace. The rules carry no athlete's numbers.
 
-The full week grows between blocks, never inside one. `fullWeek.growth` compares the
-new block with the full week `currentPlan` reached: `grown` when that block ran through
-without a break, about 5% more, all of it easy running and the long run; `held`, with
-the reason, after a gap, an illness or injury, a niggle, a fatigue flag, or where the
-volume ceiling, the ramp or the long-run limit would refuse the grown week; `baseline`
-when no earlier block reached the full week. A 50 km full week renewed after a clean
-block becomes about 52.5 km, the two 30-minute sessions unchanged and the extra in the
-easy runs and the long run; renewed after a week of illness it stays at 50 km or less.
+A general block is 3 + 1, its weeks set in `context.controlledThreshold.block`. The signal
+colour sets the rise: green (no fatigue flag, easy-run heart rate within 2 bpm of normal, no run
+of poor check-ins, no niggle) about 5% a week, yellow about 2%, red none. Renewing after a green
+block that opened at 55 km gives 58-61-64-51: week 1 about 5% over the last week 1, then +5% a
+week, then a lighter week 20% under week 3. After a red block it repeats 55-55-55-44, or comes
+down after a break. `heldBy` names any bound that stopped it: the capacity ceiling on week 1,
+the ramp, or the athlete's `maxWeeklyKm`.
 The threshold dose never grows: a guide gets faster only from two agreeing sessions or
 a 5K check. A new block stores the open proposals in `block.guideProposals`, the app
 shows their guides on Plan, and the plan focus names each without a pace, so the athlete

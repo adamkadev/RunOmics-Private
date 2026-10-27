@@ -74,19 +74,26 @@ sessions of 30 minutes, in a week of the best 4-week average ± 1 km) and the gu
 repetitions: a 5 s/km band from threshold pace rounded down to the next 5 s. It is null without
 an LTHR, and the context then holds no controlled threshold facts for the planner to use.
 
-**The full week grows between blocks, never inside one.** `blockGrowth()`
-(`src/application/coaching/blockGrowth.ts`) reads the block being renewed: its heaviest week
-holding both 30-minute sessions is the level, and the new block's full week is 5% above it when
-the block ran at least 21 days with no injury, illness or pregnancy break, no 7 days without a
-run, no illness check-in or skip, no niggle on 3 or more days, at pain 4 or more or changing a
-run in the last four weeks, and no easy-run fatigue flag. Otherwise it holds that level, as it
-does where the grown week would pass the volume ceiling, the block-opening ramp or the long-run
-limit; unreadable check-ins also hold it. The planner reads `fullWeek.growth` as grown, held with
-the reason, or baseline (no earlier full week, so the best 4-week average), and `weekKm` never
-passes what the validators accept. The threshold dose does not grow: a guide gets faster only
-from two agreeing sessions or a 5K check, which a new block stores as `block.guideProposals`.
-Plan shows the open ones under the phase card, and bootstrap refuses a plan focus that leaves an
-open one unnamed.
+**A general block is three rising weeks and a lighter fourth, set from the athlete's signals.**
+`blockTargets()` (`src/application/coaching/blockTargets.ts`) reads a colour and turns it into
+`context.controlledThreshold.block.weekKmTargets`, whole km. Green (no fatigue flag, easy-run heart
+rate within 2 bpm of normal, fewer than 3 poor check-ins in 14 days, no niggle) rises about 5% a
+week; yellow (an easy run 3-4 bpm high, such a run of check-ins, a mild niggle, unreadable
+check-ins) about 2%; red (fatigue flag, illness, a serious or recurring niggle, 7 days without a
+run, a break, a block replaced inside 21 days) holds the last block's level, or comes down to the
+running since a break. Week 1 starts the same step above the last block's week 1, or at the best
+4-week average for a first block; week 4 is 20% under week 3. The capacity ceiling bounds week 1
+only, as a jump guard; weeks 2 and 3 answer to the ramp and to `maxWeeklyKm`, typed by hand into
+the data repo's `athlete.json` (absent: no cap). `blockWeekTargets()` lays the targets over the
+block's Monday weeks (a partial first week is a lead-in at week 1's level, scaled to the run days
+it holds), the bootstrap prompt states them as `CONTROLLED_THRESHOLD_BLOCK_WEEKS`, and
+`validateDraftVolume` holds each week to its target within 1 km in place of the floor and the
+ceiling, the lighter week with `reducedVolume`. None of it applies while returning to running,
+toward a race, or without an LTHR.
+
+**The threshold dose does not grow.** A guide gets faster only from two agreeing sessions or a 5K
+check, which a new block stores as `block.guideProposals`. Plan shows the open ones under the phase
+card, and bootstrap refuses a general-block focus that leaves an open one unnamed.
 
 **A session is judged against the ceiling it prescribed,** which is what the watch held the
 athlete to, not today's LTHR. Heart rate lags a change of pace, so each repetition is read from
