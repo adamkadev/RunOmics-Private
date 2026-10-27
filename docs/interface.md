@@ -237,6 +237,14 @@ behaves as before until a token is added as a secret.
 - The light-mode accent needs a deeper tone to survive the pale backdrops, but not the same deepening
   `ACCENT_SWATCHES_LIGHT` applies: nature and silver sit one step brighter so the route line does not
   go muddy against the map design.
+- **The first and last 250 m are left out by default** (`trimShareRoute` in `shareCardMap.ts`), from the
+  drawn line, the basemap's bounds and the end markers, so a card that leaves the private site does not
+  show where the athlete lives. The cut is where the line first leaves a 250 m circle around the start
+  (and the finish), not 250 m along it, so a run that doubles back is cut as far out. A run that never
+  gets 250 m from its start keeps the outer half of its reach. The reps' shares are remapped onto the
+  trimmed line. "Show full route" draws it whole, and like every pick it lasts only while the sheet is open.
+- Whenever a basemap is drawn, the exported image carries the map credit (`t.pages.map.attribution`)
+  under the stat row, as MapTiler's and OpenStreetMap's terms ask. The card without a basemap has none.
 - Export is a 1080px-wide story frame — the resolution Instagram, Strava and Garmin expect.
 - Clipboard copy must construct the `ClipboardItem` synchronously with a pending promise to keep
   Safari's user-gesture check.

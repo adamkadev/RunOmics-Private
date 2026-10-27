@@ -270,6 +270,21 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(header).toBeGreaterThan(band)
   })
 
+  it('credits MapTiler and OpenStreetMap on the card whenever it draws a basemap', () => {
+    const map = {} as HTMLCanvasElement
+    const credited = (ops: Op[]) => texts(ops).some((text) => text.startsWith('© MapTiler'))
+    expect(credited(draw({ design: 'route', mapImage: map, mapPoints: [[40, 100], [200, 250]] }))).toBe(true)
+    expect(credited(draw({ design: 'route' }))).toBe(false)
+    expect(credited(draw({ design: 'stats', mapImage: map, mapPoints: [[40, 100], [200, 250]] }))).toBe(false)
+  })
+
+  it('sets the credit under the stat row, clear of its labels', () => {
+    const ops = draw({ design: 'route', mapImage: {} as HTMLCanvasElement, mapPoints: [[40, 100], [200, 250]] })
+    const credit = ops.find((o) => o.op === 'fillText' && String(o.args[0]).startsWith('© MapTiler'))!
+    expect(credit.args[2]).toBeGreaterThan(layout().statsTop + 19 + 9.5)
+    expect(credit.args[2]).toBeLessThan(H)
+  })
+
   it('rules the stat row off and sets it on the card colour', () => {
     const { ruleY } = layout()
     const ops = draw({ design: 'route' })

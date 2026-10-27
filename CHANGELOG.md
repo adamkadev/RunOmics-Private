@@ -37,6 +37,16 @@ All notable changes to this project are documented in this file.
   the repository's `firestore.rules`. CI builds pull requests against the E2E
   data, the weekly coverage run prepares the data first, and E2E's apt step
   gives up after 3 minutes, retrying twice.
+- Privacy and backups (R8, R14, R18). Share cards leave out the first and last
+  250 m of the route (line, map bounds and markers) unless "Show full route" is
+  on, and an image drawn on a basemap now carries the MapTiler and OpenStreetMap
+  credit. Settings fetches height and weight from an owner-only route instead of
+  rendering them into the cached page, and signing out of a private site clears
+  the HTTP cache. The nightly sync also backs up route names and avoid spots
+  (`route_names.json`, `avoid_spots.json`), and `scripts/restore_firestore.mjs`
+  (a dry run unless `--apply`) can put notes, check-ins, route names and avoid
+  spots back. The security doc gains an owner/viewer table and a "Third
+  parties" section.
 - Analytics keeps its tab and period in the URL (F5), defaults left out as
   Records does, so Back returns to the tab you left and `/analytics?tab=volume`
   opens Volume. Volume's "Since January" now totals the runs, as Progress does:
