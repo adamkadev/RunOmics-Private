@@ -14,6 +14,7 @@ import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidati
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows, type WeekWindow } from '@/domain/coaching/weekWindows'
 import { macrocyclePhases, phaseOn } from '@/domain/coaching/macrocycle'
 import { CONTROLLED_THRESHOLD } from '@/application/coaching/controlledThreshold'
+import { draftWeekTargets } from '@/application/coaching/draftRules'
 
 import {
   ADAPTATION_READING_INSTRUCTION,
@@ -216,6 +217,13 @@ function macrocyclePrompt(input: BootstrapRequest, windows: { startDate: string;
   })
 }
 
+function blockWeeksPrompt(input: BootstrapRequest, windows: WeekWindow[]): string {
+  const targets = draftWeekTargets(windows, input.context, input.primaryTargetEvent, input.availableWeekdays)
+  if (!targets) return ''
+  const weeks = windows.map((window, index) => ({ ...window, targetKm: targets[index]?.km ?? 0, lighter: targets[index]?.lighter ?? false }))
+  return `\nCONTROLLED_THRESHOLD_BLOCK_WEEKS (each week's km within ${CONTROLLED_THRESHOLD.block.targetToleranceKm} km of its target): ${JSON.stringify(weeks)}`
+}
+
 export function bootstrapUserPrompt(input: BootstrapRequest): string {
   const windows = isoWeekWindows(input.planningStartDate, input.horizonEndDate)
   const weekCount = windows.length
@@ -226,7 +234,7 @@ export function bootstrapUserPrompt(input: BootstrapRequest): string {
     ? JSON.stringify(bootstrapEventPrompt(primary))
     : 'none - general preparation, progressing fitness over time rather than toward a race'
 
-  return `${contextPrompt(input.context)}\nPOST_RACE_RECOVERY: ${JSON.stringify(recovery)}\nPRIMARY_TARGET: ${target}\nTUNE_UP_EVENTS (each goal is independent): ${JSON.stringify(input.tuneUpEvents.map(bootstrapEventPrompt))}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nrunsPerWeek (normal desired frequency): ${input.runsPerWeek ?? "unspecified; do not infer from availability"}\nMACROCYCLE (the season this rolling block is one slice of): ${macrocyclePrompt(input, windows)}\nCONTROLLED_THRESHOLD_DOSE: ${JSON.stringify(CONTROLLED_THRESHOLD.dose)}\nPlan starts: ${input.planningStartDate}${input.planningStartDate > input.context.referenceDate && input.context.currentPlan ? ` (sessions from ${input.context.referenceDate} until then stay as currentPlan has them)` : ''}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'} using these exact startDate/endDate pairs, in this order: ${JSON.stringify(windows)}. Weeks run Monday to Sunday; the first may be shorter because the plan starts mid-week. Do not invent other boundaries, and keep every workout inside its own week.\nUser target override: ${input.targetEventId ?? 'none'}\nAdditional athlete guidance (volume ranges are guidance, not mandatory quotas): ${input.guidance ?? 'none'}`
+  return `${contextPrompt(input.context)}\nPOST_RACE_RECOVERY: ${JSON.stringify(recovery)}\nPRIMARY_TARGET: ${target}\nTUNE_UP_EVENTS (each goal is independent): ${JSON.stringify(input.tuneUpEvents.map(bootstrapEventPrompt))}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nrunsPerWeek (normal desired frequency): ${input.runsPerWeek ?? "unspecified; do not infer from availability"}\nMACROCYCLE (the season this rolling block is one slice of): ${macrocyclePrompt(input, windows)}\nCONTROLLED_THRESHOLD_DOSE: ${JSON.stringify(CONTROLLED_THRESHOLD.dose)}${blockWeeksPrompt(input, windows)}\nPlan starts: ${input.planningStartDate}${input.planningStartDate > input.context.referenceDate && input.context.currentPlan ? ` (sessions from ${input.context.referenceDate} until then stay as currentPlan has them)` : ''}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'} using these exact startDate/endDate pairs, in this order: ${JSON.stringify(windows)}. Weeks run Monday to Sunday; the first may be shorter because the plan starts mid-week. Do not invent other boundaries, and keep every workout inside its own week.\nUser target override: ${input.targetEventId ?? 'none'}\nAdditional athlete guidance (volume ranges are guidance, not mandatory quotas): ${input.guidance ?? 'none'}`
 }
 
 const EVIDENCE_SCHEMA = {

@@ -2380,6 +2380,9 @@ export const en = {
       asPlanned: (n: number, of: number) => `${n} of ${of} sessions as planned`,
       raceInWeeks: (race: string, weeks: number) => `${race} in ${weeks} wk`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} today` : days === 1 ? `${race} tomorrow` : `${race} in ${days} days`),
+      guideProposal: (reps: string, from: string, to: string, source: string) => `Pace guide proposed for ${reps}: ${from} → ${to} /km, ${source}`,
+      repClass: { long: 'long reps', medium: 'medium reps', short: 'short reps' },
+      proposalSource: { sessions: 'two sessions agree', fitness_check: 'from the 5K check' },
     },
     weekRow: {
       kmOf: (km: string) => `/ ${km} km`,

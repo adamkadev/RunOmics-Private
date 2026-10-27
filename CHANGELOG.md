@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Controlled threshold blocks are 3 + 1 and grow with the athlete's signals. A
+  general block's weeks are set in advance: three rising weeks and a lighter fourth
+  (about 20% less, threshold time cut by a third, same runs). Green signals (no
+  fatigue flag, easy-run heart rate near normal, no run of poor check-ins, no niggle)
+  rise about 5% a week and start the next block 5% higher; yellow about 2%; red holds,
+  or comes down after a break. The plan focus says the colour and why, and the volume
+  check holds each week to its target. Runs per week and the two 30-minute threshold
+  sessions are unchanged. Open pace-guide proposals (two agreeing sessions or a 5K
+  check) are named in the plan focus and shown under Plan's phase card (« Allure guide
+  proposée … »), and a 5K check no longer moves a guide it already set. Athletes
+  without an LTHR are unaffected. **Needs** `"maxWeeklyKm": 70` (or another cap) in
+  the data repo's `athlete.json` to stop growth there; without it there is no cap.
 - Swipe between months. The week sheet opened from Progress → Consistency gets
   a month header with arrows (« Mois précédent », « Mois suivant ») and pages
   with a left or right swipe, from the first week shown to this month, the week

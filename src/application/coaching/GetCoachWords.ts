@@ -1,4 +1,4 @@
-import type { CoachingPlan } from '@/domain/coaching/types'
+import type { BlockGuideProposal, CoachingPlan } from '@/domain/coaching/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 
@@ -15,7 +15,8 @@ export interface CoachSessionWords {
 
 /** The coach's own text, served by /api/coaching/words behind the site's gate and never in a page's HTML. */
 export interface CoachWords {
-  block: { name: string; focus: string }
+  /** guideProposals holds only those the block left open, and is absent without one. */
+  block: { name: string; focus: string; guideProposals?: BlockGuideProposal[] }
   weeks: CoachWeekWords[]
   /** By prescription id. */
   sessions: Record<string, CoachSessionWords>
@@ -26,8 +27,9 @@ export function coachWords(plan: CoachingPlan): CoachWords {
   for (const workout of plan.weeks.flatMap((week) => week.workouts)) {
     sessions[workout.id] = { description: workout.description.trim(), notes: (workout.notes ?? []).map((note) => note.trim()).filter(Boolean) }
   }
+  const open = (plan.block.guideProposals ?? []).filter((proposal) => !proposal.adopted)
   return {
-    block: { name: plan.block.name.trim(), focus: plan.block.focus.trim() },
+    block: { name: plan.block.name.trim(), focus: plan.block.focus.trim(), ...(open.length ? { guideProposals: open } : {}) },
     weeks: plan.weeks.map((week) => ({ startDate: week.startDate, endDate: week.endDate, focus: week.focus.trim() })),
     sessions,
   }

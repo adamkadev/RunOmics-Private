@@ -100,12 +100,25 @@ export interface TrainingWeek {
   workouts: WorkoutPrescription[]
 }
 
+export interface BlockGuideProposal {
+  repClass: 'long' | 'medium' | 'short'
+  source: 'sessions' | 'fitness_check'
+  guide: NumberRange
+  proposedGuide: NumberRange
+  /** The sessions that agreed, or the check. */
+  dates: string[]
+  /** The block prescribes the proposed guide: the athlete accepted it, or a fitness check set it. */
+  adopted: boolean
+}
+
 export interface TrainingBlock {
   id: string
   name: string
   startDate: string
   endDate: string
   focus: string
+  /** Pace-guide changes the evidence proposed when the block was written; the focus may name them but never a pace. */
+  guideProposals?: BlockGuideProposal[]
 }
 
 export type CoachingEventRole = 'primary' | 'tune_up'

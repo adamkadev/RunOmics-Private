@@ -37,6 +37,15 @@ describe('coaching validation', () => {
     expect(() => parseWorkoutPrescription(invalid)).toThrow(/min must be <= max/)
   })
 
+  it('keeps the block’s pace-guide proposals and refuses one without its adopted flag', () => {
+    const proposal = { repClass: 'long', source: 'fitness_check', guide: { min: 272, max: 280 }, proposedGuide: { min: 267, max: 274 }, dates: ['2026-09-05'], adopted: false }
+    const proposing = { ...plan(), block: { ...plan().block, guideProposals: [proposal] } }
+    expect(parseCoachingPlan(proposing).block.guideProposals).toEqual([proposal])
+    const unflagged: Record<string, unknown> = { ...proposal }
+    delete unflagged.adopted
+    expect(() => parseCoachingPlan({ ...proposing, block: { ...proposing.block, guideProposals: [unflagged] } })).toThrow(/adopted: expected a boolean/)
+  })
+
   it('rejects duplicate workout ids across weeks', () => {
     const invalid = plan()
     invalid.weeks[1]!.workouts[0]!.id = invalid.weeks[0]!.workouts[0]!.id

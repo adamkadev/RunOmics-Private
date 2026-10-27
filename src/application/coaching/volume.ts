@@ -3,6 +3,7 @@ import type { BootstrapWeekDraft, CoachingPlanDraft } from '@/application/ports/
 import type { TrainingHistory } from '@/domain/training/trainingHistory'
 import type { NumberRange, WorkoutBlock, WorkoutSegment } from '@/domain/coaching/types'
 import { blocksMeters, planEasyPace } from '@/domain/coaching/sessionDistance'
+import { CONTROLLED_THRESHOLD } from './controlledThreshold'
 
 // A non-taper week should hold what the athlete just ran; the tolerance is for rounding a week's
 // sessions, not for easing off without saying so.
@@ -44,16 +45,54 @@ export interface VolumeBand {
   baselineKm: number
   capacityKm: number
   longestRunKm: number
+  /** The athlete's own cap from athlete.json; absent means none. */
+  maxWeeklyKm?: number
 }
 
-export function volumeBand(history: TrainingHistory): VolumeBand {
+export function volumeBand(history: TrainingHistory, maxWeeklyKm?: number): VolumeBand {
   const baselineKm = Math.max(history.recent7DaysKm, lastCompletedWeekKm(history), history.recentWeeklyAverageKm)
   return {
+    ...(maxWeeklyKm ? { maxWeeklyKm } : {}),
     baselineKm,
     capacityKm: Math.max(history.best4WeekAverageKm, baselineKm),
     // A month off the road leaves no recent long run, but the tolerance built over the quarter has not vanished.
     longestRunKm: history.longestRunLast30DaysKm || history.longestRunLast90DaysKm,
   }
+}
+
+/** The bounds a whole week answers to as a block's first week, before any peak of its own. */
+export function fullWeekLimits(band: VolumeBand): { ceilingKm: number; rampKm: number } {
+  return {
+    ceilingKm: round(band.capacityKm * CEILING_RATIO + CEILING_ALLOWANCE_KM),
+    rampKm: band.baselineKm * RAMP_RATIO + RAMP_ALLOWANCE_KM,
+  }
+}
+
+export interface WeekTarget {
+  km: number
+  lighter: boolean
+}
+
+/** A partial first week is a lead-in at week 1's level, so a block started midweek ends in its lighter week. */
+export function blockWeekTargets(
+  weekKmTargets: number[],
+  weeks: Pick<BootstrapWeekDraft, 'startDate' | 'endDate'>[],
+  availableWeekdays: number[],
+): (WeekTarget | null)[] {
+  const lighterIndex = weekKmTargets.length - 1
+  let next = 0
+  return weeks.map((week, index) => {
+    const share = trainingWeekShare(week, availableWeekdays)
+    if (share === 0) return null
+    const leadIn = index === 0 && share < 1 && weeks.length > 1
+    const position = leadIn ? 0 : Math.min(next++, lighterIndex)
+    return { km: round(weekKmTargets[position]! * share), lighter: position === lighterIndex }
+  })
+}
+
+export function longSessionLimitKm(band: VolumeBand, fullWeekKm: number): number {
+  const recentBound = band.longestRunKm > 0 ? band.longestRunKm * LONG_RUN_STEP : Infinity
+  return Math.max(Math.min(fullWeekKm * LONG_RUN_SHARE, recentBound), LONG_RUN_ALLOWANCE_KM)
 }
 
 export function segments(blocks: WorkoutBlock[]): { segment: WorkoutSegment; repetitions: number }[] {
@@ -74,7 +113,7 @@ export function weekKm(week: BootstrapWeekDraft, easyPace: NumberRange | null = 
  * Counted in the days this athlete runs, not calendar days: a block starting on a Tuesday is a whole
  * week for a Tue-Sun runner and must carry a whole week's volume.
  */
-export function trainingWeekShare(week: BootstrapWeekDraft, availableWeekdays: number[]): number {
+export function trainingWeekShare(week: Pick<BootstrapWeekDraft, 'startDate' | 'endDate'>, availableWeekdays: number[]): number {
   if (availableWeekdays.length === 0) return 0
   const start = Date.parse(week.startDate)
   const days = Math.round((Date.parse(week.endDate) - start) / DAY_MS) + 1
@@ -98,7 +137,7 @@ function longestSession(week: BootstrapWeekDraft, weekTotalKm: number, share: nu
   // tail holds two runs, and one of them being most of it is arithmetic.
   const shareBound = (weekTotalKm / share) * LONG_RUN_SHARE
   const recentBound = band.longestRunKm > 0 ? band.longestRunKm * LONG_RUN_STEP : Infinity
-  const limit = Math.max(Math.min(shareBound, recentBound), LONG_RUN_ALLOWANCE_KM)
+  const limit = longSessionLimitKm(band, weekTotalKm / share)
 
   for (const workout of week.workouts) {
     const km = round(blocksMeters(workout.blocks, easyPace) / 1_000)
@@ -121,6 +160,7 @@ export function validateDraftVolume(
   availableWeekdays: number[],
   before?: CoachingPlanDraft,
   returning = false,
+  targets?: (WeekTarget | null)[],
 ): void {
   if (!(band.baselineKm > 0)) return
 
@@ -137,12 +177,16 @@ export function validateDraftVolume(
   // Seeded from what the athlete has been running, or the block's first week would answer to nothing.
   let peakKm = band.baselineKm
 
-  for (const week of draft.weeks) {
+  for (const [weekIndex, week] of draft.weeks.entries()) {
     const share = trainingWeekShare(week, availableWeekdays)
     if (share === 0) continue
 
+    const target = adapting ? null : targets?.[weekIndex] ?? null
     const floorKm = round(band.baselineKm * share * FLOOR_RATIO)
-    const ceilingKm = round(band.capacityKm * share * CEILING_RATIO + CEILING_ALLOWANCE_KM)
+    const ceilingKm = round(Math.min(
+      band.capacityKm * share * CEILING_RATIO + CEILING_ALLOWANCE_KM,
+      (band.maxWeeklyKm ?? Infinity) * share,
+    ))
     const km = weekKm(week, easyPaceOf(week))
     // Nothing carried a distance, or a duration with a pace: an under-specified week is frequency's business.
     if (km === 0) continue
@@ -153,13 +197,21 @@ export function validateDraftVolume(
       throw new Error(`Week ${week.startDate} says ${claimed} km in its focus but prescribes ${km} km; make the focus match the workouts`)
     }
 
-    if (judged && km > ceilingKm) {
+    // The targets were bounded when they were set, so they stand in for the floor and the ceiling.
+    if (target) {
+      if (Math.abs(km - target.km) > CONTROLLED_THRESHOLD.block.targetToleranceKm) {
+        throw new Error(`Week ${week.startDate} prescribes ${km} km against the block's target of ${target.km} km; write it to the target`)
+      }
+      if (target.lighter && week.reducedVolume === undefined) {
+        throw new Error(`Week ${week.startDate} is the block's lighter week; set week.reducedVolume with reason cutback`)
+      }
+    } else if (judged && km > ceilingKm) {
       throw new Error(`Week ${week.startDate} prescribes ${km} km, beyond the ${ceilingKm} km this athlete has sustained; reduce it`)
     }
 
     const reduction = week.reducedVolume
     // Walks in a return carry no distance while the recorded kilometres include them, so those set no floor.
-    if (!adapting && !returning && km < floorKm && reduction === undefined) {
+    if (!adapting && !returning && !target && km < floorKm && reduction === undefined) {
       throw new Error(`Week ${week.startDate} prescribes ${km} km against a recent ${band.baselineKm} km; either build from that or set week.reducedVolume with the recovery, taper or cutback reason`)
     }
 

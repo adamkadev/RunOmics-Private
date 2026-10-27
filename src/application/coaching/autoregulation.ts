@@ -1,6 +1,6 @@
 import type { Activity } from '@/domain/activity/types'
 import type { OfficialRaceResult } from '@/domain/activity/raceResult'
-import type { CoachingPlan, NumberRange, WorkoutPrescription, WorkoutSegment } from '@/domain/coaching/types'
+import type { BlockGuideProposal, CoachingPlan, NumberRange, WorkoutPrescription, WorkoutSegment } from '@/domain/coaching/types'
 import { DAY_MS } from '@/lib/calendarDate'
 import { thresholdPaceFromVdot, vdotFromEffort } from '@/domain/training/vdot'
 import { CONTROLLED_THRESHOLD, heartRateUnder, repLengthClass, type RepLengthClass } from './controlledThreshold'
@@ -10,7 +10,9 @@ import { CONTROLLED_THRESHOLD, heartRateUnder, repLengthClass, type RepLengthCla
  * Every threshold it judges by lives in CONTROLLED_THRESHOLD.
  */
 
-export function controlledStep(workout: WorkoutPrescription): { repetitions: number; step: WorkoutSegment } | null {
+type Written = Pick<WorkoutPrescription, 'type' | 'blocks'> & Partial<Pick<WorkoutPrescription, 'status'>>
+
+export function controlledStep(workout: Written): { repetitions: number; step: WorkoutSegment } | null {
   if (workout.type !== 'threshold' || workout.status === 'cancelled') return null
   for (const block of workout.blocks) {
     if (block.kind !== 'repeat') continue
@@ -330,7 +332,8 @@ export function readFitnessCheck(
     paceSecPerKm: pace(latest),
     previous: previous ? { date: dayOf(previous), paceSecPerKm: pace(previous) } : null,
     impliedThresholdSecPerKm: thresholdPaceFromVdot(vdotFromEffort(5, seconds(latest))),
-    proposedGuides: ratio === null ? [] : [...currentGuides(byDate, referenceDate)].map(([repClass, guide]) => ({
+    // The guides the check was run under: one adopted since would otherwise be moved by the same check again.
+    proposedGuides: ratio === null ? [] : [...currentGuides(byDate, dayOf(latest))].map(([repClass, guide]) => ({
       repClass,
       guide,
       proposedGuide: { min: Math.round(guide.min * ratio), max: Math.round(guide.max * ratio) },
@@ -369,6 +372,43 @@ export function autoregulationReport(
     fatigue: assessFatigue(easyRuns(past, byDate)),
     fitnessCheck: readFitnessCheck(past, byDate, referenceDate, officialResults),
   }
+}
+
+/** Every proposal open when a block is written, marked adopted where the block already prescribes it. */
+export function blockGuideProposals(report: AutoregulationReport | undefined, workouts: Written[]): BlockGuideProposal[] {
+  if (!report) return []
+  const prescribed = new Map<RepLengthClass, NumberRange>()
+  for (const workout of workouts) {
+    const controlled = controlledStep(workout)
+    if (!controlled) continue
+    const repClass = repLengthClass(controlled.step.target.durationSeconds!)
+    if (!prescribed.has(repClass)) prescribed.set(repClass, controlled.step.target.paceSecPerKm!)
+  }
+  const adopted = (repClass: RepLengthClass, proposed: NumberRange) => {
+    const guide = prescribed.get(repClass)
+    return guide !== undefined && guide.min === proposed.min && guide.max === proposed.max
+  }
+  const check = report.fitnessCheck
+  return [
+    ...report.guideProposals.map((proposal) => ({
+      repClass: proposal.repClass,
+      source: 'sessions' as const,
+      guide: proposal.guide,
+      proposedGuide: proposal.proposedGuide,
+      dates: proposal.sessions.map((session) => session.date),
+      adopted: adopted(proposal.repClass, proposal.proposedGuide),
+    })),
+    ...(check?.proposedGuides ?? [])
+      .filter((proposal) => proposal.guide.min !== proposal.proposedGuide.min || proposal.guide.max !== proposal.proposedGuide.max)
+      .map((proposal) => ({
+        repClass: proposal.repClass,
+        source: 'fitness_check' as const,
+        guide: proposal.guide,
+        proposedGuide: proposal.proposedGuide,
+        dates: [check!.date],
+        adopted: adopted(proposal.repClass, proposal.proposedGuide),
+      })),
+  ]
 }
 
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`
