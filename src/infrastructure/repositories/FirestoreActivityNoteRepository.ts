@@ -1,5 +1,6 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { withTimeout } from '../withTimeout'
+import { isEmptyNote } from './JsonActivityNoteRepository'
 
 const COLLECTION = 'activityNotes'
 
@@ -9,6 +10,8 @@ const READ_TIMEOUT_MS = 10_000
 export interface ActivityNote {
   note: string
   tags: string[]
+  /** The owner's "HR unreliable" mark: the run's heart rate leaves every load, zone and efficiency figure. */
+  hrUnreliable?: true
 }
 
 /** `available` tells "annotated nothing" from "could not ask": a prompt built from the second reads an unexplained RPE as fitness. */
@@ -21,7 +24,7 @@ const UNAVAILABLE: ActivityNotesRead = { notes: new Map(), available: false }
 
 function read(data: Record<string, unknown>): ActivityNote {
   const tags = Array.isArray(data.tags) ? data.tags.filter((tag): tag is string => typeof tag === 'string') : []
-  return { note: typeof data.note === 'string' ? data.note : '', tags }
+  return { note: typeof data.note === 'string' ? data.note : '', tags, ...(data.hrUnreliable === true ? { hrUnreliable: true } : {}) }
 }
 
 /** Notes and tags come from the RunOmics UI only - Garmin Connect's comment field is never used - so this collection is their only source. */
@@ -35,7 +38,7 @@ export async function getActivityNotes(): Promise<ActivityNotesRead> {
     const notes = new Map<string, ActivityNote>()
     for (const doc of snapshot.docs) {
       const note = read(doc.data() as Record<string, unknown>)
-      if (note.note !== '' || note.tags.length > 0) notes.set(doc.id, note)
+      if (!isEmptyNote(note)) notes.set(doc.id, note)
     }
     return { notes, available: true }
   } catch {

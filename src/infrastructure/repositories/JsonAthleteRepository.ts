@@ -54,6 +54,8 @@ export interface AthleteProfile {
   lastUpdate?: string
   injuryHistory?: InjuryHistory
   trainingBreaks?: TrainingBreak[]
+  /** YYYY-MM-DD: the first day a reliable heart-rate sensor was worn; earlier runs' heart rate is not trusted. */
+  hrReliableFrom?: string
 }
 
 export function getAthleteProfile(): AthleteProfile {

@@ -2,14 +2,19 @@ import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
 import type { ActivityNote } from './FirestoreActivityNoteRepository'
 
+export function isEmptyNote(note: ActivityNote): boolean {
+  return note.note === '' && note.tags.length === 0 && !note.hrUnreliable
+}
+
 function readNote(raw: unknown): ActivityNote | null {
   if (typeof raw !== 'object' || raw === null) return null
-  const { note, tags } = raw as Record<string, unknown>
-  const read = {
+  const { note, tags, hrUnreliable } = raw as Record<string, unknown>
+  const read: ActivityNote = {
     note: typeof note === 'string' ? note : '',
     tags: Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    ...(hrUnreliable === true ? { hrUnreliable: true } : {}),
   }
-  return read.note === '' && read.tags.length === 0 ? null : read
+  return isEmptyNote(read) ? null : read
 }
 
 /** The nightly sync's copy of the Firestore notes; null when it has never written one. */
@@ -22,4 +27,9 @@ export function getActivityNotesBackup(): Map<string, ActivityNote> | null {
     if (note) notes.set(activityId, note)
   }
   return notes
+}
+
+/** From the nightly copy: a mark made today reaches the figures after the next sync. */
+export function getHrUnreliableIds(): Set<string> {
+  return new Set([...(getActivityNotesBackup() ?? [])].filter(([, note]) => note.hrUnreliable).map(([id]) => id))
 }
