@@ -1,4 +1,4 @@
-import type { ActivityType } from '@/domain/activity/types'
+import type { ActivityType, HrDistrust } from '@/domain/activity/types'
 import type { NiggleSide, NiggleSite } from '@/domain/wellness/checkIn'
 
 function ordinal(n: number): string {
@@ -1350,6 +1350,11 @@ export const en = {
     },
     dataQuality: {
       estimated: 'Estimated',
+      hrUntrusted: {
+        marked: 'HR unreliable · load from effort',
+        beforeReliable: 'HR before the strap · load from effort',
+        wrist: 'Wrist HR · load from effort',
+      } satisfies Record<HrDistrust, string>,
     },
     similarRuns: {
       summary: (n: number, rank: number) =>
@@ -1376,6 +1381,8 @@ export const en = {
       usedBefore: 'Used before',
       removeTag: (tag: string) => `Remove tag ${tag}`,
       addTag: (tag: string) => `Add tag ${tag}`,
+      hrUnreliable: 'HR unreliable',
+      hrUnreliableHint: 'Leaves this run’s heart rate out of load, zones and efficiency from the next sync. Load is then estimated from effort.',
     },
     zones: {
       short: 'Heart-rate zones',

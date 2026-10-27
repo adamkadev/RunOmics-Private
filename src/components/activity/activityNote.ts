@@ -5,6 +5,9 @@ export const TAGS_MAX_COUNT = 10
 export interface ActivityNote {
   note: string
   tags: string[]
+  hrUnreliable?: true
 }
+
+export const hasNoteContent = (note: ActivityNote) => note.note !== '' || note.tags.length > 0 || !!note.hrUnreliable
 
 export const EMPTY_NOTE: ActivityNote = { note: '', tags: [] }

@@ -1262,6 +1262,11 @@ export const fr = {
     },
     dataQuality: {
       estimated: 'Estimé',
+      hrUntrusted: {
+        marked: 'FC non fiable · charge selon l’effort',
+        beforeReliable: 'FC avant le brassard · charge selon l’effort',
+        wrist: 'FC au poignet · charge selon l’effort',
+      },
     },
     similarRuns: {
       summary: (n: number, rank: number) =>
@@ -1285,6 +1290,8 @@ export const fr = {
       usedBefore: 'Déjà utilisés',
       removeTag: (tag: string) => `Supprimer le tag ${tag}`,
       addTag: (tag: string) => `Ajouter le tag ${tag}`,
+      hrUnreliable: 'FC non fiable',
+      hrUnreliableHint: 'Écarte la fréquence cardiaque de cette sortie de la charge, des zones et de l’efficacité dès la prochaine synchro. La charge est alors estimée d’après l’effort.',
     },
     zones: {
       short: 'Zones cardiaques',

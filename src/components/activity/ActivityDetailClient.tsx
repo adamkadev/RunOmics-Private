@@ -249,8 +249,14 @@ export function ActivityDetailClient({
       })()}
 
       <RunVerdict activity={activity} type={type} aiVerdict={aiVerdict}>
-        {!activity.avgHeartRate && (
-          <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
+        {activity.hrUntrusted ? (
+          <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')} data-testid="run-hr-untrusted">
+            {t.activity.dataQuality.hrUntrusted[activity.hrUntrusted]}
+          </span>
+        ) : (
+          !activity.avgHeartRate && (
+            <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
+          )
         )}
         <span className={RUN_CHIP_CLASS} data-testid="run-effort">
           {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
