@@ -33,6 +33,14 @@ describe('coachWords', () => {
     for (const text of ['Autumn 10K', 'provenance', 'demo', 'goal']) expect(payload).not.toContain(text)
   })
 
+  it('carries the pace-guide proposals the block left open, and drops one it adopted', () => {
+    const open = { repClass: 'long' as const, source: 'sessions' as const, guide: { min: 272, max: 280 }, proposedGuide: { min: 268, max: 276 }, dates: ['2026-09-01', '2026-09-03'], adopted: false }
+    const adopted = { ...open, repClass: 'short' as const, source: 'fitness_check' as const, dates: ['2026-09-05'], adopted: true }
+    const proposing = { ...coachingPlan, block: { ...coachingPlan.block, guideProposals: [open, adopted] } }
+    expect(coachWords(proposing).block.guideProposals).toEqual([open])
+    expect(coachWords({ ...coachingPlan, block: { ...coachingPlan.block, guideProposals: [adopted] } }).block).not.toHaveProperty('guideProposals')
+  })
+
   it('is none without a plan', () => {
     expect(getCoachWords({ getCurrentPlan: () => null })).toBeNull()
     expect(getCoachWords({ getCurrentPlan: () => coachingPlan })?.block.name).toBe('Reprise en douceur')

@@ -74,6 +74,27 @@ sessions of 30 minutes, in a week of the best 4-week average ± 1 km) and the gu
 repetitions: a 5 s/km band from threshold pace rounded down to the next 5 s. It is null without
 an LTHR, and the context then holds no controlled threshold facts for the planner to use.
 
+**A general block is three rising weeks and a lighter fourth, set from the athlete's signals.**
+`blockTargets()` (`src/application/coaching/blockTargets.ts`) reads a colour and turns it into
+`context.controlledThreshold.block.weekKmTargets`, whole km. Green (no fatigue flag, easy-run heart
+rate within 2 bpm of normal, fewer than 3 poor check-ins in 14 days, no niggle) rises about 5% a
+week; yellow (an easy run 3-4 bpm high, such a run of check-ins, a mild niggle, unreadable
+check-ins) about 2%; red (fatigue flag, illness, a serious or recurring niggle, 7 days without a
+run, a break, a block replaced inside 21 days) holds the last block's level, or comes down to the
+running since a break. Week 1 starts the same step above the last block's week 1, or at the best
+4-week average for a first block; week 4 is 20% under week 3. The capacity ceiling bounds week 1
+only, as a jump guard; weeks 2 and 3 answer to the ramp and to `maxWeeklyKm`, typed by hand into
+the data repo's `athlete.json` (absent: no cap). `blockWeekTargets()` lays the targets over the
+block's Monday weeks (a partial first week is a lead-in at week 1's level, scaled to the run days
+it holds), the bootstrap prompt states them as `CONTROLLED_THRESHOLD_BLOCK_WEEKS`, and
+`validateDraftVolume` holds each week to its target within 1 km in place of the floor and the
+ceiling, the lighter week with `reducedVolume`. None of it applies while returning to running,
+toward a race, or without an LTHR.
+
+**The threshold dose does not grow.** A guide gets faster only from two agreeing sessions or a 5K
+check, which a new block stores as `block.guideProposals`. Plan shows the open ones under the phase
+card, and bootstrap refuses a general-block focus that leaves an open one unnamed.
+
 **A session is judged against the ceiling it prescribed,** which is what the watch held the
 athlete to, not today's LTHR. Heart rate lags a change of pace, so each repetition is read from
 minute 3 to its end. Over: a repetition past its target or touching the ceiling without having
@@ -302,11 +323,11 @@ it is scored as an easy run.
 
 | Session | Budget | Also |
 |---|---|---|
-| Quality (controlled threshold, threshold, tempo, intervals) | flat, as "Flat for the reps" | Trails OK does not apply |
-| The day before a quality session | ≤ 12 m/km | Trails OK does not apply |
+| Quality (controlled threshold, threshold, tempo, intervals) | flat, as "Flat for the reps" | |
+| The day before a quality session | ≤ 12 m/km | |
 | Recovery run | ≤ 12 m/km | |
 | Long run | ≤ 15 m/km | steep descents (7 % or more) scored like steep climbs |
-| Easy run, or no session | ≤ 20 m/km; ≤ 30 m/km with Trails OK | |
+| Easy run, or no session | ≤ 20 m/km | |
 
 These are [convention], not research thresholds. The reasoning behind them: walking grades steeper
 than about 15-20 % costs about as much energy as running them (Minetti et al. 2002's cost curves), so
@@ -316,13 +337,12 @@ before reps; and the goal race, a road half marathon, favours runnable terrain f
 The panel names the budget and each loop's m/km against it, and on an easy, recovery or long run a loop
 with 200 m or more at 10 % or steeper says to walk the steep climbs.
 
-**Trails, mud and darkness weigh more than new ground.** A loop's share on trails (steps, soft ground,
-and paths or tracks without a paved surface) costs 1.5, two and a half times what new ground can earn
-(0.6), so "New streets first" can no longer pull a loop into a muddy wood. "Trails OK" lifts that
-penalty in daylight. When the run, timed from now (or, for a later day's plan, from the athlete's usual
-start hour) at the easy pace, would start before sunrise or end
-within 15 minutes of sunset, trails cost 6 more whatever the toggles, and the panel says the loop keeps
-to streets. These weights are [convention] too, set against a forest loop of 25 October 2026: 13.3 km, 407 m
+**Trails are open in daylight, on any day.** The owner judges whether a forest loop suits
+the day, a quality day or the day before one included, so a loop's share on trails (steps, soft ground,
+and paths or tracks without a paved surface) costs nothing in daylight. When the run, timed from now (or,
+for a later day's plan, from the athlete's usual start hour) at the easy pace, would start before sunrise
+or end within 15 minutes of sunset, trails cost 6, ten times what new ground can earn (0.6), whatever the
+toggles, and the panel says the loop keeps to streets. These weights are [convention] too, set against a forest loop of 25 October 2026: 13.3 km, 407 m
 of DEM climb, muddy and steep, run into the dusk the day the clocks went back.
 
 ## AI insight generation

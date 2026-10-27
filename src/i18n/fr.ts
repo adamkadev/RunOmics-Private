@@ -184,6 +184,8 @@ export const fr = {
       current: 'En cours',
       runsColumn: 'sorties',
       seeRuns: (runs: number) => (runs > 1 ? `Voir les ${runs} sorties dans Activités` : 'Voir la sortie dans Activités'),
+      prevMonth: 'Mois précédent',
+      nextMonth: 'Mois suivant',
       close: 'Fermer',
     },
     empty: 'Aucune sortie pour l’instant.',
@@ -374,9 +376,7 @@ export const fr = {
         avoidBusyRoads: 'Éviter les grands axes',
         newStreetsFirst: 'Rues nouvelles d’abord',
         flatForReps: 'Plat pour les fractions',
-        trailsOk: 'Sentiers OK',
-        trailsLocked: 'Pas le jour d’une séance de qualité ni la veille',
-        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites', flatForReps: 'Plat', trailsOk: 'Sentiers' },
+        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites', flatForReps: 'Plat' },
         climb: {
           sessions: {
             quality: 'Séance de qualité',
@@ -2211,6 +2211,9 @@ export const fr = {
       asPlanned: (n: number, of: number) => `${n} séance${n > 1 ? 's' : ''} sur ${of} conforme${n > 1 ? 's' : ''} au plan`,
       raceInWeeks: (race: string, weeks: number) => `${race} dans ${weeks} sem.`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} aujourd’hui` : days === 1 ? `${race} demain` : `${race} dans ${days} jours`),
+      guideProposal: (reps: string, from: string, to: string, source: string) => `Allure guide proposée pour les ${reps} : ${from} → ${to} /km, ${source}`,
+      repClass: { long: 'répétitions longues', medium: 'répétitions moyennes', short: 'répétitions courtes' },
+      proposalSource: { sessions: 'deux séances concordantes', fitness_check: 'd’après le test 5 km' },
     },
     weekRow: {
       kmOf: (km: string) => `/ ${km} km`,

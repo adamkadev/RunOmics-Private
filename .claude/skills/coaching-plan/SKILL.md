@@ -67,6 +67,18 @@ the athlete to. What a new block is told comes from the athlete's own data, in
 `context.controlledThreshold`: the ceiling 6 bpm under the LTHR, the full week
 at about the best four-week average, and the short-repetition guide in the
 5 s/km band that holds threshold pace. The rules carry no athlete's numbers.
+
+A general block is 3 + 1, its weeks set in `context.controlledThreshold.block`. The signal
+colour sets the rise: green (no fatigue flag, easy-run heart rate within 2 bpm of normal, no run
+of poor check-ins, no niggle) about 5% a week, yellow about 2%, red none. Renewing after a green
+block that opened at 55 km gives 58-61-64-51: week 1 about 5% over the last week 1, then +5% a
+week, then a lighter week 20% under week 3. After a red block it repeats 55-55-55-44, or comes
+down after a break. `heldBy` names any bound that stopped it: the capacity ceiling on week 1,
+the ramp, or the athlete's `maxWeeklyKm`.
+The threshold dose never grows: a guide gets faster only from two agreeing sessions or
+a 5K check. A new block stores the open proposals in `block.guideProposals`, the app
+shows their guides on Plan, and the plan focus names each without a pace, so the athlete
+can accept it in the guidance at the next block.
 An athlete without an LTHR - a Forerunner 55 has no lactate threshold
 detection, and %HRmax zones are no threshold - gets no controlled threshold
 sessions: the context says null and the rules keep threshold work pace-led.

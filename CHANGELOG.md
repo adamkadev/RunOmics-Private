@@ -27,6 +27,8 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   same `OPS_PUSH_SECRET` on the owner's. Unset, they go to the deployment's own devices as before.
 - **Needs** `npm run coach:sync-garmin -- --apply` and `npm run coach:sync-garmin:lamiaa -- --apply`, to replace
   the easy runs already on the watches with ones carrying no heart rate.
+- **Needs** `"maxWeeklyKm"` (e.g. 70) in the owner's `athlete.json` to cap the coach's block-to-block volume growth;
+  without it there is no cap.
 - A data repository's Vercel build now fails unless the site is private with a 32-character `SESSION_SECRET`.
 - Optional: `GEMINI_BACKFILL_MODEL` replaces the backfill pool (`GEMINI_MODEL` now replaces the main pool only);
   `RUNOMICS_DATA_SOURCE=github` reads the data repository at run time.
@@ -73,6 +75,10 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
 - Strength, cycling, swimming and other sessions sync into their own store, with a strength session's sets, and
   show on Plan and Consistency and in the coach's context, never in running numbers.
 - Plan loads 18 KB of runs instead of 58 KB.
+- **Swipe between months.** The week sheet opened from Progress → Consistency gets a month header with arrows
+  (« Mois précédent », « Mois suivant ») and pages with a left or right swipe, from the first week shown to this
+  month. Plan's Month and Week swipe the same way, with a mouse drag too; a swipe that starts on a map or a
+  sideways scroller is left to it, and a vertical scroll or the sheet's drag-down never pages.
 
 ### Today
 
@@ -153,8 +159,10 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
 - **Loop routes (X3, X6).** "Plan a run" opens the generator: OpenRouteService round trips on foot
   (`POST /api/explore/route`, `ORS_API_KEY` on the server), scored on distance, new ground and busy roads, saved
   as GPX 1.1. It starts where the owner taps (or in the quartier), times a loop at the owner's own easy pace,
-  ranks flat loops first on a reps day, keeps to runnable ground within a climb budget per session, keeps to
-  streets after dusk and names the sunset. Plan's cards get "Find a route". The app never reads the location,
+  ranks flat loops first on a reps day and keeps within a climb budget per session (flat for the reps, 12 m/km the
+  day before a quality session, 20 on an easy run). Trails are always allowed in daylight, a quality day included,
+  with no "Trails OK" switch; a loop finishing after dusk keeps off mud, dirt, grass, steps and forest paths, and
+  the panel names the sunset. Plan's cards get "Find a route". The app never reads the location,
   and no routed point is within 600 m of home.
 - **Spots to avoid (F7).** The owner marks a fallen tree or a flooded path, 40, 80 or 150 m wide; mud expires
   after 3 weeks and a closure after 6, and at 100 spots Mark a spot turns off. The quartier's start and the vias
@@ -204,6 +212,14 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   of its description or notes naming a heart rate or zone. Quality sessions and the Plan Heart rate tile are
   unchanged. **Needs** `npm run coach:sync-garmin -- --apply` (and `coach:sync-garmin:lamiaa -- --apply`) to
   replace the easy runs already on the watch.
+- **Controlled threshold blocks are 3 + 1 and grow with the athlete's signals.** Three rising weeks and a lighter
+  fourth (about 20 % less, threshold time cut by a third, same runs). Green signals (no fatigue flag, easy-run
+  heart rate near normal, no run of poor check-ins, no niggle) rise about 5 % a week and start the next block 5 %
+  higher; yellow about 2 %; red holds, or comes down after a break. The plan focus says the colour and why, and the
+  volume check holds each week to its target. Open pace-guide proposals (two agreeing sessions or a 5K check) are
+  named in the focus and shown under Plan's phase card (« Allure guide proposée … »), and a 5K check no longer
+  moves a guide it already set. Athletes without an LTHR are unaffected. **Needs** `"maxWeeklyKm": 70` (or another
+  cap) in the data repo's `athlete.json` to stop growth there; without it there is no cap.
 - Controlled-threshold heart rates come from each athlete's LTHR; without one, no controlled threshold session
   is written.
 - Bootstrap reads `coaching/guidance.md` from the data workspace and records its hash, and takes `--days`,

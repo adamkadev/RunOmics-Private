@@ -4,6 +4,8 @@ import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/doma
 import { createHash } from 'crypto'
 import { autoregulationReport, controlledStep, type AutoregulationReport } from './autoregulation'
 import { controlledThresholdFacts, type ControlledThresholdFacts } from './controlledThreshold'
+import { blockTargets } from './blockTargets'
+import { volumeBand } from './volume'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { raceExecution, type RaceExecution } from '@/domain/activity/raceExecution'
@@ -101,6 +103,8 @@ export interface CoachingContext {
     injuryHistory: InjuryHistory | null
     /** Typed into athlete.json; absent when it has none. */
     trainingBreaks?: TrainingBreak[]
+    /** The weekly volume growth stops at, typed into athlete.json; absent means none. */
+    maxWeeklyKm?: number
   }
   /** Absent unless a long injury, illness or pregnancy break has not yet been followed by 30 minutes of running. */
   returnToRunning?: ReturnToRunning
@@ -260,6 +264,21 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
   const sessions = input.plan ? sessionsAcrossPlans([input.plan, ...(input.archivedPlans ?? [])], []) : []
   const breaks = recentBreaks(input.athlete.trainingBreaks, referenceDate)
   const returning = returnToRunning(breaks.trainingBreaks, input.activities.filter(isRunningActivity), referenceDate)
+  const wellness = wellnessFacts(input.wellness, referenceDate)
+  const autoregulation = input.plan?.weeks.some((week) => week.workouts.some((workout) => controlledStep(workout) !== null))
+    ? autoregulationReport(input.activities, [input.plan, ...(input.archivedPlans ?? [])], referenceDate, input.officialResults)
+    : undefined
+  const block = returning ? undefined : blockTargets({
+    plan: input.plan,
+    runs: input.activities.filter(isRunningActivity),
+    referenceDate,
+    ...(wellness.wellness ? { checkIns: wellness.wellness.checkIns, niggles: wellness.wellness.niggles } : {}),
+    ...(input.athlete.trainingBreaks ? { breaks: input.athlete.trainingBreaks } : {}),
+    fatigue: autoregulation?.fatigue ?? null,
+    best4WeekAverageKm: history.best4WeekAverageKm,
+    band: volumeBand(history, input.athlete.maxWeeklyKm),
+    ...(input.athlete.maxWeeklyKm ? { maxWeeklyKm: input.athlete.maxWeeklyKm } : {}),
+  })
 
   return {
     schemaVersion: 1,
@@ -319,9 +338,10 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       // Null means nobody has asked, which is not the same as none.
       injuryHistory: input.athlete.injuryHistory ?? null,
       ...breaks,
+      ...(input.athlete.maxWeeklyKm ? { maxWeeklyKm: input.athlete.maxWeeklyKm } : {}),
     },
     ...(returning ? { returnToRunning: returning } : {}),
-    ...wellnessFacts(input.wellness, referenceDate),
+    ...wellness,
     trajectories: input.trajectories,
     goals: input.goals,
     personalBests: input.personalBests,
@@ -339,10 +359,9 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       input.athlete.lthrBpm,
       input.trainingZones?.thresholdPaceSecPerKm ?? input.athlete.thresholdPaceSecPerKm,
       history.best4WeekAverageKm,
+      block,
     ),
-    ...(input.plan?.weeks.some((week) => week.workouts.some((workout) => controlledStep(workout) !== null))
-      ? { autoregulation: autoregulationReport(input.activities, [input.plan, ...(input.archivedPlans ?? [])], referenceDate, input.officialResults) }
-      : {}),
+    ...(autoregulation ? { autoregulation } : {}),
   }
 }
 

@@ -1326,6 +1326,29 @@ describe('general preparation', () => {
     expect(proposal.proposedPlan?.targetEvent).toBeUndefined()
   })
 
+  it('records the open pace-guide proposal on the block, and sends back a focus that leaves it unnamed', async () => {
+    const proposal = { repClass: 'long' as const, direction: 'faster' as const, guide: { min: 272, max: 280 }, proposedGuide: { min: 268, max: 276 }, stepSecPerKm: 4, sessions: [] }
+    const context = { ...targetContext([]), autoregulation: { referenceDate: '2026-09-04', controlledSessions: [], guideProposals: [proposal], fatigue: null, fitnessCheck: null } }
+    const focuses: string[] = []
+    const advisor: CoachingAdvisor = {
+      bootstrap: async (request) => {
+        const draft = { ...draftThrough(request), focus: focuses.length ? 'Two sessions propose a faster long-repetition guide.' : 'Hold the full week.' }
+        focuses.push(draft.focus)
+        return draft
+      },
+      evaluateActivity: async () => { throw new Error('unused') },
+      reviewWeek: async () => { throw new Error('unused') },
+    }
+    const result = await createBootstrapProposal(context, [0, 2, 3, 4, 6], {
+      repository: new MemoryRepository(), advisor, id: ids(), now: () => new Date('2026-09-04T08:00:00Z'),
+    })
+
+    expect(focuses).toHaveLength(2)
+    expect(result.proposedPlan?.block.guideProposals).toEqual([
+      { repClass: 'long', source: 'sessions', guide: { min: 272, max: 280 }, proposedGuide: { min: 268, max: 276 }, dates: [], adopted: false },
+    ])
+  })
+
   it('refuses a block that is asked to be general and to target a race at once', async () => {
     await expect(createBootstrapProposal(targetContext([
       { garminEventUuid: 'autumn-10k', date: '2026-09-27', name: 'Autumn 10K', distance: '10K' },

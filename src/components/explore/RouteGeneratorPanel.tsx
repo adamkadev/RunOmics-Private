@@ -220,10 +220,8 @@ export function RouteGeneratorPanel({
     ...(prefs.avoidBusyRoads ? [e.summary.avoidBusyRoads] : []),
     ...(prefs.newStreetsFirst ? [e.summary.newStreetsFirst] : []),
     ...(prefs.flatForReps ? [e.summary.flatForReps] : []),
-    ...(prefs.trailsOk ? [e.summary.trailsOk] : []),
   ].join(' · ')
-  const budget = climbBudget(day, prefs.trailsOk)
-  const trailsLocked = budget.kind === 'quality' || budget.kind === 'beforeQuality'
+  const budget = climbBudget(day)
   const notes = [climbLine(budget, ready ? stats : null), darknessLine(darkness), terrainLine(budget, ready ? stats : null)].filter(
     (line): line is string => line !== null,
   )
@@ -378,19 +376,6 @@ export function RouteGeneratorPanel({
                 <label className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
                   <span className="text-[15px] text-foreground">{e.flatForReps}</span>
                   <Toggle checked={prefs.flatForReps} onChange={(on) => onPrefsChange({ ...prefs, flatForReps: on })} label={e.flatForReps} />
-                </label>
-                <div aria-hidden="true" className="ml-4 h-px bg-[var(--row-separator)]" />
-                <label className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
-                  <span className="flex min-w-0 flex-col py-1.5">
-                    <span className="text-[15px] text-foreground">{e.trailsOk}</span>
-                    {trailsLocked && <span className="text-[13px] leading-[18px] text-muted-foreground">{e.trailsLocked}</span>}
-                  </span>
-                  <Toggle
-                    checked={prefs.trailsOk && !trailsLocked}
-                    disabled={trailsLocked}
-                    onChange={(on) => onPrefsChange({ ...prefs, trailsOk: on })}
-                    label={e.trailsOk}
-                  />
                 </label>
                 {avoid.enabled && <AvoidSpotsRows avoid={avoid} markRef={markRef} />}
               </div>

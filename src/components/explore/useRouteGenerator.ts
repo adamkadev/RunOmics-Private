@@ -95,7 +95,7 @@ const startKeyOf = (origin: LonLat | null) => (origin ? `${origin[0].toFixed(5)}
 const bit = (on: boolean) => (on ? 1 : 0)
 
 const prefsKeyOf = (p: RoutePreferences, c: RouteContext) =>
-  `${bit(p.avoidBusyRoads)}${bit(p.newStreetsFirst)}${bit(p.flatForReps)}${bit(p.trailsOk)}|${c.day.session ?? '-'}${bit(c.day.beforeQuality)}${bit(c.dark)}`
+  `${bit(p.avoidBusyRoads)}${bit(p.newStreetsFirst)}${bit(p.flatForReps)}|${c.day.session ?? '-'}${bit(c.day.beforeQuality)}${bit(c.dark)}`
 
 const circlesKeyOf = (circles: readonly AvoidCircle[]) => circles.map((c) => c.join(':')).join(',')
 

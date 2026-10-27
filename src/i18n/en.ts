@@ -181,6 +181,8 @@ export const en = {
       current: 'In progress',
       runsColumn: 'runs',
       seeRuns: (runs: number) => (runs === 1 ? 'See the run in Activities' : `See the ${runs} runs in Activities`),
+      prevMonth: 'Previous month',
+      nextMonth: 'Next month',
       close: 'Close',
     },
     empty: 'No runs yet.',
@@ -390,12 +392,8 @@ export const en = {
         newStreetsFirst: 'New streets first',
         // On by itself on a reps or tempo day: flat ground, on paths and cycleways rather than across streets.
         flatForReps: 'Flat for the reps',
-        // Off by default: lets loops take forest paths, dirt, grass and steps in daylight.
-        trailsOk: 'Trails OK',
-        // Under Trails OK on a quality day or the day before one, where it does not apply.
-        trailsLocked: 'Not on or before a quality day',
         // The options row's summary, "Loop · Avoid busy roads · New streets first": one line on a 393 pt phone.
-        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat', trailsOk: 'Trails' },
+        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat' },
         // The climb a loop may hold for the day's session. `max` and `perKm` are whole metres a km, "20".
         climb: {
           sessions: {
@@ -2382,6 +2380,9 @@ export const en = {
       asPlanned: (n: number, of: number) => `${n} of ${of} sessions as planned`,
       raceInWeeks: (race: string, weeks: number) => `${race} in ${weeks} wk`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} today` : days === 1 ? `${race} tomorrow` : `${race} in ${days} days`),
+      guideProposal: (reps: string, from: string, to: string, source: string) => `Pace guide proposed for ${reps}: ${from} → ${to} /km, ${source}`,
+      repClass: { long: 'long reps', medium: 'medium reps', short: 'short reps' },
+      proposalSource: { sessions: 'two sessions agree', fitness_check: 'from the 5K check' },
     },
     weekRow: {
       kmOf: (km: string) => `/ ${km} km`,

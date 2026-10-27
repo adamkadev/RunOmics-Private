@@ -227,19 +227,31 @@ export interface SheetRow {
 export interface WeekSheet {
   week: ConsistencyWeek
   status: Exclude<WeekStatus, 'future'>
-  /** The month the calendar shows: the one the week's Monday is in. */
+  /** YYYY-MM the calendar shows: the week's Monday's unless another is asked for. */
   month: string
   rows: SheetRow[]
 }
 
-export function weekSheet(view: ConsistencyView, weekStart: string, today: string): WeekSheet | null {
+/** YYYY-MM the sheet can page through: from the first week's month, the first its runs cover, to today's. */
+export function sheetMonths(view: ConsistencyView, today: string): { first: string; last: string } | null {
+  const first = view.weeks[0]?.start.slice(0, 7)
+  return first ? { first, last: today.slice(0, 7) } : null
+}
+
+/** YYYY-MM a month on or back. */
+export function shiftMonth(month: string, delta: number): string {
+  const date = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + delta, 1))
+  return date.toISOString().slice(0, 7)
+}
+
+export function weekSheet(view: ConsistencyView, weekStart: string, today: string, shownMonth?: string): WeekSheet | null {
   const week = view.weeks.find((w) => w.start === weekStart)
   if (!week) return null
   const current = mondayOf(today)
   const planned = new Set(view.plannedDates)
   const othersByDay = new Map<string, number>()
   for (const entry of view.others) othersByDay.set(entry.date, (othersByDay.get(entry.date) ?? 0) + 1)
-  const month = weekStart.slice(0, 7)
+  const month = shownMonth ?? weekStart.slice(0, 7)
   const last = plusDays(monthStart(plusDays(`${month}-28`, 4)), -1)
 
   const rows: SheetRow[] = []
