@@ -457,12 +457,28 @@ Playwright can drive without a test-only auth bypass, which is its own follow-up
 
 ### Monitoring
 
-`GET /api/internal/health` (authenticated with `x-internal-secret`) reports the
-last synced activity date and flags the data as `stale` after 7 days without
-one - point any uptime monitor at it to catch a silently broken Garmin sync.
+`GET /api/internal/health` (authenticated with `x-internal-secret`) answers
+`ok`, or `stale` with HTTP 503 once the last sync (`lastSyncedAt`) is 72 hours
+old, the same threshold as the in-app stale-sync push. The date of the last run
+(`daysSinceLastActivity`) is reported for information only: a training break is
+not a broken sync. Data that will not load answers `unloaded`, also with 503.
 Its `integrations` field says which server integrations the deployment has
-credentials for (`firebaseAdmin`, `gemini`, `syncButton`) and whether it is private (`privateSite`), by name only, and
-the nightly sync warns when one the post-sync checks need is missing.
+credentials for (`firebaseAdmin`, `gemini`, `syncButton`, `cron`) and whether it
+is private (`privateSite`), by name only, and the nightly sync warns when one the
+post-sync checks need is missing.
+
+Every other alert is sent by the deployment it watches, so one that is down, or
+has lost its Firebase or cron credentials, cannot report itself. The *Deployment
+Health Watchdog* workflow checks each profile from GitHub instead, daily at
+14:47 UTC, with its GitHub Environment's `APP_URL` and `INTERNAL_NOTIFY_SECRET`.
+It fails when the last sync is 36 hours old (one missed night), when the data is
+unloaded, or when `firebaseAdmin` or `cron` is missing, and GitHub emails a
+failed scheduled run to whoever last changed its schedule. Run it by hand from
+Actions after changing a deployment's variables.
+
+When GitHub refuses the nightly sync's dispatch (an expired or narrowed
+`GITHUB_SYNC_TOKEN`), no run starts, so the nightly-sync cron sends an operator
+push itself.
 
 Errors on a phone are reported to `/api/client-errors`, scrubbed of coordinates,
 and listed under Settings → Diagnostics; see
