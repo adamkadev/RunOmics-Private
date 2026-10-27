@@ -251,6 +251,16 @@ describe('routeStart', () => {
     expectAt(routeStart(area, 'test-r'), 525, 525)
   })
 
+  it('moves off a cell under a spot to the nearest clear one', () => {
+    const start = routeStart(area, 'test-r', [[...at(525, 525), 40]])!
+    const metres = Math.hypot(projectX(PROJ, start[0]) - 525, projectY(PROJ, start[1]) - 525)
+    expect(metres).toBeCloseTo(150, 6)
+  })
+
+  it('keeps the nearest cell when every cell is under a spot', () => {
+    expectAt(routeStart(area, 'test-r', [[...at(300, 300), 250]]), 525, 525)
+  })
+
   it('skips the cells without a way, even the one holding the label', () => {
     // The label sits in (1,0), which is not runnable; (0,0) is the nearest that is.
     const offWay = buildAreaIndex(areaFile([unit('test-r', 'R', rect(0, 0, 600, 600), cells(0, 3, 0, 3, [[1, 0]]), { label: at(200, 60) })]))

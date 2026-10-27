@@ -319,7 +319,8 @@ with 200 m or more at 10 % or steeper says to walk the steep climbs.
 **Trails, mud and darkness weigh more than new ground.** A loop's share on trails (steps, soft ground,
 and paths or tracks without a paved surface) costs 1.5, two and a half times what new ground can earn
 (0.6), so "New streets first" can no longer pull a loop into a muddy wood. "Trails OK" lifts that
-penalty in daylight. When the run, timed from now at the easy pace, would start before sunrise or end
+penalty in daylight. When the run, timed from now (or, for a later day's plan, from the athlete's usual
+start hour) at the easy pace, would start before sunrise or end
 within 15 minutes of sunset, trails cost 6 more whatever the toggles, and the panel says the loop keeps
 to streets. These weights are [convention] too, set against a forest loop of 25 October 2026: 13.3 km, 407 m
 of DEM climb, muddy and steep, run into the dusk the day the clocks went back.

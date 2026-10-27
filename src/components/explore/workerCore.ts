@@ -266,8 +266,8 @@ function score(area: AreaState, msg: RequestOf<'scoreRoutes'>): ExploreResults['
 }
 
 function plan(area: AreaState, msg: RequestOf<'routePlan'>): ExploreResults['routePlan'] {
-  const { unitId, origin, distanceM, seeds } = msg
-  return planRoute(area.index, visitedCells(area), { unitId, origin, home: homeOf(area, msg.home, msg.homeFromTracks, undefined), distanceM, seeds })
+  const { unitId, origin, distanceM, seeds, avoid } = msg
+  return planRoute(area.index, visitedCells(area), { unitId, origin, home: homeOf(area, msg.home, msg.homeFromTracks, undefined), distanceM, seeds, avoid })
 }
 
 function added(ids: string[]): AddedTracks {
@@ -289,7 +289,7 @@ function dispatch(
     case 'scoreRoutes':
       return serial(state, msg.areaKey, async () => score(requireArea(state, msg.areaKey), msg))
     case 'routeStart':
-      return serial(state, msg.areaKey, async () => routeStart(requireArea(state, msg.areaKey).index, msg.unitId))
+      return serial(state, msg.areaKey, async () => routeStart(requireArea(state, msg.areaKey).index, msg.unitId, msg.avoid))
     case 'routePlan':
       return serial(state, msg.areaKey, async () => plan(requireArea(state, msg.areaKey), msg))
     default:

@@ -1,18 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Maximize, Minimize, SlidersHorizontal } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { ACTIVITY_TYPES } from "@/domain/activity/types";
 import { areaForCluster } from "@/domain/explore/areaForCluster";
 import { medianStart } from "@/domain/explore/home";
-import type { AvoidCircle } from "@/domain/explore/avoidSpots";
-import type { ExploreAreaRef, ScoredRoute } from "@/domain/explore/types";
+import { circleOf } from "@/domain/explore/avoidSpots";
+import type { ExploreAreaRef } from "@/domain/explore/types";
+import { TEST_MAPS } from "@/lib/maptiler";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { formatKm, formatNumber } from "@/lib/formatters";
-import { removeUrlParams, useUrlParam } from "@/lib/useUrlParam";
+import { useUrlParam } from "@/lib/useUrlParam";
 import { MAP_PADDING, type CameraPadding, type LngLatBounds } from "@/lib/routeFrame";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import type { TerritoryCardContent } from "./TerritoryBand";
@@ -32,24 +33,18 @@ import { initialMapLayer, parseMapLayer, readStoredMapLayer, storeMapLayer, type
 import { NextQuartierCard } from "@/components/explore/NextQuartierCard";
 import { QuartierSheet } from "@/components/explore/QuartierSheet";
 import { useDistrictsTap, useQuartierCamera } from "@/components/explore/useQuartierMap";
-import { parseExploreRoute } from "@/components/explore/exploreHref";
 import { RouteGeneratorMode } from "@/components/explore/RouteGeneratorMode";
-import { useAvoidSpots } from "@/components/explore/useAvoidSpots";
+import { generatorUnit, useExploreGenerator } from "@/components/explore/useExploreGenerator";
 import {
   easyPaceOf,
-  generatorDay,
-  generatorPlan,
-  generatorTarget,
   lineBounds,
   medianOf,
   unionBounds,
   type ExplorePlan,
-  type GeneratorTarget,
 } from "@/components/explore/routeGenerator";
 import type { RouteDrawing } from "@/components/explore/routeLayer";
-import { routeStartState, type RouteStartMode } from "@/components/explore/routeStart";
 import { combineOverlays, useRouteOverlay, useRouteSync } from "@/components/explore/useRouteOverlay";
-import { quartierPadding, sheetBoxOf, unitBounds } from "@/components/explore/quartierCamera";
+import { QUARTIER_EASE_MS, quartierPadding, sheetBoxOf, unitBounds } from "@/components/explore/quartierCamera";
 import {
   activeFilterCount,
   areaRows,
@@ -82,41 +77,44 @@ const NO_CREDITS: readonly MapCredit[] = [];
 const NO_PLANS: readonly ExplorePlan[] = [];
 const NO_TRACKS: [number, number][][] = [];
 
-const EXPLORE_PARAMS = ["explore", "quartier", "km", "pace", "date", "from"] as const;
-
-interface GeneratorState extends GeneratorTarget {
-  plan: ExplorePlan | null;
-  /** null when a link opened it. */
-  returnTo: { expanded: boolean; unitId: string | null } | null;
-  /** Where focus goes back to on close; null when a link opened it. */
-  opener: GeneratorOpener | null;
-}
-
-interface GeneratorOpener {
-  element: HTMLElement | null;
-  /** Its card unmounts with the generator open: focus goes to the new card's button instead. */
-  fromNextCard: boolean;
-}
-
 /** Until the panel is measured: it stands about 430 pt tall on a phone. */
 const GENERATOR_PADDING: CameraPadding = { top: 72, right: 24, bottom: 460, left: 24 };
+
+/** Close enough to see which street the circle covers. */
+const SPOT_ZOOM = 16;
 
 const samePadding = (a: CameraPadding | null, b: CameraPadding | null) =>
   a === b || (!!a && !!b && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left);
 
 const bboxBounds = ([minLon, minLat, maxLon, maxLat]: readonly [number, number, number, number]): LngLatBounds => ({ minLon, minLat, maxLon, maxLat });
 
+interface ClusterTracksState {
+  routes: [number, number][][];
+  /** The last fetch for this cluster failed: nothing would come without a retry. */
+  failed: boolean;
+  retry: () => void;
+}
+
 /** A cluster's tracks, gathered by global route index as each cluster arrives. */
-function useClusterTracks(version: string, clusterId: string | null): [number, number][][] {
+function useClusterTracks(version: string, clusterId: string | null): ClusterTracksState {
   const [tracks, setTracks] = useState<{ version: string; routes: [number, number][][]; loaded: Set<string> }>(
     () => ({ version, routes: [], loaded: new Set() }),
   );
+  const [failedFor, setFailedFor] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const key = `${version}|${clusterId}`;
+  const failed = clusterId !== null && failedFor === key;
 
   useEffect(() => {
     if (clusterId === null) return;
     let cancelled = false;
     void clusterTracks(version, clusterId).then((answer: ClusterTracks | null) => {
-      if (cancelled || !answer) return;
+      if (cancelled) return;
+      if (!answer) {
+        setFailedFor(`${version}|${clusterId}`);
+        return;
+      }
+      setFailedFor(null);
       setTracks((prev) => {
         const same = prev.version === version;
         if (same && prev.loaded.has(clusterId)) return prev;
@@ -128,9 +126,28 @@ function useClusterTracks(version: string, clusterId: string | null): [number, n
     return () => {
       cancelled = true;
     };
-  }, [version, clusterId]);
+  }, [version, clusterId, attempt]);
 
-  return tracks.version === version ? tracks.routes : NO_TRACKS;
+  const retry = useCallback(() => {
+    setFailedFor(null);
+    setAttempt((n) => n + 1);
+  }, []);
+
+  // A phone back from a tunnel or from the background tries again by itself.
+  useEffect(() => {
+    if (!failed) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") retry();
+    };
+    window.addEventListener("online", retry);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", retry);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [failed, retry]);
+
+  return { routes: tracks.version === version ? tracks.routes : NO_TRACKS, failed, retry };
 }
 
 export function GlobalMapClient({ data, version, onContentChange, exploreAreas = NO_AREAS, explorePlans = NO_PLANS, completedSince, today = null }: Props) {
@@ -151,20 +168,34 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const medianKm = useMemo(() => medianOf(routeMeta, clusters[selectedIdx]?.routeIndices ?? NO_RUNS, (m) => m.distanceKm), [routeMeta, clusters, selectedIdx]);
   const easyPace = useMemo(() => easyPaceOf(routeMeta, clusters[selectedIdx]?.routeIndices ?? NO_RUNS, today), [routeMeta, clusters, selectedIdx, today]);
 
-  const [exploreParam] = useUrlParam("explore");
-  const [kmParam] = useUrlParam("km");
-  const [paceParam] = useUrlParam("pace");
-  const [fromParam] = useUrlParam("from");
-  const [dateParam] = useUrlParam("date");
   const [quartierParam, setQuartierParam] = useUrlParam("quartier");
-  const [generator, setGenerator] = useState<GeneratorState | null>(() => {
-    const link = parseExploreRoute({ explore: exploreParam, quartier: quartierParam, km: kmParam, pace: paceParam, date: dateParam, from: fromParam });
-    const home = clusters[data.defaultClusterIdx];
-    if (!link || !home || exploreAreas.length === 0 || !areaForCluster(exploreAreas, home)) return null;
-    const plan = generatorPlan(explorePlans, link, today);
-    return { ...generatorTarget(link, { plan, medianKm, easyPace }), plan, returnTo: null, opener: null };
+  const [openUnitId, setOpenUnitId] = useState<string | null>(null);
+  const districtsArea = useMemo(() => {
+    const cluster = clusters[selectedIdx];
+    return cluster && exploreAreas.length > 0 ? areaForCluster(exploreAreas, cluster) : null;
+  }, [clusters, selectedIdx, exploreAreas]);
+  const onGeneratorReturn = useCallback((back: { expanded: boolean; unitId: string | null }) => {
+    setExpanded(back.expanded);
+    setOpenUnitId(back.unitId);
+  }, []);
+  const closeSheet = useCallback(() => setOpenUnitId(null), []);
+  const explore = useExploreGenerator({
+    clusters,
+    defaultClusterIdx: data.defaultClusterIdx,
+    exploreAreas,
+    explorePlans,
+    today,
+    districtsArea,
+    medianKm,
+    easyPace,
+    expanded,
+    openUnitId,
+    onReturn: onGeneratorReturn,
+    onOpen: closeSheet,
   });
-  const linkedGenerator = generator !== null;
+  const { generator, generatorOpen, linked: linkedGenerator, avoid, drawn: drawnRoute, start: routeStart, takeClosedOpener } = explore;
+  const { setMarking: setAvoidMarking, marking: avoidMarking } = avoid;
+  const closeGenerator = explore.close;
 
   // Read once, on mount. A change by hand takes the link's layer out of the
   // address, so a remount (List and back) keeps the hand's choice instead of
@@ -177,9 +208,8 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   }, [linkedLayer]);
 
   const [linkedQuartier, setLinkedQuartier] = useState<string | null>(() => (linkedGenerator ? null : quartierParam));
-  const [openUnitId, setOpenUnitId] = useState<string | null>(null);
 
-  const routes = useClusterTracks(version, clusters[selectedIdx]?.id ?? null);
+  const { routes, failed: tracksFailed, retry: retryTracks } = useClusterTracks(version, clusters[selectedIdx]?.id ?? null);
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.type));
@@ -203,11 +233,6 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     [areaParam, setAreaParam],
   );
 
-  const districtsArea = useMemo(() => {
-    const cluster = clusters[selectedIdx];
-    return cluster && exploreAreas.length > 0 ? areaForCluster(exploreAreas, cluster) : null;
-  }, [clusters, selectedIdx, exploreAreas]);
-  const generatorOpen = generator !== null && !!districtsArea;
   const isFullscreen = expanded || generatorOpen;
   const districtsOn = (layer === "districts" || generatorOpen) && !!districtsArea;
   const coverageRoutes = districtsOn ? routes : NO_TRACKS;
@@ -255,61 +280,13 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   const nextCardRef = useRef<HTMLButtonElement>(null);
   const expandRef = useRef<HTMLButtonElement>(null);
-  const [routePrefs, setRoutePrefs] = useState(() => ({
-    avoidBusyRoads: true,
-    newStreetsFirst: true,
-    flatForReps: generator?.plan?.session === "quality",
-    trailsOk: false,
-  }));
-  const planRun = useCallback(
-    (unitId: string) => {
-      const active = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
-      const opener = { element: active, fromNextCard: !!active?.closest("[data-testid='next-quartier-card']") };
-      const plan = generatorPlan(explorePlans, null, today);
-      setGenerator({ ...generatorTarget(null, { unitId, plan, medianKm, easyPace }), plan, returnTo: { expanded, unitId: openUnitId }, opener });
-      setRoutePrefs((prefs) => ({ ...prefs, flatForReps: plan?.session === "quality" }));
-      setOpenUnitId(null);
-    },
-    [explorePlans, today, medianKm, easyPace, expanded, openUnitId],
-  );
-  const onPlanRun = districtsArea ? planRun : undefined;
-  const [drawnRoute, setDrawnRoute] = useState<ScoredRoute | null>(null);
-  const [startMode, setStartMode] = useState<RouteStartMode>("pick");
-  const [pickedStart, setPickedStart] = useState<[number, number] | null>(null);
-  const routeStart = useMemo(() => routeStartState(startMode, pickedStart), [startMode, pickedStart]);
-  const avoid = useAvoidSpots(generatorOpen);
-  const setAvoidMarking = avoid.setMarking;
-  const avoidMarking = avoid.marking;
-  const generatorPlanDay = generator?.plan ?? null;
-  const sessionDay = useMemo(() => generatorDay(explorePlans, generatorPlanDay, today), [explorePlans, generatorPlanDay, today]);
-  // The closed generator's opener, until the map it gives back has rendered.
-  const closedOpener = useRef<GeneratorOpener | null>(null);
-  const closeGenerator = useCallback(() => {
-    const back = generator?.returnTo ?? null;
-    closedOpener.current = generator?.opener ?? null;
-    setGenerator(null);
-    setDrawnRoute(null);
-    setStartMode("pick");
-    setPickedStart(null);
-    setAvoidMarking(false);
-    if (back) {
-      setExpanded(back.expanded);
-      setOpenUnitId(back.unitId);
-    }
-    if (exploreParam !== null) removeUrlParams(EXPLORE_PARAMS);
-  }, [generator, exploreParam, setAvoidMarking]);
-  const setRouteKm = useCallback((km: number) => setGenerator((g) => (g ? { ...g, km } : g)), []);
+  const onPlanRun = districtsArea ? explore.planRun : undefined;
 
   const generatorUnitId = generator?.unitId ?? null;
-  const target = useMemo(() => {
-    if (!generatorOpen || !districtsFile) return null;
-    const asked = generatorUnitId ? districtsFile.features.find((f) => f.properties.id === generatorUnitId) : undefined;
-    if (asked) return { id: asked.properties.id, name: asked.properties.name };
-    if (!districtsCoverage) return null;
-    const units = districtsCoverage.units;
-    const next = units.find((u) => u.id === districtsCoverage.nextId) ?? [...units].sort((a, b) => a.pct - b.pct)[0];
-    return next ? { id: next.id, name: next.name } : null;
-  }, [generatorOpen, districtsFile, districtsCoverage, generatorUnitId]);
+  const target = useMemo(
+    () => (generatorOpen ? generatorUnit(districtsFile, districtsCoverage, generatorUnitId) : null),
+    [generatorOpen, districtsFile, districtsCoverage, generatorUnitId],
+  );
 
   const districtsState = useMemo(
     () => ({
@@ -326,7 +303,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   // Home is drawn here only, never sent anywhere.
   const startPoint = routeStart.origin;
-  const avoidCircles = useMemo(() => avoid.spots.map((spot): AvoidCircle => [spot.lon, spot.lat, spot.radiusM]), [avoid.spots]);
+  const avoidCircles = useMemo(() => avoid.spots.map(circleOf), [avoid.spots]);
   const routeDrawing = useMemo<RouteDrawing | null>(() => {
     if (!generatorOpen) return null;
     if (drawnRoute) {
@@ -378,9 +355,14 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const districtsCard = useMemo(
     () =>
       districtsOn && cardContent
-        ? districtsCardContent(cardContent.eyebrow, { coverage: districtsCoverage, status: districtsStatus }, onPlanRun)
+        ? districtsCardContent(
+            cardContent.eyebrow,
+            { coverage: districtsCoverage, status: tracksFailed && !districtsCoverage ? "error" : districtsStatus },
+            onPlanRun,
+            tracksFailed ? retryTracks : undefined,
+          )
         : null,
-    [districtsOn, cardContent, districtsCoverage, districtsStatus, onPlanRun],
+    [districtsOn, cardContent, districtsCoverage, districtsStatus, onPlanRun, tracksFailed, retryTracks],
   );
   const shownCard = districtsCard ?? cardContent;
 
@@ -413,6 +395,21 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   });
   useDistrictsSync(mapRef, mapReady, districtsState);
   useRouteSync(mapRef, mapReady, routeDrawing);
+
+  const locatedTap = avoid.located?.tap ?? 0;
+  const locatedAt = avoid.located ? ([avoid.located.spot.lon, avoid.located.spot.lat] as [number, number]) : null;
+  // Read by the effect, which flies once per tap: a new padding or radius alone does not fly again.
+  const locatedRef = useRef({ center: locatedAt, padding: panelPadding ?? GENERATOR_PADDING });
+  useLayoutEffect(() => {
+    locatedRef.current = { center: locatedAt, padding: panelPadding ?? GENERATOR_PADDING };
+  });
+  useEffect(() => {
+    const map = mapRef.current;
+    const { center, padding } = locatedRef.current;
+    if (!mapReady || !map || !center || locatedTap === 0) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    map.easeTo({ center, zoom: Math.max(map.getZoom(), SPOT_ZOOM), padding, duration: reduce ? 0 : QUARTIER_EASE_MS });
+  }, [mapRef, mapReady, locatedTap]);
 
   // Measured on its layout box: its rise is a transform.
   useEffect(() => {
@@ -448,13 +445,12 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     if (generatorWasOpen.current === generatorOpen) return;
     generatorWasOpen.current = generatorOpen;
     if (generatorOpen) return;
-    const opener = closedOpener.current;
-    closedOpener.current = null;
+    const opener = takeClosedOpener();
     // A quartier's sheet back on screen takes focus itself.
     if (sheetOpen) return;
     const back = opener?.element?.isConnected ? opener.element : opener?.fromNextCard ? nextCardRef.current : null;
     (back ?? expandRef.current)?.focus({ preventScroll: true });
-  }, [generatorOpen, sheetOpen]);
+  }, [generatorOpen, sheetOpen, takeClosedOpener]);
 
   // Not under the generator, whose panel is the sheet there.
   useDistrictsTap(
@@ -463,7 +459,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     (unitId) => {
       if (districtsOn && !generatorOpen) setOpenUnitId(unitId);
     },
-    !generatorOpen ? null : avoid.marking ? avoid.mark : startMode === "pick" ? setPickedStart : null,
+    explore.mapPick,
   );
   useQuartierCamera(mapRef, mapReady, openUnit?.id ?? null, districtsFile);
 
@@ -570,13 +566,15 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             area={districtsArea}
             target={target}
             tracksReady={districtsCoverage !== null}
+            tracksFailed={tracksFailed}
+            onRetryTracks={retryTracks}
             distanceKm={generator.km}
-            onDistanceChange={setRouteKm}
-            prefs={routePrefs}
-            onPrefsChange={setRoutePrefs}
+            onDistanceChange={explore.setKm}
+            prefs={explore.prefs}
+            onPrefsChange={explore.setPrefs}
             start={routeStart}
-            onStartModeChange={setStartMode}
-            day={sessionDay}
+            onStartModeChange={explore.setStartMode}
+            day={explore.day}
             avoid={avoid}
             home={districtsHome}
             paceSecPerKm={generator.pace}
@@ -585,7 +583,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             from={generator.from}
             credits={districtCredits}
             onClose={closeGenerator}
-            onDrawnChange={setDrawnRoute}
+            onDrawnChange={explore.setDrawn}
             panelRef={panelRef}
           />
         )}
@@ -631,7 +629,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
         )}
 
 
-        {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && (
+        {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && !TEST_MAPS && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
               {t.pages.map.mapUnavailable}
@@ -639,7 +637,16 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
           </div>
         )}
 
-        {visibleIndices.length === 0 && !generatorOpen && (
+        {tracksFailed && !generatorOpen ? (
+          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+            <div role="alert" data-testid="map-tracks-failed" className="glass-map-chip pointer-events-auto flex items-center gap-3 py-1 pl-4 pr-1 text-xs font-medium text-subtle">
+              {t.pages.map.tracksFailed}
+              <button type="button" onClick={retryTracks} className="hit-44 rounded-full px-3 py-1.5 font-semibold text-accent-text">
+                {t.pages.error.retry}
+              </button>
+            </div>
+          </div>
+        ) : visibleIndices.length === 0 && !generatorOpen && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
               {t.pages.map.noRoutes}

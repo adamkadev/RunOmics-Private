@@ -3,7 +3,7 @@ import type { User } from 'firebase/auth'
 import type { RouteCandidate } from '@/domain/explore/types'
 import { ROUTE_ENDPOINT, RouteRequestError, requestRouteBatch, routeFailure, type RouteBatchRequest } from '../routeApi'
 
-const REQUEST: RouteBatchRequest = { start: [-150, 45], distanceM: 8000, seeds: [1, 2, 3, 4, 5], avoidBusyRoads: true }
+const REQUEST: RouteBatchRequest = { start: [-150, 45], distanceM: 8000, seeds: [1, 2, 3, 4, 5] }
 const LOOP: RouteCandidate = {
   seed: 1,
   coordinates: [[-150, 45], [-149.99, 45], [-150, 45]],

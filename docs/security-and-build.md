@@ -85,8 +85,8 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
   planned session, marked skipped on Plan). Read by the owner only: health data never reaches
   another viewer, and pages never server-render it.
 - `avoidSpots`: Explore's spots to avoid, with `lon`, `lat`, an integer `radiusM` of 20-250, a
-  `createdAt` date and an optional `reason` (`blocked`, `mud` or `unsafe`). Read by the owner only:
-  they say where the athlete runs.
+  `createdAt` date, an optional `reason` (`blocked`, `mud` or `unsafe`) and an optional `expiresOn`
+  date. Read by the owner only: they say where the athlete runs.
 - `runShoes/{activityId}` and `shoeSettings/default`: the owner's shoe for a run and the default
   shoe, each only a `gearId` of 1 to 64 letters, digits, `_` or `-`; `shoeSettings` takes no other
   document id. Gear is the owner's alone to change.

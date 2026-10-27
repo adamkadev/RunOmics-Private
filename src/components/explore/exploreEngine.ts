@@ -179,19 +179,30 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
 
   async function scoreRoutes(ref: ExploreAreaRef, request: ScoreRoutesRequest): Promise<ScoredRoute[]> {
     await loadArea(ref)
-    const { candidates, targetM, prefs } = request
-    return call<'scoreRoutes'>({ type: 'scoreRoutes', areaKey: areaKey(ref), candidates, targetM, prefs })
+    const { candidates, targetM, prefs, context } = request
+    return call<'scoreRoutes'>({ type: 'scoreRoutes', areaKey: areaKey(ref), candidates, targetM, prefs, ...(context ? { context } : {}) })
   }
 
   async function routeStart(ref: ExploreAreaRef, request: RouteStartRequest): Promise<LonLat | null> {
     await loadArea(ref)
-    return call<'routeStart'>({ type: 'routeStart', areaKey: areaKey(ref), unitId: request.unitId })
+    const { unitId, avoid } = request
+    return call<'routeStart'>({ type: 'routeStart', areaKey: areaKey(ref), unitId, ...(avoid?.length ? { avoid: [...avoid] } : {}) })
   }
 
   async function routePlan(ref: ExploreAreaRef, request: RoutePlanRequest): Promise<RoutePlan | null> {
     await loadArea(ref)
-    const { unitId, origin, home, homeFromTracks, distanceM, seeds } = request
-    return call<'routePlan'>({ type: 'routePlan', areaKey: areaKey(ref), unitId, origin, home, homeFromTracks, distanceM, seeds: [...seeds] })
+    const { unitId, origin, home, homeFromTracks, distanceM, seeds, avoid } = request
+    return call<'routePlan'>({
+      type: 'routePlan',
+      areaKey: areaKey(ref),
+      unitId,
+      origin,
+      home,
+      homeFromTracks,
+      distanceM,
+      seeds: [...seeds],
+      ...(avoid?.length ? { avoid: [...avoid] } : {}),
+    })
   }
 
   function unsent(ref: ExploreAreaRef, ids: readonly string[]): string[] {

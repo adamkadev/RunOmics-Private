@@ -46,12 +46,13 @@ service cloud.firestore {
     function isWellFormedAvoidSpot() {
       let data = request.resource.data;
       return data.keys().hasAll(['lon', 'lat', 'radiusM', 'createdAt'])
-        && data.keys().hasOnly(['lon', 'lat', 'radiusM', 'createdAt', 'reason'])
+        && data.keys().hasOnly(['lon', 'lat', 'radiusM', 'createdAt', 'reason', 'expiresOn'])
         && data.lon is number && data.lon >= -180 && data.lon <= 180
         && data.lat is number && data.lat >= -90 && data.lat <= 90
         && data.radiusM is int && data.radiusM >= 20 && data.radiusM <= 250
         && data.createdAt is string && data.createdAt.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && (!('reason' in data) || data.reason in ['blocked', 'mud', 'unsafe']);
+        && (!('reason' in data) || data.reason in ['blocked', 'mud', 'unsafe'])
+        && (!('expiresOn' in data) || (data.expiresOn is string && data.expiresOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
     }
 
     // Places the athlete marked for Explore's loops to go around: where they run is the owner's alone.

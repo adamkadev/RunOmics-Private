@@ -18,6 +18,22 @@ All notable changes to this project are documented in this file.
   Settings → Diagnostics lists each series and since when it stopped. The rules
   must be deployed by hand to both Firebase projects.
 
+- Explore fixes and maps in tests (F7, E2). The dark warning for a later
+  day's plan is timed at the athlete's usual start hour that day, not now,
+  and the session and the dark now reach the worker's ranking at all. A
+  failed track fetch shows an error with Retry on the heat map, the
+  Districts card and the generator, and retries when the phone is back
+  online or in the foreground. Spots to avoid keep the quartier's start and
+  the vias off them, and a loop that still runs through one is dropped.
+  "Avoid busy roads" only re-ranks, as the scoring always did, and is no
+  longer sent. Requests are keyed on the spots in reach, and the last four
+  batches are kept. A spot can be 40, 80 or 150 m, a tap on its row flies
+  to it, mud expires after 3 weeks and a closure after 6, and at 100 spots
+  Mark a spot turns off with its own message. The e2e build draws its maps
+  on a blank style (`NEXT_PUBLIC_E2E_MAPS`), so Playwright taps a start, a
+  spot and a quartier; `GlobalMapClient`'s generator wiring moves to
+  `useExploreGenerator`, with hook tests for it and `useRouteGenerator`.
+  **Needs** a deploy of `firestore.rules` to both projects for `expiresOn`.
 - Plan folds the coach's words to their first line: the session's note on its
   card and the week's or block's focus on the phase card. A tap on the note
   opens it whole and the next folds it back (a button with `aria-expanded` and a
@@ -362,7 +378,8 @@ All notable changes to this project are documented in this file.
   the panel names the sunset. "Trails OK" opens the trails in daylight.
   The panel shows the budget, each loop's climb against it and its share
   on trails. The owner can mark spots to avoid (a fallen tree, a flooded
-  path), which every loop goes around: while a spot is being marked, the
+  path), which ORS is asked to route around (those within reach, and not
+  by the start or a via): while a spot is being marked, the
   panel steps down to a one-line bar so the map is free to tap. The GPX
   file name is lowercase.
 

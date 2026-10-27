@@ -41,9 +41,13 @@ describe('restore_firestore', () => {
     expect(planRestore(byName('wellness'), { 'not-a-date': { sleep: 3 }, '2026-10-01': {} }, new Map()).invalid).toBe(2)
     expect(planRestore(byName('routeNames'), { k: { name: '' } }, new Map()).invalid).toBe(1)
     const spot = { lon: 2.35, lat: 48.85, radiusM: 80, createdAt: '2026-10-01' }
-    const spots = planRestore(byName('avoidSpots'), { ok: spot, wide: { ...spot, radiusM: 400 } }, new Map())
-    expect((spots.create as [string, unknown][]).map(([id]) => id)).toEqual(['ok'])
-    expect(spots.invalid).toBe(1)
+    const spots = planRestore(
+      byName('avoidSpots'),
+      { ok: spot, dried: { ...spot, expiresOn: '2026-10-22' }, wide: { ...spot, radiusM: 400 }, soon: { ...spot, expiresOn: 'soon' } },
+      new Map(),
+    )
+    expect((spots.create as [string, unknown][]).map(([id]) => id)).toEqual(['ok', 'dried'])
+    expect(spots.invalid).toBe(2)
     expect(planRestore(byName('runShoes'), { 1: { gearId: 'a1' }, 2: { gearId: 'not/an id' } }, new Map()).invalid).toBe(1)
     expect(planRestore(byName('shoeSettings'), { default: { gearId: 'a1' }, other: { gearId: 'a1' } }, new Map()).invalid).toBe(1)
   })

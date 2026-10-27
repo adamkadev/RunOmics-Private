@@ -47,6 +47,12 @@ describe('planRoute', () => {
     for (const via of plan.vias.flat()) expect(between(via, HOME)).toBeGreaterThanOrEqual(HOME_GUARD_M)
   })
 
+  it('picks no via under a spot or within 50 m of its edge', () => {
+    const spot: [number, number, number] = [...at(3750, 750), 150]
+    const plan = tour(planRoute(index, NONE, { unitId: 'test-far', origin: at(2250, 750), home: HOME, distanceM: 6000, seeds: SEEDS, avoid: [spot] }))
+    for (const via of plan.vias.flat()) expect(between(via, at(3750, 750))).toBeGreaterThanOrEqual(200)
+  })
+
   it('prefers the quartier cells no run has visited', () => {
     const visited = new Set(cells(20, 29, 0, 9, [[25, 5], [26, 6]]))
     const plan = tour(planRoute(index, visited, { unitId: 'test-far', origin: at(2250, 750), home: HOME, distanceM: 4000, seeds: SEEDS }))

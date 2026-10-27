@@ -196,6 +196,16 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { lon: -150, lat: 0, radiusM: 80 }))
     })
 
+    it('takes an expiry date on a spot, and only a date', async () => {
+      const db = owner()
+      await assertSucceeds(setDoc(doc(db, 'avoidSpots', 'spot-4'), { ...spot, reason: 'mud', expiresOn: '2026-11-16' }))
+      await assertSucceeds(updateDoc(doc(db, 'avoidSpots', 'spot-4'), { reason: 'unsafe', expiresOn: deleteField() }))
+      await assertSucceeds(updateDoc(doc(db, 'avoidSpots', 'spot-4'), { radiusM: 150 }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-5'), { ...spot, expiresOn: 'in three weeks' }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-5'), { ...spot, expiresOn: 20261116 }))
+      await assertFails(setDoc(doc(stranger(), 'avoidSpots', 'spot-5'), { ...spot, expiresOn: '2026-11-16' }))
+    })
+
     it('only lets the owner delete one', async () => {
       await assertFails(deleteDoc(doc(stranger(), 'avoidSpots', 'spot-1')))
       await assertSucceeds(deleteDoc(doc(owner(), 'avoidSpots', 'spot-1')))

@@ -1,4 +1,4 @@
-import type { PlannedWorkout } from '@/domain/activity/types'
+import type { PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
 import type { ExploreSession } from '@/domain/explore/climbBudget'
 import type { CoachingWorkoutType } from '@/domain/coaching/types'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
@@ -39,6 +39,7 @@ export function explorePlanOn(
   coach: readonly PlanPrescriptionView[],
   garmin: readonly PlannedWorkout[],
   zones: TrainingZonesData | null,
+  runHour: (scheduled: ScheduledTimeOfDay | undefined) => number | null = () => null,
 ): ExplorePlan | null {
   const session = sessionOn(date, coach, garmin, zones)
   if (!session) return null
@@ -58,6 +59,7 @@ export function explorePlanOn(
     distanceM: workout.distanceM && workout.distanceM > 0 ? Math.round(workout.distanceM) : null,
     paceSecPerKm: planPaceSecPerKm(workout),
     session: exploreSession(coachType, kind?.kind ?? null),
+    hour: runHour(garmin.find((p) => p.date === date)?.scheduledTime),
   }
 }
 
@@ -66,12 +68,13 @@ export function explorePlansFrom(
   coach: readonly PlanPrescriptionView[],
   garmin: readonly PlannedWorkout[],
   zones: TrainingZonesData | null,
+  runHour?: (scheduled: ScheduledTimeOfDay | undefined) => number | null,
   days = EXPLORE_PLAN_DAYS,
 ): ExplorePlan[] {
   const [year, month, day] = today.split('-').map(Number) as [number, number, number]
   const start = new Date(year, month - 1, day)
   return Array.from({ length: days }, (_, i) => isoDate(addDays(start, i))).flatMap((date) => {
-    const plan = explorePlanOn(date, coach, garmin, zones)
+    const plan = explorePlanOn(date, coach, garmin, zones, runHour)
     return plan ? [plan] : []
   })
 }
