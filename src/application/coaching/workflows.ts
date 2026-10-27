@@ -473,10 +473,11 @@ function evaluationFor(
 /** Drafts fail over wording as often as substance, so the complaint goes back with the next ask instead of the draft being thrown away. */
 const REPAIR_ATTEMPTS = 2
 
-async function draftUntilAccepted(
-  ask: (extraGuidance?: string) => Promise<CoachingPlanDraft>,
-  review: (draft: CoachingPlanDraft) => CoachingPlan,
-): Promise<CoachingPlan> {
+async function draftUntilAccepted<Draft, Accepted>(
+  ask: (extraGuidance?: string) => Promise<Draft>,
+  review: (draft: Draft) => Accepted,
+  what = 'plan',
+): Promise<Accepted> {
   let complaint: string | undefined
 
   for (let attempt = 0; ; attempt++) {
@@ -485,9 +486,13 @@ async function draftUntilAccepted(
       return review(draft)
     } catch (error) {
       if (attempt >= REPAIR_ATTEMPTS) throw error
-      complaint = `Your previous answer was rejected: ${error instanceof Error ? error.message : String(error)}\nReturn a corrected plan that satisfies this exactly, changing nothing else.`
+      complaint = `Your previous answer was rejected: ${error instanceof Error ? error.message : String(error)}\nReturn a corrected ${what} that satisfies this exactly, changing nothing else.`
     }
   }
+}
+
+function withComplaint(guidance: string | undefined, complaint: string | undefined): { guidance?: string } {
+  return guidance || complaint ? { guidance: [guidance, complaint].filter(Boolean).join('\n\n') } : {}
 }
 
 export async function createBootstrapProposal(
@@ -523,7 +528,7 @@ export async function createBootstrapProposal(
     context,
     availableWeekdays,
     runsPerWeek,
-    ...(guidance || extraGuidance ? { guidance: [guidance, extraGuidance].filter(Boolean).join('\n\n') } : {}),
+    ...withComplaint(guidance, extraGuidance),
     planningStartDate: strategy.planningStartDate,
     primaryTargetEvent: strategy.primary,
     tuneUpEvents: strategy.tuneUps,
@@ -596,11 +601,18 @@ async function createAdaptationProposal(
   const matched = activity ? matchPrescription(plan, activity).prescription : null
   const guidance = services.repository.getGuidance?.() ?? undefined
   const told = guidance ? { guidance } : {}
-  const advice = kind === 'post_activity' && activity
-    ? await services.advisor.evaluateActivity({ context, activity, prescription: matched, ...told })
-    : await services.advisor.reviewWeek({ context, ...told })
-  const decision = decisionFromAdvice(advice, plan, sourceOf(services), kind, effectiveDate, createdAt, id(), id)
-  validateAdaptation(plan, applyCoachDecision(plan, decision), context, told)
+  const ask = (complaint?: string) => {
+    const request = { context, effectiveDate, ...withComplaint(guidance, complaint) }
+    return kind === 'post_activity' && activity
+      ? services.advisor.evaluateActivity({ ...request, activity, prescription: matched })
+      : services.advisor.reviewWeek(request)
+  }
+  const review = (advice: AdvisorRecommendation) => {
+    const decision = decisionFromAdvice(advice, plan, sourceOf(services), kind, effectiveDate, createdAt, id(), id)
+    validateAdaptation(plan, applyCoachDecision(plan, decision), context, told)
+    return decision
+  }
+  const decision = await draftUntilAccepted(ask, review, 'recommendation')
   const hash = coachingContextHash(context)
   const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id, sourceOf(services)) : undefined
   return {

@@ -45,8 +45,8 @@ describe('POST /api/internal/activity-sync-check', () => {
 
     expect(await res.json()).toEqual({ newActivities: ['r2', 'r1'] })
     expect(sendPushes).toHaveBeenCalledWith('training', [
-      expect.objectContaining({ title: 'New activity: Evening tempo' }),
-      expect.objectContaining({ title: 'New activity: Morning easy' }),
+      expect.objectContaining({ title: 'New activity: Evening tempo', link: '/activities/r2', tag: 'run:r2' }),
+      expect.objectContaining({ title: 'New activity: Morning easy', link: '/activities/r1', tag: 'run:r1' }),
     ])
     expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushes.mock.invocationCallOrder[0]!)
   })

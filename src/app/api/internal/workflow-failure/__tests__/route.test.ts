@@ -48,13 +48,18 @@ describe('POST /api/internal/workflow-failure', () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ sent: true })
-    expect(sendPush).toHaveBeenCalledWith('always', 'Daily Session Reminder failed', `Open the run: ${RUN_URL}`)
+    expect(sendPush).toHaveBeenCalledWith('always', {
+      title: 'Daily Session Reminder failed',
+      body: `Open the run: ${RUN_URL}`,
+      link: RUN_URL,
+      tag: 'workflow-failure:Daily Session Reminder',
+    })
   })
 
   it('takes a workflow name in any script', async () => {
     await POST(request({ workflow: 'Synchronisation nocturne · données', runUrl: RUN_URL }))
 
-    expect(sendPush).toHaveBeenCalledWith('always', 'Synchronisation nocturne · données failed', expect.any(String))
+    expect(sendPush).toHaveBeenCalledWith('always', expect.objectContaining({ title: 'Synchronisation nocturne · données failed' }))
   })
 
   it('writes the operator’s alert in English on a deployment that speaks French', async () => {
@@ -64,7 +69,7 @@ describe('POST /api/internal/workflow-failure', () => {
 
     await french(request({ workflow: 'Nightly sync', runUrl: RUN_URL }))
 
-    expect(sendPush).toHaveBeenCalledWith('always', 'Nightly sync failed', `Open the run: ${RUN_URL}`)
+    expect(sendPush).toHaveBeenCalledWith('always', expect.objectContaining({ title: 'Nightly sync failed', body: `Open the run: ${RUN_URL}` }))
   })
 
   it('refuses a caller without the internal secret before reading the body', async () => {

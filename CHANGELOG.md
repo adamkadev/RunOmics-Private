@@ -14,6 +14,33 @@ All notable changes to this project are documented in this file.
   threshold pace unchanged for 8 weeks to the VDOT estimate, and race
   predictions older than 14 days are dropped by Records and Goals as the Race
   page already did, through one helper.
+- Every push opens its page (R6). A new run, its verdict or a record opens that
+  run; shoe wear the shoe; a quartier the map; the morning session and the
+  digest the plan; a failed workflow its run on GitHub; token and error alerts
+  Settings. Each push carries a tag, so a repeated warning replaces the last
+  one on the lock screen instead of stacking. The links are absolute HTTPS
+  URLs built from `APP_URL` or Vercel's production domain, as FCM requires.
+- The Garmin key is announced before it expires (G7). The nightly sync posts
+  the Environment variable `GARMIN_PERSONAL_API_KEY_EXPIRES` (a bare date) as
+  `garminKey`, and the operator gets a push from 14 days ahead saying where to
+  make a new key. A profile with a key and no date gets a warning in the run.
+- A watchdog outside the deployments (R2). A daily GitHub workflow checks each
+  profile's health and fails, which emails the repository owner, when the last
+  sync is 36 hours old, the data is unloaded, or Firebase Admin or the cron
+  secret is missing. Health now judges staleness by the last sync rather than
+  the last run, so a training break no longer reads as stale, answers 503 when
+  stale, and reports `cron`. A nightly dispatch GitHub refuses sends an operator
+  push.
+- The coach runs through Claude Code by default (N9). `weekly-review` and
+  `evaluate` gain the manual path bootstrap had (`--prompt-out` /
+  `--from-answer`), sharing the prompts with the Gemini advisor, and every
+  coach command now writes its prompt rather than calling an API; Gemini
+  coaching needs an explicit `--advisor gemini`. The app's AI copy stays on
+  Gemini. A review is no longer told to keep a four-week horizon: it gets the
+  weeks left up to the block's end, so a late-block REPLAN no longer throws,
+  and a rejected review or evaluation is sent back with the reason, as a new
+  block is. Changes to the live plan are also told the notes, check-in and
+  return-to-running rules.
 - A change to the live plan is held to "no stop signals" too. A weekly
   review's ADJUST or REPLAN and a run's evaluation are now told the athlete's
   guidance, as a new block is, and one that adds a stop rule or a symptom

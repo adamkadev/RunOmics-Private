@@ -73,7 +73,9 @@ The sync reads your runs through Garmin's **Personal API**, with a key you creat
 yourself, on [Garmin Connect's Personal API page](https://connect.garmin.com/app/settings/personalApiToken): accept the terms and
 create a key. Garmin shows it once; copy it as
 `GARMIN_PERSONAL_API_KEY`. Choose the longest lifetime offered (a year at most)
-and diary its renewal: an expired key fails the night with a message saying so
+and note its expiry date as `GARMIN_PERSONAL_API_KEY_EXPIRES` (see
+[Set environment variables](#3-set-environment-variables)) so the nightly sync warns two weeks
+ahead: an expired key fails the night with a message saying so
 (with `GARMIN_SECRET` also set, garth reads the runs meanwhile and the night is
 reported as a partial one), and a new key from the same page is all it takes.
 
@@ -163,11 +165,11 @@ NEXT_PUBLIC_LOCALE=en
 #
 # GEMINI_API_KEY writes the verdicts and insight cards on Today, the shoes and
 # each activity - without it every card falls back to its rules-based copy.
-# GEMINI_COACH_API_KEY is used only by the adaptive coach - a local CLI
-# (`npm run coach`) for now - from a separate Google project: coaching never
-# falls back to GEMINI_API_KEY and GEMINI_API_KEY never falls back to it, so the
-# two free-tier quotas stay independent. Nothing deployed reads the coach key,
-# so it goes in .env.local only, not into Vercel or GitHub Actions.
+# GEMINI_COACH_API_KEY is optional and read only by `npm run coach ... --advisor
+# gemini`; the coach itself runs through Claude Code with no key. It belongs to a
+# separate Google project: coaching never falls back to GEMINI_API_KEY and
+# GEMINI_API_KEY never falls back to it, so the two free-tier quotas stay
+# independent. Nothing deployed reads it, so it goes in .env.local only.
 #
 # Free-tier quotas are counted per model, so there are two pools: the read
 # surfaces draw from the Flash pool, and the per-activity verdict backfill from
@@ -176,7 +178,7 @@ NEXT_PUBLIC_LOCALE=en
 # retires a model - check the live list first:
 # https://generativelanguage.googleapis.com/v1beta/models
 # GEMINI_API_KEY=...          # general AI surfaces
-# GEMINI_COACH_API_KEY=...    # adaptive coaching only, separate project
+# GEMINI_COACH_API_KEY=...    # only for the coach's --advisor gemini, separate project
 # GEMINI_MODEL=
 # GEMINI_COACH_MODEL= # optional coaching-specific override
 
@@ -318,11 +320,19 @@ Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/`
 ## Adaptive coach
 
 The optional coach runs locally, from the CLI (`npm run coach`), and keeps its reviewed
-prescriptions under the private `data/coaching/` tree. Every coaching generation reads
-`GEMINI_COACH_API_KEY` and nothing else: without it the command fails rather than
-borrowing the general `GEMINI_API_KEY` quota. Nothing deployed calls it, so the key stays
-in `.env.local` and is needed neither on Vercel nor in GitHub Actions.
-Garmin-scheduled sessions under `data/planned_workouts/` remain a separate,
+prescriptions under the private `data/coaching/` tree. **The coach runs through Claude Code;
+the app's AI copy runs through Gemini.** Every coach command (`bootstrap`, `evaluate`,
+`weekly-review`) writes its whole prompt - rules, athlete context, answer schema - to
+`.coach-previews/coach-prompt.md` (or `--prompt-out`) and stops. Answer it in Claude Code,
+save the JSON reply, and run the same command again with `--from-answer <reply>`. No API key
+is involved. A reply the validators reject rewrites the prompt with the reason attached,
+ready to answer again; an in-app change and a new block both get that repair loop.
+
+`--advisor gemini` asks Gemini instead, with `GEMINI_COACH_API_KEY` and nothing else:
+without it the command fails rather than borrowing the general `GEMINI_API_KEY` quota,
+which stays the app's, for its verdicts and insight cards. Nothing deployed calls the
+coach, so the coach key stays in `.env.local` and is needed neither on Vercel nor in GitHub
+Actions. Garmin-scheduled sessions under `data/planned_workouts/` remain a separate,
 observed schedule signal; applying a coach proposal does not publish anything to
 Garmin or trigger a deployment.
 
@@ -344,8 +354,13 @@ npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5
 npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 --race "Harbor Lights 10K"
 npm run coach -- evaluate --activity latest
 npm run coach -- weekly-review
+npm run coach -- weekly-review --from-answer answer.json
+npm run coach -- weekly-review --advisor gemini
 npm run coach -- --apply .coach-previews/<proposal>.json
 ```
+
+A weekly review or a run's evaluation is told the weeks left in the current block, up to
+its end date, and may replan only those: a new block comes from `bootstrap`.
 
 The coach reads the notes and tags written in the app from Firestore `activityNotes`, live,
 at the moment it builds its context, and morning check-ins the same way from Firestore
@@ -457,12 +472,28 @@ Playwright can drive without a test-only auth bypass, which is its own follow-up
 
 ### Monitoring
 
-`GET /api/internal/health` (authenticated with `x-internal-secret`) reports the
-last synced activity date and flags the data as `stale` after 7 days without
-one - point any uptime monitor at it to catch a silently broken Garmin sync.
+`GET /api/internal/health` (authenticated with `x-internal-secret`) answers
+`ok`, or `stale` with HTTP 503 once the last sync (`lastSyncedAt`) is 72 hours
+old, the same threshold as the in-app stale-sync push. The date of the last run
+(`daysSinceLastActivity`) is reported for information only: a training break is
+not a broken sync. Data that will not load answers `unloaded`, also with 503.
 Its `integrations` field says which server integrations the deployment has
-credentials for (`firebaseAdmin`, `gemini`, `syncButton`) and whether it is private (`privateSite`), by name only, and
-the nightly sync warns when one the post-sync checks need is missing.
+credentials for (`firebaseAdmin`, `gemini`, `syncButton`, `cron`) and whether it
+is private (`privateSite`), by name only, and the nightly sync warns when one the
+post-sync checks need is missing.
+
+Every other alert is sent by the deployment it watches, so one that is down, or
+has lost its Firebase or cron credentials, cannot report itself. The *Deployment
+Health Watchdog* workflow checks each profile from GitHub instead, daily at
+14:47 UTC, with its GitHub Environment's `APP_URL` and `INTERNAL_NOTIFY_SECRET`.
+It fails when the last sync is 36 hours old (one missed night), when the data is
+unloaded, or when `firebaseAdmin` or `cron` is missing, and GitHub emails a
+failed scheduled run to whoever last changed its schedule. Run it by hand from
+Actions after changing a deployment's variables.
+
+When GitHub refuses the nightly sync's dispatch (an expired or narrowed
+`GITHUB_SYNC_TOKEN`), no run starts, so the nightly-sync cron sends an operator
+push itself.
 
 Errors on a phone are reported to `/api/client-errors`, scrubbed of coordinates,
 and listed under Settings → Diagnostics; see
@@ -527,11 +558,12 @@ from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `
 | `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService loops) - see [Explore](docs/interface.md#explore) |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | The private data repository the build clones; a fine-grained token with Contents: Read only |
 | `RUNOMICS_DATA_SOURCE` | `github`: reads that repository at run time. The sync never rebuilds a deployment, so without it a deployment keeps the data of its last build - see [Reading the data at run time](docs/data-and-sync.md#reading-the-data-at-run-time) |
+| `APP_URL` | Optional: this deployment's `https://` origin, for the links pushes open. On Vercel it defaults to the project's production domain (`VERCEL_PROJECT_PRODUCTION_URL`); without either, a tapped push opens the app's home page |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | Optional: `true` lets search engines index the site (the public demo); anything else answers `noindex` |
 
 > `GARMIN_PERSONAL_API_KEY` and `GARMIN_SECRET` are only used by the sync script - neither runs on Vercel.
-> `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
-> CLI (`npm run coach`) for now, so nothing deployed reads them. Add them here only if a
+> `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: only the local coach CLI reads
+> them, and only with `--advisor gemini`, so nothing deployed does. Add them here only if a
 > server-side coaching route ever ships. No workflow runs a coaching generation either, so
 > they belong in no GitHub Environment yet. See
 > [AI insight generation](docs/coaching-and-metrics.md#ai-insight-generation) for the full split.
@@ -541,7 +573,10 @@ after the deployment's profile (GitHub → Settings → Environments), not from
 repository secrets: `GARMIN_PERSONAL_API_KEY` (and optionally `GARMIN_SECRET`), `RUNOMICS_DATA_REPO_URL`,
 `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash) and
 `INTERNAL_NOTIFY_SECRET`, plus an environment *variable* `PROFILE` holding the environment's
-own name. These are separate from the Vercel env vars above, and `INTERNAL_NOTIFY_SECRET`
+own name. With a Garmin key, add the *variable* `GARMIN_PERSONAL_API_KEY_EXPIRES`: the key's
+expiry date as Garmin showed it when you created it, as `YYYY-MM-DD` (e.g. `2027-10-01`). The
+nightly sync then pushes from 14 days before that date, and warns in the run's annotations while
+the variable is missing; update it with each new key. These are separate from the Vercel env vars above, and `INTERNAL_NOTIFY_SECRET`
 must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per

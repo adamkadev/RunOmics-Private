@@ -62,7 +62,12 @@ describe('POST /api/internal/daily-session', () => {
     const { POST } = await routeIn('en')
 
     expect(await (await POST(request())).json()).toEqual({ sent: true, restDay: true, source: null })
-    expect(sendPush).toHaveBeenCalledWith('training', 'Rest day', 'No session scheduled today - recovery day.')
+    expect(sendPush).toHaveBeenCalledWith('training', {
+      title: 'Rest day',
+      body: 'No session scheduled today - recovery day.',
+      link: '/plan',
+      tag: 'daily-session',
+    })
   })
 
   it('names the session, its distance and its duration', async () => {
@@ -70,7 +75,12 @@ describe('POST /api/internal/daily-session', () => {
     const { POST } = await routeIn('en')
 
     await POST(request())
-    expect(sendPush).toHaveBeenCalledWith('training', "Today's session", 'Strides 6 x 20s (8.0 km · 45 min)')
+    expect(sendPush).toHaveBeenCalledWith('training', {
+      title: "Today's session",
+      body: 'Strides 6 x 20s (8.0 km · 45 min)',
+      link: '/plan',
+      tag: 'daily-session',
+    })
   })
 
   it('sends from the cron in the 08:xx Paris hour only, once a day', async () => {
@@ -98,13 +108,13 @@ describe('POST /api/internal/daily-session', () => {
     getDailySession.mockResolvedValue({ workout: null, source: null })
     const { POST: restDay } = await routeIn('fr')
     await restDay(request())
-    expect(sendPush).toHaveBeenLastCalledWith('training', 'Jour de repos', 'Aucune séance prévue aujourd’hui : place à la récupération.')
+    expect(sendPush).toHaveBeenLastCalledWith('training', expect.objectContaining({ title: 'Jour de repos', body: 'Aucune séance prévue aujourd’hui : place à la récupération.' }))
 
     getDailySession.mockResolvedValue({ workout: { date: '2026-10-02', name: 'Footing', distanceM: 8000, durationSecs: 2700 }, source: 'coach' })
     sent.clear()
     const { POST: session } = await routeIn('fr')
     await session(request())
-    expect(sendPush).toHaveBeenLastCalledWith('training', 'Séance du jour', 'Footing (8,0 km · 45 min)')
+    expect(sendPush).toHaveBeenLastCalledWith('training', expect.objectContaining({ title: 'Séance du jour', body: 'Footing (8,0 km · 45 min)' }))
   })
 })
 

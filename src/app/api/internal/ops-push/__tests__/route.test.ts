@@ -37,7 +37,26 @@ describe('POST /api/internal/ops-push', () => {
 
   it('names the deployment the alert came from', async () => {
     expect(await (await POST(request(ALERT))).json()).toEqual({ sent: true })
-    expect(sendPush).toHaveBeenCalledWith('always', 'kestrel · Token expiring', 'Garmin, in 9 days')
+    expect(sendPush).toHaveBeenCalledWith('always', { title: 'kestrel · Token expiring', body: 'Garmin, in 9 days' })
+  })
+
+  it('keeps the link and prefixes the tag with the sending deployment', async () => {
+    const link = 'https://kestrel.example.com/settings'
+    expect((await POST(request({ ...ALERT, link, tag: 'token-expiry' }))).status).toBe(200)
+    expect(sendPush).toHaveBeenCalledWith('always', {
+      title: 'kestrel · Token expiring',
+      body: 'Garmin, in 9 days',
+      link,
+      tag: 'kestrel:token-expiry',
+    })
+  })
+
+  it('rejects a link that is not an https URL, and a tag that is not a printable line', async () => {
+    expect((await POST(request({ ...ALERT, link: 'http://kestrel.example.com/settings' }))).status).toBe(400)
+    expect((await POST(request({ ...ALERT, link: '/settings' }))).status).toBe(400)
+    expect((await POST(request({ ...ALERT, link: 'javascript:alert(1)' }))).status).toBe(400)
+    expect((await POST(request({ ...ALERT, tag: 'line\nbreak' }))).status).toBe(400)
+    expect(sendPush).not.toHaveBeenCalled()
   })
 
   it('refuses a caller holding the wrong ops secret', async () => {

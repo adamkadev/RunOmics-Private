@@ -1,8 +1,11 @@
 import fs from 'fs'
 import { describe, expect, it } from 'vitest'
 import { ADAPTATION_NAMING_RULE, BOOTSTRAP_SYSTEM_INSTRUCTION } from '@/infrastructure/ai/coachingPrompt'
-import { WORKOUT_NAMING_INSTRUCTION } from '@/infrastructure/ai/coachingRules.generated'
-import { GENERATED_PATH, NAMING_SECTION, expectedGenerated, rulesFromMarkdown } from '../coachingRules'
+import { ADAPTATION_READING_INSTRUCTION, WORKOUT_NAMING_INSTRUCTION } from '@/infrastructure/ai/coachingRules.generated'
+import { weeklyReviewPrompt } from '@/infrastructure/ai/coachingPrompt'
+import { buildCoachingContext } from '@/application/coaching/context'
+import { plan } from '@/domain/coaching/__tests__/fixtures'
+import { GENERATED_PATH, NAMING_SECTION, adaptationRules, expectedGenerated, rulesFromMarkdown } from '../coachingRules'
 
 describe('coaching rules generation', () => {
   it('keeps the committed file in step with the Markdown', () => {
@@ -41,6 +44,19 @@ describe('coaching rules generation', () => {
     expect(WORKOUT_NAMING_INSTRUCTION).not.toContain('runsPerWeek')
     expect(BOOTSTRAP_SYSTEM_INSTRUCTION).toContain(WORKOUT_NAMING_INSTRUCTION)
     expect(ADAPTATION_NAMING_RULE).toContain(WORKOUT_NAMING_INSTRUCTION)
+  })
+
+  it('hands a change to the live plan the notes, check-in and return-to-running rules', () => {
+    const markdown = fs.readFileSync('.claude/skills/coaching-plan/rules.md', 'utf-8')
+    const context = buildCoachingContext({
+      activities: [], plan: plan(), athlete: {}, trainingStatus: null, loadBalance: null, trainingZones: null, trajectories: null,
+      latestVo2max: null, racePredictions: null, goals: [], personalBests: [], upcomingRaces: [], officialResults: [],
+    }, '2026-09-14')
+
+    expect(ADAPTATION_READING_INSTRUCTION).toBe(adaptationRules(markdown))
+    expect(ADAPTATION_READING_INSTRUCTION).toContain('morning check-ins')
+    expect(ADAPTATION_READING_INSTRUCTION).toContain('While returning')
+    expect(weeklyReviewPrompt({ context, effectiveDate: '2026-09-14' }).systemInstruction).toContain(ADAPTATION_READING_INSTRUCTION)
   })
 
   it('refuses a section that is not there', () => {

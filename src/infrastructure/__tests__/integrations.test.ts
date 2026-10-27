@@ -6,8 +6,16 @@ const FIREBASE = { FIREBASE_PROJECT_ID: 'demo', FIREBASE_CLIENT_EMAIL: 'sa@demo.
 describe('integrationStatus', () => {
   it('reports each integration whose every variable is set', () => {
     expect(
-      integrationStatus({ ...FIREBASE, GEMINI_API_KEY: 'g', GITHUB_SYNC_TOKEN: 't', GITHUB_SYNC_REPO: 'o/r', RUNOMICS_PRIVATE: '1', ORS_API_KEY: 'k' })
-    ).toEqual({ firebaseAdmin: true, gemini: true, syncButton: true, privateSite: true, routing: true })
+      integrationStatus({
+        ...FIREBASE,
+        GEMINI_API_KEY: 'g',
+        GITHUB_SYNC_TOKEN: 't',
+        GITHUB_SYNC_REPO: 'o/r',
+        CRON_SECRET: 'c',
+        RUNOMICS_PRIVATE: '1',
+        ORS_API_KEY: 'k',
+      })
+    ).toEqual({ firebaseAdmin: true, gemini: true, syncButton: true, cron: true, privateSite: true, routing: true })
   })
 
   it('counts a half-configured or blank integration as missing', () => {
@@ -17,9 +25,10 @@ describe('integrationStatus', () => {
         FIREBASE_CLIENT_EMAIL: 'sa@demo.iam',
         GEMINI_API_KEY: '  ',
         GITHUB_SYNC_TOKEN: 't',
+        CRON_SECRET: ' ',
         ORS_API_KEY: ' ',
       })
-    ).toEqual({ firebaseAdmin: false, gemini: false, syncButton: false, privateSite: false, routing: false })
+    ).toEqual({ firebaseAdmin: false, gemini: false, syncButton: false, cron: false, privateSite: false, routing: false })
   })
 
   it('needs only the project id against the Firestore emulator', () => {
@@ -29,8 +38,8 @@ describe('integrationStatus', () => {
 
   it('never echoes a value', () => {
     const report = JSON.stringify(
-      integrationStatus({ ...FIREBASE, FIREBASE_PRIVATE_KEY: 'private-value', GEMINI_API_KEY: 'gemini-value', ORS_API_KEY: 'ors-value' })
+      integrationStatus({ ...FIREBASE, FIREBASE_PRIVATE_KEY: 'private-value', GEMINI_API_KEY: 'gemini-value', CRON_SECRET: 'cron-value', ORS_API_KEY: 'ors-value' })
     )
-    expect(report).not.toMatch(/private-value|gemini-value|ors-value|sa@demo/)
+    expect(report).not.toMatch(/private-value|gemini-value|cron-value|ors-value|sa@demo/)
   })
 })

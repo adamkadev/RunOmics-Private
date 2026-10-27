@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { opsStrings, sendOpsPush } from '@/lib/opsPush'
+import { pushPaths } from '@/lib/pushLinks'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -13,7 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'since must be a YYYY-MM-DD date' }, { status: 400 })
     }
 
-    await sendOpsPush(opsStrings.connectExpired.title, opsStrings.connectExpired.body(since))
+    const n = opsStrings.connectExpired
+    await sendOpsPush({ title: n.title, body: n.body(since), link: pushPaths.settings, tag: 'connect-expired' })
     return NextResponse.json({ sent: true })
   })
 }

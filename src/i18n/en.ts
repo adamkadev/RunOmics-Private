@@ -1959,6 +1959,10 @@ export const en = {
       title: (name: string) => `${name} explored`,
       body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
     },
+    syncDispatchRefused: {
+      title: 'Nightly sync did not start',
+      body: (status: number) => `GitHub refused its dispatch (${status}). Check the Sync button token and repository in Vercel.`,
+    },
     tokenExpiring: {
       names: { dataActions: 'the data token (GitHub Actions)', dataVercel: 'the data token (Vercel)', syncVercel: 'the Sync button token (Vercel)' },
       title: (days: number) => (days <= 0 ? 'A GitHub token expires today' : `A GitHub token expires in ${days} day${days === 1 ? '' : 's'}`),
@@ -1968,6 +1972,10 @@ export const en = {
       title: 'Garmin Connect has stopped',
       body: (since: string) =>
         `garth's token expired on ${since}. Runs still sync through the Personal API; shoes, the calendar, training status and race predictions do not. Runbook: docs/data-and-sync.md, After garth.`,
+    },
+    garminKeyExpiring: {
+      title: (days: number) => (days <= 0 ? 'The Garmin key expires today' : `The Garmin key expires in ${days} day${days === 1 ? '' : 's'}`),
+      body: 'Create a new key at connect.garmin.com/app/settings/personalApiToken, then update GARMIN_PERSONAL_API_KEY and GARMIN_PERSONAL_API_KEY_EXPIRES in the GitHub Environment.',
     },
   },
 

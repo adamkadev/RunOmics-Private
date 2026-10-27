@@ -45,8 +45,8 @@ describe('POST /api/internal/pr-check', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ newPrs: PRS })
     expect(sendPushes).toHaveBeenCalledWith('records', [
-      { title: 'New PR: 5K', body: '19:10 - new personal best!' },
-      { title: 'New PR: 10K', body: '40:00 - new personal best!' },
+      { title: 'New PR: 5K', body: '19:10 - new personal best!', link: '/activities/a', tag: 'record:5k' },
+      { title: 'New PR: 10K', body: '40:00 - new personal best!', link: '/activities/a', tag: 'record:10k' },
     ])
     expect(commit).toHaveBeenCalledTimes(1)
     expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushes.mock.invocationCallOrder[0]!)

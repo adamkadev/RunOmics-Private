@@ -38,8 +38,13 @@ describe('POST /api/internal/connect-expired', () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ sent: true })
-    expect(sendPush).toHaveBeenCalledWith('always', 'Garmin Connect has stopped', expect.stringContaining('expired on 2026-11-03'))
-    expect(sendPush.mock.calls[0]![2]).toContain('docs/data-and-sync.md')
+    expect(sendPush).toHaveBeenCalledWith('always', {
+      title: 'Garmin Connect has stopped',
+      body: expect.stringContaining('expired on 2026-11-03'),
+      link: '/settings',
+      tag: 'connect-expired',
+    })
+    expect(sendPush.mock.calls[0]![1].body).toContain('docs/data-and-sync.md')
   })
 
   it('forwards it to the operator’s deployment when this one belongs to another athlete', async () => {
@@ -50,7 +55,7 @@ describe('POST /api/internal/connect-expired', () => {
     await POST(request({ since: '2026-11-03' }))
 
     expect(sendPush).not.toHaveBeenCalled()
-    expect(JSON.parse(fetch.mock.calls[0]![1]!.body as string)).toMatchObject({ title: 'Garmin Connect has stopped' })
+    expect(JSON.parse(fetch.mock.calls[0]![1]!.body as string)).toMatchObject({ title: 'Garmin Connect has stopped', tag: 'connect-expired' })
     fetch.mockRestore()
   })
 

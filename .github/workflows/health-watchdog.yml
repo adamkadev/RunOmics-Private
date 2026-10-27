@@ -1,0 +1,38 @@
+name: Deployment Health Watchdog
+
+# Every other alert is sent by the deployment it watches; a failed run here emails the repository owner instead.
+on:
+  schedule:
+    # 14:47 UTC: one missed 01:00 nightly sync is 36 h old by then, and GitHub delays runs set on the hour.
+    - cron: "47 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [adam, lamiaa]
+    environment: ${{ matrix.profile }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Check the deployment's health
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: node scripts/check_deployment_health.mjs
