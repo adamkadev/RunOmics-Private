@@ -70,6 +70,10 @@ class ActivityData:
     duration_bests: dict[str, float] | None = None
     gap_sec_per_km: float | None = None
     gap_samples: list[int] | None = None
+    hr_source: str | None = None
+    longest_continuous_run_sec: int | None = None
+    longest_continuous_run_m: float | None = None
+    running_sec: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +91,7 @@ class ActivityData:
             "paceSecPerKm": self.pace_sec_per_km,
             "hrZones": [z.to_dict() for z in self.hr_zones],
             "avgHeartRate": self.avg_heart_rate,
+            "hrSource": self.hr_source,
             "rpe": self.rpe,
             "comment": self.comment,
             "route": self.route,
@@ -109,6 +114,9 @@ class ActivityData:
             "vo2maxGarmin": self.vo2max_garmin,
             "avgTemperature": self.avg_temperature,
             "cadenceSamples": self.cadence_samples,
+            "longestContinuousRunSec": self.longest_continuous_run_sec,
+            "longestContinuousRunM": self.longest_continuous_run_m,
+            "runningSec": self.running_sec,
             "splits": [s.to_dict() for s in self.splits] if self.splits else None,
             "gearId": self.gear_id,
             "weather": self.weather,
@@ -182,6 +190,10 @@ def fit_derived_fields(parsed: ParsedFit | None, pace_sec_per_km: float | None) 
         "splits": parsed.splits or None,
         "gap_sec_per_km": gap_sec_per_km,
         "gap_samples": gap_samples,
+        "hr_source": parsed.hr_source,
+        "longest_continuous_run_sec": parsed.longest_continuous_run_sec,
+        "longest_continuous_run_m": parsed.longest_continuous_run_m,
+        "running_sec": parsed.running_sec,
     }
     if parsed.route:
         fields["route"] = parsed.route
@@ -194,7 +206,8 @@ _FIT_FIELDS = (
     "aer_training_effect", "ana_training_effect", "hr_samples", "elevation_profile", "calories", "cadence_spm",
     "ground_contact_ms", "vertical_oscillation_mm", "vertical_ratio_pct", "stride_length_m", "best_efforts",
     "duration_bests", "pace_samples", "vo2max_garmin", "avg_temperature", "cadence_samples", "splits",
-    "gap_sec_per_km", "gap_samples",
+    "gap_sec_per_km", "gap_samples", "hr_source", "longest_continuous_run_sec", "longest_continuous_run_m",
+    "running_sec",
 )
 
 
@@ -273,6 +286,7 @@ def map_activity(
     type_inference = infer_type_with_source(
         name,
         parsed,
+        activity_id=activity_id,
         hr_zones=hr_zones or [],
         duration_seconds=duration_seconds,
         date=date_str,

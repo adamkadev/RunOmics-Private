@@ -6,6 +6,7 @@ export const pushPaths = {
   goals: '/goals',
   analytics: '/analytics',
   settings: '/settings',
+  comeback: '/records?tab=return',
 } as const
 
 /** This deployment's origin: `APP_URL` where set, else the production domain Vercel exposes to every function. */

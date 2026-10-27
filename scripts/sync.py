@@ -414,6 +414,7 @@ def _retype(run: dict, type_context: TypeContext) -> dict | None:
     inference = infer_type_with_source(
         run.get("description", ""),
         parsed,
+        activity_id=run.get("id"),
         hr_zones=run.get("hrZones") or [],
         duration_seconds=run.get("durationSeconds"),
         date=run.get("date"),

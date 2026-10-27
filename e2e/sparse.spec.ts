@@ -97,3 +97,33 @@ test('Today’s session card carries one line of the coach’s words', async ({ 
   await page.goto('/')
   await expect(page.getByTestId('session-card').getByTestId('session-coach-line')).toContainText('minutes de course')
 })
+
+test('a run before the armband reads its heart rate as untrusted, and one after it does not', async ({ page, t }) => {
+  const athlete = read('athlete.json') as { hrReliableFrom: string }
+  const runs = Object.values(
+    Object.fromEntries((read('activities/index.json') as { months: string[] }).months.flatMap((month) =>
+      (read(`activities/${month}.json`).activities as { id: string; date: string }[]).map((run) => [run.id, run]))),
+  ).sort((a, b) => a.date.localeCompare(b.date))
+  const before = runs.filter((run) => run.date < athlete.hrReliableFrom).at(-1)!
+  const after = runs.find((run) => run.date >= athlete.hrReliableFrom)!
+
+  await page.goto(`/activities/${before.id}`)
+  await expect(page.getByTestId('run-hr-untrusted')).toHaveText(t.activity.dataQuality.hrUntrusted.beforeReliable)
+  await page.goto(`/activities/${after.id}`)
+  await expect(page.getByTestId('run-verdict')).toBeVisible()
+  await expect(page.getByTestId('run-hr-untrusted')).toHaveCount(0)
+})
+
+test('Plan shows the return’s running minutes per week and its longest non-stop run', async ({ page }) => {
+  await page.goto('/plan')
+  const card = page.getByTestId('return-progress-card')
+  await expect(card).toBeVisible()
+  await expect(card.getByTestId('return-week').first()).toBeVisible()
+  await expect(card.getByTestId('return-card-longest')).not.toHaveText('—')
+})
+
+test('Records has a comeback tab with the milestones still ahead', async ({ page, t }) => {
+  await page.goto('/records?tab=return')
+  await expect(page.getByTestId('return-progress')).toBeVisible()
+  await expect(page.getByTestId('return-pending').first()).toContainText(t.returnProgress.milestones.continuous10)
+})

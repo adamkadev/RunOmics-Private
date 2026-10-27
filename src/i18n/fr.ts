@@ -1262,6 +1262,11 @@ export const fr = {
     },
     dataQuality: {
       estimated: 'Estimé',
+      hrUntrusted: {
+        marked: 'FC non fiable · charge selon l’effort',
+        beforeReliable: 'FC avant le brassard · charge selon l’effort',
+        wrist: 'FC au poignet · charge selon l’effort',
+      },
     },
     similarRuns: {
       summary: (n: number, rank: number) =>
@@ -1285,6 +1290,8 @@ export const fr = {
       usedBefore: 'Déjà utilisés',
       removeTag: (tag: string) => `Supprimer le tag ${tag}`,
       addTag: (tag: string) => `Ajouter le tag ${tag}`,
+      hrUnreliable: 'FC non fiable',
+      hrUnreliableHint: 'Écarte la fréquence cardiaque de cette sortie de la charge, des zones et de l’efficacité dès la prochaine synchro. La charge est alors estimée d’après l’effort.',
     },
     zones: {
       short: 'Zones cardiaques',
@@ -1758,6 +1765,32 @@ export const fr = {
     allEfforts: (distance: string) => `Tous les efforts sur ${distance} ›`,
     topEfforts: (n: number, distance: string) => `Les ${n} meilleurs efforts sur ${distance} ›`,
     findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
+  },
+
+  returnProgress: {
+    milestones: {
+      continuous10: 'Premières 10 minutes sans marcher',
+      continuous20: 'Premières 20 minutes sans marcher',
+      continuous30: 'Premières 30 minutes sans marcher',
+      nonstop3k: 'Premiers 3 km sans marcher',
+      nonstop5k: 'Premiers 5 km sans marcher',
+      blockCompleted: 'Premier bloc terminé',
+    },
+    tab: 'Reprise',
+    since: (date: string) => `Depuis ta reprise le ${date}`,
+    longest: 'Plus longue course sans marcher',
+    reached: 'Atteintes',
+    next: 'À venir',
+    cardTitle: 'Ta reprise',
+    runningPerWeek: 'Minutes de course par semaine',
+    weekOf: (date: string) => `Semaine du ${date}`,
+    minutes: (n: number) => `${n} min`,
+    nothingYet: 'Pas encore de sortie depuis la reprise.',
+    celebration: 'Depuis ta reprise',
+    push: {
+      title: 'Une étape depuis ta reprise',
+      body: (label: string) => `${label} !`,
+    },
   },
 
   pbAlerts: {

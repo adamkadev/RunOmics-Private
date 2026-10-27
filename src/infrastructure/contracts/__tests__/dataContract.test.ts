@@ -119,6 +119,24 @@ describe('the data contract', () => {
     expect(warnings()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.trainingBreaks[0].reason' })])
   })
 
+  it('refuses an hrReliableFrom that is not a date, since it decides which heart rate is trusted', () => {
+    write('athlete.json', { hrReliableFrom: '2026-10-16' })
+    expect(checkDataDirectory(dir)).toEqual([])
+
+    write('athlete.json', { hrReliableFrom: '16/10/2026' })
+    expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.hrReliableFrom' })])
+  })
+
+  it('accepts the heart-rate source and continuous-run fields, and only warns on unknown values', () => {
+    activities(
+      activity({ hrSource: 'external', longestContinuousRunSec: 900, longestContinuousRunM: 2010.5 }),
+      activity({ id: '2', hrSource: null, longestContinuousRunSec: null }),
+      activity({ id: '3', hrSource: 'chest', longestContinuousRunSec: '900' }),
+    )
+    expect(errors()).toEqual([])
+    expect(warnings().map((p) => p.path)).toEqual(['$.activities[2].longestContinuousRunSec', '$.activities[2].hrSource'])
+  })
+
   it('refuses a cross-training session the lists cannot key or place, and only warns on its figures', () => {
     write('cross_training/2026.json', {
       sessions: [

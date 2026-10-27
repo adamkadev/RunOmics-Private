@@ -33,6 +33,8 @@ export type ExploreMilestoneState = { areas?: Record<string, string[]>; areaId?:
 /** `jobErrorAt` is the newest server error announced; a state saved before server errors were digested has none. */
 export type ClientErrorAlertState = { lastAt: string | null; jobErrorAt?: string | null }
 
+export type ReturnMilestoneState = { announced: string[] }
+
 export const { read: getLastPrState, write: saveLastPrState } =
   notificationDocument<PrState>('lastPrs')
 
@@ -50,6 +52,9 @@ export const { read: getLastActivitySyncState, write: saveLastActivitySyncState 
 
 export const { read: getLastExploreMilestoneState, write: saveLastExploreMilestoneState } =
   notificationDocument<ExploreMilestoneState>('lastExploreMilestones')
+
+export const { read: getLastReturnMilestoneState, write: saveLastReturnMilestoneState } =
+  notificationDocument<ReturnMilestoneState>('lastReturnMilestones')
 
 export const { read: getLastClientErrorAlertState, write: saveLastClientErrorAlertState } =
   notificationDocument<ClientErrorAlertState>('lastClientErrors')

@@ -7,6 +7,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getExploreHome } from '@/application/usecases/GetExploreAreas'
 import { getCrossTrainingEntries } from '@/application/usecases/GetCrossTraining'
+import { getReturnProgress } from '@/application/usecases/GetReturnProgress'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planRun } from '@/components/plan/planRun'
 import { planCoachingView } from '@/components/plan/planCoachingView'
@@ -25,6 +26,7 @@ export default async function PlanPage() {
   const trainingPlan = getTrainingPlan()
   const coaching = getCoachingOverview(today)
   const athlete = getAthleteProfile()
+  const returnProgress = getReturnProgress(today)
 
   return (
     <PlanClient
@@ -36,6 +38,7 @@ export default async function PlanPage() {
       trainingZones={trainingZones}
       hrZoneBoundsBpm={athlete.hrZoneBoundsBpm ?? null}
       coaching={coaching ? planCoachingView(coaching) : null}
+      returnProgress={returnProgress?.ongoing ? returnProgress : null}
       today={today}
       // Only whether there is one: the area and the runs stay on the server.
       exploreAvailable={getExploreHome() !== null}
