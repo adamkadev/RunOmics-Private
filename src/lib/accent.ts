@@ -20,21 +20,8 @@ export function parseAccent(stored: string | null): AccentId {
   return DEFAULT_ACCENT
 }
 
-export function readAccentPreference(): AccentId {
-  if (typeof window === 'undefined') return DEFAULT_ACCENT
-  try {
-    return parseAccent(localStorage.getItem(ACCENT_STORAGE_KEY))
-  } catch {
-    return DEFAULT_ACCENT
-  }
-}
-
 export function accentColor(id: AccentId, mode: 'light' | 'dark'): string {
   return curatedAccent(id)[mode].acc
-}
-
-export function accentSwatchColor(id: AccentId, mode: 'light' | 'dark' = 'dark'): string {
-  return accentColor(id, mode)
 }
 
 export const ACCENT_SWATCHES: Record<AccentId, string> = Object.fromEntries(
@@ -44,10 +31,6 @@ export const ACCENT_SWATCHES: Record<AccentId, string> = Object.fromEntries(
 export const ACCENT_SWATCHES_LIGHT: Record<AccentId, string> = Object.fromEntries(
   CURATED_ACCENTS.map((accent) => [accent.id, accent.light.acc]),
 ) as Record<AccentId, string>
-
-export const ACCENT_UI: Record<AccentId, [light: string, dark: string]> = Object.fromEntries(
-  CURATED_ACCENTS.map((accent) => [accent.id, [accent.light.acc, accent.dark.acc] as [string, string]]),
-) as Record<AccentId, [light: string, dark: string]>
 
 export function persistAccent(id: AccentId): void {
   try {

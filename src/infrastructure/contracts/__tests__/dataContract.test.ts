@@ -24,7 +24,7 @@ function write(relative: string, value: unknown) {
 const activity = (overrides: Record<string, unknown> = {}) => ({
   id: '1', week: 202637, date: '2026-09-10', dayOfWeek: 'Thursday', type: 'Base', description: 'Easy',
   comment: '', durationSeconds: 1800, distanceKm: 5, paceSecPerKm: 360, hrZones: [], avgHeartRate: 140,
-  rpe: null, polyline: null, route: [[6.1, 49.6], [6.2, 49.7]], splits: null, bestEfforts: null, weather: null,
+  rpe: null, route: [[6.1, 49.6], [6.2, 49.7]], splits: null, bestEfforts: null, weather: null,
   ...overrides,
 })
 

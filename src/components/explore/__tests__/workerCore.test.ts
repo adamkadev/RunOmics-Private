@@ -11,7 +11,6 @@ import {
   COVERAGE_ALGO,
   createWorkerState,
   handleMessage,
-  locateClusterTracks,
   readCachedTrack,
   trackFingerprint,
   type FetchResponse,
@@ -95,14 +94,11 @@ function response(body: unknown, status = 200): FetchResponse {
 
 function setup({
   area = AREA as unknown,
-  routes = {} as Record<string, unknown>,
-  ids = {} as Record<string, string>,
   status = 200,
 } = {}) {
   const cache = new MemoryCache()
   const fetch = vi.fn(async (url: string): Promise<FetchResponse> => {
     if (url.startsWith('/api/explore/areas/')) return response(status === 200 ? area : { error: 'x' }, status)
-    if (url.startsWith('/api/map/routes')) return response({ routes, ids })
     return response({ error: 'Not found' }, 404)
   })
   const deps: WorkerDeps = { fetch, cache }
@@ -354,119 +350,6 @@ describe('addTracks and coverage', () => {
     const bad = { ...buffers(['r1']), offsets: new Uint32Array([0, 9999]) }
 
     expect(await send({ type: 'addTracks', areaKey: KEY, ...bad })).toMatchObject({ error: 'Invalid track buffers' })
-  })
-})
-
-describe('fetchClusterTracks', () => {
-  const routes = { 0: lonLatRoute('r1'), 4: lonLatRoute('r2'), 7: [] }
-  const ids = { 0: 'r1', 4: 'r2', 7: 'empty' }
-  const index = [
-    { routeIdx: 0, id: 'r1', date: '2026-05-01T07:00:00Z' },
-    { routeIdx: 4, id: 'r2', date: '2026-06-15' },
-    { routeIdx: 7, id: 'empty', date: '2026-06-16' },
-    { routeIdx: 9, id: 'missing', date: '2026-06-17' },
-  ]
-
-  it('fetches the cluster and adds its runs by activity id', async () => {
-    const { send, fetch } = await loaded({ routes, ids })
-
-    expect(ok(await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '3', index }))).toEqual({
-      added: ['r1', 'r2'],
-    })
-    expect(fetch).toHaveBeenLastCalledWith('/api/map/routes?cluster=3&enc=p5')
-
-    const coverage = ok<{ units: { id: string; lastRunDate: string | null }[] }>(
-      await send({ type: 'coverage', areaKey: KEY, home: null }),
-    )
-    expect(coverage.units.find((u) => u.id === 'test-alpha')!.lastRunDate).toBe('2026-06-15')
-    expect(coverage.units.find((u) => u.id === 'test-bravo')!.lastRunDate).toBe('2026-05-01')
-  })
-
-  it('does not fetch when it already has every run', async () => {
-    const { send, fetch } = await loaded({ routes, ids })
-    await send({ type: 'addTracks', areaKey: KEY, ...buffers(['r1']) })
-
-    ok(await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '3', index: [index[0]!] }))
-    expect(fetch).toHaveBeenCalledTimes(1)
-  })
-
-  it('fails on a response without routes, or without the ids that say whose they are', async () => {
-    const { send, fetch } = await loaded()
-    fetch.mockImplementation(async () => response({ nope: true }))
-    expect(await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '3', index })).toMatchObject({
-      error: 'Cluster 3: no routes',
-    })
-
-    fetch.mockImplementation(async () => response({ routes }))
-    expect(await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '3', index })).toMatchObject({
-      error: 'Cluster 3: no route ids',
-    })
-  })
-
-  describe('a page built before the latest data deployment', () => {
-    // The page knew r2 at index 0. Since then r1, a newer run, was synced and
-    // took index 0, moving r2 to 1. Index 0 now holds another run's track.
-    const shifted = { routes: { 0: lonLatRoute('r1'), 1: lonLatRoute('r2') }, ids: { 0: 'r1', 1: 'r2' } }
-    const stale = [{ routeIdx: 0, id: 'r2', date: '2026-06-15' }]
-    const visitedBy = (units: { id: string; visited: number }[]) => units.map((u) => `${u.id}:${u.visited}`)
-
-    it('finds each run by its id, and never pairs it with the track now at its old index', async () => {
-      const { send, cache } = await loaded(shifted)
-
-      expect(ok(await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '0', index: stale }))).toEqual({ added: ['r2'] })
-      const coverage = ok<{ units: { id: string; visited: number }[] }>(
-        await send({ type: 'coverage', areaKey: KEY, activityIds: ['r2'], home: null }),
-      )
-      await flushWrites()
-
-      // r2 runs up column 0 of Alpha only; r1's row would have lit Bravo.
-      expect(visitedBy(coverage.units)).toEqual(['test-alpha:4', 'test-bravo:0', 'test-delta:0'])
-      expect(cache.stores.tracks.get(`${VERSION}:r2`)).toMatchObject({ track: trackFingerprint(track(RUNS.r2!.points)) })
-    })
-
-    it('leaves out, and caches nothing for, a run the answer does not hold', async () => {
-      const { send, cache } = await loaded(shifted)
-
-      const added = ok(await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '0', index: [{ routeIdx: 1, id: 'gone', date: '2026-01-01' }] }))
-      await flushWrites()
-
-      expect(added).toEqual({ added: [] })
-      expect(cache.stores.tracks.size).toBe(0)
-    })
-
-    it('does not let a result an older worker cached under the wrong track outlive it', async () => {
-      // What a worker that trusted the stale index stored for r2: r1's cells.
-      const { send, cache } = await loaded(shifted)
-      const wrong = activityCells(INDEX, track(RUNS.r1!.points))
-      cache.stores.tracks.set(`${VERSION}:r2`, {
-        algo: COVERAGE_ALGO,
-        track: trackFingerprint(track(RUNS.r1!.points)),
-        date: '2026-06-15',
-        cells: Uint32Array.from(wrong.cells),
-        metresByUnit: wrong.metresByUnit,
-      })
-
-      await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '0', index: [{ routeIdx: 1, id: 'r2', date: '2026-06-15' }] })
-      const coverage = ok<{ units: { id: string; visited: number }[] }>(
-        await send({ type: 'coverage', areaKey: KEY, activityIds: ['r2'], home: null }),
-      )
-
-      expect(visitedBy(coverage.units)).toEqual(['test-alpha:4', 'test-bravo:0', 'test-delta:0'])
-    })
-  })
-})
-
-describe('locateClusterTracks', () => {
-  it('takes an index the answer confirms, finds a run that moved, and drops one that is gone', () => {
-    const wanted = [
-      { routeIdx: 3, id: 'a', date: '' },
-      { routeIdx: 4, id: 'b', date: '' },
-      { routeIdx: 5, id: 'c', date: '' },
-    ]
-    expect([...locateClusterTracks(wanted, { 3: 'a', 5: 'b', 6: 'x' })]).toEqual([
-      ['a', '3'],
-      ['b', '5'],
-    ])
   })
 })
 

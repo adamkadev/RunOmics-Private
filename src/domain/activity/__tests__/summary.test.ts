@@ -4,7 +4,6 @@ import type { Activity } from '../types'
 
 const HEAVY_FIELDS = [
   'route',
-  'polyline',
   'paceSamples',
   'hrSamples',
   'cadenceSamples',
@@ -27,7 +26,6 @@ const activity = {
   rpe: 4,
   hrZones: [{ zone: 2, seconds: 1800, percent: 60, minBpm: 120, maxBpm: 140 }],
   route: [[6.1, 49.6], [6.2, 49.7]],
-  polyline: 'abc',
   paceSamples: [300, 295],
   hrSamples: [140, 150],
   cadenceSamples: [170, 172],

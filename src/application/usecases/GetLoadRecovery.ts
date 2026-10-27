@@ -5,14 +5,6 @@ import { loadPairs, localLoadPairs, type LoadPair } from '@/domain/training/load
 import { ownLoadDays } from './GetTrainingLoad'
 import { restingDays, type RecoveryDay } from '@/domain/training/recovery'
 
-/**
- * The acute/chronic series (v5.4): the one Load trend plots, the Load ratio
- * divides and the coach read reads. Every caller goes through here.
- */
-export function getLoadPairs(): LoadPair[] {
-  return getLoadSeries().pairs
-}
-
 export type LoadSource = 'garmin' | 'local'
 
 /** Garmin's pairs, or the app's own where the watch sends none (a Forerunner 55). */

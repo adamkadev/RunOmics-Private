@@ -62,7 +62,6 @@ export interface Activity {
   avgHeartRate: number | null
   rpe: number | null
   comment: string
-  polyline: string | null
   route: [number, number][] | null
   elevationGain: number | null
   aerTrainingEffect: number | null
@@ -138,37 +137,6 @@ export interface PlannedWorkout {
   steps?: WorkoutStep[]
 }
 
-export interface WeeklyVolume {
-  week: number
-  year: number
-  label: string
-  distanceKm: number
-  sessionCount: number
-}
-
-export interface TypeDistribution {
-  type: ActivityType
-  count: number
-  distanceKm: number
-  percent: number
-}
-
-export interface WeekSummary {
-  weekNumber: number
-  totalDistanceKm: number
-  totalDurationSeconds: number
-  sessionCount: number
-  avgHeartRate: number | null
-  avgPaceSecPerKm: number | null
-}
-
 export interface DashboardData {
-  currentWeek: WeekSummary
-  lastWeek: Pick<WeekSummary, 'totalDistanceKm' | 'sessionCount'>
-  weeks: WeekSummary[]
-  weeklyVolume: WeeklyVolume[]
-  typeDistribution: TypeDistribution[]
   recentActivities: ActivitySummary[]
-  currentStreak: number
-  longestStreak: number
 }

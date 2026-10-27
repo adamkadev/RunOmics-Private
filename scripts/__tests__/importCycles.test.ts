@@ -2,7 +2,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { findCycles, importGraph } from '../importCycles'
+import { findCycles, importGraph, pagesWithoutRevalidate } from '../importCycles'
 
 describe('findCycles', () => {
   it('finds a ring of any length, and nothing in a tree', () => {
@@ -64,5 +64,14 @@ describe('importGraph', () => {
       'src/__tests__/a.test.ts': "import { a } from '../a'",
     })
     expect([...importGraph(dir).keys()]).toEqual(['src/a.ts'])
+  })
+
+  it('reports a page that awaits loadData() without exporting revalidate', () => {
+    const dir = workspace({
+      'src/app/page.tsx': 'export const revalidate = 3600\nexport default async function Page() { await loadData() }',
+      'src/app/settings/page.tsx': 'export default async function Page() { await loadData() }',
+      'src/app/about/page.tsx': 'export default function Page() { return null }',
+    })
+    expect(pagesWithoutRevalidate(importGraph(dir), dir)).toEqual(['src/app/settings/page.tsx'])
   })
 })

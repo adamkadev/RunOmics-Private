@@ -1,5 +1,5 @@
 /**
- * 80/20 is a ceiling on hard work rather than a quota (see EASY_SHARE_GUIDE):
+ * 80/20 is a ceiling on hard work rather than a quota:
  * too little hard is never a caution.
  */
 

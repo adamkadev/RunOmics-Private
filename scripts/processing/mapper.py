@@ -44,7 +44,6 @@ class ActivityData:
     avg_heart_rate: int | None
     rpe: int | None
     comment: str
-    polyline: str | None
     route: list[list[float]] | None
     elevation_gain: float | None
     aer_training_effect: float | None
@@ -90,7 +89,6 @@ class ActivityData:
             "avgHeartRate": self.avg_heart_rate,
             "rpe": self.rpe,
             "comment": self.comment,
-            "polyline": self.polyline,
             "route": self.route,
             "elevationGain": self.elevation_gain,
             "aerTrainingEffect": self.aer_training_effect,
@@ -314,7 +312,6 @@ def map_activity(
         avg_heart_rate=avg_heart_rate,
         rpe=rpe,
         comment="",
-        polyline=None,
         route=route,
         elevation_gain=elevation_gain,
         gear_id=extract_gear_id(gear),
