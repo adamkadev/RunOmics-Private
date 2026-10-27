@@ -34,14 +34,16 @@ describe('skipped days', () => {
     expect(localStorage.getItem('runomics-skipped-days')).toBeNull()
   })
 
-  it('keeps the old marks in the browser when Firestore refuses them', async () => {
+  it('keeps the old marks in the browser, and on screen, when Firestore refuses them', async () => {
     localStorage.setItem('runomics-skipped-days', JSON.stringify(['2026-10-14']))
     store.writeSkippedDay.mockRejectedValue(new Error('offline'))
     const { useSkippedDays } = await fresh()
     const { result } = renderHook(() => useSkippedDays())
 
-    await waitFor(() => expect(result.current.get('2026-10-21')).toBe('ill'))
-    expect(localStorage.getItem('runomics-skipped-days')).not.toBeNull()
+    await waitFor(() => expect(store.writeSkippedDay).toHaveBeenCalledWith('2026-10-14', 'rest'))
+    expect(result.current.get('2026-10-21')).toBe('ill')
+    expect(result.current.get('2026-10-14')).toBe('rest')
+    expect(localStorage.getItem('runomics-skipped-days')).toBe(JSON.stringify(['2026-10-14']))
   })
 
   it('shows anyone but the owner nothing, and asks Firestore nothing', async () => {

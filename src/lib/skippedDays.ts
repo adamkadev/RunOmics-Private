@@ -49,7 +49,10 @@ async function migrate(remote: Map<string, SkipReason>): Promise<void> {
 function load(): Promise<void> {
   loading ??= readSkippedDays()
     .then(async (remote) => {
-      publish(new Map(remote))
+      // Shown while they move, and kept in view and in the browser if Firestore refuses them.
+      const shown = new Map(remote)
+      for (const date of legacyMarks()) if (!shown.has(date)) shown.set(date, 'rest')
+      publish(shown)
       await migrate(remote)
       publish(remote)
     })
