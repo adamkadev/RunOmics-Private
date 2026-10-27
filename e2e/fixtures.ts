@@ -18,6 +18,8 @@ const EXPECTED_CONSOLE_NOISE: RegExp[] = [
   /nominatim\.openstreetmap\.org/i,
   // The e2e server has no FIREBASE_PROJECT_ID, so an owner-only route answers 503 to the emulator's owner.
   /status of 503 .*\/api\/athlete\/body/,
+  // Firestore's connectivity probe in WebKit, which the app's img-src refuses on a deployment too.
+  /www\.google\.com\/images\/cleardot\.gif/,
   // Vercel Analytics and Speed Insights scripts 404 under `next start`.
   /\/_vercel\/(insights|speed-insights)\/script\.js/,
 ]

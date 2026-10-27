@@ -41,7 +41,7 @@ test('a session with no run reads as missed', async ({ page, t }) => {
 
 test('the owner marks a missed session skipped, which Firestore keeps, and takes it back', async ({ page, t }) => {
   const { missed } = returnBlock()
-  await signInAsOwner(page)
+  await signInAsOwner(page, { openSettings: false })
   await deleteDocument(`wellness/${missed}`)
   const s = t.plan.dayCard
 

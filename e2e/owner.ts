@@ -59,11 +59,9 @@ async function ownerSession(apiKey: string) {
   }
 }
 
-/**
- * Signed in as the Auth SDK finds a returning owner, rather than through Google's popup, whose script comes from
- * apis.google.com even against the emulator. Every page the test opens from then on, in any tab, is the owner's.
- */
-export async function signInAsOwner(page: Page): Promise<void> {
+/** The session a returning owner has, not Google's popup, whose script loads from apis.google.com even here. */
+// openSettings: false leaves the first page to the test: WebKit reports what leaving a page cuts off as page errors.
+export async function signInAsOwner(page: Page, { openSettings = true } = {}): Promise<void> {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
   // The public demo's .env.e2e has no Firebase web config, so its build has no owner to sign in.
   if (!apiKey) return test.skip(true, 'NEXT_PUBLIC_FIREBASE_API_KEY is unset: no owner to sign in')
@@ -76,6 +74,7 @@ export async function signInAsOwner(page: Page): Promise<void> {
     },
     [`firebase:authUser:${apiKey}:[DEFAULT]`, JSON.stringify(session)] as const,
   )
+  if (!openSettings) return
   await page.goto('/settings')
   // The owner's Data card only renders once the claim has been read.
   await expect(page.getByTestId('data-card')).toBeVisible()

@@ -1,5 +1,4 @@
-// Preloaded (NODE_OPTIONS=--import) by the visual suite's build and server alone, so the demo data and the app's
-// "today" are the same day on every run. The clock still ticks: Next.js times its caches with it.
+// Ticks on from the fixed instant rather than stopping there: Next.js times its caches with it.
 const fixedNow = Date.parse(process.env.RUNOMICS_FIXED_NOW ?? '')
 if (Number.isNaN(fixedNow)) throw new Error('RUNOMICS_FIXED_NOW must be an ISO instant.')
 

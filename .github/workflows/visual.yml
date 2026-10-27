@@ -1,7 +1,6 @@
 name: Visual
 
-# On demand only: before a perf or visual pull request, run it on the branch (Actions → Visual → Run workflow).
-# "Update the baselines" rewrites the screens that changed and commits them to the branch; see e2e/visual/README.md.
+# On demand only, before a perf or visual pull request; e2e/visual/README.md says how to update the baselines.
 on:
   workflow_dispatch:
     inputs:

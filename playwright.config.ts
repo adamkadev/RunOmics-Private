@@ -29,8 +29,7 @@ export default defineConfig<AppOptions>({
     },
   ],
   webServer: [
-    // The owner's sign-in and Firestore (e2e/owner.ts); needs Java. A Firestore emulator left over from a killed run
-    // holds its port without Auth: checking Auth's makes the next start fail on that port rather than reuse half of it.
+    // Checked on Auth's port: a Firestore emulator left by a killed run then fails the start rather than being reused.
     {
       command: EMULATORS_COMMAND,
       url: `http://${AUTH_EMULATOR_HOST}`,
