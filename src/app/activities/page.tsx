@@ -11,6 +11,7 @@ import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { sessionTypes } from '@/components/activity/activityViews'
 import { getCompletedSince } from '@/application/usecases/GetExploreGains'
 import { explorePlansFrom } from '@/components/explore/explorePlan'
+import { getUsualRunHour } from '@/application/usecases/GetHeatAhead'
 import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
@@ -25,9 +26,9 @@ export default async function ActivitiesPage() {
   const exploreAreas = getExploreAreas()
   const { clusters, defaultClusterIdx } = getMapShellData()
   const defaultCluster = clusters[defaultClusterIdx]
-  // Trimmed copies (name, distance, pace), never the coach's overview, and only where the map has Districts.
+  // Trimmed copies (name, distance, pace, usual start hour), never the coach's overview, and only where the map has Districts.
   const explorePlans = exploreAreas.length > 0
-    ? explorePlansFrom(today, coaching?.workouts ?? [], await getPlannedWorkouts(), await getTrainingZones())
+    ? explorePlansFrom(today, coaching?.workouts ?? [], await getPlannedWorkouts(), await getTrainingZones(), getUsualRunHour)
     : []
 
   return (

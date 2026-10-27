@@ -1,3 +1,4 @@
+import { nearAvoidCircle, type AvoidCircle } from './avoidSpots'
 import { climbBudget, climbPerKm, NO_SESSION, type SessionDay } from './climbBudget'
 import type { AreaIndex } from './coverage'
 import { MAX_STEP_M, cellIndices, cellCentre, cellOf, cellOfXY, projectX, projectY, sampleLine } from './grid'
@@ -218,12 +219,12 @@ export function scoreRoutes(
 }
 
 /**
- * The centre of the runnable cell nearest the unit's label: a public grid point
+ * The centre of the runnable cell nearest the unit's label, clear of the spots: a public grid point
  * on a way the provider can route from. Privacy: home is deliberately not a
  * parameter, since starts that lean towards home pin it down across requests;
  * the label says only which quartier the athlete wants to run in.
  */
-export function routeStart(index: AreaIndex, unitId: string): [number, number] | null {
+export function routeStart(index: AreaIndex, unitId: string, avoid: readonly AvoidCircle[] = []): [number, number] | null {
   const unit = index.units.find((u) => u.id === unitId)
   if (!unit || unit.runnable.size === 0) return null
 
@@ -233,6 +234,8 @@ export function routeStart(index: AreaIndex, unitId: string): [number, number] |
   const ry = projectY(proj, lat)
   let nearest = -1
   let nearestD = Infinity
+  let clear = -1
+  let clearD = Infinity
   // The cells arrive sorted, so a tie keeps the lowest key.
   for (const cell of unit.runnable) {
     const [i, j] = cellIndices(cell)
@@ -241,6 +244,11 @@ export function routeStart(index: AreaIndex, unitId: string): [number, number] |
       nearestD = d
       nearest = cell
     }
+    if (d < clearD && !nearAvoidCircle(cellCentre(proj, cell), avoid)) {
+      clearD = d
+      clear = cell
+    }
   }
-  return cellCentre(proj, nearest)
+  // A quartier all under spots still gets its start: the loops that run through them are dropped afterwards.
+  return cellCentre(proj, clear >= 0 ? clear : nearest)
 }

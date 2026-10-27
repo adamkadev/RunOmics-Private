@@ -36,7 +36,8 @@ export const COLLECTIONS = [
     key: 'spots',
     valid: (_id, doc) =>
       isFiniteNumber(doc.lon) && isFiniteNumber(doc.lat) && Math.abs(doc.lon) <= 180 && Math.abs(doc.lat) <= 90 &&
-      Number.isInteger(doc.radiusM) && doc.radiusM >= 20 && doc.radiusM <= 250 && typeof doc.createdAt === 'string',
+      Number.isInteger(doc.radiusM) && doc.radiusM >= 20 && doc.radiusM <= 250 && typeof doc.createdAt === 'string' &&
+      (doc.expiresOn === undefined || (typeof doc.expiresOn === 'string' && DATE.test(doc.expiresOn))),
   },
 ]
 

@@ -391,7 +391,12 @@ alone, exactly as it would a real one. `.e2e-data/` is gitignored.
 
 `.env.e2e` also carries the non-secret Firebase client config (still needed for the app
 to boot, even though these specs don't exercise sign-in-gated flows) and pins `PORT` to
-3100, so a dev server on 3000 does not collide with the suite's own.
+3100, so a dev server on 3000 does not collide with the suite's own. It sets
+`NEXT_PUBLIC_E2E_MAPS=1`, a test build's flag only: with no MapTiler token, MapLibre
+still builds the heat map and a run's map on a blank inline style, so the specs can tap
+the map (a start point, a spot to avoid, a quartier). Under the same flag, Explore's
+spots to avoid live in the page's memory instead of the owner's Firestore, since the
+suite has no owner to sign in. Never set it on a deployment.
 
 The first e2e batch covers read-only golden paths. Sign-in-gated flows (Settings,
 activity notes editing) aren't covered yet - Google's OAuth popup isn't something

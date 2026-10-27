@@ -1,3 +1,4 @@
+import { nearAvoidCircle, type AvoidCircle } from './avoidSpots'
 import type { AreaIndex } from './coverage'
 import { cellIndices, projectX, projectY, unproject } from './grid'
 
@@ -21,6 +22,8 @@ export interface RoutePlanRequest {
   home: LonLat | null
   distanceM: number
   seeds: number[]
+  /** No via is picked inside one or by its edge. */
+  avoid?: readonly AvoidCircle[]
 }
 
 /** `vias[k]` is for `seeds[k]`; an empty list asks for a plain round trip from the origin. */
@@ -71,8 +74,9 @@ export function planRoute(index: AreaIndex, visited: ReadonlySet<number>, reques
 
   const departure = xy(request.origin)
   const home = request.home ? xy(request.home) : null
-  const awayFromHome = (cell: Cell) => !home || dist(cell.at, home) >= HOME_GUARD_M
-  const inUnit = [...unit.runnable].map(cellAt).filter(awayFromHome)
+  const avoid = request.avoid ?? []
+  const allowed = (cell: Cell) => (!home || dist(cell.at, home) >= HOME_GUARD_M) && !nearAvoidCircle(toLonLat(cell.at), avoid)
+  const inUnit = [...unit.runnable].map(cellAt).filter(allowed)
   if (inUnit.length === 0) return { kind: 'tour', vias: request.seeds.map(() => []) }
 
   const perimeter = request.distanceM / STREET_DETOUR
@@ -88,7 +92,7 @@ export function planRoute(index: AreaIndex, visited: ReadonlySet<number>, reques
   for (const [key, owner] of index.runnableUnit) {
     if (owner === unitIdx || visited.has(key)) continue
     const cell = cellAt(key)
-    if (dist(departure, cell.at) <= perimeter / 2 && awayFromHome(cell)) around.push(cell)
+    if (dist(departure, cell.at) <= perimeter / 2 && allowed(cell)) around.push(cell)
   }
 
   const vias = request.seeds.map((seed): LonLat[] => {

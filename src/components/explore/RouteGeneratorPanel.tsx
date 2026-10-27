@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type Ref } from 'react'
 import { ArrowDownToLine, Check, ChevronRight, Minus, Plus, Share2, X } from 'lucide-react'
 import { t } from '@/i18n'
-import { AVOID_REASONS, type AvoidReason } from '@/domain/explore/avoidSpots'
+import { AVOID_LIMITS, AVOID_RADII_M, AVOID_REASONS, type AvoidReason } from '@/domain/explore/avoidSpots'
 import { climbBudget, type ClimbBudget, type SessionDay } from '@/domain/explore/climbBudget'
 import type { Darkness } from '@/domain/explore/daylight'
 import type { RoutePreferences } from '@/domain/explore/types'
@@ -26,7 +26,6 @@ import { SEGMENTED_FILL_SEGMENT_CLASS, SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLA
 import { SHEET_CONTROL } from '@/components/ui/Sheet'
 import { Toggle } from '@/components/ui/Toggle'
 import { ROUTE_KM_MAX } from './exploreHref'
-import type { RouteFailure } from './routeApi'
 import { canStepDown, canStepUp, stepRouteKm, type RouteStats } from './routeGenerator'
 import { ROUTE_START_MODES, type RouteStartMode } from './routeStart'
 import type { AvoidSpots } from './useAvoidSpots'
@@ -38,13 +37,15 @@ export const ROUTE_PANEL_TEST_ID = 'route-generator'
 export type RouteGeneratorStatus = 'generating' | 'ready' | 'error'
 
 /** Failures a second try can fix; the others need a change (distance) or can't be fixed here. */
-const RETRYABLE: ReadonlySet<GeneratorFailure> = new Set<RouteFailure>(['rateLimited', 'providerLimit', 'upstream', 'invalid'])
+const RETRYABLE: ReadonlySet<GeneratorFailure> = new Set<GeneratorFailure>(['rateLimited', 'providerLimit', 'upstream', 'invalid', 'tracks'])
 
 export function failureMessage(failure: GeneratorFailure): string {
   const errors = t.pages.map.explore.errors
   switch (failure) {
     case 'tooFar':
       return errors.tooFarToRun
+    case 'tracks':
+      return errors.tracks
     case 'notConfigured':
       return errors.notConfigured
     case 'auth':
@@ -527,36 +528,81 @@ function MarkingBar({ onCancel }: { onCancel: () => void }) {
 
 function AvoidSpotsRows({ avoid, markRef }: { avoid: AvoidSpots; markRef: Ref<HTMLButtonElement> }) {
   const a = t.pages.map.explore.avoid
+  const fullId = useId()
+  const day = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
   return (
     <>
       <div aria-hidden="true" className="ml-4 h-px bg-[var(--row-separator)]" />
       <div className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
         <span className="text-[15px] text-foreground">{a.title}</span>
-        <Button ref={markRef} size="sm" variant="secondary" onClick={() => avoid.setMarking(true)} data-testid="route-avoid-mark">
+        <Button
+          ref={markRef}
+          size="sm"
+          variant="secondary"
+          onClick={() => avoid.setMarking(true)}
+          disabled={avoid.full}
+          aria-describedby={avoid.full ? fullId : undefined}
+          data-testid="route-avoid-mark"
+        >
           {a.mark}
         </Button>
       </div>
-      {avoid.spots.map((spot) => (
-        <div key={spot.id} data-testid="route-avoid-spot" className="flex min-h-[44px] items-center gap-2 pl-4 pr-1.5">
-          <span className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">{a.marked(formatDate(spot.createdAt, { style: 'bare', year: 'never' }))}</span>
-          <select
-            aria-label={a.reason}
-            value={spot.reason ?? ''}
-            onChange={(event) => avoid.setReason(spot.id, (event.target.value || null) as AvoidReason | null)}
-            className="h-8 rounded-lg bg-transparent text-[13px] text-foreground"
-          >
-            <option value="">{a.reasons.none}</option>
-            {AVOID_REASONS.map((reason) => (
-              <option key={reason} value={reason}>
-                {a.reasons[reason]}
-              </option>
-            ))}
-          </select>
-          <button type="button" onClick={() => avoid.remove(spot.id)} aria-label={a.remove} className="hit-44 flex size-8 items-center justify-center text-muted-foreground">
-            <X size={16} aria-hidden="true" />
-          </button>
-        </div>
-      ))}
+      {avoid.full && (
+        <p id={fullId} data-testid="route-avoid-full" className="px-4 pb-2.5 text-[13px] leading-[18px] text-muted-foreground">
+          {a.full(AVOID_LIMITS.stored)}
+        </p>
+      )}
+      {avoid.spots.map((spot) => {
+        const selected = avoid.selectedId === spot.id
+        return (
+          <div key={spot.id} data-testid="route-avoid-spot" data-selected={selected || undefined} className="flex flex-col">
+            <div className="flex min-h-[44px] items-center gap-2 pl-4 pr-1.5">
+              <button
+                type="button"
+                onClick={() => avoid.locate(spot.id)}
+                aria-label={a.locate(day(spot.createdAt))}
+                className="min-h-[44px] min-w-0 flex-1 truncate text-left text-[13px] text-muted-foreground"
+              >
+                {spot.expiresOn ? a.markedUntil(day(spot.createdAt), day(spot.expiresOn)) : a.marked(day(spot.createdAt))}
+              </button>
+              <select
+                aria-label={a.reason}
+                value={spot.reason ?? ''}
+                onChange={(event) => avoid.setReason(spot.id, (event.target.value || null) as AvoidReason | null)}
+                className="h-8 rounded-lg bg-transparent text-[13px] text-foreground"
+              >
+                <option value="">{a.reasons.none}</option>
+                {AVOID_REASONS.map((reason) => (
+                  <option key={reason} value={reason}>
+                    {a.reasons[reason]}
+                  </option>
+                ))}
+              </select>
+              <button type="button" onClick={() => avoid.remove(spot.id)} aria-label={a.remove} className="hit-44 flex size-8 items-center justify-center text-muted-foreground">
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+            {selected && (
+              <div role="group" aria-label={a.radius} data-testid="route-avoid-radius" className="flex items-center gap-2 pb-2.5 pl-4 pr-2.5">
+                {AVOID_RADII_M.map((radiusM) => (
+                  <button
+                    key={radiusM}
+                    type="button"
+                    aria-pressed={spot.radiusM === radiusM}
+                    onClick={() => avoid.setRadius(spot.id, radiusM)}
+                    className={cn(
+                      'hit-44 h-8 rounded-full px-3 text-[13px] font-medium tabular-nums',
+                      spot.radiusM === radiusM ? 'bg-accent text-accent-foreground' : 'bg-[var(--sheet-fill)] text-foreground shadow-[var(--sheet-fill-rim)]',
+                    )}
+                  >
+                    {a.radiusM(formatNumber(radiusM, 0))}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
       {avoid.failed && (
         <p role="alert" className="px-4 pb-2.5 text-[13px] leading-[18px] text-foreground">
           {a.failed}

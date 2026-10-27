@@ -142,6 +142,7 @@ test('heatmap fullscreen: the top row is live glass in full ink over a soft edge
   await page.goto('/map')
   await page.getByRole('button', { name: 'Fullscreen' }).click()
   await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
+  await expect(page.locator('[data-map-root]')).not.toHaveAttribute('data-map-moving')
 
   const row = page.getByTestId('heat-filter-row')
   const capsule = page.getByRole('button', { name: /^Area:/ })

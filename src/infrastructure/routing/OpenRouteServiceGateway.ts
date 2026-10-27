@@ -19,7 +19,7 @@ const LOG_BODY_LIMIT = 300
 const NO_ROUTE_CODES = new Set([2009, 2010])
 const NO_ROUTE_MESSAGE = /route could not be found|could not find routable point|unable to find a route/i
 
-// No `quiet` weighting for avoidBusyRoads: untried with round_trip, and a refused option would fail every loop.
+// "Avoid busy roads" is only a weight in the client's ranking: ORS's `quiet` weighting is untried with round_trip.
 // An extra ORS lacks comes back as a warning; avoid_polygons takes avoid_features' path in ORS, round trip included.
 function requestBody({ start, lengthM, seed, vias = [], avoid = [] }: RoundTripRequest) {
   const tour = vias.length > 0

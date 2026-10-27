@@ -3,7 +3,7 @@ import { OpenRouteServiceGateway, ORS_DIRECTIONS_URL, parseCandidate } from '../
 
 // A fictional start near the demo dataset's mid-Pacific home.
 const START: [number, number] = [-150, 0]
-const REQUEST = { start: START, lengthM: 8000, seed: 17, avoidBusyRoads: true }
+const REQUEST = { start: START, lengthM: 8000, seed: 17 }
 
 const LINE = [
   [-150, 0, 12.5],

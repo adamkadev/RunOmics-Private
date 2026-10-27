@@ -45,6 +45,10 @@ export async function heatAhead(
   return band ? { apparentTempC: Math.round(at.apparentTempC), hour, costSecPerKm: band.costSecPerKm } : null
 }
 
+export function getUsualRunHour(scheduled: ScheduledTimeOfDay | undefined): number | null {
+  return usualRunHour(getAllActivities(), scheduled)
+}
+
 export function getHeatAhead(today: string, scheduled: ScheduledTimeOfDay | undefined): Promise<HeatAhead | null> {
   return heatAhead(getAllActivities(), today, scheduled, fetchHourlyForecast, process.env.NEXT_PUBLIC_TIME_ZONE || 'Europe/Paris')
 }

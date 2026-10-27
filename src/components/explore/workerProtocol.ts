@@ -1,3 +1,4 @@
+import type { AvoidCircle } from '@/domain/explore/avoidSpots'
 import type { RoutePlan } from '@/domain/explore/routePlan'
 import type { RouteContext } from '@/domain/explore/routeScore'
 import type {
@@ -53,6 +54,7 @@ export interface ScoreRoutesRequest {
 /** No home: the start is worked out from the area file alone. */
 export interface RouteStartRequest {
   unitId: string
+  avoid?: AvoidCircle[]
 }
 
 /** Home comes in as for coverage: the plan picks no via near it. */
@@ -63,6 +65,7 @@ export interface RoutePlanRequest {
   homeFromTracks?: boolean
   distanceM: number
   seeds: number[]
+  avoid?: AvoidCircle[]
 }
 
 export type ExploreRequestBody =
