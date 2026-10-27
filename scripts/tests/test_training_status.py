@@ -1,7 +1,10 @@
+import json
 from datetime import date, timedelta
 
+from garmin import training_status
 from garmin.training_status import (
     dates_to_fetch,
+    sync_training_status,
     fetch_windows,
     normalize_load_balance,
     normalize_status_report,
@@ -180,6 +183,74 @@ class TestDatesToFetch:
         stored = {"2026-07-20": {}, "2026-07-21": {}}
         days = dates_to_fetch(date(2026, 7, 20), date(2026, 7, 21), stored)
         assert days == [date(2026, 7, 20), date(2026, 7, 21)]
+
+
+    def test_skips_days_answered_empty_before(self):
+        checked = (date(2026, 5, 1), date(2026, 5, 31))
+        days = dates_to_fetch(date(2026, 5, 1), date(2026, 6, 20), {}, checked)
+        assert days[0] == date(2026, 6, 1)
+
+    def test_refetches_checked_days_inside_the_refresh_window(self):
+        checked = (date(2026, 7, 1), date(2026, 7, 21))
+        days = dates_to_fetch(date(2026, 7, 1), date(2026, 7, 21), {}, checked)
+        assert days == [date(2026, 7, 14) + timedelta(days=i) for i in range(8)]
+
+
+class _EmptyStatusClient:
+    def __init__(self, failing: set[str] | None = None):
+        self.daily: list[tuple[str, str]] = []
+        self.failing = failing or set()
+
+    def get_training_status_daily(self, start, end):
+        self.daily.append((start, end))
+        if start in self.failing:
+            raise training_status.GarminAPIError(400, "https://example.test/status")
+        return {"reportData": {}}
+
+    def get_training_status_weekly(self, start, end):
+        return {"reportData": {}}
+
+
+class TestCheckedThroughWatermark:
+    def _sync(self, tmp_path, monkeypatch, client, today=date(2026, 7, 21)):
+        monkeypatch.setattr(training_status, "_STATUS_PATH", tmp_path / "training_status.json")
+        monkeypatch.setattr(training_status, "_RATE_LIMIT_PAUSE", 0)
+        sync_training_status(client, date(2025, 1, 1), today)
+        return json.loads((tmp_path / "training_status.json").read_text())
+
+    def test_a_watch_without_training_status_asks_only_the_refresh_window_the_next_night(self, tmp_path, monkeypatch):
+        first = _EmptyStatusClient()
+        stored = self._sync(tmp_path, monkeypatch, first)
+        assert len(first.daily) > 18
+        assert stored["checkedFrom"] == "2025-01-01"
+        assert stored["checkedThrough"] == "2026-07-21"
+
+        second = _EmptyStatusClient()
+        self._sync(tmp_path, monkeypatch, second, today=date(2026, 7, 22))
+        assert second.daily == [("2026-07-15", "2026-07-22")]
+
+    def test_a_failed_window_stops_the_watermark_before_it(self, tmp_path, monkeypatch):
+        stored = self._sync(tmp_path, monkeypatch, _EmptyStatusClient(failing={"2025-01-29"}))
+        assert stored["checkedThrough"] == "2025-01-28"
+
+        retry = _EmptyStatusClient()
+        self._sync(tmp_path, monkeypatch, retry)
+        assert retry.daily[0][0] == "2025-01-29"
+
+    def test_stored_days_carry_the_watermark_across_them(self, tmp_path, monkeypatch):
+        path = tmp_path / "training_status.json"
+        path.write_text(json.dumps({"days": {"2026-07-01": {"status": "productive"}}, "weeks": {},
+                                    "checkedFrom": "2025-01-01", "checkedThrough": "2026-06-30"}))
+        stored = self._sync(tmp_path, monkeypatch, _EmptyStatusClient())
+        assert stored["checkedThrough"] == "2026-07-21"
+        assert stored["days"] == {"2026-07-01": {"status": "productive"}}
+
+    def test_an_earlier_first_activity_drops_the_watermark(self, tmp_path, monkeypatch):
+        path = tmp_path / "training_status.json"
+        path.write_text(json.dumps({"days": {}, "weeks": {}, "checkedFrom": "2026-01-01", "checkedThrough": "2026-07-20"}))
+        client = _EmptyStatusClient()
+        self._sync(tmp_path, monkeypatch, client)
+        assert client.daily[0][0] == "2025-01-01"
 
 
 class TestFetchWindows:

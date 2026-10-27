@@ -147,6 +147,20 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      # tsx, for the data contract push_private_data.mjs checks before it pushes. Restore only: CI saves this key from
+      # a full install, which --ignore-scripts must not overwrite.
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
+
+      # No install scripts in a job that holds GARMIN_SECRET and the data repository's write token.
+      - name: Install Node dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
       - name: Fetch current private data
         env:
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
@@ -408,11 +422,10 @@ jobs:
           # rewrites this file, so it is read from the workspace, not the push.
           python -c "import json; print('last_synced_at=' + json.load(open('data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
-          # A refusal here means the data repository was committed to while this
-          # run was syncing. Failing is the point: the next run starts from fresh
-          # data.
+          # A refusal means the data repository was committed to while this run was syncing, or the data breaks the
+          # contract the deployment checks. Failing is the point: nothing reaches HEAD.
           if ! OUTPUT=$(node scripts/push_private_data.mjs data); then
-            echo "::error::Refused to push: the private data repository changed during this run. Re-run the sync to start from fresh data."
+            echo "::error::Refused to push: see the reason above. A changed data repository needs only a re-run; a broken contract needs a fix first."
             exit 1
           fi
           echo "$OUTPUT"
@@ -531,7 +544,7 @@ jobs:
             check overreaching-check
             check activity-sync-check
           fi
-          # Errors come from the phones, with or without new data.
+          # Errors come from the phones and the server's jobs, with or without new data.
           check client-error-check
 
           # Each pass regenerates a surface only if its facts moved (a Firestore

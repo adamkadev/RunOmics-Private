@@ -10,15 +10,36 @@ All notable changes to this project are documented in this file.
   it read 0 km without a goals, PBs or races file, and every 1 January until
   `goals.json` had the new year; the goal and projection still come from Goals.
 - Progress without a race (F5) shows the current block in the race card's place
-  (the coach's block name as on Plan, week n of N, sessions done of planned); a year card without
-  a goal opens All time; a new "Athlete & zones" row opens the athlete page; and
-  Goals with nothing configured says how to set a goal in `goals.json`.
+  (the coach's block name as on Plan, week n of N, sessions done of planned); a
+  year card without a goal opens All time; a new "Athlete & zones" row opens the
+  athlete page; and Goals with nothing configured says how to set a goal in
+  `goals.json`.
 - TRIMP uses Banister's female weighting, 0.86·e^(1.67·HRR), when `athlete.json`
   has `sex: "female"` (F9). **One-time shift:** for a female athlete every
   session's load rises by about 7–19 % (more at easy effort), so fitness (CTL),
   fatigue (ATL) and the planned-session load estimates step up once on the first
   deploy; form (TSB) and ACWR, being differences and ratios, barely move.
-
+- A durable trace of server jobs (R4). Every scheduled run and every internal
+  5xx is kept in a capped Firestore collection, `jobEvents` (route, trigger,
+  outcome, status and error class only; the last 200). Settings → Diagnostics
+  shows each job's last run and outcome beside the phone errors, the nightly
+  error digest counts server errors too, and the later morning cron sends the
+  daily session when the 08:xx Paris run failed, until 10:00. `firestore.rules`
+  lets the owner read the trace and no client write it.
+- Push tokens stay fresh (R5). On app start, a device with pushes on re-saves
+  its FCM token when it changed or was saved over 30 days ago, keeping its
+  switches; Settings says when the device could not be registered. The server
+  drops tokens not saved in 270 days.
+- Runs deleted, re-typed or renamed in Garmin Connect follow in the app (R17).
+  After a complete listing, a stored run missing from it moves to
+  `removed_activities.json` (at most 5 a night; a list that looks cut short
+  removes nothing and makes the night partial), a run re-typed to walking
+  lands in Other training, and stored names follow Connect's. Sync data guards
+  (R10): a push validates the data contract first, a run that changes month
+  leaves its old month file, one id in two month files stops the sync, best
+  efforts cap GPS jumps as duration bests do, and the mapper and reprocess
+  share `fit_derived_fields()`. The Forerunner 55 profile stops re-asking
+  Garmin for 18 empty training-status windows every night (G9).
 - The coach's own words reach the app (F1). Plan's phase card names the
   coach's block ("Reprise en douceur") instead of « Préparation générale » and
   adds the week's focus; a planned session's card carries the coach's note,

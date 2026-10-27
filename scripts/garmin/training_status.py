@@ -126,20 +126,50 @@ def normalize_load_balance(payload: dict[str, Any]) -> dict[str, Any] | None:
     return {key: value for key, value in balance.items() if value is not None}
 
 
-def _load_stored() -> tuple[dict[str, Any], dict[str, Any]]:
+def _load_stored() -> tuple[dict[str, Any], dict[str, Any], tuple[date, date] | None]:
     stored = read_history(_STATUS_PATH)
-    return stored.get("days") or {}, stored.get("weeks") or {}
+    return stored.get("days") or {}, stored.get("weeks") or {}, _checked_span(stored)
 
 
-def dates_to_fetch(start: date, today: date, stored: dict[str, Any]) -> list[date]:
+def _checked_span(stored: dict[str, Any]) -> tuple[date, date] | None:
+    try:
+        return date.fromisoformat(stored["checkedFrom"]), date.fromisoformat(stored["checkedThrough"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def dates_to_fetch(
+    start: date, today: date, stored: dict[str, Any], checked: tuple[date, date] | None = None
+) -> list[date]:
+    """A day inside `checked` was answered empty: a watch without training status (a Forerunner 55) never fills it."""
     refresh_from = today - timedelta(days=_REFRESH_WINDOW_DAYS)
     days: list[date] = []
     current = start
     while current <= today:
-        if current.isoformat() not in stored or current >= refresh_from:
+        was_checked = checked is not None and checked[0] <= current <= checked[1]
+        if (current.isoformat() not in stored and not was_checked) or current >= refresh_from:
             days.append(current)
         current += timedelta(days=1)
     return days
+
+
+def checked_through(
+    start: date,
+    today: date,
+    stored: dict[str, Any],
+    checked: tuple[date, date] | None,
+    answered: list[tuple[date, date]],
+) -> date | None:
+    """The last day of the unbroken run from `start` of days Garmin has answered, with data or empty."""
+    spans = [*answered, *([checked] if checked else [])]
+    last: date | None = None
+    current = start
+    while current <= today and (
+        current.isoformat() in stored or any(first <= current <= end for first, end in spans)
+    ):
+        last = current
+        current += timedelta(days=1)
+    return last
 
 
 def fetch_windows(days: list[date]) -> list[tuple[date, date]]:
@@ -175,8 +205,11 @@ def weekly_windows(start: date, today: date, stored: dict[str, Any]) -> list[tup
     return windows
 
 
-def _fetch_days(client: GarminClient, windows: list[tuple[date, date]]) -> dict[str, Any]:
+def _fetch_days(
+    client: GarminClient, windows: list[tuple[date, date]]
+) -> tuple[dict[str, Any], list[tuple[date, date]]]:
     days: dict[str, Any] = {}
+    answered: list[tuple[date, date]] = []
 
     for window_start, window_end in windows:
         try:
@@ -188,9 +221,10 @@ def _fetch_days(client: GarminClient, windows: list[tuple[date, date]]) -> dict[
             continue
 
         days.update(normalize_status_report(payload))
+        answered.append((window_start, window_end))
         time.sleep(_RATE_LIMIT_PAUSE)
 
-    return days
+    return days, answered
 
 
 def _fetch_weeks(client: GarminClient, windows: list[tuple[date, date]]) -> dict[str, Any]:
@@ -213,19 +247,25 @@ def _fetch_weeks(client: GarminClient, windows: list[tuple[date, date]]) -> dict
 
 def sync_training_status(client: GarminClient, start: date, today: date | None = None) -> int:
     today = today or date.today()
-    stored_days, stored_weeks = _load_stored()
+    stored_days, stored_weeks, checked = _load_stored()
+    if checked and checked[0] > start:
+        checked = None
 
-    day_windows = fetch_windows(dates_to_fetch(start, today, stored_days))
+    day_windows = fetch_windows(dates_to_fetch(start, today, stored_days, checked))
     week_windows = weekly_windows(start, today, stored_weeks)
 
     print(f"Syncing training status over {len(day_windows) + len(week_windows)} window(s)…")
-    fetched_days = _fetch_days(client, day_windows)
+    fetched_days, answered = _fetch_days(client, day_windows)
     fetched_weeks = _fetch_weeks(client, week_windows)
 
     days = {**stored_days, **fetched_days}
     weeks = {**stored_weeks, **fetched_weeks}
 
-    write_history(_STATUS_PATH, {"days": dict(sorted(days.items())), "weeks": dict(sorted(weeks.items()))})
+    payload: dict[str, Any] = {"days": dict(sorted(days.items())), "weeks": dict(sorted(weeks.items()))}
+    through = checked_through(start, today, days, checked, answered)
+    if through:
+        payload |= {"checkedFrom": start.isoformat(), "checkedThrough": through.isoformat()}
+    write_history(_STATUS_PATH, payload)
     print(
         f"  {len(fetched_days)} day(s) and {len(fetched_weeks)} week(s) recorded, "
         f"{len(days)} day(s) total."

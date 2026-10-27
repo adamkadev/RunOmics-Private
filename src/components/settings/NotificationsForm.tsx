@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { t } from '@/i18n'
 import { PUSH_CATEGORIES, type PushCategories, type PushCategory } from '@/lib/pushCategories'
+import { ALL_OFF, canReceivePush, loadPrefs, registrationFailed, savePrefs, subscribeRegistration } from '@/lib/pushPrefs'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { Toggle } from '@/components/ui/Toggle'
 import { useMounted } from '@/lib/useMounted'
@@ -10,33 +11,6 @@ import { dailyReminderTime } from './reminderTime'
 import { GROUP_CARD, GROUP_ROW } from './settingsGroup'
 
 type PushStatus = 'loading' | 'unsupported' | 'idle' | 'busy' | 'enabled' | 'denied'
-
-// The records key keeps its old name, so a phone that already chose keeps its switch.
-const STORAGE_KEYS: Record<PushCategory, string> = {
-  training: 'notif_training',
-  shoes:    'notif_shoes',
-  records:  'notif_races',
-}
-
-const ALL_OFF: PushCategories = { training: false, shoes: false, records: false }
-
-/** A mirror for drawing the switches: the server reads the copy on the device's token, which a client cannot read back. */
-function loadPrefs(): PushCategories {
-  if (typeof window === 'undefined') return ALL_OFF
-  return { training: stored('training'), shoes: stored('shoes'), records: stored('records') }
-}
-
-function stored(category: PushCategory): boolean {
-  return localStorage.getItem(STORAGE_KEYS[category]) === 'true'
-}
-
-function savePrefs(prefs: PushCategories) {
-  for (const category of PUSH_CATEGORIES) localStorage.setItem(STORAGE_KEYS[category], String(prefs[category]))
-}
-
-function canReceivePush(): boolean {
-  return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
-}
 
 function deviceStatus(): PushStatus {
   if (!canReceivePush()) return 'unsupported'
@@ -55,6 +29,7 @@ export function NotificationsForm() {
   const prefs = chosenPrefs ?? (mounted && deviceStatus() === 'enabled' ? loadPrefs() : ALL_OFF)
   const { toast, leaving, showToast } = useToast()
   const n = t.settings.notifications
+  const unregistered = useSyncExternalStore(subscribeRegistration, registrationFailed, () => false)
 
   const reminderAt = mounted ? dailyReminderTime(new Date(), process.env.NEXT_PUBLIC_TIME_ZONE || undefined) : null
 
@@ -120,6 +95,11 @@ export function NotificationsForm() {
         )
       })}
     </section>
+    {status === 'enabled' && unregistered && (
+      <p className="px-4 text-xs leading-snug text-[var(--neg)]" data-testid="push-unregistered">
+        {n.notRegistered}
+      </p>
+    )}
     {/* Outside the group, so its separators never count it as a row. */}
     <Toast toast={toast} leaving={leaving} />
     </>

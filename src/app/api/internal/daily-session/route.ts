@@ -4,7 +4,8 @@ import { sendPush } from '@/lib/sendPushNotification'
 import { pushPaths } from '@/lib/pushLinks'
 import { getDailySession } from '@/application/usecases/GetDailySession'
 import { sendOncePer } from '@/application/usecases/SendScheduledPush'
-import { DAILY_SESSION_PUSH, isDailySessionHour } from '@/lib/dailySessionPush'
+import { DAILY_SESSION_PUSH, isDailySessionHour, isDailySessionRetry } from '@/lib/dailySessionPush'
+import { lastJobRun } from '@/application/usecases/JobEvents'
 import { todayIso } from '@/lib/calendarDate'
 import { formatDurationWords, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -13,7 +14,7 @@ import { loadData } from '@/application/usecases/LoadData'
 /** Garmin's calendar leads: it is what the watch will offer the athlete this morning. */
 export const { GET, POST } = scheduledRoute('daily-session', async (trigger) => {
   const now = new Date()
-  if (trigger === 'cron' && !isDailySessionHour(now)) {
+  if (trigger === 'cron' && !isDailySessionHour(now) && !isDailySessionRetry(now, await lastJobRun('daily-session').catch(() => null))) {
     return NextResponse.json({ skipped: 'not 08:xx in Paris' })
   }
 

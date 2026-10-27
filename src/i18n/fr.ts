@@ -481,6 +481,11 @@ export const fr = {
       loading: 'Chargement…',
       none: 'Aucune erreur enregistrée.',
       loadFailed: 'Impossible de charger les erreurs.',
+      scheduledJobs: 'Tâches planifiées : dernière exécution et résultat',
+      jobsNone: 'Aucune exécution enregistrée.',
+      jobsLoadFailed: 'Impossible de charger les exécutions.',
+      outcome: { sent: 'Fait', skipped: 'Rien à faire', error: 'Échec' },
+      trigger: { cron: 'cron', manual: 'à la main', sync: 'synchro' },
     },
     sync: {
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
@@ -589,6 +594,7 @@ export const fr = {
     },
     notifications: {
       error: 'Impossible de mettre à jour les réglages de notification, réessaie.',
+      notRegistered: 'Cet appareil n’est pas enregistré pour les notifications. Désactive puis réactive une option pour réessayer.',
       // « 8 h 00 », the French way of writing a time.
       at: (hour: number, minute: string) => `${hour} h ${minute}`,
       types: {
@@ -1807,8 +1813,15 @@ export const fr = {
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,
     },
     clientErrors: {
-      title: (count: number) => `${count} erreur${count > 1 ? 's' : ''} sur ton téléphone`,
+      title: (phone: number, server: number) =>
+        [
+          phone > 0 ? `${phone} erreur${phone > 1 ? 's' : ''} sur ton téléphone` : null,
+          server > 0 ? `${server} erreur${server > 1 ? 's' : ''} serveur` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       body: (message: string) => `Dernière : ${message}. Tout est dans Réglages → Diagnostic.`,
+      serverError: (route: string, error: string) => `échec de ${route} (${error})`,
     },
     exploreComplete: {
       title: (name: string) => `${name} exploré`,

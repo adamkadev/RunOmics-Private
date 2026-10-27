@@ -30,7 +30,7 @@ import httpx
 
 from .errors import GarminAPIError, GarminAuthError
 from .retry import retry_transient
-from .shared import collect_activity_starts, fit_from_archive, zone_floors
+from .shared import collect_activity_rows, fit_from_archive, zone_floors
 
 DEFAULT_BASE_URL = "https://personal.connectapi.garmin.com"
 TOKEN_PATH = "/personalapitoken-service/personal-api/personal-api-key/token"
@@ -115,8 +115,8 @@ class PersonalApiClient:
         self._rows.update((str(row["activityId"]), row) for row in rows)
         return rows
 
-    def get_activity_starts(self, *, running_only: bool = True) -> dict[str, str | None]:
-        return collect_activity_starts(self.get_activities, running_only=running_only)
+    def get_activity_rows(self, *, running_only: bool = True) -> dict[str, dict[str, Any]]:
+        return collect_activity_rows(self.get_activities, running_only=running_only)
 
     def get_activity_detail(self, activity_id: str) -> dict[str, Any]:
         # An empty answer raises rather than passing for an activity: mapped,

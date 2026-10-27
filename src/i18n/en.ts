@@ -508,6 +508,12 @@ export const en = {
       loading: 'Loading…',
       none: 'No errors recorded.',
       loadFailed: 'The errors couldn’t be loaded.',
+      // Each server job's latest run, kept in Firestore: Vercel's own log lasts half an hour.
+      scheduledJobs: 'Scheduled jobs: last run and outcome',
+      jobsNone: 'No run recorded yet.',
+      jobsLoadFailed: 'The runs couldn’t be loaded.',
+      outcome: { sent: 'Done', skipped: 'Nothing to do', error: 'Failed' },
+      trigger: { cron: 'cron', manual: 'by hand', sync: 'sync' },
     },
     sync: {
       subtitle: 'Pull in today’s runs without waiting for tonight.',
@@ -623,6 +629,8 @@ export const en = {
     },
     notifications: {
       error: 'Could not update notification settings, please retry.',
+      // The app's start-up refresh of this device's push token failed: the switches may be on while nothing arrives.
+      notRegistered: 'Not registered on this device. Turn a switch off and on again to retry.',
       // The daily reminder's time beside its switch: "08:00".
       at: (hour: number, minute: string) => `${String(hour).padStart(2, '0')}:${minute}`,
       types: {
@@ -1959,10 +1967,17 @@ export const en = {
       title: (workflow: string) => `${workflow} failed`,
       body: (runUrl: string) => `Open the run: ${runUrl}`,
     },
-    // The nightly digest of what failed on a phone, never one push per error: anyone may post an error.
+    // The nightly digest of what failed on a phone or in a server job, never one push per error: anyone may post an error.
     clientErrors: {
-      title: (count: number) => `${count} error${count === 1 ? '' : 's'} on your phone`,
+      title: (phone: number, server: number) =>
+        [
+          phone > 0 ? `${phone} error${phone === 1 ? '' : 's'} on your phone` : null,
+          server > 0 ? `${server} server error${server === 1 ? '' : 's'}` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       body: (message: string) => `Latest: ${message}. Settings → Diagnostics has them all.`,
+      serverError: (route: string, error: string) => `${route} failed (${error})`,
     },
     exploreComplete: {
       title: (name: string) => `${name} explored`,
