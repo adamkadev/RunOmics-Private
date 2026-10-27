@@ -8,6 +8,7 @@ import httpx
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from .step_warnings import warn
 from repository.history_file import read_history_section, write_history
 
 _PATH = get_data_dir() / "fitness_age_history.json"
@@ -60,8 +61,8 @@ def sync_fitness_age_history(client: GarminClient, today: date | None = None) ->
         payload = retry_transient(
             lambda: client.get_fitness_age_weekly(as_of.isoformat(), _WEEKS)
         )
-    except (GarminAPIError, httpx.HTTPError):
-        print("  Fitness Age history unavailable; keeping existing normalized data.")
+    except (GarminAPIError, httpx.HTTPError) as exc:
+        warn("fitness age history", f"Fitness Age history unavailable ({type(exc).__name__}); keeping existing data.")
         return len(existing)
 
     fetched = normalize_weekly_fitness_age(payload)

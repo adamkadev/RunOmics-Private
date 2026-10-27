@@ -4,12 +4,15 @@ import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoach
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
-import { formatKm } from '@/lib/formatters'
+import { formatDate, formatKm } from '@/lib/formatters'
 import { Plus } from 'lucide-react'
 import { t } from '@/i18n'
 import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
 import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
 import { loadData } from '@/application/usecases/LoadData'
+import { getOldShoeListDate } from '@/application/usecases/GetSyncStatus'
+import { getShoeChoices } from '@/infrastructure/repositories/JsonShoeChoiceRepository'
+import { DefaultShoe } from '@/components/shoes/DefaultShoe'
 
 const QUALITY_RUNS_WINDOW = 6
 
@@ -30,6 +33,8 @@ export default async function ShoesPage() {
   }
 
   const comparison = getShoeComparison()
+  const listCheckedOn = shoes.length > 0 ? getOldShoeListDate() : null
+  const defaultOptions = shoes.filter((shoe) => !shoe.retired).map(({ gearId, name }) => ({ gearId, name }))
 
   return (
     <div className="space-y-6">
@@ -41,6 +46,11 @@ export default async function ShoesPage() {
             <p className="mt-0.5 text-footnote text-muted-foreground">
               {t.shoes.tracked(formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)))}
             </p>
+            {listCheckedOn && (
+              <p className="mt-0.5 text-footnote text-muted-foreground" data-testid="shoe-list-old">
+                {t.shoes.listCheckedAt(formatDate(listCheckedOn))}
+              </p>
+            )}
           </div>
           {/* Pairs come from Garmin; adding one happens there. */}
           <a
@@ -57,6 +67,8 @@ export default async function ShoesPage() {
           </a>
         </div>
       </div>
+
+      <DefaultShoe options={defaultOptions} initial={getShoeChoices().defaultGearId} />
 
       <ShoesGrid
         shoes={shoes}

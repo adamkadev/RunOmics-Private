@@ -48,10 +48,10 @@ describe('defaultGoalsYear', () => {
 })
 
 describe('GoalsClient', () => {
-  it('says where a goal is set when there is none', () => {
+  it('says where a goal is set when there is none, and links to the editor', () => {
     render(<GoalsClient data={{ years: [], byYear: {}, history: [], nextRace: null }} today={TODAY} />)
-    expect(screen.getByTestId('goals-empty').textContent).toBe(`${t.goals.empty}${t.goals.emptyHow}`)
-    expect(t.goals.emptyHow).toContain('goals.json')
+    expect(screen.getByTestId('goals-empty')).toHaveTextContent(t.goals.emptyHow)
+    expect(screen.getByTestId('goals-empty-action')).toHaveAttribute('href', '/settings#goals-races')
   })
 
   it('puts the year stepper in the button row, the title on its own row', () => {

@@ -64,6 +64,83 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    function isWellFormedRaceEntry() {
+      let data = request.resource.data;
+      return (data.keys().hasOnly(['garminKey', 'removed'])
+          && data.removed == true
+          && data.garminKey is string && data.garminKey.size() > 0 && data.garminKey.size() <= 120)
+        || (data.keys().hasAll(['name', 'date', 'distanceKm', 'priority'])
+          && data.keys().hasOnly(['name', 'date', 'distanceKm', 'priority', 'targetSeconds', 'location', 'garminKey'])
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+          && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && data.distanceKm is number && data.distanceKm >= 1 && data.distanceKm <= 250
+          && data.priority in ['A', 'B', 'C']
+          && (!('targetSeconds' in data) || (data.targetSeconds is int && data.targetSeconds >= 150 && data.targetSeconds <= 300000))
+          && (!('location' in data) || (data.location is string && data.location.size() <= 80))
+          && (!('garminKey' in data) || (data.garminKey is string && data.garminKey.size() > 0 && data.garminKey.size() <= 120)));
+    }
+
+    // Races added in the app, and edits or removals of those synced from Garmin. The sync mirrors them for every reader.
+    match /raceEntries/{entryId} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedRaceEntry();
+      allow delete: if isOwner();
+    }
+
+    // A missing distance has no target; null is "just finish".
+    function isGoalTime(targets, key) {
+      return !(key in targets) || targets[key] == null
+        || (targets[key] is int && targets[key] >= 600 && targets[key] <= 60000);
+    }
+
+    function isWellFormedGoalEntry(year) {
+      let data = request.resource.data;
+      return year.matches('^20[0-9]{2}$') && (
+        (data.keys().hasOnly(['removed']) && data.removed == true)
+        || (data.keys().hasAll(['targets'])
+          && data.keys().hasOnly(['annualDistanceKm', 'targets'])
+          && (!('annualDistanceKm' in data) || (data.annualDistanceKm is number && data.annualDistanceKm > 0 && data.annualDistanceKm <= 15000))
+          && data.targets is map
+          && data.targets.keys().hasOnly(['5k', '10k', 'half', 'marathon'])
+          && isGoalTime(data.targets, '5k') && isGoalTime(data.targets, '10k')
+          && isGoalTime(data.targets, 'half') && isGoalTime(data.targets, 'marathon')));
+    }
+
+    // One document per season year; it replaces that year in goals.json.
+    match /goalEntries/{year} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedGoalEntry(year);
+      allow delete: if isOwner();
+    }
+
+    function isWellFormedShoePick() {
+      return request.resource.data.keys().hasOnly(['gearId'])
+        && request.resource.data.gearId is string
+        && request.resource.data.gearId.matches('^[A-Za-z0-9_-]{1,64}$');
+    }
+
+    // The shoe the owner picked for a run, keyed by activity id. Gear is the owner's alone to change.
+    match /runShoes/{activityId} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedShoePick();
+      allow delete: if isOwner();
+    }
+
+    // One document, `default`: the shoe a run with none from Garmin counts toward.
+    match /shoeSettings/{settingId} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && settingId == 'default' && isWellFormedShoePick();
+      allow delete: if isOwner();
+    }
+
     function isScore(data, field) {
       return !(field in data) || (data[field] is int && data[field] >= 1 && data[field] <= 5);
     }

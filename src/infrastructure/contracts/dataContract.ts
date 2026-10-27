@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { diskFiles, type DataFiles } from '../dataFiles'
+import { readGoalEntry, readRaceEntry } from '@/domain/goals/entries'
 
 /**
  * `error`: the app dereferences the field unconditionally, so the build refuses the dataset.
@@ -220,6 +221,22 @@ function checkRecords(
   problems.push(...report.problems)
 }
 
+/** The app's own entries, keyed by Firestore id; an entry the readers cannot use is skipped by them, so only a warning. */
+function checkEntries(dir: string, name: string, key: string, problems: Problem[]) {
+  const file = path.join(dir, name)
+  if (!files.existsSync(file)) return
+  const report = new Report(name)
+  const data = readJson(file, report)
+  if (data !== undefined && (!isObject(data) || !isObject(data[key]))) report.error(`$.${key}`, 'expected an object of entries')
+  else if (isObject(data) && isObject(data[key])) {
+    const read = key === 'races' ? readRaceEntry : readGoalEntry
+    for (const [id, entry] of Object.entries(data[key])) {
+      if (read(id, entry) === null) report.warn(`$.${key}.${id}`, 'not an entry the app can read; it is ignored')
+    }
+  }
+  problems.push(...report.problems)
+}
+
 function checkAthlete(dir: string, problems: Problem[]) {
   const file = path.join(dir, 'athlete.json')
   if (!files.existsSync(file)) return
@@ -292,6 +309,27 @@ function checkCrossTraining(dir: string, problems: Problem[]) {
   }
 }
 
+/** Warnings only: a pick the app cannot read leaves the run on Garmin's shoe, never a broken page. */
+function checkShoeChoices(dir: string, problems: Problem[]) {
+  const file = path.join(dir, 'shoe_choices.json')
+  if (!files.existsSync(file)) return
+  const report = new Report('shoe_choices.json')
+  const choices = readJson(file, report)
+  if (choices !== undefined) {
+    for (const key of ['runs', 'settings']) {
+      const docs = isObject(choices) ? choices[key] : undefined
+      if (!isObject(docs)) {
+        report.warn(`$.${key}`, 'expected an object')
+        continue
+      }
+      for (const [id, doc] of Object.entries(docs)) {
+        if (!isObject(doc) || !isNonEmptyString(doc.gearId)) report.warn(`$.${key}.${id}.gearId`, 'expected a non-empty string')
+      }
+    }
+  }
+  problems.push(...report.problems)
+}
+
 export function checkDataDirectory(dir: string, using: DataFiles = diskFiles): Problem[] {
   files = using
   try {
@@ -330,6 +368,9 @@ function checkAll(dir: string): Problem[] {
     if (typeof race.distance !== 'string') report.error(`${at}.distance`, 'expected a string')
   }, problems)
 
+  checkEntries(dir, 'race_entries.json', 'races', problems)
+  checkEntries(dir, 'goal_entries.json', 'goals', problems)
+
   checkRecords(dir, 'shoes.json', 'shoes', (shoe, at, report) => {
     for (const key of ['gearId', 'brand', 'model']) {
       if (typeof shoe[key] !== 'string') report.error(`${at}.${key}`, 'expected a string')
@@ -338,6 +379,7 @@ function checkAll(dir: string): Problem[] {
     if (typeof shoe.retired !== 'boolean') report.warn(`${at}.retired`, 'expected a boolean')
   }, problems)
 
+  checkShoeChoices(dir, problems)
   checkPlannedWorkouts(dir, problems)
   checkCrossTraining(dir, problems)
 
@@ -347,6 +389,10 @@ function checkAll(dir: string): Problem[] {
     const meta = readJson(syncMeta, report)
     if (meta !== undefined && !(isObject(meta) && typeof meta.lastSyncedAt === 'string' && !Number.isNaN(Date.parse(meta.lastSyncedAt)))) {
       report.error('$.lastSyncedAt', 'expected an ISO timestamp')
+    }
+    if (isObject(meta)) {
+      if (meta.warnings !== undefined && !Array.isArray(meta.warnings)) report.warn('$.warnings', 'expected an array')
+      if (meta.seriesFreshness !== undefined && !isObject(meta.seriesFreshness)) report.warn('$.seriesFreshness', 'expected an object')
     }
     problems.push(...report.problems)
   }

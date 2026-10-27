@@ -19,6 +19,30 @@ All notable changes to this project are documented in this file.
   baselines. A `project-rules` skill gives cloud sessions the repository's
   standing rules. The demo data no longer archives a six-week plan when
   generated on a Wednesday, which failed the e2e build that day.
+- Races and goals editor (G4). Settings → Races & goals (owner only) adds, edits
+  and removes races (name, date, distance, a goal time or "just finish", priority
+  A/B/C, place) and sets each season's distance and target times, in English and
+  French, with an empty state for an athlete with no race. Entries live in
+  Firestore `raceEntries` and `goalEntries`; the nightly sync mirrors them to
+  `race_entries.json` and `goal_entries.json`, laid over `upcoming_races.json`
+  and `goals.json`, which keep working unchanged. Plan, Today, the race page,
+  Goals and the coach all read the merged list; a Garmin race removed in the app
+  stays hidden, and the coach's dump warns when the app holds edits the last
+  sync has not mirrored. The Goals page's empty state links to the editor.
+  `firestore.rules` changed: deploy it to both Firebase projects.
+- Shoes without garth and Garmin warnings (G3, G6). The owner picks a run's
+  shoe on its page and sets a default shoe on Shoes, stored in Firestore
+  (`runShoes`, `shoeSettings/default`, owner-only rules) and committed nightly as
+  `shoe_choices.json`, which the app applies when it loads the runs: a pick wins
+  over Garmin's shoe, and the default fills a run Garmin gave none, from the
+  pair's first use. The mileage follows after the next sync; the stored `gearId`
+  is never rewritten. Shoes says when the list was last refreshed from Garmin
+  once that is more than 14 days ago. The ten Connect requests a step reads
+  around now land in `sync_meta.json` (`warnings`, `warningsAt`) and the run's
+  summary, with `seriesFreshness`, the newest sample of each Garmin series.
+  Health reports `connectWarnings`, `seriesFreshness` and `staleSeries`;
+  Settings → Diagnostics lists each series and since when it stopped. The rules
+  must be deployed by hand to both Firebase projects.
 - Explore fixes and maps in tests (F7, E2). The dark warning for a later
   day's plan is timed at the athlete's usual start hour that day, not now,
   and the session and the dark now reach the worker's ranking at all. A
@@ -43,6 +67,11 @@ All notable changes to this project are documented in this file.
   note's button rather than around it. The share card is back to its state
   before R8: no "Show full route" switch, the whole route drawn, and no map
   credit on the image.
+- E2E caches WebKit's system packages (`~/.cache/webkit-apt`, apt's archive directory, one entry per
+  Playwright version a week), so a run on a crawling Ubuntu mirror installs them without downloading.
+- E2E's WebKit install no longer fails its retries on a held lock: a try cut short left its `apt-get`
+  running under sudo with the dpkg lock, so tries 2 and 3 failed at once. Each retry now ends the
+  leftover `apt-get` (a `dpkg` it started finishes), and apt waits up to 2 minutes for a lock.
 - E2E's WebKit install gives each of its three apt tries 3 minutes of its own (the step 10, the job 20):
   one 3-minute budget for all three let a slow mirror fail the job before any retry, red on main since #343.
 - Plan truth (F4). A session's distance counts an untargeted warm-up, cool-down

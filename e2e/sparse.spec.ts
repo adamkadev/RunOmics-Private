@@ -174,3 +174,10 @@ test('Records has a comeback tab with the milestones still ahead', async ({ page
   await expect(page.getByTestId('return-progress')).toBeVisible()
   await expect(page.getByTestId('return-pending').first()).toContainText(t.returnProgress.milestones.continuous10)
 })
+
+test('Goals with no goal or race says so and points to the editor in Settings', async ({ page, t }) => {
+  await page.goto('/goals')
+  await expect(page.getByTestId('goals-empty')).toContainText(t.goals.emptyHow)
+  await page.getByTestId('goals-empty-action').click()
+  await expect(page).toHaveURL(/\/settings#goals-races$/)
+})

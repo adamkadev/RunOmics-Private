@@ -23,9 +23,12 @@ import { GlowRow } from './GlowRow'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { RecentErrors } from './RecentErrors'
 import { ScheduledJobs } from './ScheduledJobs'
+import { GarminSeriesStatus, type GarminSeriesProps } from './GarminSeriesStatus'
 import { ConnectedMark, GarminTile } from './GarminMark'
 import { NotificationsForm } from './NotificationsForm'
 import { BuildInfo } from './BuildInfo'
+import { GoalsRacesSection } from './GoalsRacesSection'
+import type { GoalYear, UpcomingRace } from '@/domain/goals/types'
 import { GROUP_CARD, GROUP_ROW } from './settingsGroup'
 import { bodyMetrics } from '@/components/profile/ProfileAthleteStats'
 import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
@@ -41,16 +44,18 @@ interface Zones {
 }
 
 interface Props {
+  goalsRaces?: { syncedRaces: UpcomingRace[]; writtenGoals: GoalYear[]; today: string }
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
   zones?: Zones
   privateSite?: boolean
+  garminSeries?: GarminSeriesProps
 }
 
 export const ATHLETE_HREF = '/athlete'
 
-export function SettingsClient({ lastSyncedAt, activityCount, device, zones, privateSite = false }: Props) {
+export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device, zones, privateSite = false, garminSeries }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
   // Signed out from the first render (no Firebase), a page cached hours ago would not hydrate on a relative time.
   const mounted = useMounted()
@@ -164,6 +169,12 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, zones, pri
       <AppearanceSection />
       <ProfileSection owner={user} zones={zones} />
 
+      {goalsRaces && (
+        <Section title={t.settings.sections.goalsRaces} testId="goals-races">
+          <GoalsRacesSection {...goalsRaces} onSaved={showToast} />
+        </Section>
+      )}
+
       <Section title={t.settings.sections.data}>
         <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} onDataLive={router.refresh} />
       </Section>
@@ -175,6 +186,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, zones, pri
       <Section title={t.settings.sections.diagnostics}>
         <RecentErrors user={user} />
         <ScheduledJobs user={user} />
+        {garminSeries && <GarminSeriesStatus {...garminSeries} />}
       </Section>
 
       <button
@@ -202,7 +214,7 @@ function SettingsHeader() {
 
 function Section({ title, children, testId }: { title: string; children: ReactNode; testId?: string }) {
   return (
-    <section className="flex flex-col gap-2" data-testid={testId}>
+    <section className="flex scroll-mt-16 flex-col gap-2" id={testId} data-testid={testId}>
       <SectionDivider as="h2" className="px-1">
         {title}
       </SectionDivider>

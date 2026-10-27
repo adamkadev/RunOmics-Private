@@ -330,6 +330,21 @@ jobs:
             exit "$STATUS"
           fi
 
+      # A step that reads around a failed Garmin request leaves the night green: this says which, and how many.
+      - name: Report Connect warnings
+        if: always() && steps.sync.outcome != 'skipped' && inputs.dry_run != true
+        continue-on-error: true
+        run: |
+          COUNT=$(jq 'if .warningsAt == .lastSyncedAt then (.warnings // [] | length) else 0 end' data/sync_meta.json)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::warning::$COUNT Garmin endpoint(s) failed and were read around; their series keep what they last stored."
+            {
+              echo "### Garmin warnings ($COUNT)"
+              jq -r '.warnings[] | "- **\(.step)**: \(.message)"' data/sync_meta.json
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          jq -r '.seriesFreshness // {} | to_entries | map("\(.key) \(.value // "none")") | "Newest Garmin samples: " + join(", ")' data/sync_meta.json
+
       # Through WARP, like every garth call; a failure keeps the stored shoe list and counts the night as partial.
       - name: Sync shoes
         id: shoes
@@ -412,6 +427,22 @@ jobs:
           mv "$RUNNER_TEMP/wellness.json" data/wellness.json
           echo "Backed up $(jq '.entries | length' data/wellness.json) check-in(s)."
 
+      # The owner's shoe picks exist only in Firestore otherwise; the app reads this copy for the shoes' mileage.
+      - name: Back up shoe choices
+        if: inputs.dry_run != true
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          set -euo pipefail
+          printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 30 "$APP_URL/api/internal/shoe-choices" -H @- \
+            | jq -S --indent 2 '.' > "$RUNNER_TEMP/shoe_choices.json"
+          jq -e '(.runs | type == "object") and (.settings | type == "object")' "$RUNNER_TEMP/shoe_choices.json" > /dev/null
+          mv "$RUNNER_TEMP/shoe_choices.json" data/shoe_choices.json
+          echo "Backed up the shoe of $(jq '.runs | length' data/shoe_choices.json) run(s); default shoe set: $(jq '.settings | has("default")' data/shoe_choices.json)."
+
       # Explore's avoid spots say where the athlete runs: the log gets counts only.
       - name: Back up route names and avoid spots
         if: inputs.dry_run != true
@@ -428,6 +459,23 @@ jobs:
           jq -S --indent 2 '{spots}' "$RUNNER_TEMP/route_data.json" > data/avoid_spots.json
           rm "$RUNNER_TEMP/route_data.json"
           echo "Backed up $(jq '.names | length' data/route_names.json) route name(s) and $(jq '.spots | length' data/avoid_spots.json) avoid spot(s)."
+
+      # Races and goals edited in the app: every page and the coach read this copy, so it is not only a backup.
+      - name: Mirror races and goals
+        if: inputs.dry_run != true
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          set -euo pipefail
+          printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 30 "$APP_URL/api/internal/goals-races" -H @- > "$RUNNER_TEMP/goals_races.json"
+          jq -e '(.races | type == "object") and (.goals | type == "object")' "$RUNNER_TEMP/goals_races.json" > /dev/null
+          jq -S --indent 2 '{races}' "$RUNNER_TEMP/goals_races.json" > data/race_entries.json
+          jq -S --indent 2 '{goals}' "$RUNNER_TEMP/goals_races.json" > data/goal_entries.json
+          rm "$RUNNER_TEMP/goals_races.json"
+          echo "Mirrored $(jq '.races | length' data/race_entries.json) race entr(ies) and $(jq '.goals | length' data/goal_entries.json) goal year(s)."
 
       - name: Commit updated data
         id: commit

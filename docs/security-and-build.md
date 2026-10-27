@@ -59,6 +59,7 @@ public site, anyone who is not signed in sees what a viewer sees.
 | Route names | The geocoded place only | Their own names, and renames them |
 | Morning check-ins, niggles (`wellness`) | No: the rules refuse the read | Yes |
 | Avoid spots | No: the rules refuse the read | Yes |
+| Races and goals editor (`raceEntries`, `goalEntries`) | Sees the races and goals on the pages; the rules refuse the read | Yes, in Settings |
 | Height and weight (`/api/athlete/body`) | No | Yes, in Settings |
 | Settings, Sync, the data export, job trace, phone errors | No | Yes |
 | Push notifications | No: only the owner writes a token | Yes |
@@ -87,6 +88,16 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
 - `avoidSpots`: Explore's spots to avoid, with `lon`, `lat`, an integer `radiusM` of 20-250, a
   `createdAt` date, an optional `reason` (`blocked`, `mud` or `unsafe`) and an optional `expiresOn`
   date. Read by the owner only: they say where the athlete runs.
+- `raceEntries`: a race with a `name` (1-80 characters), a `date`, a `distanceKm` of 1-250, a
+  `priority` (`A`, `B` or `C`), an optional integer `targetSeconds` (none means "just finish"), an
+  optional `location` and, for an edit of a Garmin race, its `garminKey`; or `{ garminKey, removed: true }`
+  to hide a Garmin race. Owner only.
+- `goalEntries/{year}`: one document per `20xx` season, an optional `annualDistanceKm` (up to 15,000)
+  and a `targets` map of `5k`, `10k`, `half` and `marathon` to seconds or null (finish); or
+  `{ removed: true }` to hide that year of `goals.json`. Owner only.
+- `runShoes/{activityId}` and `shoeSettings/default`: the owner's shoe for a run and the default
+  shoe, each only a `gearId` of 1 to 64 letters, digits, `_` or `-`; `shoeSettings` takes no other
+  document id. Gear is the owner's alone to change.
 - `pushTokens/{token}`: the document's id is its token, with a `userAgent`, an `updatedAt` and
   optional `categories`, a map of `training`, `shoes` and `records` to booleans. Create, update
   and delete only; nothing on a phone reads the list.
@@ -151,7 +162,7 @@ What leaves the app, and from where:
   start point as picked, any via points, the loop length and seed, and the avoid spots near the loop
   as polygons. Its logs replace every coordinate with `#`.
 - **Firebase** (Google). Auth handles the Google sign-in. Firestore holds what the athletes write
-  (`activityNotes`, `wellness`, `routeNames`, `avoidSpots`), the push tokens and the server's own
+  (`activityNotes`, `wellness`, `routeNames`, `avoidSpots`, `runShoes`, `shoeSettings`), the push tokens and the server's own
   records (`jobEvents`, `aiInsights`, `aiStatus`, `aiBudget`, `clientErrors`, `notifications`). FCM delivers the
   pushes: a title and a body, such as today's session, a run's name and distance, a shoe's
   kilometres, a PR, form or a Gemini verdict. On the second athlete's deployment, ops pushes are

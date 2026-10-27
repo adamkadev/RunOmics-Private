@@ -70,3 +70,22 @@ def test_a_dry_run_previews_without_writing(run, tmp_path, capsys):
 
     assert '"model": "Vomero Plus"' in capsys.readouterr().out
     assert not (tmp_path / "shoes.json").exists()
+
+
+def test_a_garmin_answer_dates_the_shoe_list_in_sync_meta(run, tmp_path):
+    (tmp_path / "sync_meta.json").write_text('{"lastSyncedAt": "2026-10-27T03:00:00+00:00"}')
+
+    assert run() == 0
+
+    meta = json.loads((tmp_path / "sync_meta.json").read_text())
+    assert meta["lastSyncedAt"] == "2026-10-27T03:00:00+00:00"
+    assert meta["shoesCheckedAt"].startswith("20")
+
+
+def test_a_dry_run_or_a_workspace_never_synced_dates_nothing(run, tmp_path):
+    assert run() == 0
+    assert not (tmp_path / "sync_meta.json").exists()
+
+    (tmp_path / "sync_meta.json").write_text('{"lastSyncedAt": "2026-10-27T03:00:00+00:00"}')
+    assert run("--dry-run") == 0
+    assert "shoesCheckedAt" not in json.loads((tmp_path / "sync_meta.json").read_text())

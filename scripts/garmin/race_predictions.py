@@ -8,6 +8,7 @@ from typing import Any
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from .step_warnings import warn
 from repository.history_file import read_history_section, write_history
 
 _DATA_DIR = get_data_dir()
@@ -69,7 +70,7 @@ def sync_race_predictions(client: GarminClient, today: date | None = None) -> in
             lambda: client.get_race_predictions(start.isoformat(), today.isoformat())
         )
     except GarminAPIError as exc:
-        print(f"  Warning: race predictions fetch failed: {exc}")
+        warn("race predictions", f"race predictions fetch failed: {exc}")
         return len(stored)
 
     fetched = merge_days(stored, payload)

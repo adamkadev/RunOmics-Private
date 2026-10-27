@@ -5,7 +5,10 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAthleteProfile, type AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
-import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
+import { getRaceEntriesBackup, getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
+import { getGoalEntriesBackup } from '@/infrastructure/repositories/JsonGoalRepository'
+import { getGoalsRacesEntries } from '@/infrastructure/repositories/FirestoreGoalsRacesRepository'
+import { goalEntryDoc, raceEntryDoc, type GoalEntry, type RaceEntry } from '@/domain/goals/entries'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { getCrossTrainingSessions } from '@/infrastructure/repositories/JsonCrossTrainingRepository'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -104,6 +107,25 @@ async function readNotes(): Promise<Map<string, ActivityNote>> {
   return backup ?? new Map()
 }
 
+function entriesFingerprint(races: readonly RaceEntry[], goals: readonly GoalEntry[]): string {
+  const sorted = <T>(items: [string, T][]) => items.sort(([a], [b]) => a.localeCompare(b))
+  return JSON.stringify([
+    sorted(races.map((entry) => [entry.id, raceEntryDoc(entry)])),
+    sorted(goals.map((entry) => [String(entry.year), goalEntryDoc(entry)])),
+  ])
+}
+
+/** The coach reads the races and goals the pages read, the nightly mirror; an edit made since then is named, not missed. */
+export async function warnOnUnmirroredGoalsRaces(): Promise<boolean> {
+  const live = await getGoalsRacesEntries()
+  if (!live.available) return false
+  const behind = entriesFingerprint(live.races, live.goals) !== entriesFingerprint(getRaceEntriesBackup(), getGoalEntriesBackup())
+  if (behind) {
+    console.warn('[coaching] races or goals were edited in the app since the last sync - run a sync, pull the data, then dump again.')
+  }
+  return behind
+}
+
 export async function getCoachingContext(plan: CoachingPlan | null, referenceDate: string): Promise<CoachingContext> {
   const [trainingStatus, trainingZones, activityNotes, records, wellness] = await Promise.all([
     getTrainingStatus(),
@@ -111,6 +133,7 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
     readNotes(),
     getRecords(),
     readWellness(),
+    warnOnUnmirroredGoalsRaces(),
   ])
   const activities = getAllActivities()
   const athlete = getAthleteProfile()

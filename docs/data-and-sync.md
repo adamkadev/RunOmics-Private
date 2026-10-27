@@ -130,6 +130,24 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   next morning. Without `GARMIN_SECRET`, or when Connect fails, the stored list is kept and a
   failure counts the night as partial. Once garth's token has expired the step is skipped
   (see [After garth](#after-garth)).
+- **Shoe picks** (`shoe_choices.json`). The owner picks a run's shoe on its page (Firestore
+  `runShoes/{activityId}`) and a default shoe on Shoes (`shoeSettings/default`), both owner-only
+  in `firestore.rules`. `GET /api/internal/shoe-choices` returns `{ runs, settings }` and the
+  workflow commits it like the notes. The app reads the copy when it loads the runs: a pick wins
+  over Garmin's shoe, and the default fills a run Garmin gave none, from the pair's first use on.
+  The stored `gearId` is never rewritten, so a pick can be undone and Garmin's answer comes back.
+  A pick counts toward the mileage after the next sync; the owner's own page shows it at once.
+  A pick or a default naming a shoe `shoes.json` does not list is ignored.
+- **Sync report** (`sync_meta.json`). Besides `lastSyncedAt`: `warnings`, each Garmin request a
+  step read around rather than failed on (`{ step, message }`, from `scripts/garmin/step_warnings.py`),
+  dated `warningsAt`, which a quick or single-run sync leaves as the last full sync wrote them;
+  `seriesFreshness`, the newest sample date of each Garmin series file
+  (`scripts/garmin/series_freshness.py`); and `shoesCheckedAt`, the last time Connect answered
+  the gear list. The workflow writes the warnings into the run's summary. Health reports
+  `connectWarnings`, `seriesFreshness` and `staleSeries`, and Settings → Diagnostics lists each
+  series with its newest sample, red with "nothing new since" once it is past
+  `STALE_AFTER_DAYS` (`src/domain/sync/seriesFreshness.ts`). A series the watch never filled reads
+  "never received", not stale. Shoes notes the list's date once it is more than 14 days old.
 - **Run notes and morning check-ins** (`activity_notes.json`, `wellness.json`). Both exist
   only in Firestore otherwise. The workflow reads them through `GET /api/internal/activity-notes`
   and `GET /api/internal/wellness`, sorted so the commit changes only where an entry did, and
@@ -138,8 +156,17 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
 - **Route names and avoid spots** (`route_names.json`, `avoid_spots.json`). Also only in Firestore
   otherwise: one `GET /api/internal/route-data` returns both, sorted by id, and the step writes one
   file each and logs the two counts. Nothing in the app reads them back; they are there to restore.
+- **Races and goals edited in the app** (`race_entries.json`, `goal_entries.json`). Settings →
+  Races & goals writes Firestore `raceEntries` and `goalEntries`; one `GET /api/internal/goals-races`
+  returns both, sorted by id, and the step writes one file each. Unlike the backups above, the app
+  reads them: `getUpcomingRaceYears` lays the race entries over `upcoming_races.json` (a race added
+  in the app, or a Garmin race edited or hidden under its Garmin id), and `getGoalYears` lets a
+  season in `goal_entries.json` replace the same year in `goals.json`. Plan, Today, the race page,
+  Goals and the coach all read through those two, so they agree, and an edit reaches them at the
+  next sync (the Sync button, or the night). The coach's dump warns when Firestore holds edits the
+  mirror lacks.
 - **Restoring from the backups** (`scripts/restore_firestore.mjs`). Puts `activityNotes`, `wellness`,
-  `routeNames` and `avoidSpots` back from those four files, with the Admin SDK. It is a dry run by
+  `routeNames`, `avoidSpots`, `runShoes`, `shoeSettings`, `raceEntries` and `goalEntries` back from those seven files, with the Admin SDK. It is a dry run by
   default: it reads each collection and reports, per collection, how many documents are missing, how
   many differ from the backup and how many already match. `--apply` writes the missing and differing
   ones (a whole-document `set`). It only upserts: a document that is in Firestore but not in the backup
@@ -304,10 +331,10 @@ estimates by VDOT, Records predicts by Riegel and Goals shows none.
 | Training status and load | The local TRIMP estimate after 3 days | Covered (G2) |
 | Threshold pace and pace zones | The VDOT estimate after 8 weeks | Covered (G2) |
 | Race predictions (Race, Records, Goals) | VDOT on Race, Riegel on Records, none on Goals after 14 days | Covered (G2) |
-| Each run's shoe (`gearId`) | None: new runs have no shoe | Open: a default shoe and a picker (G3) |
-| Shoe list (`shoes.json`) | The stored list, frozen | Open (G3) |
+| Each run's shoe (`gearId`) | The default shoe, or the owner's pick on the run page | Covered (G3) |
+| Shoe list (`shoes.json`) | The stored list, frozen; Shoes says since when | Partial (G3) |
 | Garmin calendar (`planned_workouts/`) | The coach's plan on Plan; the morning push still reads the calendar | Partial (N8) |
-| Upcoming races (`upcoming_races.json`) | The stored list, frozen | Open: a goals and races editor (G4) |
+| Upcoming races (`upcoming_races.json`) | The stored list, edited, hidden and added to in Settings → Races & goals | Covered (G4) |
 | Coach workouts sent to the watch | None | Open: Run/Walk settings on Plan, then intervals.icu (G5) |
 | Training load balance | The last stored day, frozen | No fallback |
 | Garmin Coach plan (`training_plan.json`) | The last stored plan, frozen | No fallback |

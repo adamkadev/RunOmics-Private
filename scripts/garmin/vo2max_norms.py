@@ -11,6 +11,7 @@ from typing import Any
 from data_directory import get_data_dir
 from repository.atomic_write import write_text_atomic
 from .client import GarminAPIError, GarminClient
+from .step_warnings import warn
 
 _OUT_PATH = get_data_dir() / "vo2max_norms.json"
 
@@ -29,13 +30,13 @@ def fetch_vo2max_norms(client: GarminClient) -> dict[str, Any] | None:
     try:
         raw = client.get_vo2max_norms()
     except GarminAPIError as exc:
-        print(f"  Warning: VO2max norms fetch failed: {exc}")
+        warn("VO2max norms", f"VO2max norms fetch failed: {exc}")
         return None
 
     try:
         return normalize_vo2max_norms(raw)
     except Vo2maxNormsError as exc:
-        print(f"  Warning: unexpected VO2max norms payload: {exc}")
+        warn("VO2max norms", f"unexpected VO2max norms payload: {exc}")
         return None
 
 
