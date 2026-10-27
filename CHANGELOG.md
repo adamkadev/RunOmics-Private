@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The sync survives garth's token dying (G1). A 401 on the token exchange is
+  `GarminTokenExpired`: the sync writes `connect_status.json`, carries on
+  through the Personal API with exit 0, stops marking new runs gear-pending
+  and skips the shoe list, and the operator gets one push with the runbook.
+  `docs/data-and-sync.md` gains a sunset matrix of every Connect-only feature.
+- Garmin readings stop at an age (G2). Training status older than 3 days
+  gives way to the local estimate on Today and in the overreaching push,
+  threshold pace unchanged for 8 weeks to the VDOT estimate, and race
+  predictions older than 14 days are dropped by Records and Goals as the Race
+  page already did, through one helper.
 - Every push opens its page (R6). A new run, its verdict or a record opens that
   run; shoe wear the shoe; a quartier the map; the morning session and the
   digest the plan; a failed workflow its run on GitHub; token and error alerts

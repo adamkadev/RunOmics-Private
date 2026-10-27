@@ -19,8 +19,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history, vo2max_metrics
 from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminClient
+from garmin.connect_status import record_connect_status
 from garmin.cross_training import sync_cross_training
-from garmin.errors import GarminAPIError, GarminAuthError
+from garmin.errors import GarminAPIError, GarminAuthError, GarminTokenExpired
 from garmin.personal_api import KEY_PAGE, PersonalApiClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
@@ -100,10 +101,10 @@ def main() -> int:
             if api_key
             else None
         )
-        connect = (
-            _open_client(stack, "Garmin Connect", lambda: GarminClient(secret), failed_steps, fallback=personal is not None)
+        connect, connect_expired = (
+            _open_connect(stack, secret, failed_steps, fallback=personal is not None, dry_run=args.dry_run)
             if secret and not quick
-            else None
+            else (None, False)
         )
         # Never None: _open_client raises when there is no fallback.
         client: ActivitySource = personal or connect
@@ -197,7 +198,7 @@ def main() -> int:
                     activity_data,
                     replace=args.force,
                     keep_gear=gear is None,
-                    gear_pending=gear is None and bool(secret),
+                    gear_pending=gear is None and bool(secret) and not connect_expired,
                     keep_zone_bounds=client is personal,
                 )
                 if connect and gear is None:
@@ -248,12 +249,32 @@ def _open_client(
     and the other client can read the runs instead."""
     try:
         return stack.enter_context(open_client())
+    except GarminTokenExpired:
+        raise
     except _SIGN_IN_ERRORS as exc:
         if not fallback:
             raise
         print(f"Warning: {name} sign-in failed ({type(exc).__name__}: {exc}); carrying on without it.")
         failed_steps.append(f"{name} sign-in")
         return None
+
+
+def _open_connect(
+    stack: ExitStack, secret: str, failed_steps: list[str], *, fallback: bool, dry_run: bool
+) -> tuple[GarminClient | None, bool]:
+    """Connect's client, and whether garth's token has expired: then Connect is absent, not failing, so not partial."""
+    try:
+        connect = _open_client(stack, "Garmin Connect", lambda: GarminClient(secret), failed_steps, fallback=fallback)
+    except GarminTokenExpired as exc:
+        if not dry_run:
+            record_connect_status(expired=True)
+        if not fallback:
+            raise
+        print(f"Garmin Connect is gone: {exc}\nCarrying on without it; see 'After garth' in docs/data-and-sync.md.")
+        return None, True
+    if connect and not dry_run:
+        record_connect_status(expired=False)
+    return connect, False
 
 
 def _fetch_gear(connect: GarminClient, activity_id: str, *, required: bool) -> list[dict] | None:

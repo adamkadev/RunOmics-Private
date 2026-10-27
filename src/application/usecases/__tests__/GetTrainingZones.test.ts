@@ -13,6 +13,18 @@ vi.mock('@/infrastructure/repositories/JsonRaceResultRepository', () => ({
   getOfficialRaceResults: vi.fn(() => []),
 }))
 
+vi.mock('@/infrastructure/repositories/JsonAthleteHistoryRepository', () => ({
+  getAthleteHistory: vi.fn(() => []),
+}))
+
+vi.mock('@/infrastructure/repositories/JsonThresholdHistoryRepository', () => ({
+  getThresholdSamples: vi.fn(() => []),
+}))
+
+const RECENT_MILE = [
+  { id: 'recent', date: '2026-10-13', type: 'Base', sport: 'running', bestEfforts: { '1k': 421.6, '1mile': 731.9 } },
+] as unknown as Activity[]
+
 describe('getTrainingZones', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -81,5 +93,78 @@ describe('getTrainingZones', () => {
     expect(byKey.easy!.paceMinSecPerKm).toBeGreaterThan(byKey.marathon!.paceMinSecPerKm)
     expect(byKey.marathon!.paceMinSecPerKm).toBeGreaterThan(byKey.threshold!.paceMinSecPerKm)
     expect(byKey.threshold!.paceMinSecPerKm).toBeGreaterThan(byKey.vo2max!.paceMinSecPerKm)
+  })
+
+  it("keeps the watch's threshold pace for eight weeks after it last changed", async () => {
+    const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+    const { getThresholdSamples } = await import('@/infrastructure/repositories/JsonThresholdHistoryRepository')
+    vi.mocked(getAthleteProfile).mockReturnValue({ thresholdPaceSecPerKm: 280 })
+    vi.mocked(getThresholdSamples).mockReturnValue([{ date: '2026-09-01', thresholdPaceSecPerKm: 280 }])
+
+    const { getTrainingZones } = await import('../GetTrainingZones')
+    const result = await getTrainingZones('2026-10-27')
+
+    expect(result?.thresholdPaceSecPerKm).toBe(280)
+    expect(result?.estimate).toBeUndefined()
+  })
+
+  it("estimates by VDOT once the watch's threshold pace is more than eight weeks old", async () => {
+    const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+    const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')
+    const { getThresholdSamples } = await import('@/infrastructure/repositories/JsonThresholdHistoryRepository')
+    vi.mocked(getAthleteProfile).mockReturnValue({ thresholdPaceSecPerKm: 280 })
+    vi.mocked(getAllActivities).mockReturnValue(RECENT_MILE)
+    vi.mocked(getThresholdSamples).mockReturnValue([{ date: '2026-08-31', thresholdPaceSecPerKm: 280 }])
+
+    const { getTrainingZones } = await import('../GetTrainingZones')
+    const result = await getTrainingZones('2026-10-27')
+
+    expect(result?.thresholdPaceSecPerKm).toBe(498)
+    expect(result?.estimate).toMatchObject({ effort: '1mile', date: '2026-10-13' })
+  })
+
+  it('does not count a weight change in the athlete history as a fresh threshold pace', async () => {
+    const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+    const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')
+    const { getAthleteHistory } = await import('@/infrastructure/repositories/JsonAthleteHistoryRepository')
+    vi.mocked(getAthleteProfile).mockReturnValue({ thresholdPaceSecPerKm: 280 })
+    vi.mocked(getAllActivities).mockReturnValue(RECENT_MILE)
+    vi.mocked(getAthleteHistory).mockReturnValue([
+      { date: '2026-06-01', thresholdPaceSecPerKm: 280, weightKg: 70 },
+      { date: '2026-10-20', thresholdPaceSecPerKm: 280, weightKg: 69 },
+    ])
+
+    const { getTrainingZones } = await import('../GetTrainingZones')
+    expect((await getTrainingZones('2026-10-27'))?.estimate).toBeDefined()
+  })
+
+  it("keeps the watch's threshold pace when no history dates it", async () => {
+    const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+    const { getAthleteHistory } = await import('@/infrastructure/repositories/JsonAthleteHistoryRepository')
+    const { getThresholdSamples } = await import('@/infrastructure/repositories/JsonThresholdHistoryRepository')
+    vi.mocked(getAthleteProfile).mockReturnValue({ thresholdPaceSecPerKm: 280 })
+    vi.mocked(getAthleteHistory).mockReturnValue([])
+    vi.mocked(getThresholdSamples).mockReturnValue([])
+
+    const { getTrainingZones } = await import('../GetTrainingZones')
+    expect((await getTrainingZones('2026-10-27'))?.thresholdPaceSecPerKm).toBe(280)
+  })
+})
+
+describe('thresholdPaceSince', () => {
+  it('dates the current pace from the sample where it took that value', async () => {
+    const { thresholdPaceSince } = await import('../GetTrainingZones')
+    const samples = [
+      { date: '2026-03-01', thresholdPaceSecPerKm: 290 },
+      { date: '2026-05-01', thresholdPaceSecPerKm: 280 },
+      { date: '2026-07-01' },
+      { date: '2026-09-01', thresholdPaceSecPerKm: 280 },
+    ]
+    expect(thresholdPaceSince(samples, 280)).toBe('2026-05-01')
+  })
+
+  it('gives null when the latest sample disagrees with the current pace', async () => {
+    const { thresholdPaceSince } = await import('../GetTrainingZones')
+    expect(thresholdPaceSince([{ date: '2026-05-01', thresholdPaceSecPerKm: 290 }], 280)).toBeNull()
   })
 })

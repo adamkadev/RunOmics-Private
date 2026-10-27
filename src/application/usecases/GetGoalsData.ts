@@ -5,7 +5,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
-import { getGarminRacePredictions } from './GetGarminRacePredictions'
+import { freshGarminPredictions, getGarminRacePredictions } from './GetGarminRacePredictions'
 import { DISTANCE_KEY, getRecords } from './GetRecords'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
 import { DAY_MS, addDays, appTodayIso, isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -289,18 +289,18 @@ export async function getCurrentWeeklyGoal(today: string = appTodayIso()): Promi
   return computeWeeklyGoal(getAllActivities(), year, goals, now)
 }
 
-async function getGoalPredictions(): Promise<GoalRacePrediction[]> {
-  const garmin = getGarminRacePredictions()
-  if (!garmin) return []
+async function getGoalPredictions(today: string): Promise<GoalRacePrediction[]> {
+  const latest = freshGarminPredictions(getGarminRacePredictions(), today)
+  if (Object.keys(latest).length === 0) return []
 
   const records = await getRecords()
   const recordByKey = new Map(records.map((r) => [r.key, r]))
 
-  return RACE_DISTANCES.filter((key) => garmin.latest[key] != null).map((key) => {
+  return RACE_DISTANCES.filter((key) => latest[key] != null).map((key) => {
     const record = recordByKey.get(key)
     return {
       key,
-      predictedSeconds: garmin.latest[key]!,
+      predictedSeconds: latest[key]!,
       actualSeconds: record?.seconds ?? null,
       actualDate: record?.date ?? null,
     }
@@ -312,7 +312,7 @@ export async function getGoalsPageData(today: string = appTodayIso()): Promise<G
   const upcomingRaceYears = getUpcomingRaceYears()
   const goalYears = getGoalYears()
   const pbYears = getPbYears()
-  const predictions = await getGoalPredictions()
+  const predictions = await getGoalPredictions(today)
   const plannedByMonth = plannedKmByMonth(await getPlannedWorkouts())
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))

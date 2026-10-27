@@ -120,7 +120,8 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
 - **Shoes** (`shoes.json`). The nightly workflow runs `scripts/sync_shoes.py` after the sync,
   through WARP like every garth call, so a pair added or retired in Garmin Connect shows the
   next morning. Without `GARMIN_SECRET`, or when Connect fails, the stored list is kept and a
-  failure counts the night as partial.
+  failure counts the night as partial. Once garth's token has expired the step is skipped
+  (see [After garth](#after-garth)).
 - **Run notes and morning check-ins** (`activity_notes.json`, `wellness.json`). Both exist
   only in Firestore otherwise. The workflow reads them through `GET /api/internal/activity-notes`
   and `GET /api/internal/wellness`, sorted so the commit changes only where an entry did, and
@@ -176,12 +177,12 @@ off. A device registered before categories existed has none stored and keeps get
 | `training` | The morning session or rest day, the Monday digest, the Friday goal check-in, a new run, the AI verdict of a run that just landed, an overreaching alert |
 | `shoes` | Shoe wear |
 | `records` | A new record, a quartier past 90 % |
-| `always` | A failed workflow, a stale sync, a data token or the Garmin key about to expire, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
+| `always` | A failed workflow, a stale sync, a data token or the Garmin key about to expire, garth's token found expired, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
 
 **Operator alerts leave the athlete's deployment.** A second athlete's deployment registers
 her devices, so an `always` push about a dead token or a failed workflow reaches her and not
-the person who can fix it. `sendOpsPush` carries those four - a failed workflow, a data token
-about to expire, the digest of phone errors and the coaching-block reminder - and with
+the person who can fix it. `sendOpsPush` carries those five - a failed workflow, a data token
+about to expire, garth's token found expired, the digest of phone errors and the coaching-block reminder - and with
 `OPS_PUSH_URL` and `OPS_PUSH_SECRET` set it POSTs them to the operator's own deployment at
 `/api/internal/ops-push` instead of pushing locally. That route is the one internal route
 guarded by `OPS_PUSH_SECRET` rather than `INTERNAL_NOTIFY_SECRET`, so the second deployment
@@ -210,6 +211,64 @@ link and gets its tag prefixed with the sending profile.
 | An overreaching alert | `/analytics` | `overreaching` |
 | A failed workflow | Its run on GitHub | `workflow-failure:<workflow>` |
 | A token or the Garmin key about to expire, a refused nightly dispatch, a stale sync, the digest of phone errors | `/settings` | `token-expiry`, `garmin-key-expiry`, `sync-dispatch-refused`, `stale-sync`, `client-errors` |
+| garth's token found expired | `/settings` | `connect-expired` |
+
+## After garth
+
+garth's OAuth1 token can no longer be minted (Garmin changed its login in March 2026) and dies
+about a year after it was minted, on a date nothing can read. The Personal API key carries the
+runs on; everything only Connect's private API serves stops.
+
+**What the sync does the night the token dies.** `GarminClient` raises `GarminTokenExpired` when
+Garmin answers the token exchange with a 401. A 403 (Cloudflare refusing a datacenter IP, as
+when WARP is down), a 5xx or a network error stays a plain `GarminAuthError`: a partial night,
+tried again tomorrow. On an expired token `sync.py`:
+
+- writes `connect_status.json` as `{"state": "expired", "since": "<the day>"}` and keeps that
+  day on later nights;
+- carries on without Connect and exits 0, so the night is not partial and sends no failure push;
+- stores new runs without `gearPending`, as no shoe will ever come for them;
+- and the workflow skips *Sync shoes*, then, once the data commit has landed, posts the day to
+  `POST /api/internal/connect-expired`. That route sends one operator push (`sendOpsPush`, so
+  the second deployment's alert reaches the operator) with this runbook. The next night reads
+  `expired` from the data repository and stays quiet.
+
+Without a Personal API key nothing can read the runs, so the sync still stops with exit 1
+after recording the expiry. A token that works again turns the file to `{"state": "active"}`;
+a deployment that never lost Connect has no file.
+
+**Runbook.** Confirm with `npm run coach:garmin-auth`. If a working way to mint a token exists
+(see *Optional: the garth token* in README.md), put the new token in the profile's
+`GARMIN_SECRET`; the next night records Connect active again. If not, leave `GARMIN_SECRET` as
+it is: each night tries once, costs nothing, and Connect comes back on its own if it can.
+
+**Readings mirrored from Connect stop at an age** (`src/domain/sync/garminReadings.ts`), so a
+frozen file never reads as current. Training status counts for 3 days, then Today and the
+overreaching push use the local estimate. Threshold pace counts for 8 weeks from the day it
+last changed (in `threshold_history.json` or `athlete_history.json`), then the pace zones and
+the coach use the VDOT estimate. Race predictions count for 14 days, then the Race page
+estimates by VDOT, Records predicts by Riegel and Goals shows none.
+
+### Sunset matrix
+
+| Connect-only feature | Without Connect | Status |
+|---|---|---|
+| Runs, FIT tracks, HR zones, resting HR, other training, recovery | The Personal API | Covered |
+| Lactate threshold HR | The Personal API's zone settings | Covered |
+| VO₂max history | The runs' own FIT readings (`sync_vo2max_from_runs`) | Covered |
+| Training status and load | The local TRIMP estimate after 3 days | Covered (G2) |
+| Threshold pace and pace zones | The VDOT estimate after 8 weeks | Covered (G2) |
+| Race predictions (Race, Records, Goals) | VDOT on Race, Riegel on Records, none on Goals after 14 days | Covered (G2) |
+| Each run's shoe (`gearId`) | None: new runs have no shoe | Open: a default shoe and a picker (G3) |
+| Shoe list (`shoes.json`) | The stored list, frozen | Open (G3) |
+| Garmin calendar (`planned_workouts/`) | The coach's plan on Plan; the morning push still reads the calendar | Partial (N8) |
+| Upcoming races (`upcoming_races.json`) | The stored list, frozen | Open: a goals and races editor (G4) |
+| Coach workouts sent to the watch | None | Open: Run/Walk settings on Plan, then intervals.icu (G5) |
+| Training load balance | The last stored day, frozen | No fallback |
+| Garmin Coach plan (`training_plan.json`) | The last stored plan, frozen | No fallback |
+| Fitness age history | The last stored values, frozen | No fallback |
+| Sex, height, the watch | `athlete.json` as stored | Kept as stored |
+| VO₂max norms | `vo2max_norms.json` as stored | Kept as stored |
 
 ## Garmin write path (coaching sync)
 

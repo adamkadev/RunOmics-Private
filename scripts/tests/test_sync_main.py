@@ -10,7 +10,7 @@ import httpx
 import pytest
 
 import sync
-from garmin.client import GarminAPIError, GarminAuthError, GarminClient
+from garmin.client import GarminAPIError, GarminAuthError, GarminClient, GarminTokenExpired
 from repository.json_store import JsonActivityStore
 
 # Every step main() runs besides the activities, under the names it imports them as; here they only record that they ran.
@@ -555,3 +555,88 @@ class TestVo2maxWithoutConnect:
 
         athlete = json.loads((workspace / "athlete.json").read_text())
         assert (athlete["vo2maxMlKgMin"], athlete["vmaKmh"]) == (38.0, 10.9)
+
+
+def _expired(_secret):
+    raise GarminTokenExpired("Token refresh failed: 401 Client Error")
+
+
+def _connect_status(workspace) -> dict:
+    return json.loads((workspace / "connect_status.json").read_text())
+
+
+class TestExpiredConnect:
+    def test_the_runs_come_from_the_key_the_night_is_clean_and_the_expiry_is_recorded(
+        self, workspace, personal, steps, monkeypatch, capsys
+    ):
+        monkeypatch.setenv("GARMIN_SECRET", "expired")
+        monkeypatch.setattr(sync, "GarminClient", _expired)
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert steps == _PERSONAL_ONLY_STEPS
+        assert _connect_status(workspace) == {"state": "expired", "since": date.today().isoformat()}
+        assert "Garmin Connect sign-in" not in capsys.readouterr().out
+
+    def test_no_new_run_waits_for_a_shoe_connect_will_never_send(self, workspace, personal, steps, monkeypatch):
+        monkeypatch.setenv("GARMIN_SECRET", "expired")
+        monkeypatch.setattr(sync, "GarminClient", _expired)
+
+        assert _run(monkeypatch) == 0
+
+        assert JsonActivityStore(workspace / "activities").get_gear_pending_ids() == []
+
+    def test_later_nights_keep_the_day_it_was_first_found(self, workspace, personal, steps, monkeypatch):
+        (workspace / "connect_status.json").write_text('{"state": "expired", "since": "2026-11-03"}')
+        monkeypatch.setenv("GARMIN_SECRET", "expired")
+        monkeypatch.setattr(sync, "GarminClient", _expired)
+
+        assert _run(monkeypatch) == 0
+
+        assert _connect_status(workspace)["since"] == "2026-11-03"
+
+    def test_a_new_token_brings_connect_back(self, workspace, personal, garmin, steps, monkeypatch):
+        (workspace / "connect_status.json").write_text('{"state": "expired", "since": "2026-11-03"}')
+        monkeypatch.setenv("GARMIN_SECRET", "renewed")
+
+        assert _run(monkeypatch) == 0
+
+        assert _connect_status(workspace)["state"] == "active"
+        assert steps[-1] == "sync_training_plan"
+
+    def test_a_connect_that_signs_in_writes_no_status(self, workspace, garmin, steps, monkeypatch):
+        assert _run(monkeypatch) == 0
+
+        assert not (workspace / "connect_status.json").exists()
+
+    def test_another_sign_in_failure_is_still_a_partial_night_and_not_an_expiry(
+        self, workspace, personal, steps, monkeypatch
+    ):
+        def unreachable(_secret):
+            raise GarminAuthError("Token refresh failed: 403 Forbidden")
+
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        monkeypatch.setattr(sync, "GarminClient", unreachable)
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert not (workspace / "connect_status.json").exists()
+
+    def test_a_dry_run_records_nothing(self, workspace, personal, steps, monkeypatch):
+        monkeypatch.setenv("GARMIN_SECRET", "expired")
+        monkeypatch.setattr(sync, "GarminClient", _expired)
+
+        assert _run(monkeypatch, "--dry-run") == 0
+
+        assert not (workspace / "connect_status.json").exists()
+
+    def test_without_a_key_nothing_can_read_the_runs_so_it_stops_with_the_expiry_recorded(
+        self, workspace, monkeypatch
+    ):
+        monkeypatch.setattr(sync, "GarminClient", _expired)
+
+        with pytest.raises(GarminTokenExpired):
+            _run(monkeypatch)
+
+        assert _connect_status(workspace)["state"] == "expired"
