@@ -46,20 +46,19 @@ function walkRun(date: string, reps: number, minutes: number, run = PACE, walk: 
     title: `Easy · ${reps} × ${minutes}′`,
     shortName: `Easy ${reps}×${minutes}′`,
     structure: { reps, repMinutes: minutes },
-    description: 'Run and walk by time, at a pace that leaves breath to talk.',
+    description: 'Stop and see the physio on any pain at the injured site.',
     blocks: [
       { kind: 'warmup', target: { durationSeconds: 300 } },
       {
         kind: 'repeat',
         repetitions: reps,
         steps: [
-          { kind: 'effort', target: { durationSeconds: minutes * 60, ...run }, notes: ['Above 165, walk until back under 145.'] },
+          { kind: 'effort', target: { durationSeconds: minutes * 60, ...run } },
           { kind: 'recovery', target: { durationSeconds: 60, ...walk } },
         ],
       },
       { kind: 'cooldown', target: { durationSeconds: 300 } },
     ],
-    notes: ['Stop and see the physio on any pain at the injured site.'],
   }
 }
 
@@ -74,11 +73,12 @@ const returnBlock = (run = PACE, walk: WorkoutTarget = {}): CoachingPlanDraft =>
   ],
 })
 
-const validate = (athlete: AthleteProfile, draft = returnBlock()) => () => validateBootstrapDraft(draft, {
+const validate = (athlete: AthleteProfile, draft = returnBlock(), guidance?: string) => () => validateBootstrapDraft(draft, {
   availableWeekdays: [3, 5, 0],
   runsPerWeek: 3,
   context: context(athlete),
   events: { primary: null, tuneUps: [], planningStartDate: '2026-04-27' },
+  ...(guidance ? { guidance } : {}),
 })
 
 describe('a return to running', () => {
@@ -134,5 +134,29 @@ describe('a return to running', () => {
     expect(watchTargets(returnBlock())).toEqual(['pace.zone', 'no.target'])
     expect(validate({ trainingBreaks: [injury] }, returnBlock(PACE, PACE))).toThrow(/walk break in a return carries no pace/)
     expect(validate({ trainingBreaks: [injury] }, returnBlock({ ...PACE, ...ZONE_2 }))).toThrow(/heart-rate zone or its pace range, not both/)
+  })
+
+  it('keeps notes off the steps and the workout, so the watch shows one line', () => {
+    const noted = (change: (workout: BootstrapWorkoutDraft) => BootstrapWorkoutDraft): CoachingPlanDraft => {
+      const draft = returnBlock()
+      return { ...draft, weeks: draft.weeks.map((week) => ({ ...week, workouts: week.workouts.map(change) })) }
+    }
+
+    expect(validate({ trainingBreaks: [injury] }, noted((workout) => ({ ...workout, notes: ['Talk in full sentences.'] })))).toThrow(/one-line description/)
+    expect(validate({ trainingBreaks: [injury] }, noted((workout) => ({ ...workout, blocks: [{ kind: 'warmup', target: { durationSeconds: 300 }, notes: ['Brisk walk.'] }, ...workout.blocks.slice(1)] })))).toThrow(/step in a return carries no notes/)
+  })
+
+  it('accepts the stop rule by default, and refuses one anywhere when the guidance asks for no stop signals', () => {
+    const noStopSignals = 'Write no stop signals or symptom warnings in sessions, descriptions or focus.'
+    const described = (description: string, focus = 'Four-minute runs.'): CoachingPlanDraft => {
+      const draft = returnBlock()
+      return { ...draft, weeks: draft.weeks.map((week, index) => ({ ...week, ...(index === 0 ? { focus } : {}), workouts: week.workouts.map((workout) => ({ ...workout, description })) })) }
+    }
+
+    expect(validate({ trainingBreaks: [injury] })).not.toThrow()
+    expect(validate({ trainingBreaks: [injury] }, returnBlock(), noStopSignals)).toThrow(/asks for no stop signals/)
+    expect(validate({ trainingBreaks: [injury] }, described('Course continue, marche si besoin.'), noStopSignals)).not.toThrow()
+    expect(validate({ trainingBreaks: [injury] }, described('Arrête si fuite, pesanteur ou douleur.'), noStopSignals)).toThrow(/workouts\[0\]: the guidance asks/)
+    expect(validate({ trainingBreaks: [injury] }, described('Easy, walk when you need to.', 'Stop on any leaking.'), noStopSignals)).toThrow(/weeks\[0\]\.focus/)
   })
 })
