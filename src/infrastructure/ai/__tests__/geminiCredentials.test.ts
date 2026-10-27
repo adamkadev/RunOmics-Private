@@ -72,7 +72,7 @@ function context() {
 }
 
 function evaluate() {
-  return new GeminiCoachingAdvisor().evaluateActivity({ context: context(), activity: activity(), prescription: null })
+  return new GeminiCoachingAdvisor().evaluateActivity({ context: context(), effectiveDate: '2026-09-08', activity: activity(), prescription: null })
 }
 
 async function coachingFailure(): Promise<string> {

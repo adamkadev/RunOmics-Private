@@ -209,7 +209,7 @@ link and gets its tag prefixed with the sending profile.
 | The Friday goal check-in | `/goals` | `weekly-goal` |
 | An overreaching alert | `/analytics` | `overreaching` |
 | A failed workflow | Its run on GitHub | `workflow-failure:<workflow>` |
-| A token or the Garmin key about to expire, a stale sync, the digest of phone errors | `/settings` | `token-expiry`, `garmin-key-expiry`, `stale-sync`, `client-errors` |
+| A token or the Garmin key about to expire, a refused nightly dispatch, a stale sync, the digest of phone errors | `/settings` | `token-expiry`, `garmin-key-expiry`, `sync-dispatch-refused`, `stale-sync`, `client-errors` |
 
 ## Garmin write path (coaching sync)
 

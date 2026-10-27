@@ -18,7 +18,8 @@ so planning further ahead is guessing about a state that has not happened.
 
 ## Generating a block
 
-The coaching CLI renders the whole prompt to a file, so no API key is involved:
+Every coach command renders the whole prompt to a file by default (`.coach-previews/coach-prompt.md`
+without `--prompt-out`), so no API key is involved; `--advisor gemini` is the opt-in exception:
 
 ```bash
 npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 \
@@ -39,6 +40,10 @@ npm run coach -- bootstrap --days ... --runs-per-week 5 --from-answer answer.jso
 
 A rejected plan rewrites the prompt with the reason attached, ready to answer
 again. Apply the preview it prints with `npm run coach -- --apply <path>`.
+
+`weekly-review` and `evaluate --activity <id|latest>` work the same way: the prompt
+asks for a KEEP, ADJUST or REPLAN recommendation, gives the weeks left in the block
+up to its end date, and a rejected answer comes back with the reason.
 
 Add `--general` for a block written toward no race: the full four weeks, base
 rules throughout, and any race inside it run as a supporting one. It is also

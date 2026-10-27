@@ -21,10 +21,9 @@ function usage(): string {
     'RunOmics coaching preview/apply',
     '',
     '  npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 [--race <id|name> | --general]',
-    '  npm run coach -- bootstrap --days ... --runs-per-week 5 --prompt-out coach-prompt.md',
     '  npm run coach -- bootstrap --days ... --runs-per-week 5 --from-answer answer.json',
-    '  npm run coach -- evaluate --activity <id|latest>',
-    '  npm run coach -- weekly-review',
+    '  npm run coach -- evaluate --activity <id|latest> [--from-answer answer.json]',
+    '  npm run coach -- weekly-review [--from-answer answer.json]',
     '  npm run coach -- autoregulate   (after each threshold session: proposes, never applies)',
     '  npm run coach -- --apply .coach-previews/<proposal>.json',
     '',
@@ -40,8 +39,10 @@ function usage(): string {
     '  --guidance-file <path> Athlete instructions for bootstrap, in place of the data',
     '                     workspace\'s coaching/guidance.md (read by default).',
     '  --context-out <path> Save the compact bootstrap context for inspection.',
-    '  --prompt-out <path> Write the coaching prompt to paste into a chat instead of calling the API.',
-    '  --from-answer <path> Build the proposal from a chat reply saved as JSON.',
+    '  --prompt-out <path> Where to write the coaching prompt for Claude Code',
+    '                     (default: <out>/coach-prompt.md).',
+    '  --from-answer <path> Build the proposal from the reply to that prompt, saved as JSON.',
+    '  --advisor gemini   Ask Gemini (GEMINI_COACH_API_KEY) instead of writing the prompt.',
     '  --reference-date <YYYY-MM-DD> Reproduce coaching at a specified date.',
     '  --replace          Supersede the active plan instead of refusing. The outgoing',
     '                     plan is kept under coaching/superseded/.',
@@ -85,20 +86,23 @@ function requestedRuns(args: string[], fallback: number | undefined): number {
   return Number(raw)
 }
 
-interface ManualPaths {
-  promptPath: string
-  answerPath: string | undefined
-}
+type AdvisorChoice =
+  | { kind: 'manual'; promptPath: string; answerPath: string | undefined }
+  | { kind: 'gemini' }
 
-/** The prompt is only needed again if a pasted answer is rejected, so it has a default. */
-function manualPaths(args: string[]): ManualPaths | undefined {
+function advisorChoice(args: string[]): AdvisorChoice {
+  const advisor = option(args, '--advisor') ?? 'manual'
   const promptOut = option(args, '--prompt-out')
   const answer = option(args, '--from-answer')
-  if (!promptOut && !answer) return undefined
+
+  if (advisor === 'gemini') {
+    if (promptOut || answer) throw new Error('--advisor gemini asks the API; drop --prompt-out and --from-answer')
+    return { kind: 'gemini' }
+  }
+  if (advisor !== 'manual') throw new Error(`Unknown --advisor ${advisor}: use gemini, or leave it out for the manual prompt`)
 
   const promptPath = path.resolve(promptOut ?? path.join(option(args, '--out') ?? '.coach-previews', 'coach-prompt.md'))
-  fs.mkdirSync(path.dirname(promptPath), { recursive: true })
-  return { promptPath, answerPath: answer ? path.resolve(answer) : undefined }
+  return { kind: 'manual', promptPath, answerPath: answer ? path.resolve(answer) : undefined }
 }
 
 /** guidance.md keeps what a hand-guided block was told, so the next renewal is told it too. */
@@ -129,8 +133,9 @@ async function createProposal(command: string, args: string[]) {
   const { getAllActivities } = await interopImport(import('@/infrastructure/repositories/JsonActivityRepository'))
 
   const repository = new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR)
-  const manual = manualPaths(args)
-  const advisor = manual ? new ManualCoachingAdvisor(manual.promptPath, manual.answerPath) : new GeminiCoachingAdvisor()
+  const choice = advisorChoice(args)
+  if (choice.kind === 'manual') fs.mkdirSync(path.dirname(choice.promptPath), { recursive: true })
+  const advisor = choice.kind === 'manual' ? new ManualCoachingAdvisor(choice.promptPath, choice.answerPath) : new GeminiCoachingAdvisor()
   const currentPlan = repository.getCurrentPlan()
 
   if (command === 'bootstrap') {
@@ -269,10 +274,10 @@ function printPasteInstructions(promptPath: string, answerPath: string | undefin
   const bytes = fs.statSync(promptPath).size
   console.log(`\nCoaching prompt written to ${promptPath} (${Math.ceil(bytes / 1024)} KB).`)
   if (answerPath) {
-    console.log('The pasted plan was rejected; the prompt above now carries the reason.')
-    console.log(`Paste it into the same chat and overwrite ${answerPath} with the corrected reply.`)
+    console.log('The answer was rejected; the prompt above now carries the reason.')
+    console.log(`Hand it to Claude Code again and overwrite ${answerPath} with the corrected reply.`)
   } else {
-    console.log('Paste it into a chat, save the JSON reply, then run the same command again with:')
+    console.log('Hand it to Claude Code, save the JSON reply, then run the same command again with:')
     console.log('  --from-answer <path to the saved reply>')
   }
   console.log('It contains your health data - keep it out of anything you would not trust with that.')

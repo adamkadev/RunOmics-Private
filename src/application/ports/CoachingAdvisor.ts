@@ -73,15 +73,22 @@ export interface AdvisorRecommendation {
   changes: AdvisorPlanChange[]
 }
 
+export interface WeeklyReviewRequest {
+  context: CoachingContext
+  /** The first day a change may touch; earlier sessions are fixed. */
+  effectiveDate: string
+  guidance?: string
+}
+
+export interface ActivityEvaluationRequest extends WeeklyReviewRequest {
+  activity: Activity
+  prescription: WorkoutPrescription | null
+}
+
 export interface CoachingAdvisor {
   /** Recorded as the advice's provenance; Gemini when unsaid. */
   readonly source?: CoachingProvenance['source']
   bootstrap(request: BootstrapRequest): Promise<CoachingPlanDraft>
-  evaluateActivity(input: {
-    context: CoachingContext
-    activity: Activity
-    prescription: WorkoutPrescription | null
-    guidance?: string
-  }): Promise<AdvisorRecommendation>
-  reviewWeek(input: { context: CoachingContext; guidance?: string }): Promise<AdvisorRecommendation>
+  evaluateActivity(input: ActivityEvaluationRequest): Promise<AdvisorRecommendation>
+  reviewWeek(input: WeeklyReviewRequest): Promise<AdvisorRecommendation>
 }

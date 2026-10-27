@@ -472,7 +472,7 @@ jobs:
           # Gemini. Name what this deployment lacks, rather than leave a row of 500s
           # to be read backwards. Health reports names only, never values.
           MISSING=$(printf 'x-internal-secret: %s\n' "$SECRET" \
-            | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+            | curl -sS --max-time 20 "$APP_URL/api/internal/health" -H @- \
             | python -c "import json,sys; i=json.load(sys.stdin).get('integrations') or {}; print(' '.join(k for k in ('firebaseAdmin', 'gemini') if i.get(k) is False))" 2>/dev/null || true)
           if [ -n "$MISSING" ]; then
             echo "::warning::This deployment has no credentials for: $MISSING."
@@ -480,7 +480,7 @@ jobs:
           # Routes are stored as recorded, start and finish included: on a public
           # site, anyone sees where every run begins.
           PUBLIC=$(printf 'x-internal-secret: %s\n' "$SECRET" \
-            | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+            | curl -sS --max-time 20 "$APP_URL/api/internal/health" -H @- \
             | python -c "import json,sys; print('yes' if (json.load(sys.stdin).get('integrations') or {}).get('privateSite') is False else '')" 2>/dev/null || true)
           if [ -n "$PUBLIC" ]; then
             echo "::warning::This deployment is public and serves every route in full, start and finish included. Set RUNOMICS_PRIVATE=1."

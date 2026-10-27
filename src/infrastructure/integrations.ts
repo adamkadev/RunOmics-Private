@@ -7,8 +7,10 @@ export interface IntegrationStatus {
   firebaseAdmin: boolean
   /** The AI insight pass. */
   gemini: boolean
-  /** The owner's Sync button. Optional: nothing else depends on it. */
+  /** The owner's Sync button, and the nightly sync's dispatch from Vercel Cron. */
   syncButton: boolean
+  /** Every Vercel Cron job: without it each scheduled call is refused, and nothing says so. */
+  cron: boolean
   /**
    * The site answers only to the owner and invited viewers. Not a credential,
    * but the sync's check reads it from here: routes are stored as recorded,
@@ -28,6 +30,7 @@ export function integrationStatus(env: Readonly<Record<string, string | undefine
       : set('FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'),
     gemini: set('GEMINI_API_KEY'),
     syncButton: set('GITHUB_SYNC_TOKEN', 'GITHUB_SYNC_REPO'),
+    cron: set('CRON_SECRET'),
     privateSite: isSitePrivate(env),
     routing: set('ORS_API_KEY'),
   }

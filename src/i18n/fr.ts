@@ -1807,6 +1807,10 @@ export const fr = {
       title: (name: string) => `${name} exploré`,
       body: (pct: string, done: number, total: number) => `${pct} de ses rues parcourues. ${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}.`,
     },
+    syncDispatchRefused: {
+      title: 'La synchro de nuit n’a pas démarré',
+      body: (status: number) => `GitHub a refusé son lancement (${status}). Vérifie le jeton et le dépôt du bouton Sync dans Vercel.`,
+    },
     tokenExpiring: {
       names: { dataActions: 'le jeton de données (GitHub Actions)', dataVercel: 'le jeton de données (Vercel)', syncVercel: 'le jeton du bouton Sync (Vercel)' },
       title: (days: number) => (days <= 0 ? 'Un jeton GitHub expire aujourd’hui' : `Un jeton GitHub expire dans ${days} jour${days === 1 ? '' : 's'}`),
