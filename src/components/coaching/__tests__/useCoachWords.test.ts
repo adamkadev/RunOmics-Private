@@ -1,0 +1,53 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { CoachWords } from '@/application/coaching/GetCoachWords'
+import { COACH_WORDS_PATH, forgetCoachWords, readCoachWords, sessionWords, weekFocus } from '../useCoachWords'
+
+const WORDS: CoachWords = {
+  block: { name: 'Reprise en douceur', focus: 'Trois sorties par semaine.' },
+  weeks: [
+    { startDate: '2026-09-07', endDate: '2026-09-13', focus: 'On démarre doucement.' },
+    { startDate: '2026-09-14', endDate: '2026-09-20', focus: '' },
+  ],
+  sessions: {
+    'run-walk': { description: 'Course très lente, 1 minute de marche.', notes: ['Passe à la marche au moindre doute.'] },
+    'easy-run': { description: 'Easy run', notes: [] },
+  },
+}
+
+describe('the coach’s words', () => {
+  afterEach(() => {
+    forgetCoachWords()
+    vi.unstubAllGlobals()
+  })
+
+  it('finds the focus of the week a day falls in', () => {
+    expect(weekFocus(WORDS, '2026-09-09')).toBe('On démarre doucement.')
+    expect(weekFocus(WORDS, '2026-09-15')).toBeNull()
+    expect(weekFocus(WORDS, '2026-10-01')).toBeNull()
+    expect(weekFocus(null, '2026-09-09')).toBeNull()
+  })
+
+  it('drops a description that only repeats the session’s title', () => {
+    expect(sessionWords(WORDS, 'run-walk', 'Footing · 3 × 3′')).toEqual(WORDS.sessions['run-walk'])
+    expect(sessionWords(WORDS, 'easy-run', 'Easy run.')).toBeNull()
+    expect(sessionWords(WORDS, 'garmin:2026-09-09:Easy', 'Easy')).toBeNull()
+  })
+
+  it('asks the server once for every reader, and reads a refusal as none', async () => {
+    const fetch = vi.fn(async () => Response.json({ available: true, ...WORDS }))
+    vi.stubGlobal('fetch', fetch)
+    const [first, second] = await Promise.all([readCoachWords(), readCoachWords()])
+    expect(first).toEqual(WORDS)
+    expect(second).toBe(first)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch).toHaveBeenCalledWith(COACH_WORDS_PATH)
+
+    forgetCoachWords()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Sign in required', { status: 401 })))
+    expect(await readCoachWords()).toBeNull()
+
+    forgetCoachWords()
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ available: false })))
+    expect(await readCoachWords()).toBeNull()
+  })
+})

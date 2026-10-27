@@ -48,3 +48,36 @@ test('no run in the list reads VO2 max', async ({ page, t }) => {
   await expect(page.getByTestId('thumb-row').first()).toBeVisible()
   await expect(page.locator('main')).not.toContainText(t.activityTypes.VO2Max)
 })
+
+function nextSession() {
+  const plan = read('coaching/current_plan.json') as {
+    block: { name: string }
+    weeks: { workouts: { id: string; date: string; description: string }[] }[]
+  }
+  const today = new Date().toLocaleDateString('sv-SE')
+  const upcoming = plan.weeks.flatMap((week) => week.workouts).find((workout) => workout.date > today)!
+  return { block: plan.block.name, upcoming }
+}
+
+test('Plan names the coach’s block and shows its words, none of them in the page’s HTML', async ({ page, request, t }) => {
+  const { block, upcoming } = nextSession()
+  await page.goto('/plan')
+  const phase = page.getByTestId('phase-line')
+  await expect(phase.getByRole('heading')).toHaveText(block)
+  await expect(phase).not.toContainText(t.plan.weekPurpose.generalPreparation)
+  await expect(page.getByTestId('phase-focus')).toBeVisible()
+
+  await page.goto(`/plan?date=${upcoming.date}`)
+  const card = page.getByTestId(`plan-workout-${upcoming.id}`)
+  await expect(card.getByTestId('coach-note')).toContainText(upcoming.description)
+  await expect(card.getByTestId('workout-steps')).toContainText(t.plan.row.walk('1:00'))
+
+  const html = await (await request.get(`/plan?date=${upcoming.date}`)).text()
+  expect(html).not.toContain(block)
+  expect(html).not.toContain('minutes de course')
+})
+
+test('Today’s session card carries one line of the coach’s words', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('session-card').getByTestId('session-coach-line')).toContainText('minutes de course')
+})

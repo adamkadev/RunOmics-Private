@@ -143,9 +143,9 @@ export function coachWorkoutView(
   }
 }
 
-const HERO_FIELDS = ['title', 'shortName', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure', 'hr'] as const satisfies readonly (keyof PlanWorkoutView)[]
+const HERO_FIELDS = ['key', 'state', 'title', 'shortName', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure', 'hr'] as const satisfies readonly (keyof PlanWorkoutView)[]
 
-/** The coach's description and notes stay out of the dashboard's page payload. */
+/** The coach's description and notes stay out of the dashboard's page payload: the card fetches them by `key`. */
 export type HeroWorkoutView = Pick<PlanWorkoutView, (typeof HERO_FIELDS)[number]>
 
 export function heroWorkoutView(view: PlanWorkoutView): HeroWorkoutView {

@@ -43,7 +43,7 @@ const run = (date: string, km: number): ActivitySummary => ({
   paceSecPerKm: 360, avgHeartRate: 140, zones: [], routeThumb: null,
 })
 
-const EASY = { title: 'Easy run', type: 'Base' as const, duration: { seconds: 3_600, estimated: false }, distanceM: 10_000, activityId: null, target: null, structure: null, hr: null }
+const EASY = { key: 'garmin:2026-10-19:Easy run', title: 'Easy run', type: 'Base' as const, duration: { seconds: 3_600, estimated: false }, distanceM: 10_000, activityId: null, target: null, structure: null, hr: null }
 
 describe('sessionCard', () => {
   it("is today's session until it is run, opening Plan on today", () => {

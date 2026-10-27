@@ -14,6 +14,14 @@ All notable changes to this project are documented in this file.
   efforts cap GPS jumps as duration bests do, and the mapper and reprocess
   share `fit_derived_fields()`. The Forerunner 55 profile stops re-asking
   Garmin for 18 empty training-status windows every night (G9).
+- The coach's own words reach the app (F1). Plan's phase card names the
+  coach's block ("Reprise en douceur") instead of « Préparation générale » and
+  adds the week's focus; a planned session's card carries the coach's note,
+  its description and notes; Today's session card gives the description's
+  first sentence. The text comes from a new route, `/api/coaching/words`,
+  behind the private site's sign-in gate, never in a page's HTML. In the step
+  list, a warm-up, cool-down or break at a walking pace, or with no target in
+  an easy session, reads "walk" (« marche ») instead of "1:00 rec".
 - The sync survives garth's token dying (G1). A 401 on the token exchange is
   `GarminTokenExpired`: the sync writes `connect_status.json`, carries on
   through the Personal API with exit 0, stops marking new runs gear-pending
