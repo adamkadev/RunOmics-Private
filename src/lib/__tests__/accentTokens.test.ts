@@ -114,8 +114,8 @@ describe('neutral surfaces', () => {
     // The design table's bg, surface, surface-2, line, line-2, text, text-2, muted, faint, warn.
     const table = (t: Record<string, string>) =>
       ['--background', '--card', '--surface-2', '--border', '--line-2', '--foreground', '--text-2', '--muted-foreground', '--subtle', '--warn'].map((k) => t[k])
-    expect(table(dark)).toEqual(['#0b0c0c', '#141616', '#0f1111', '#232626', '#303432', '#f2f4f3', '#a3aaa7', '#8d9391', '#7f8482', '#f0b73c'])
-    expect(table(light)).toEqual(['#f3f4f3', '#ffffff', '#f0f1f0', '#e4e6e5', '#d3d6d4', '#141615', '#434846', '#6b706e', '#6b706e', '#9a5b00'])
+    expect(table(dark)).toEqual(['#0b0c0c', '#141616', '#0f1111', '#232626', '#303432', '#f2f4f3', '#a3aaa7', '#8d9391', '#808583', '#f0b73c'])
+    expect(table(light)).toEqual(['#f3f4f3', '#ffffff', '#f0f1f0', '#e4e6e5', '#d3d6d4', '#141615', '#434846', '#6a6f6d', '#6a6f6d', '#9a5b00'])
     // Dark's track is a lighter step than surface-2, as its inset tile is darker than the card.
     expect(light['--track']).toBe(light['--surface-2'])
     expect(dark['--track']).toBe('#262a29')

@@ -240,6 +240,7 @@ export const fr = {
   pwa: {
     updateAvailable: 'Une nouvelle version de RunOmics est prête.',
     refresh: 'Actualiser',
+    dismiss: 'Masquer',
   },
 
   signIn: {
@@ -601,6 +602,8 @@ export const fr = {
     notifications: {
       error: 'Impossible de mettre à jour les réglages de notification, réessaie.',
       notRegistered: 'Cet appareil n’est pas enregistré pour les notifications. Désactive puis réactive une option pour réessayer.',
+      unsupported: 'Ajoute RunOmics à l’écran d’accueil pour recevoir les notifications.',
+      denied: 'Notifications bloquées : autorise-les dans Réglages → Notifications → RunOmics.',
       // « 8 h 00 », the French way of writing a time.
       at: (hour: number, minute: string) => `${hour} h ${minute}`,
       types: {
@@ -614,6 +617,7 @@ export const fr = {
   dashboard: {
     // « Lundi 19 oct. » : la date ouvre la ligne, d’où la majuscule.
     headerDate: (weekday: string, date: string) => `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${date}`,
+    stalePage: 'Page d’hier, actualiser',
     readiness: {
       open: 'Ouvrir la charge dans Analyses',
       // Des mots de tous les jours, pas des sigles.
@@ -2264,6 +2268,70 @@ export const fr = {
     line: (temp: number, time: string, cost: number) =>
       `${temp} °C à ${time} — par cette chaleur, tes sorties coûtent environ +${cost} s/km : cours au cardio`,
     time: (hour: number) => `${hour} h`,
+  },
+
+  workbook: {
+    sections: {
+      export: 'Export',
+      usage: 'Utilisation',
+      privacy: 'Confidentialité',
+      notes: 'Notes',
+      caveat: 'Précaution',
+      sheet: 'Feuille',
+      goal: 'Objectif',
+      availability: 'Disponibilités',
+      currentBlock: 'Bloc en cours',
+      upcomingRace: 'Course à venir',
+      injuries: 'Blessures',
+      trainingBreaks: 'Pauses',
+    },
+    guide: {
+      source: 'Données d’entraînement Runomics',
+      intended_audience: 'Athlète, coach de course à pied ou analyse de l’entraînement par un LLM',
+      missing_values: 'Une cellule vide signifie que la source n’a pas fourni de valeur fiable.',
+      units: 'Les unités figurent dans le nom des colonnes. Allures et temps restent en secondes, pour l’analyse.',
+      location_data: 'Les coordonnées des parcours sont volontairement exclues.',
+      raw_samples: 'Les séries brutes de fréquence cardiaque, d’allure, de cadence et d’altitude sont exclues ; des résumés utiles sont exportés à la place.',
+      comment_and_tags: 'comment et tags sont les notes et étiquettes saisies sur chaque activité dans l’app. notes_status vaut « included » sur chaque ligne d’un export complet ; « unavailable » signifie que les notes n’ont pas pu être lues : un commentaire vide ne veut alors pas dire qu’il n’y avait pas de note, refais l’export.',
+    },
+    caveats: {
+      daily_plan_completion: 'planned_day_completed signifie seulement qu’au moins une activité a eu lieu un jour planifié ; cela ne prouve pas que la séance prescrite a été suivie.',
+      hr_zones: 'Les colonnes de zones cardiaques sont les seuils bas des zones Garmin : une zone va de sa borne basse jusqu’à un battement sous celle de la zone suivante, et la zone 5 jusqu’à max_hr_bpm.',
+      sessions: 'Une séance que la montre a enregistrée en plusieurs sorties enchaînées (échauffement, test, retour au calme) est une seule ligne d’Activities : activity_id est sa sortie principale, merged_activity_ids les autres. La ligne se lit comme la sortie principale (la course ou le test lui-même) : sa distance, son temps, son allure, sa fréquence cardiaque, sa dynamique de course, son type, son exécution et sa météo. session_distance_km et session_duration_seconds ajoutent les sorties enregistrées à part, remplies seulement sur les lignes fusionnées ; zones, TRIMP, calories et dénivelé comptent toute la séance. Les sorties synchronisées avant l’enregistrement des heures de départ restent une ligne chacune.',
+      load_source: 'trimp vient de la fréquence cardiaque, ou vaut « estimated from effort » (RPE de séance × minutes, ramené au TRIMP) quand la fréquence cardiaque n’est pas fiable : enregistrée avant hr_reliable_from de l’athlète, au capteur poignet après, ou marquée non fiable dans l’app. Les colonnes de fréquence cardiaque et de zones d’une telle sortie sont vides.',
+      type: 'type est l’étiquette Garmin issue de l’effet d’entraînement, ou celle de Runomics tirée du nom de la séance quand type_source vaut runomics ; il diffère souvent de l’intention. description et planned_type disent ce que la séance devait être.',
+      planned_columns: 'planned_* sont la prescription du coach Runomics pour ce jour quand il y en a une (objectif, repère d’allure, plafond cardiaque), sinon la séance du calendrier Garmin. Elles figurent sur la séance principale du jour ; compare-les aux colonnes execution_*.',
+      race_results: 'race_official_* sont les résultats publiés (temps puce, distance certifiée). distance_km et pace_sec_per_km restent la mesure de la montre, qui donne souvent un peu plus au GPS.',
+    },
+    sheets: {
+      Athlete: 'Profil actuel de l’athlète et valeurs physiologiques de référence.',
+      Context: 'Ce que les chiffres ne disent pas : l’objectif, les jours disponibles, le bloc en cours et l’axe de chaque semaine, les courses à venir, les antécédents de blessure et les raisons des pauses.',
+      Activities: 'Une ligne par séance : conditions, intensité, ce qui était prévu et ce qui a été fait, résultats officiels, records, matériel, tes notes et étiquettes. L’export CSV est cette feuille seule.',
+      Intervals: 'Une ligne par segment d’une séance avec répétitions ou lignes droites (échauffement, chaque répétition ou ligne droite, chaque récupération, retour au calme), avec son allure et sa fréquence cardiaque.',
+      'Daily Status': 'Une ligne par jour du calendrier, jours de repos compris : charge, statut, plan et pause éventuelle.',
+      Records: 'Records personnels officiels par année, plus les records calculés localement quand il n’y a pas de record officiel.',
+      Races: 'Courses terminées avec le résultat officiel à côté de celui de la montre, et courses au calendrier. predicted_time_seconds est la prédiction Garmin le jour de la course.',
+      'Training Plan': 'Séances du calendrier Garmin, avec l’objectif et le plafond cardiaque du coach quand le coach Runomics les a prescrites.',
+      'Fitness History': 'Historique de VO2max, seuil lactique, allure au seuil, âge physique et poids.',
+      'Race Predictions': 'Historique des prédictions de course Garmin, en secondes.',
+      Shoes: 'Cycle de vie des chaussures et distance cumulée dans les activités exportées.',
+      Goals: 'Objectifs annuels de volume et de temps de course, avec la progression observée.',
+      'Load Balance': 'Dernier équilibre d’intensité Garmin sur quatre semaines et fourchettes cibles personnalisées.',
+    },
+    context: {
+      weekdays: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
+      on: (name: string, date: string) => `${name} le ${date}`,
+      span: (start: string, end: string) => `du ${start} au ${end}`,
+      week: (index: number, span: string) => `Semaine ${index}, ${span}`,
+      target: (time: string) => `objectif ${time}`,
+      noTarget: 'pas de temps visé',
+      noInjury: 'Aucune blessure de course signalée.',
+      resolved: 'guérie',
+      ongoing: 'en cours',
+      resolutionUnknown: 'guérison non confirmée',
+      weeksOut: (weeks: number) => `${weeks} semaine${weeks === 1 ? '' : 's'} d’arrêt`,
+      recurrent: 'récidivante',
+    },
   },
 
   activityTypes: {

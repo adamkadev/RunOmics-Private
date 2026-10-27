@@ -61,9 +61,17 @@ describe('in the French build', () => {
     expect(fr.formatDeltaFixed(-1.44, 1)).toBe(`${MINUS}1,4`)
   })
 
-  it('groups thousands with the French space', () => {
-    expect(fr.formatKm(2684)).toMatch(/^2\s684$/)
-    expect(fr.formatKm(1306)).toMatch(/^1\s306$/)
+  it('groups thousands with a no-break space, so a total never wraps', () => {
+    expect(fr.formatKm(2684)).toBe('2\u00a0684')
+    expect(fr.formatNumber(1306.5)).toBe('1\u00a0306,5')
+  })
+
+  it('keeps the per cent sign on the line of its number', () => {
+    expect(fr.formatPercent(45)).toBe('45\u00a0%')
+  })
+
+  it('keeps a date spaced with U+0020', () => {
+    expect(fr.formatDate('2026-09-06', { year: 'never' })).not.toContain('\u00a0')
   })
 
   it('leaves the English build as it was', () => {

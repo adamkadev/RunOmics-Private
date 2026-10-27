@@ -54,8 +54,7 @@ export function NotificationsForm() {
       return
     }
 
-    // Not enabled yet, whatever the reason: the tap is the permission request, and
-    // the browser's own prompt is the only messaging needed.
+    // Not enabled yet: the tap is the permission request.
     const next = { ...prefs, [category]: true }
     setPrefs(next)
     setStatus('busy')
@@ -67,10 +66,13 @@ export function NotificationsForm() {
       setStatus('enabled')
     } catch {
       setPrefs(prefs)
-      setStatus(typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'denied' : 'idle')
-      showToast(n.error, false)
+      const blocked = typeof Notification !== 'undefined' && Notification.permission === 'denied'
+      setStatus(blocked ? 'denied' : 'idle')
+      if (!blocked) showToast(n.error, false)
     }
   }
+
+  const blockedHint = status === 'unsupported' ? n.unsupported : status === 'denied' ? n.denied : null
 
 
   return (
@@ -89,12 +91,17 @@ export function NotificationsForm() {
                   {reminderAt}
                 </span>
               )}
-              <Toggle checked={enabled} disabled={status === 'loading'} label={title} onChange={() => handleToggle(key)} />
+              <Toggle checked={enabled} disabled={status === 'loading' || blockedHint !== null} label={title} onChange={() => handleToggle(key)} />
             </span>
           </div>
         )
       })}
     </section>
+    {blockedHint && (
+      <p className="px-4 text-xs leading-snug text-muted-foreground" data-testid="push-blocked">
+        {blockedHint}
+      </p>
+    )}
     {status === 'enabled' && unregistered && (
       <p className="px-4 text-xs leading-snug text-[var(--neg)]" data-testid="push-unregistered">
         {n.notRegistered}

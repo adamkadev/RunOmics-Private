@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
+import { t } from '@/i18n'
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
@@ -37,6 +38,15 @@ describe('CelebrationOverlay', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     fireEvent.click(screen.getByText(/later/i))
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('names the dialog after what it celebrates and closes on Escape, remembered as seen', () => {
+    render(<CelebrationOverlay record={RECENT_RECORD} aiTake={null} />)
+    expect(screen.getByRole('dialog', { name: `${t.dashboard.celebration.eyebrow} 5K` })).toBeInTheDocument()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(window.localStorage.getItem(`ro-celebration-seen:${RECENT_RECORD.activityId}-${RECENT_RECORD.key}`)).toBe('1')
   })
 
   it('does not re-show a record already marked seen', () => {
