@@ -184,6 +184,8 @@ export const fr = {
       current: 'En cours',
       runsColumn: 'sorties',
       seeRuns: (runs: number) => (runs > 1 ? `Voir les ${runs} sorties dans Activités` : 'Voir la sortie dans Activités'),
+      prevMonth: 'Mois précédent',
+      nextMonth: 'Mois suivant',
       close: 'Fermer',
     },
     empty: 'Aucune sortie pour l’instant.',

@@ -136,10 +136,7 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
     setViewParam(null)
   }
 
-  const swipeHandlers = useSwipeNavigation(
-    () => shift(-1),
-    () => { if (!atPresent || canGoForward) shift(1) }
-  )
+  const swipeHandlers = useSwipeNavigation(() => shift(-1), () => shift(1), { canNext: !atPresent || canGoForward })
 
   return (
     <div className="flex flex-col gap-5">
