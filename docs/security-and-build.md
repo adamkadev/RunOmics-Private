@@ -54,7 +54,7 @@ public site, anyone who is not signed in sees what a viewer sees.
 | Every page, the runs, the maps, records, analytics | Yes | Yes |
 | Run notes and tags (`/api/activities/[id]/note`) | Reads them | Reads and edits them |
 | The coach's words (`/api/coaching/words`) | Yes | Yes |
-| Share cards | Yes, trimmed by default (see [Share card](interface.md#share-card)) | Yes |
+| Share cards | Yes | Yes |
 | Explore: generate a loop | Yes, without avoid spots | Yes, around their avoid spots |
 | Route names | The geocoded place only | Their own names, and renames them |
 | Morning check-ins, niggles (`wellness`) | No: the rules refuse the read | Yes |
