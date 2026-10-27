@@ -1,15 +1,14 @@
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { weekTarget, type WeekTarget, type WeekTargetDay } from '@/domain/training/weekTarget'
-import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatKm } from '@/lib/formatters'
 import { intendedType } from '@/lib/activityTitle'
 import type { PlanPrescriptionView } from './planCoachingView'
 
 type Run = Pick<ActivitySummary, 'date' | 'distanceKm'> & Partial<Pick<ActivitySummary, 'type' | 'description'>>
-type Prescription = Pick<PlanPrescriptionView, 'state'> & {
-  prescription: Pick<PlanPrescriptionView['prescription'], 'date' | 'type'> & Parameters<typeof prescriptionDistanceMeters>[0]
+type Prescription = Pick<PlanPrescriptionView, 'state' | 'distanceMeters'> & {
+  prescription: Pick<PlanPrescriptionView['prescription'], 'date' | 'type'>
 }
 
 // Hardest first: hardestType ranks by this order.
@@ -88,7 +87,7 @@ export function weekPlanDays(
     let plannedSessions = 0
     if (coach.length > 0) {
       plannedSessions = coach.length
-      const meters = coach.map((view) => prescriptionDistanceMeters(view.prescription))
+      const meters = coach.map((view) => view.distanceMeters)
       if (meters.some((m) => m !== null)) plannedKm = meters.reduce<number>((sum, m) => sum + (m ?? 0), 0) / 1000
     } else if (garmin) {
       plannedSessions = 1

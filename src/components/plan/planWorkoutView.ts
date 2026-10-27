@@ -14,7 +14,6 @@ import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
 import type { SessionHrTarget } from '@/domain/training/hrTarget'
 import {
   isKeyPrescription,
-  prescriptionDistanceMeters,
   prescriptionDuration,
   prescriptionEffortPace,
   prescriptionPace,
@@ -129,7 +128,7 @@ export function coachWorkoutView(
     type,
     scheduledTime: garmin?.scheduledTime,
     duration: prescriptionDuration(workout),
-    distanceM: prescriptionDistanceMeters(workout),
+    distanceM: view.distanceMeters,
     effort,
     target,
     description: workout.description || null,

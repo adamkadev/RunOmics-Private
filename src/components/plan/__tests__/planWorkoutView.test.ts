@@ -37,6 +37,43 @@ function viewOf(prescription: WorkoutPrescription): PrescriptionView {
   return buildCoachingOverview(coachingPlan, [], [], '2026-09-09').workouts[0]!
 }
 
+describe('a session’s distance on Plan and Today', () => {
+  const fourthOfNovember = workout({
+    id: 'workout-return',
+    type: 'easy',
+    totalDurationSeconds: undefined,
+    blocks: [
+      { kind: 'warmup', target: { durationSeconds: 300 } },
+      { kind: 'effort', target: { durationSeconds: 900, paceSecPerKm: { min: 470, max: 525 } } },
+      { kind: 'cooldown', target: { durationSeconds: 300 } },
+    ],
+  })
+
+  function overviewOf(prescription: WorkoutPrescription, easyPace?: { min: number; max: number } | null): PrescriptionView {
+    const coachingPlan: CoachingPlan = plan()
+    coachingPlan.weeks[0]!.workouts = [prescription]
+    coachingPlan.weeks[1]!.workouts = []
+    return buildCoachingOverview(coachingPlan, [], [], '2026-09-09', easyPace).workouts[0]!
+  }
+
+  it('runs the untargeted warm-up and cool-down at the athlete’s easy pace zone', () => {
+    const view = overviewOf(fourthOfNovember, { min: ZONES.zones[0]!.paceMinSecPerKm, max: ZONES.zones[0]!.paceMaxSecPerKm })
+    expect(coachWorkoutView(view, ZONES).distanceM).toBe(Math.round(1_809 + (600 * 2_000) / (310 + 387)))
+  })
+
+  it('falls back to the plan’s own easy range without zones', () => {
+    expect(overviewOf(fourthOfNovember).distanceMeters).toBe(3_015)
+  })
+
+  it('counts nothing for a walk the notes name', () => {
+    const walked = workout({
+      ...fourthOfNovember,
+      blocks: fourthOfNovember.blocks.map((block) => (block.kind === 'effort' ? block : { ...block, notes: ['Marche active.'] })),
+    })
+    expect(overviewOf(walked).distanceMeters).toBe(1_809)
+  })
+})
+
 describe('coach prescriptions normalised into the Plan session view', () => {
   it('derives the duration of a session stated only as distance and pace', () => {
     const view = coachWorkoutView(viewOf(recovery()), ZONES)

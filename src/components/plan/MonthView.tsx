@@ -5,7 +5,7 @@ import { ChevronRight } from 'lucide-react'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from './planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import { isKeyPrescription, prescriptionDistanceMeters } from '@/components/coaching/presentation'
+import { isKeyPrescription } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
 import { zoneColor } from '@/lib/colors'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -47,7 +47,7 @@ interface Planned {
 function plannedFor(date: string, byDatePlanned: Map<string, PlannedWorkout>, byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>): Planned | null {
   const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
   if (coach) {
-    const meters = prescriptionDistanceMeters(coach.prescription)
+    const meters = coach.distanceMeters
     const seconds = coach.prescription.totalDurationSeconds
     return { km: meters ? meters / 1000 : null, minutes: seconds ? Math.round(seconds / 60) : null }
   }

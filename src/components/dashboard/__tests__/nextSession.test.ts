@@ -14,7 +14,7 @@ function prescription(date: string, title: string, totalDistanceMeters: number):
 }
 
 function view(p: WorkoutPrescription, state: 'prescribed' | 'cancelled' = 'prescribed') {
-  return { prescription: p, state, activityId: null }
+  return { prescription: p, state, activityId: null, distanceMeters: p.totalDistanceMeters ?? null }
 }
 
 describe('findNextSession', () => {
