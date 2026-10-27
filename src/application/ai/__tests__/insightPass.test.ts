@@ -4,7 +4,7 @@ import { runHistory } from '@/domain/activity/runHistory'
 import { runVerdictInsightHash, runVerdictNoteKey, runVerdictSurface, type RunVerdictContext } from '@/domain/ai/runVerdictInsight'
 import type { Activity } from '@/domain/activity/types'
 import type { CachedInsight, CachedKeys, VerdictPhrasing } from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import type { Spender } from '@/lib/aiSpend'
+import type { Spender } from '@/application/ai/aiSpend'
 import type { InsightRequest, InsightResult } from '@/lib/gemini'
 import {
   generateFromPool,

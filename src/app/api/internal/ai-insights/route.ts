@@ -10,7 +10,7 @@ import {
   saveCachedInsight,
   saveVerdictPhrasing,
 } from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import { openSpender } from '@/lib/aiSpend'
+import { openSpender } from '@/application/ai/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 import { sendPush } from '@/lib/sendPushNotification'
 import { pushPaths } from '@/lib/pushLinks'

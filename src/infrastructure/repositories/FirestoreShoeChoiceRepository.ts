@@ -1,6 +1,6 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { DEFAULT_SHOE_DOC, RUN_SHOES_COLLECTION, SHOE_SETTINGS_COLLECTION } from '@/lib/shoeChoices'
-import { withTimeout } from '../withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 
 /** The nightly backup's first Firestore call is cold. */
 const READ_TIMEOUT_MS = 10_000

@@ -1,7 +1,7 @@
 import { SettingsClient } from '@/components/settings/SettingsClient'
 import { getGarminSeriesStatus, getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getActivities } from '@/application/usecases/GetActivities'
+import { getAthleteProfile } from '@/application/usecases/GetAthleteProfile'
 import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
 import { isSitePrivate } from '@/lib/siteAccess'
@@ -15,7 +15,7 @@ export const metadata = {
 export default async function SettingsPage() {
   await loadData()
   const lastSyncedAt = getLastSyncedAt()
-  const activityCount = getAllActivities().length
+  const activityCount = getActivities().length
   const { deviceName, lthrBpm, maxHrBpm } = getAthleteProfile()
 
   return (

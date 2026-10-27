@@ -1,5 +1,5 @@
-import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getAthleteProfile } from '@/application/usecases/GetAthleteProfile'
+import { getActivities } from '@/application/usecases/GetActivities'
 import { zoneDistribution, recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { getFitnessAge } from '@/application/usecases/GetFitnessAge'
@@ -15,7 +15,7 @@ export const revalidate = 3600
 export default async function AthletePage() {
   await loadData()
   const athlete = getAthleteProfile()
-  const activities = getAllActivities()
+  const activities = getActivities()
 
   const today = appTodayIso()
   const currentWeek = isoWeekNumber(new Date(`${today}T00:00:00`))
