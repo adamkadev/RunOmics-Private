@@ -20,31 +20,31 @@ import {
 const garminRace: UpcomingRace = {
   garminEventUuid: 'uuid-1',
   date: '2026-11-29',
-  name: 'Metz Night 10K',
+  name: 'Harbor Lights 10K',
   distance: '10K',
-  location: 'Metz',
+  location: 'Fictional Bay',
   isPrimaryEvent: true,
   targetSeconds: 2_700,
 }
 
-const tuneUp: UpcomingRace = { garminEventId: 42, date: '2026-11-08', name: 'Cross de Thionville', distance: '8 km', isTrainingEvent: true }
+const tuneUp: UpcomingRace = { garminEventId: 42, date: '2026-11-08', name: 'Ridge Cross', distance: '8 km', isTrainingEvent: true }
 
 describe('mergeRaces', () => {
   it('reads Garmin’s primary event as A and a training event as C, with no entries', () => {
     expect(mergeRaces([garminRace, tuneUp], []).map((race) => [race.name, race.priority])).toEqual([
-      ['Cross de Thionville', 'C'],
-      ['Metz Night 10K', 'A'],
+      ['Ridge Cross', 'C'],
+      ['Harbor Lights 10K', 'A'],
     ])
   })
 
   it('adds an app race with its own id, labelled like a synced one, by date', () => {
     const merged = mergeRaces([garminRace], [
-      { id: 'abc', name: 'Semi de Luxembourg', date: '2026-11-15', distanceKm: 21.0975, priority: 'B', targetSeconds: 5_700 },
+      { id: 'abc', name: 'Autumn Trail Half', date: '2026-11-15', distanceKm: 21.0975, priority: 'B', targetSeconds: 5_700 },
     ])
-    expect(merged.map((race) => race.name)).toEqual(['Semi de Luxembourg', 'Metz Night 10K'])
+    expect(merged.map((race) => race.name)).toEqual(['Autumn Trail Half', 'Harbor Lights 10K'])
     expect(merged[0]).toEqual({
       entryId: 'abc',
-      name: 'Semi de Luxembourg',
+      name: 'Autumn Trail Half',
       date: '2026-11-15',
       distance: 'Half-Marathon',
       targetSeconds: 5_700,
@@ -56,7 +56,7 @@ describe('mergeRaces', () => {
 
   it('applies an edit to a Garmin race and keeps its Garmin identity', () => {
     const [edited] = mergeRaces([garminRace], [
-      { id: garminEntryId('uuid-1'), garminKey: 'uuid-1', name: 'Metz Night 10K', date: '2026-11-29', distanceKm: 10, priority: 'B' },
+      { id: garminEntryId('uuid-1'), garminKey: 'uuid-1', name: 'Harbor Lights 10K', date: '2026-11-29', distanceKm: 10, priority: 'B' },
     ])
     expect(edited).toMatchObject({ garminEventUuid: 'uuid-1', priority: 'B', isPrimaryEvent: false, targetSeconds: null, justFinish: true })
     expect(edited).not.toHaveProperty('location')
@@ -64,7 +64,7 @@ describe('mergeRaces', () => {
   })
 
   it('hides a Garmin race the athlete removed', () => {
-    expect(mergeRaces([garminRace, tuneUp], [{ id: 'garmin-42', garminKey: '42', removed: true }]).map((race) => race.name)).toEqual(['Metz Night 10K'])
+    expect(mergeRaces([garminRace, tuneUp], [{ id: 'garmin-42', garminKey: '42', removed: true }]).map((race) => race.name)).toEqual(['Harbor Lights 10K'])
   })
 })
 
@@ -116,13 +116,13 @@ describe('reading stored entries', () => {
 })
 
 describe('validateRaceDraft', () => {
-  const draft: RaceDraft = { name: ' Metz 10K ', date: '2026-12-06', distanceKm: '10', justFinish: false, time: '44:30', priority: 'A', location: '' }
+  const draft: RaceDraft = { name: ' Harbor 10K ', date: '2026-12-06', distanceKm: '10', justFinish: false, time: '44:30', priority: 'A', location: '' }
   const today = '2026-10-27'
 
   it('turns a valid draft into the fields Firestore stores', () => {
     expect(validateRaceDraft(draft, { today })).toEqual({
       ok: true,
-      value: { name: 'Metz 10K', date: '2026-12-06', distanceKm: 10, priority: 'A', targetSeconds: 2_670 },
+      value: { name: 'Harbor 10K', date: '2026-12-06', distanceKm: 10, priority: 'A', targetSeconds: 2_670 },
     })
   })
 

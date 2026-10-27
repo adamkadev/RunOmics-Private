@@ -46,7 +46,7 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       await setDoc(doc(db, 'wellness', '2026-10-24'), { sleep: 2, soreness: 4, ill: true })
       await setDoc(doc(db, 'pushTokens', 'token-1'), { token: 'token-1', userAgent: 'iPhone' })
       await setDoc(doc(db, 'aiInsights', 'today'), { text: 'x' })
-      await setDoc(doc(db, 'raceEntries', 'race-1'), { name: 'Metz 10K', date: '2027-04-11', distanceKm: 10, priority: 'A' })
+      await setDoc(doc(db, 'raceEntries', 'race-1'), { name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'A' })
       await setDoc(doc(db, 'goalEntries', '2027'), { annualDistanceKm: 1500, targets: { '10k': 2700 } })
       await setDoc(doc(db, 'jobEvents', 'event-1'), { at: '2026-10-27T06:00:01.000Z', route: 'daily-session', trigger: 'cron', outcome: 'sent', status: 200 })
     })
@@ -263,7 +263,7 @@ describe.skipIf(!emulator)('firestore.rules', () => {
   })
 
   describe('raceEntries', () => {
-    const race = { name: 'Semi de Luxembourg', date: '2027-05-29', distanceKm: 21.0975, priority: 'B', targetSeconds: 5400, location: 'Luxembourg' }
+    const race = { name: 'Autumn Trail Half', date: '2027-05-29', distanceKm: 21.0975, priority: 'B', targetSeconds: 5400, location: 'Fictional Bay' }
 
     it('lets only the owner read the races', async () => {
       await assertFails(getDoc(doc(visitor(), 'raceEntries', 'race-1')))

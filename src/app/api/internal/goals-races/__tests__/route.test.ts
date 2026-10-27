@@ -18,7 +18,7 @@ describe('GET /api/internal/goals-races', () => {
     getGoalsRacesEntries.mockResolvedValue({
       available: true,
       races: [
-        { id: 'b', name: 'Metz 10K', date: '2027-04-11', distanceKm: 10, priority: 'A', targetSeconds: 2_700 },
+        { id: 'b', name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'A', targetSeconds: 2_700 },
         { id: 'a', garminKey: 'uuid-1', removed: true },
       ],
       goals: [
@@ -32,7 +32,7 @@ describe('GET /api/internal/goals-races', () => {
     expect(await res.text()).toBe(JSON.stringify({
       races: {
         a: { garminKey: 'uuid-1', removed: true },
-        b: { name: 'Metz 10K', date: '2027-04-11', distanceKm: 10, priority: 'A', targetSeconds: 2_700 },
+        b: { name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'A', targetSeconds: 2_700 },
       },
       goals: {
         2026: { removed: true },

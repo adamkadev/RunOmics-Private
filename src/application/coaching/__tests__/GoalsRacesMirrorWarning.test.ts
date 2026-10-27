@@ -7,7 +7,7 @@ vi.mock('@/infrastructure/repositories/JsonGoalRepository', () => ({ getGoalEntr
 
 const { warnOnUnmirroredGoalsRaces } = await import('../GetCoachingContext')
 
-const race = { id: 'abc', name: 'Metz 10K', date: '2027-04-11', distanceKm: 10, priority: 'A' as const }
+const race = { id: 'abc', name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'A' as const }
 const goal = { year: 2027, targets: { '10k': 2_700 } }
 
 describe('warnOnUnmirroredGoalsRaces', () => {

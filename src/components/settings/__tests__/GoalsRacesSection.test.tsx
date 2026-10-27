@@ -16,7 +16,7 @@ const { GoalsRacesSection } = await import('../GoalsRacesSection')
 
 const s = t.settings.goalsRaces
 const today = '2026-10-27'
-const garminRace: UpcomingRace = { garminEventUuid: 'uuid-1', date: '2026-11-29', name: 'Metz Night 10K', distance: '10K', isPrimaryEvent: true, targetSeconds: 2_700 }
+const garminRace: UpcomingRace = { garminEventUuid: 'uuid-1', date: '2026-11-29', name: 'Harbor Lights 10K', distance: '10K', isPrimaryEvent: true, targetSeconds: 2_700 }
 
 function renderSection(syncedRaces: UpcomingRace[] = [], onSaved = vi.fn()) {
   render(<GoalsRacesSection syncedRaces={syncedRaces} writtenGoals={[]} today={today} onSaved={onSaved} />)
@@ -53,7 +53,7 @@ describe('GoalsRacesSection', () => {
     ])
     expect(saveRace).not.toHaveBeenCalled()
 
-    await user.type(within(sheet).getByTestId('race-name'), 'Semi de Luxembourg')
+    await user.type(within(sheet).getByTestId('race-name'), 'Autumn Trail Half')
     await user.type(within(sheet).getByTestId('race-date'), '2027-05-29')
     await user.click(within(sheet).getByRole('button', { name: t.records.distances.half }))
     await user.type(within(sheet).getByTestId('race-time'), '1:35:00')
@@ -61,7 +61,7 @@ describe('GoalsRacesSection', () => {
     await user.click(within(sheet).getByRole('button', { name: t.settings.actions.save }))
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(s.added, true))
-    expect(saveRace).toHaveBeenCalledWith({ name: 'Semi de Luxembourg', date: '2027-05-29', distanceKm: 21.0975, priority: 'A', targetSeconds: 5_700 }, {})
+    expect(saveRace).toHaveBeenCalledWith({ name: 'Autumn Trail Half', date: '2027-05-29', distanceKm: 21.0975, priority: 'A', targetSeconds: 5_700 }, {})
   })
 
   it('refuses a new race dated in the past', async () => {
@@ -82,7 +82,7 @@ describe('GoalsRacesSection', () => {
     const user = userEvent.setup()
     renderSection([garminRace])
     const row = await screen.findByTestId('race-row')
-    expect(row).toHaveTextContent('Metz Night 10K')
+    expect(row).toHaveTextContent('Harbor Lights 10K')
     expect(row).toHaveTextContent('45:00')
 
     await user.click(row)
@@ -90,7 +90,7 @@ describe('GoalsRacesSection', () => {
     await user.click(within(sheet).getByTestId('race-just-finish'))
     await user.click(within(sheet).getByRole('button', { name: t.settings.actions.save }))
     await waitFor(() => expect(saveRace).toHaveBeenCalledWith(
-      { name: 'Metz Night 10K', date: '2026-11-29', distanceKm: 10, priority: 'A' },
+      { name: 'Harbor Lights 10K', date: '2026-11-29', distanceKm: 10, priority: 'A' },
       { garminKey: 'uuid-1' },
     ))
 
@@ -103,12 +103,12 @@ describe('GoalsRacesSection', () => {
 
   it('shows the app’s edit of a race over Garmin’s', async () => {
     readGoalsRacesEntries.mockResolvedValue({
-      races: [{ id: 'garmin-uuid-1', garminKey: 'uuid-1', name: 'Metz by Night', date: '2026-11-29', distanceKm: 10, priority: 'B' }],
+      races: [{ id: 'garmin-uuid-1', garminKey: 'uuid-1', name: 'Harbor by Night', date: '2026-11-29', distanceKm: 10, priority: 'B' }],
       goals: [],
     })
     renderSection([garminRace])
     const row = await screen.findByTestId('race-row')
-    expect(row).toHaveTextContent('Metz by Night')
+    expect(row).toHaveTextContent('Harbor by Night')
     expect(row).toHaveTextContent(s.justFinish)
   })
 

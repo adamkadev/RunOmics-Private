@@ -543,7 +543,7 @@ export const en = {
       targetKind: { none: 'No target', time: 'Time', finish: 'Finish' },
       fields: {
         name: 'Name',
-        namePlaceholder: 'Metz 10K',
+        namePlaceholder: 'Harbor 10K',
         date: 'Date',
         distance: 'Distance',
         otherDistance: 'Other',

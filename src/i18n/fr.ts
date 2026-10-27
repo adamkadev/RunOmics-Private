@@ -515,7 +515,7 @@ export const fr = {
       targetKind: { none: 'Aucun', time: 'Temps', finish: 'Finir' },
       fields: {
         name: 'Nom',
-        namePlaceholder: '10 km de Metz',
+        namePlaceholder: '10 km du Port',
         date: 'Date',
         distance: 'Distance',
         otherDistance: 'Autre',

@@ -22,9 +22,9 @@ describe('restore_firestore', () => {
 
   it('restores a race, a hidden Garmin race and a season, and skips one the rules would refuse', () => {
     const races = planRestore(byName('raceEntries'), {
-      a: { name: 'Metz 10K', date: '2027-04-11', distanceKm: 10, priority: 'A', targetSeconds: 2700 },
+      a: { name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'A', targetSeconds: 2700 },
       'garmin-uuid-1': { garminKey: 'uuid-1', removed: true },
-      bad: { name: 'Metz 10K', date: '2027-04-11', distanceKm: 10, priority: 'D' },
+      bad: { name: 'Harbor 10K', date: '2027-04-11', distanceKm: 10, priority: 'D' },
     }, new Map())
     expect([(races.create as [string, unknown][]).map(([id]) => id), races.invalid]).toEqual([['a', 'garmin-uuid-1'], 1])
 
