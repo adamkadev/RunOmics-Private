@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
 import { DataSourceInfo } from '@/components/settings/DataSourceInfo'
@@ -81,8 +81,10 @@ describe('Export', () => {
 
     await userEvent.click(screen.getByTestId('export-row'))
     await userEvent.click(screen.getByTestId('export-xlsx'))
-    await userEvent.click(await screen.findByTestId('export-row'))
+    await waitForElementToBeRemoved(() => screen.queryByTestId('export-xlsx'))
+    await userEvent.click(screen.getByTestId('export-row'))
     await userEvent.click(screen.getByTestId('export-csv'))
+    await waitForElementToBeRemoved(() => screen.queryByTestId('export-csv'))
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       '/api/activities/export?format=xlsx',
@@ -100,6 +102,7 @@ describe('Export', () => {
 
     await userEvent.click(screen.getByTestId('export-row'))
     await userEvent.click(screen.getByTestId('export-csv'))
+    await waitForElementToBeRemoved(() => screen.queryByTestId('export-csv'))
 
     expect(await screen.findByText(s.dataExport.notesUnavailable)).toBeInTheDocument()
     expect(saveFileWithFallback).toHaveBeenCalledTimes(1)

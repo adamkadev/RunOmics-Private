@@ -1,4 +1,4 @@
-import type { ActivityType, WorkoutStep } from '@/domain/activity/types'
+import type { WorkoutStep } from '@/domain/activity/types'
 
 export type { WorkoutStep, WorkoutStepKind } from '@/domain/activity/types'
 
