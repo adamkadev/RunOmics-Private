@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } fr
 import type { FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import { heatBasemapStyle, maptilerStyle } from "@/lib/maptiler";
+import { basemapStyle, heatBasemapStyle } from "@/lib/maptiler";
 import { percentileBounds, type CameraPadding, type LngLatBounds } from "@/lib/routeFrame";
 import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
@@ -211,8 +211,7 @@ export function useMapRoutes(
       const mgl = await loadMapLibre();
       if (cancelled) return;
 
-      const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;
-      if (!token) {
+      if (!basemapStyle(false)) {
         console.warn("NEXT_PUBLIC_MAPTILER_TOKEN not set");
         return;
       }
@@ -223,7 +222,7 @@ export function useMapRoutes(
       let accent = readAccent();
       const map = new mgl.Map({
         container: containerRef.current!,
-        style: heatBasemapStyle(maptilerStyle(dark, token), dark),
+        style: heatBasemapStyle(basemapStyle(dark)!, dark),
         bounds: boundsArray(first.frame),
         fitBoundsOptions: { padding: fitPadding(fullscreenRef.current), maxZoom: FIT_MAX_ZOOM },
         // The licence-required attribution is MapAttribution's line of text:
@@ -246,7 +245,7 @@ export function useMapRoutes(
         accent = readAccent();
         styleLoadedRef.current = false;
         removeRunLayers(map);
-        map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
+        map.setStyle(heatBasemapStyle(basemapStyle(dark)!, dark), { diff: false });
       };
 
       // iOS draws its app switcher snapshots in both appearances: a flip back

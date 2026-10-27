@@ -10,8 +10,6 @@ export interface RoundTripRequest {
   lengthM: number
   /** Same start, length and seed, same loop: the seed is the only way to ask for another. */
   seed: number
-  /** A hint only: route scoring penalises busy roads either way. */
-  avoidBusyRoads: boolean
   /** Spots the athlete marked to avoid; one too close to the start or a via is dropped rather than fail the loop. */
   avoid?: AvoidCircle[]
   /** The caller has gone: stop waiting. The provider may already have counted the call. */

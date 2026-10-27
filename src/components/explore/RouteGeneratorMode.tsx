@@ -7,7 +7,6 @@ import { t } from '@/i18n'
 import type { SessionDay } from '@/domain/explore/climbBudget'
 import { runDarkness } from '@/domain/explore/daylight'
 import type { ExploreAreaRef, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
-import { appTodayIso } from '@/lib/calendarDate'
 import { formatPercent, formatWeekday } from '@/lib/formatters'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
@@ -15,7 +14,7 @@ import { Glass, GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/Gl
 import { MapAttribution, type MapCredit } from '@/components/ui/MapAttribution'
 import { planRouteKm, type ExploreFrom } from './exploreHref'
 import { RouteGeneratorPanel } from './RouteGeneratorPanel'
-import { generatorBack, routeStats, type ExplorePlan } from './routeGenerator'
+import { generatorBack, routeStats, runStart, type ExplorePlan } from './routeGenerator'
 import { routeGpxFile } from './routeGpx'
 import type { RouteStartMode, RouteStartState } from './routeStart'
 import type { AvoidSpots } from './useAvoidSpots'
@@ -47,6 +46,9 @@ export interface RouteGeneratorModeProps {
   target: { id: string; name: string } | null
   /** The runs are in the worker: loops can be scored against them. */
   tracksReady: boolean
+  /** The runs never came: no loop can be scored until they are fetched again. */
+  tracksFailed?: boolean
+  onRetryTracks?: () => void
   distanceKm: number
   onDistanceChange: (km: number) => void
   prefs: RoutePreferences
@@ -79,6 +81,8 @@ export function RouteGeneratorMode({
   area,
   target,
   tracksReady,
+  tracksFailed = false,
+  onRetryTracks,
   distanceKm,
   onDistanceChange,
   prefs,
@@ -107,13 +111,12 @@ export function RouteGeneratorMode({
   const darkness = useMemo(
     () =>
       runDarkness({
-        date: today ?? appTodayIso(new Date(now)),
+        ...runStart(plan, today, now),
         lat: sunLat,
         lon: sunLon,
-        now,
         durationS: distanceKm * (paceSecPerKm ?? FALLBACK_PACE_SEC_PER_KM),
       }),
-    [today, now, sunLat, sunLon, distanceKm, paceSecPerKm],
+    [plan, today, now, sunLat, sunLon, distanceKm, paceSecPerKm],
   )
   const context = useMemo(() => ({ day, dark: darkness !== null }), [day, darkness])
   const generator = useRouteGenerator({
@@ -132,6 +135,7 @@ export function RouteGeneratorMode({
     avoidSpots: avoid.spots,
   })
   const { route, drawn } = generator
+  const noTracks = tracksFailed && !tracksReady
 
   const onDrawnRef = useRef(onDrawnChange)
   useLayoutEffect(() => {
@@ -196,15 +200,15 @@ export function RouteGeneratorMode({
           avoid={avoid}
           prefs={prefs}
           onPrefsChange={onPrefsChange}
-          status={generator.status === 'idle' ? 'generating' : generator.status}
-          failure={generator.failure}
+          status={noTracks ? 'error' : generator.status === 'idle' ? 'generating' : generator.status}
+          failure={noTracks ? 'tracks' : generator.failure}
           minKm={generator.minKm}
           stats={stats}
           paceSecPerKm={paceSecPerKm}
           routeKey={generator.routeKey}
           gpxFile={gpxFile}
           onRegenerate={generator.regenerate}
-          onRetry={generator.retry}
+          onRetry={noTracks ? (onRetryTracks ?? generator.retry) : generator.retry}
           onClose={onClose}
         />
       </div>

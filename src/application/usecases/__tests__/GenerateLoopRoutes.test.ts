@@ -12,7 +12,7 @@ import {
 
 // A fictional start near the demo dataset's mid-Pacific home.
 const START: [number, number] = [-150, 0]
-const REQUEST: LoopRequest = { start: START, distanceM: 8000, seeds: [10, 11, 12], avoidBusyRoads: false }
+const REQUEST: LoopRequest = { start: START, distanceM: 8000, seeds: [10, 11, 12] }
 
 function loop(seed: number, distanceM: number): RouteCandidate {
   return { seed, coordinates: [[-150, 0], [-150.01, 0], [-150, 0]], distanceM, durationS: 0, ascentM: null, descentM: null, waytypes: [] }
@@ -44,14 +44,14 @@ describe('generateLoopRoutes', () => {
       return found(req.seed, 8100)
     })
 
-    const pending = generateLoopRoutes(gateway, { ...REQUEST, avoidBusyRoads: true })
+    const pending = generateLoopRoutes(gateway, REQUEST)
     await Promise.resolve()
     // Every request is out before any has answered.
     expect(calls.map((c) => c.seed)).toEqual([10, 11, 12])
     release()
 
     expect(await pending).toEqual({ ok: true, candidates: [loop(10, 8100), loop(11, 8100), loop(12, 8100)] })
-    expect(calls.every((c) => c.lengthM === 8000 && c.avoidBusyRoads && c.start === START)).toBe(true)
+    expect(calls.every((c) => c.lengthM === 8000 && c.start === START)).toBe(true)
   })
 
   it('keeps a loop within 15% of the target without asking again', async () => {
@@ -153,9 +153,9 @@ describe('generateLoopRoutes', () => {
 describe('parseLoopRequest', () => {
   const valid = { start: START, distanceM: 8000, seeds: [0, 1, 2, 3, 4] }
 
-  it('accepts a well-formed body, avoidBusyRoads off unless asked', () => {
-    expect(parseLoopRequest(valid)).toEqual({ ...valid, avoidBusyRoads: false })
-    expect(parseLoopRequest({ ...valid, avoidBusyRoads: true })?.avoidBusyRoads).toBe(true)
+  it('accepts a well-formed body, and leaves out the busy roads an older client still sends', () => {
+    expect(parseLoopRequest(valid)).toEqual(valid)
+    expect(parseLoopRequest({ ...valid, avoidBusyRoads: true })).toEqual(valid)
     expect(parseLoopRequest({ ...valid, avoid: [[-150.01, 0, 80]] })?.avoid).toEqual([[-150.01, 0, 80]])
   })
 
@@ -178,7 +178,6 @@ describe('parseLoopRequest', () => {
     ['seven seeds', { ...valid, seeds: [1, 2, 3, 4, 5, 6, 7] }],
     ['a fractional seed', { ...valid, seeds: [1.5] }],
     ['seeds that are not an array', { ...valid, seeds: 4 }],
-    ['avoidBusyRoads as a string', { ...valid, avoidBusyRoads: 'yes' }],
     ['an avoid spot 5 km wide', { ...valid, avoid: [[-150.01, 0, 5000]] }],
     ['twenty-one avoid spots', { ...valid, avoid: Array.from({ length: 21 }, () => [-150.01, 0, 80]) }],
   ])('refuses %s', (_label, body) => {

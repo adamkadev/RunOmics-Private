@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { RouteGeneratorPanel, type RouteGeneratorPanelProps } from '../RouteGeneratorPanel'
+import type { AvoidSpot } from '@/domain/explore/avoidSpots'
 import type { AvoidSpots } from '../useAvoidSpots'
 
-const avoidSpots = (marking: boolean, setMarking: (on: boolean) => void = () => {}): AvoidSpots => ({
+const avoidSpots = (marking: boolean, setMarking: (on: boolean) => void = () => {}, more: Partial<AvoidSpots> = {}): AvoidSpots => ({
   enabled: true,
   spots: [],
   marking,
@@ -11,8 +12,18 @@ const avoidSpots = (marking: boolean, setMarking: (on: boolean) => void = () => 
   mark: () => {},
   remove: () => {},
   setReason: () => {},
+  setRadius: () => {},
+  selectedId: null,
+  located: null,
+  locate: () => {},
+  full: false,
   failed: false,
+  ...more,
 })
+
+const SPOT: AvoidSpot = { id: 's1', lon: -150, lat: 0, radiusM: 80, createdAt: '2026-10-26', reason: 'mud', expiresOn: '2026-11-16' }
+
+const openOptions = () => fireEvent.click(screen.getByRole('button', { name: /^Route options/ }))
 
 const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
   unitName: 'Bravo',
@@ -71,5 +82,34 @@ describe('RouteGeneratorPanel', () => {
     expect(screen.queryByTestId('route-avoid-marking')).toBeNull()
     expect(screen.getByRole('button', { name: 'Download GPX' })).toBeVisible()
     expect(screen.getByTestId('route-avoid-mark')).toHaveFocus()
+  })
+
+  it('turns Mark a spot off at the cap and says why', () => {
+    render(<RouteGeneratorPanel {...props(avoidSpots(false, undefined, { full: true }))} />)
+    openOptions()
+    expect(screen.getByTestId('route-avoid-mark')).toBeDisabled()
+    expect(screen.getByTestId('route-avoid-mark')).toHaveAccessibleDescription('100 spots is the most. Remove one to mark another.')
+  })
+
+  it('names how long a spot lasts and flies to it on a tap of its row', () => {
+    const locate = vi.fn()
+    render(<RouteGeneratorPanel {...props(avoidSpots(false, undefined, { spots: [SPOT], locate }))} />)
+    openOptions()
+    const row = screen.getByRole('button', { name: /^Show the spot marked/ })
+    expect(row).toHaveTextContent(/^Marked .+ · until .+$/)
+    fireEvent.click(row)
+    expect(locate).toHaveBeenCalledWith('s1')
+    expect(screen.queryByTestId('route-avoid-radius')).toBeNull()
+  })
+
+  it('offers the three sizes on the spot shown, its own pressed', () => {
+    const setRadius = vi.fn()
+    render(<RouteGeneratorPanel {...props(avoidSpots(false, undefined, { spots: [SPOT], selectedId: 's1', setRadius }))} />)
+    openOptions()
+    const sizes = within(screen.getByTestId('route-avoid-radius')).getAllByRole('button')
+    expect(sizes.map((b) => b.textContent)).toEqual(['40 m', '80 m', '150 m'])
+    expect(sizes.map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false'])
+    fireEvent.click(sizes[2]!)
+    expect(setRadius).toHaveBeenCalledWith('s1', 150)
   })
 })

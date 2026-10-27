@@ -154,13 +154,16 @@ other roads half, and `wClimb` 0.25. Trail share counts steps, soft ground on an
 ground or mud, sand, grass, ice) and paths or tracks without a paved surface (gravel half); `wTrail` is
 1.5, 0 with **Trails OK** (off by default; it does not apply on a quality day or the day before one), and
 6 more whenever the run would start before sunrise or end after sunset less 15 min (NOAA's solar
-equations at the start, the run timed from now at the easy pace, 6:00/km without one), which Trails OK
+equations at the start, the run timed from now at the easy pace, 6:00/km without one; for a later
+day's plan, from the athlete's usual start hour that day, the median of the last 20 runs' starts within
+the part of the day Garmin scheduled), which Trails OK
 never lifts. Steep share counts climbs of 7-10 % half and steeper ones in full, and descents too on a
 long run. The climb budget comes from the day's session (see
 [Explore loops](coaching-and-metrics.md#explore-loops)). "Flat for the reps", on by default when the
 day's session is a quality one, makes `wClimb` 0.5 and adds `0.4·(1 − traffic-free share)`, traffic-free
-being paved paths and tracks, footways and cycleways. The toggles but "Avoid busy roads", the session
-and the daylight re-rank the loops already fetched, without a new request. The panel names the day's
+being paved paths and tracks, footways and cycleways. Every toggle, "Avoid busy roads" included (it is a
+ranking weight, never sent to ORS), the session and the daylight re-rank the loops already fetched,
+without a new request; the last four batches are kept, so the stepper back and forth asks for nothing. The panel names the day's
 budget and the loop's m/km against it, the sunset when it applies, and the share on trails and a hint
 to walk steep climbs when they are notable. The GPX is GPX 1.1, the loop only, closed on its start,
 named `runomics-<quartier>-<km>km.gpx`.
@@ -169,10 +172,21 @@ named `runomics-<quartier>-<km>km.gpx`.
 the map) where a fallen tree, a flooded path or an unsafe corner should keep loops away. Until the tap,
 the panel steps down to a one-line bar, the prompt and Cancel (Escape too), so the map is free to tap
 and the camera fits the larger view; it comes back with the new spot's row in view, to pick its
-reason. Each is an 80 m circle in Firestore `avoidSpots` (owner-only rules), with an optional reason,
-listed and removed in the same place and drawn on the map. A batch sends the nearest 20 a loop could
-reach to ORS as `options.avoid_polygons` (octagons around the circles), leaving out any within 50 m of
-the start or a via, where it would leave ORS no routable point and fail every loop.
+reason. Each is a circle in Firestore `avoidSpots` (owner-only rules), 80 m to start with, with an
+optional reason, listed and removed in the same place and drawn on the map. A tap on a spot's row flies
+the map to it and shows its size, 40, 80 or 150 m. A reason that wears off sets an expiry, counted from
+the day the reason is given: mud 3 weeks, blocked 6, unsafe never; a spot past it is removed when the
+list is next read. At 100 spots Mark a spot turns off and says to remove one. The quartier's own start
+and the worker's vias skip any cell within a spot's radius plus 50 m. A batch is keyed on, and sends,
+the nearest 20 a loop could reach (`options.avoid_polygons`, octagons around the circles), leaving out
+any within 50 m of the start or a via, where it would leave ORS no routable point and fail every loop.
+Each loop that comes back is then checked against those spots: one whose line passes inside a circle
+(ORS can cut an octagon's corner) is dropped, the spots by the start or a via aside, and with none left
+the panel says no loop was found.
+
+**When the runs don't load:** a failed `/api/map/routes` fetch shows an error with Retry on the heat
+map, the Districts card and the generator's panel, instead of loading forever, and tries again by
+itself when the phone comes back online or to the foreground.
 
 **New ground:** the server replays each area's runs oldest first, from the busiest cluster in it as the map
 opens it (`src/domain/explore/gains.ts`,

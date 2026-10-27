@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { Layers, LocateFixed, MapPin, X } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
-import { maptilerStyle } from '@/lib/maptiler'
+import { basemapStyle, TEST_MAPS } from '@/lib/maptiler'
 import { MapAttribution } from '@/components/ui/MapAttribution'
 import { Glass, GlassLayers, GLASS_CIRCLE, GLASS_GROUP_BUTTON, glassClass } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
@@ -62,7 +62,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
   // The element MapLibre draws into. It moves between hosts when fullscreen
   // portals the map to <body>, so the map is resized rather than rebuilt.
   const mapElRef = useRef<HTMLDivElement | null>(null)
-  const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
+  const hasMap = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN || TEST_MAPS
   const mapRef = useRef<MapLibreMap | null>(null)
   // What the run layers show, so a new style can draw them again as they were.
   const drawnRef = useRef(0)
@@ -158,8 +158,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
       const mgl = await loadMapLibre()
       if (cancelled) return
 
-      const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
-      if (!token) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
+      if (!basemapStyle(false)) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
 
       const first = route[0]
       if (!first) return
@@ -181,7 +180,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
 
       const map = new mgl.Map({
         container: mapEl,
-        style: maptilerStyle(dark, token),
+        style: basemapStyle(dark)!,
         bounds,
         fitBoundsOptions: { padding: ROUTE_FIT_PADDING, maxZoom: 15 },
         attributionControl: false,
@@ -265,7 +264,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         layersReadyRef.current = false
         removeFence?.()
         removeFence = null
-        map.setStyle(maptilerStyle(dark, token), { diff: false })
+        map.setStyle(basemapStyle(dark)!, { diff: false })
       }
       applyStyleRef.current = applyStyle
       // Not map.isStyleLoaded(): it stays false while tiles load, long after style.load, and a flip then went unseen.
@@ -305,7 +304,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
   }, [hoverFraction, route])
 
   // The overlay over the placeholder too, so the hero's edges are the same whatever it shows.
-  if (!hasToken) return <><MapUnavailable className={className} />{overlay}</>
+  if (!hasMap) return <><MapUnavailable className={className} />{overlay}</>
 
   const m = t.activity.map
   const shownStyle = styleChoice ?? (isFullscreen ? themeStyle() : 'dark')

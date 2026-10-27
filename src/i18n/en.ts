@@ -294,6 +294,7 @@ export const en = {
       exitFullscreen: 'Exit fullscreen',
       less: 'Rare',
       more: 'Frequent',
+      tracksFailed: 'Your runs couldn’t load.',
       noRoutes: 'No routes for this filter',
       loadFailed: 'The map couldn’t load.',
       mapUnavailable: 'Map unavailable - no map token configured',
@@ -427,6 +428,12 @@ export const en = {
           markPrompt: 'Tap the map where loops must not go.',
           // A spot's row. `date` is "26 Oct".
           marked: (date: string) => `Marked ${date}`,
+          // A spot whose reason wears off: "Marked 26 Oct · until 16 Nov".
+          markedUntil: (date: string, until: string) => `Marked ${date} · until ${until}`,
+          locate: (date: string) => `Show the spot marked ${date} on the map`,
+          radius: 'Size',
+          radiusM: (m: string) => `${m} m`,
+          full: (max: number) => `${max} spots is the most. Remove one to mark another.`,
           reason: 'Reason',
           reasons: { none: 'No reason', blocked: 'Blocked', mud: 'Muddy', unsafe: 'Unsafe' },
           remove: 'Remove spot',
@@ -447,6 +454,7 @@ export const en = {
         retry: 'Try again',
         errors: {
           notConfigured: 'Route generation isn’t set up on this deployment.',
+          tracks: 'Your runs couldn’t load, so no loop can be scored.',
           auth: 'Sign in as the owner to plan routes.',
           rateLimited: 'Too many requests. Try again in a minute.',
           dailyQuota: 'Today’s route quota is used up.',
