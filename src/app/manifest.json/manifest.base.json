@@ -1,8 +1,9 @@
 {
   "name": "RunOmics",
   "short_name": "RunOmics",
-  "description": "Your personal running training dashboard - stats, maps, trends.",
   "start_url": "/",
+  "id": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b0c0c",
   "theme_color": "#0b0c0c",

@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { CoachingPlan } from '@/domain/coaching/types'
 import { buildActivitiesCsv, buildTrainingWorkbook, type TrainingWorkbookData } from '../GetTrainingWorkbook'
@@ -436,6 +436,36 @@ describe('buildTrainingWorkbook', () => {
 
       expect(rows.slice(1).map((row) => row[header.indexOf('notes_status')])).toEqual(['unavailable', 'unavailable'])
       expect(csv).not.toContain('private-route')
+    })
+  })
+
+  describe('in the French build', () => {
+    let fr: typeof import('../GetTrainingWorkbook')
+
+    beforeAll(async () => {
+      vi.stubEnv('NEXT_PUBLIC_LOCALE', 'fr')
+      vi.resetModules()
+      fr = await import('../GetTrainingWorkbook')
+    })
+    afterAll(() => {
+      vi.unstubAllEnvs()
+      vi.resetModules()
+    })
+
+    it('writes the guide and the context in French and keeps the column and item keys', () => {
+      const input = data()
+      input.athlete = { ...input.athlete, trainingBreaks: [{ start: '2026-01-02', end: '2026-01-02', reason: 'heat' }] }
+      const workbook = fr.buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z'))
+      const guide = workbook.getWorksheet('Guide')!
+      const context = workbook.getWorksheet('Context')!
+
+      expect(headers(guide)).toEqual(['section', 'item', 'description'])
+      expect(headers(context)).toEqual(['section', 'item', 'value'])
+      const caveat = guide.getRows(2, guide.rowCount - 1)!.find((row) => row.getCell(2).value === 'hr_zones')!
+      expect(caveat.getCell(1).value).toBe('Précaution')
+      expect(String(caveat.getCell(3).value)).toContain('zones Garmin')
+      const pause = context.getRows(2, context.rowCount - 1)!.find((row) => row.getCell(1).value === 'Pauses')!
+      expect(pause.getCell(2).value).toBe('du 2026-01-02 au 2026-01-02')
     })
   })
 })

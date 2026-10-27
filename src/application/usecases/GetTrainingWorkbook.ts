@@ -21,6 +21,7 @@ import { trimp, hrBoundsOf, loadSource, type HrBounds } from '@/domain/training/
 import { loadSeries } from '@/domain/training/loadSeries'
 import { prescriptionsByDate } from '@/application/coaching/autoregulation'
 import { round } from '@/lib/math'
+import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
@@ -245,36 +246,20 @@ function workbookLoadSource(parts: Activity[]): string | null {
 }
 
 function guideRows(generatedAt: Date): RowData[] {
+  const w = t.workbook
+  const row = (section: string, item: string, description: string) => ({ section, item, description })
   return [
-    { section: 'Export', item: 'schema_version', description: SCHEMA_VERSION },
-    { section: 'Export', item: 'generated_at_utc', description: generatedAt.toISOString() },
-    { section: 'Export', item: 'source', description: 'Runomics training data' },
-    { section: 'Usage', item: 'intended_audience', description: 'Athlete, running coach, or LLM-based training analysis' },
-    { section: 'Usage', item: 'missing_values', description: 'Blank cells mean the source did not provide a reliable value.' },
-    { section: 'Usage', item: 'units', description: 'Units are included in column names. Pace and finish times remain numeric seconds for analysis.' },
-    { section: 'Privacy', item: 'location_data', description: 'Route coordinates are intentionally excluded.' },
-    { section: 'Privacy', item: 'raw_samples', description: 'Raw heart-rate, pace, cadence, and elevation arrays are excluded; useful summaries are exported instead.' },
-    { section: 'Notes', item: 'comment_and_tags', description: 'comment and tags are the notes and tags typed on each activity in the app. notes_status is "included" on every row of a complete export; "unavailable" means the notes store could not be read, so a blank comment does not mean there was no note: export again.' },
-    { section: 'Caveat', item: 'daily_plan_completion', description: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.' },
-    { section: 'Caveat', item: 'hr_zones', description: 'Athlete HR zone columns are Garmin zone floors: a zone runs from its own lower bound up to one below the next zone\'s, and zone 5 up to max_hr_bpm.' },
-    { section: 'Caveat', item: 'sessions', description: 'A session the watch saved as several back-to-back runs (warm-up, test, cool-down) is one Activities row: activity_id is its main run, merged_activity_ids the others. The row reads as the main run (the race or the test itself): its distance, time, pace, heart rate, running dynamics, type, execution and weather. session_distance_km and session_duration_seconds add the runs saved apart, filled on merged rows only; zones, TRIMP, calories and elevation count the whole session. Runs synced before start times were stored stay one row each.' },
-    { section: 'Caveat', item: 'load_source', description: 'trimp comes from heart rate, or is "estimated from effort" (session RPE × minutes, scaled to TRIMP) where the heart rate is not trusted: recorded before athlete hr_reliable_from, on the wrist sensor after it, or marked unreliable in the app. Such a run\'s heart-rate and zone columns are blank.' },
-    { section: 'Caveat', item: 'type', description: 'type is Garmin\'s label from training effect, or Runomics\' from the workout name when type_source is runomics; it often differs from the intent. description and planned_type say what the session was meant to be.' },
-    { section: 'Caveat', item: 'planned_columns', description: 'planned_* are the Runomics coach\'s prescription for that day when there is one (purpose, pace guide, heart-rate cap), else the workout on the Garmin calendar. They sit on the day\'s main session; compare them with the execution_* columns.' },
-    { section: 'Caveat', item: 'race_results', description: 'race_official_* are published results (chip time, certified distance). distance_km and pace_sec_per_km stay what the watch measured, which runs long on GPS.' },
-    { section: 'Sheet', item: 'Athlete', description: 'Current athlete profile and physiological reference values.' },
-    { section: 'Sheet', item: 'Context', description: 'What the numbers cannot say: the training goal, available days, the current block and the focus of each week, upcoming races, injury history, and the reasons behind breaks in training.' },
-    { section: 'Sheet', item: 'Activities', description: 'One row per session with conditions, intensity, what was planned and how it was executed, official race results, records, gear, and your notes and tags. The CSV export is this sheet alone.' },
-    { section: 'Sheet', item: 'Intervals', description: 'One row per segment of a workout with reps or strides - warm-up, each rep or stride, each recovery, cool-down - with its own pace and heart rate.' },
-    { section: 'Sheet', item: 'Daily Status', description: 'One row per calendar day, including rest days, with load, status, plan, and any training break.' },
-    { section: 'Sheet', item: 'Records', description: 'Official yearly personal bests plus locally derived records when no official record exists.' },
-    { section: 'Sheet', item: 'Races', description: 'Completed races with their official result next to the watch\'s, and calendar races. predicted_time_seconds is Garmin\'s prediction on the race day.' },
-    { section: 'Sheet', item: 'Training Plan', description: 'Workouts on the Garmin calendar, with the coach\'s purpose and heart-rate cap where the Runomics coach prescribed them.' },
-    { section: 'Sheet', item: 'Fitness History', description: 'VO2max, lactate-threshold, threshold-pace, fitness-age, and weight history.' },
-    { section: 'Sheet', item: 'Race Predictions', description: 'Garmin race prediction history in seconds.' },
-    { section: 'Sheet', item: 'Shoes', description: 'Shoe lifecycle and distance accumulated in exported activities.' },
-    { section: 'Sheet', item: 'Goals', description: 'Annual volume and race-time targets with observed progress.' },
-    { section: 'Sheet', item: 'Load Balance', description: 'Latest Garmin four-week intensity balance and personalised target ranges.' },
+    row(w.sections.export, 'schema_version', SCHEMA_VERSION),
+    row(w.sections.export, 'generated_at_utc', generatedAt.toISOString()),
+    row(w.sections.export, 'source', w.guide.source),
+    row(w.sections.usage, 'intended_audience', w.guide.intended_audience),
+    row(w.sections.usage, 'missing_values', w.guide.missing_values),
+    row(w.sections.usage, 'units', w.guide.units),
+    row(w.sections.privacy, 'location_data', w.guide.location_data),
+    row(w.sections.privacy, 'raw_samples', w.guide.raw_samples),
+    row(w.sections.notes, 'comment_and_tags', w.guide.comment_and_tags),
+    ...Object.entries(w.caveats).map(([item, description]) => row(w.sections.caveat, item, description)),
+    ...Object.entries(w.sheets).map(([sheet, description]) => row(w.sections.sheet, sheet, description)),
   ]
 }
 
@@ -307,8 +292,6 @@ function athleteRows(athlete: AthleteProfile): RowData[] {
   }]
 }
 
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
 function clock(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -319,45 +302,46 @@ function clock(seconds: number): string {
 function contextRows(data: TrainingWorkbookData, generatedAt: Date): RowData[] {
   const rows: RowData[] = []
   const add = (section: string, item: string, value: string | number) => rows.push({ section, item, value })
+  const { sections, context: c } = t.workbook
   const plan = data.coachingPlans.find((candidate) => candidate.status === 'active')
 
   if (plan) {
-    add('Goal', plan.goal.kind, plan.goal.description)
-    if (plan.targetEvent) add('Goal', 'target_event', `${plan.targetEvent.name} on ${plan.targetEvent.date}`)
+    add(sections.goal, plan.goal.kind, plan.goal.description)
+    if (plan.targetEvent) add(sections.goal, 'target_event', c.on(plan.targetEvent.name, plan.targetEvent.date))
     if (plan.trainingPreferences) {
       // Weekday numbers count from Sunday; the athlete's week starts on Monday.
       const mondayFirst = [...plan.trainingPreferences.availableWeekdays].sort((a, b) => (a + 6) % 7 - (b + 6) % 7)
-      add('Availability', 'running_days', mondayFirst.map((day) => WEEKDAYS[day]).join(', '))
-      if (plan.trainingPreferences.runsPerWeek) add('Availability', 'runs_per_week', plan.trainingPreferences.runsPerWeek)
+      add(sections.availability, 'running_days', mondayFirst.map((day) => c.weekdays[day]).join(', '))
+      if (plan.trainingPreferences.runsPerWeek) add(sections.availability, 'runs_per_week', plan.trainingPreferences.runsPerWeek)
     }
-    add('Current block', plan.block.name, `${plan.block.startDate} to ${plan.block.endDate}. ${plan.block.focus}`)
-    for (const week of plan.weeks) add('Current block', `Week ${week.index}, ${week.startDate} to ${week.endDate}`, week.focus)
+    add(sections.currentBlock, plan.block.name, `${c.span(plan.block.startDate, plan.block.endDate)}. ${plan.block.focus}`)
+    for (const week of plan.weeks) add(sections.currentBlock, c.week(week.index, c.span(week.startDate, week.endDate)), week.focus)
   }
 
   const today = utcDate(generatedAt)
   for (const race of data.upcomingRaces.flatMap((year) => year.races).filter((race) => race.date >= today)) {
-    const target = race.targetSeconds ? `target ${clock(race.targetSeconds)}` : 'no target time set'
-    add('Upcoming race', `${race.date} ${race.name}`, `${race.distance}, ${target}`)
+    const target = race.targetSeconds ? c.target(clock(race.targetSeconds)) : c.noTarget
+    add(sections.upcomingRace, `${race.date} ${race.name}`, `${race.distance}, ${target}`)
   }
 
   const history = data.athlete.injuryHistory
   if (history) {
-    add('Injuries', 'reviewed_on', history.reviewedOn)
-    if (!history.injuries.length) add('Injuries', 'none', 'No running injury reported.')
+    add(sections.injuries, 'reviewed_on', history.reviewedOn)
+    if (!history.injuries.length) add(sections.injuries, 'none', c.noInjury)
     for (const injury of history.injuries) {
-      const resolved = injury.resolved === undefined ? 'not known to be resolved' : injury.resolved ? 'resolved' : 'ongoing'
+      const resolved = injury.resolved === undefined ? c.resolutionUnknown : injury.resolved ? c.resolved : c.ongoing
       const facts = [
-        injury.weeksOut === undefined ? null : `${injury.weeksOut} week${injury.weeksOut === 1 ? '' : 's'} out`,
-        injury.recurrent ? 'recurrent' : null,
+        injury.weeksOut === undefined ? null : c.weeksOut(injury.weeksOut),
+        injury.recurrent ? c.recurrent : null,
         resolved,
         injury.note ?? null,
       ]
-      add('Injuries', `${injury.date ?? injury.year} ${injury.site}`, facts.filter(Boolean).join('; '))
+      add(sections.injuries, `${injury.date ?? injury.year} ${injury.site}`, facts.filter(Boolean).join('; '))
     }
   }
 
   for (const pause of data.athlete.trainingBreaks ?? []) {
-    add('Training breaks', `${pause.start} to ${pause.end}`, pause.note ? `${pause.reason}: ${pause.note}` : pause.reason)
+    add(sections.trainingBreaks, c.span(pause.start, pause.end), pause.note ? `${pause.reason}: ${pause.note}` : pause.reason)
   }
   return rows
 }

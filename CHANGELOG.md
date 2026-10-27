@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- PWA states, accessibility and French (F6, F10, F11, manifest). Settings →
+  Notifications says "add to the Home Screen" where Safari offers no push and
+  "blocked in Settings" once permission is refused, with the switches disabled,
+  instead of the retry toast. The update banner shows only for another build's
+  worker, sits above the tab bar and can be dismissed. Turning notifications on
+  takes the token on the running worker (`serviceWorker.ready`) instead of
+  registering `/sw.js` without `?v=`, which replaced the build's worker and its
+  caches. Today resumed past midnight offers "Page d'hier, actualiser". The
+  celebration dialog is named and closes on Escape. `--axis-text` and the faint
+  greys reach 4.5:1 on the card, ground, raised and inset surfaces in both
+  themes, now tested for every text token. French numbers keep a no-break space
+  inside them ("1 705", "45 %"), dates keep U+0020. The workbook's Guide and
+  Context sheets are written in the build's language, column and item keys
+  unchanged. `/manifest.json` is now a route that adds `lang` and the localized
+  description to `id: "/"` and `scope: "/"`; `generate-brand` writes its base in
+  `src/app/manifest.json/manifest.base.json`.
+
 - Heart-rate trust and return-to-running progress (F2, F3). The sync reads the
   FIT's paired sensors into each run's `hrSource` (`external` or `wrist`), and
   `athlete.json` takes an optional `hrReliableFrom`: a run before it, a wrist

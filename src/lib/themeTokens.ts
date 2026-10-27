@@ -48,11 +48,11 @@ export const SURFACES = {
     text: '#141615',
     body: '#434846',
     // Labels and meta.
-    text2: '#6b706e',
+    text2: '#6a6f6d',
     // The map's street labels. Not for UI text: see subtle.
     text3: '#9aa09d',
     // Faint UI text at 4.5:1: on the light ground nothing lighter than text2 reaches it.
-    subtle: '#6b706e',
+    subtle: '#6a6f6d',
     tabBar: '#ffffff',
     // Tracks, inset tiles, the segmented control's ground.
     seg: '#f0f1f0',
@@ -62,7 +62,7 @@ export const SURFACES = {
     band: '#8e9491',
     restBar: '#d9dcdb',
     neutralBar: '#b4b9b7',
-    axisText: '#8d9391',
+    axisText: '#6a6f6d',
     amber: STATUS_HEX.light.warn,
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
   },
@@ -78,7 +78,7 @@ export const SURFACES = {
     text2: '#8d9391',
     text3: '#5b6563',
     // A step under text2 that still reaches 4.5:1.
-    subtle: '#7f8482',
+    subtle: '#808583',
     tabBar: '#0d0f0f',
     seg: '#0f1111',
     // The active segment.
@@ -88,7 +88,7 @@ export const SURFACES = {
     band: '#6a706d',
     restBar: '#3a3f3e',
     neutralBar: '#5b6260',
-    axisText: '#6b7270',
+    axisText: '#808583',
     amber: STATUS_HEX.dark.warn,
     shadowRaised: 'none',
   },

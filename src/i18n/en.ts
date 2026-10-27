@@ -239,6 +239,7 @@ export const en = {
   pwa: {
     updateAvailable: 'A new version of RunOmics is ready.',
     refresh: 'Refresh',
+    dismiss: 'Dismiss',
   },
 
   signIn: {
@@ -637,6 +638,9 @@ export const en = {
       error: 'Could not update notification settings, please retry.',
       // The app's start-up refresh of this device's push token failed: the switches may be on while nothing arrives.
       notRegistered: 'Not registered on this device. Turn a switch off and on again to retry.',
+      // Safari offers push only to a web app opened from the Home Screen.
+      unsupported: 'Add RunOmics to your Home Screen to receive notifications.',
+      denied: 'Notifications blocked: allow them in Settings → Notifications → RunOmics.',
       // The daily reminder's time beside its switch: "08:00".
       at: (hour: number, minute: string) => `${String(hour).padStart(2, '0')}:${minute}`,
       types: {
@@ -650,6 +654,8 @@ export const en = {
   dashboard: {
     // Today's page header: the date over the title.
     headerDate: (weekday: string, date: string) => `${weekday}, ${date}`,
+    // A Home Screen app resumed after midnight still shows the day it was opened on.
+    stalePage: 'Yesterday’s page, refresh',
     readiness: {
       open: 'Open Load in Analytics',
       // Everyday words, not acronyms.
@@ -2443,6 +2449,71 @@ export const en = {
     line: (temp: number, time: string, cost: number) =>
       `${temp} °C at ${time} — your runs at this heat cost about +${cost} s/km: run by heart rate`,
     time: (hour: number) => `${String(hour).padStart(2, '0')}:00`,
+  },
+
+  // The training workbook's Guide and Context sheets; column and item keys stay English.
+  workbook: {
+    sections: {
+      export: 'Export',
+      usage: 'Usage',
+      privacy: 'Privacy',
+      notes: 'Notes',
+      caveat: 'Caveat',
+      sheet: 'Sheet',
+      goal: 'Goal',
+      availability: 'Availability',
+      currentBlock: 'Current block',
+      upcomingRace: 'Upcoming race',
+      injuries: 'Injuries',
+      trainingBreaks: 'Training breaks',
+    },
+    guide: {
+      source: 'Runomics training data',
+      intended_audience: 'Athlete, running coach, or LLM-based training analysis',
+      missing_values: 'Blank cells mean the source did not provide a reliable value.',
+      units: 'Units are included in column names. Pace and finish times remain numeric seconds for analysis.',
+      location_data: 'Route coordinates are intentionally excluded.',
+      raw_samples: 'Raw heart-rate, pace, cadence, and elevation arrays are excluded; useful summaries are exported instead.',
+      comment_and_tags: 'comment and tags are the notes and tags typed on each activity in the app. notes_status is "included" on every row of a complete export; "unavailable" means the notes store could not be read, so a blank comment does not mean there was no note: export again.',
+    },
+    caveats: {
+      daily_plan_completion: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.',
+      hr_zones: 'Athlete HR zone columns are Garmin zone floors: a zone runs from its own lower bound up to one below the next zone\'s, and zone 5 up to max_hr_bpm.',
+      sessions: 'A session the watch saved as several back-to-back runs (warm-up, test, cool-down) is one Activities row: activity_id is its main run, merged_activity_ids the others. The row reads as the main run (the race or the test itself): its distance, time, pace, heart rate, running dynamics, type, execution and weather. session_distance_km and session_duration_seconds add the runs saved apart, filled on merged rows only; zones, TRIMP, calories and elevation count the whole session. Runs synced before start times were stored stay one row each.',
+      load_source: 'trimp comes from heart rate, or is "estimated from effort" (session RPE × minutes, scaled to TRIMP) where the heart rate is not trusted: recorded before athlete hr_reliable_from, on the wrist sensor after it, or marked unreliable in the app. Such a run\'s heart-rate and zone columns are blank.',
+      type: 'type is Garmin\'s label from training effect, or Runomics\' from the workout name when type_source is runomics; it often differs from the intent. description and planned_type say what the session was meant to be.',
+      planned_columns: 'planned_* are the Runomics coach\'s prescription for that day when there is one (purpose, pace guide, heart-rate cap), else the workout on the Garmin calendar. They sit on the day\'s main session; compare them with the execution_* columns.',
+      race_results: 'race_official_* are published results (chip time, certified distance). distance_km and pace_sec_per_km stay what the watch measured, which runs long on GPS.',
+    },
+    sheets: {
+      Athlete: 'Current athlete profile and physiological reference values.',
+      Context: 'What the numbers cannot say: the training goal, available days, the current block and the focus of each week, upcoming races, injury history, and the reasons behind breaks in training.',
+      Activities: 'One row per session with conditions, intensity, what was planned and how it was executed, official race results, records, gear, and your notes and tags. The CSV export is this sheet alone.',
+      Intervals: 'One row per segment of a workout with reps or strides - warm-up, each rep or stride, each recovery, cool-down - with its own pace and heart rate.',
+      'Daily Status': 'One row per calendar day, including rest days, with load, status, plan, and any training break.',
+      Records: 'Official yearly personal bests plus locally derived records when no official record exists.',
+      Races: 'Completed races with their official result next to the watch\'s, and calendar races. predicted_time_seconds is Garmin\'s prediction on the race day.',
+      'Training Plan': 'Workouts on the Garmin calendar, with the coach\'s purpose and heart-rate cap where the Runomics coach prescribed them.',
+      'Fitness History': 'VO2max, lactate-threshold, threshold-pace, fitness-age, and weight history.',
+      'Race Predictions': 'Garmin race prediction history in seconds.',
+      Shoes: 'Shoe lifecycle and distance accumulated in exported activities.',
+      Goals: 'Annual volume and race-time targets with observed progress.',
+      'Load Balance': 'Latest Garmin four-week intensity balance and personalised target ranges.',
+    },
+    context: {
+      weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      on: (name: string, date: string) => `${name} on ${date}`,
+      span: (start: string, end: string) => `${start} to ${end}`,
+      week: (index: number, span: string) => `Week ${index}, ${span}`,
+      target: (time: string) => `target ${time}`,
+      noTarget: 'no target time set',
+      noInjury: 'No running injury reported.',
+      resolved: 'resolved',
+      ongoing: 'ongoing',
+      resolutionUnknown: 'not known to be resolved',
+      weeksOut: (weeks: number) => `${weeks} week${weeks === 1 ? '' : 's'} out`,
+      recurrent: 'recurrent',
+    },
   },
 
   activityTypes: {

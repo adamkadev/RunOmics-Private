@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
+import { appTodayIso } from '@/lib/calendarDate'
 import { DashboardGreeting, headerDate, isSyncStale } from '../DashboardGreeting'
 
 const push = vi.fn()
@@ -142,6 +143,16 @@ describe('DashboardGreeting', () => {
     owner.phase = { kind: 'done' }
     rerender(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
     expect(refresh).toHaveBeenCalledTimes(2)
+  })
+
+  it('offers to refresh a page rendered on an earlier day, and stays quiet on the day it was rendered', async () => {
+    const today = appTodayIso()
+    const { rerender } = render(<DashboardGreeting name="Adam" today={today} />)
+    expect(screen.queryByTestId('today-stale')).toBeNull()
+
+    rerender(<DashboardGreeting name="Adam" today="2020-01-01" />)
+    await userEvent.click(screen.getByRole('button', { name: t.dashboard.stalePage }))
+    expect(refresh).toHaveBeenCalledTimes(1)
   })
 
   it('keeps a fresh sync as plain text', () => {
