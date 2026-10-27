@@ -44,6 +44,8 @@ describe('POST /api/internal/overreaching-check', () => {
       {
         title: 'Overreaching risk detected',
         body: 'Form (TSB) -34, ACWR 1.6 - high training risk, consider recovery.',
+        link: '/analytics',
+        tag: 'overreaching',
       },
     ])
     expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushes.mock.invocationCallOrder[0]!)

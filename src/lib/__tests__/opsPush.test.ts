@@ -7,6 +7,7 @@ vi.mock('@/lib/sendPushNotification', () => ({ sendPush }))
 const { opsSource, opsStrings, sendOpsPush } = await import('../opsPush')
 
 const URL = 'https://owner.example.com/api/internal/ops-push'
+const ALERT = { title: 'Token expiring', body: 'dataActions' }
 
 describe('sendOpsPush', () => {
   beforeEach(() => {
@@ -21,14 +22,14 @@ describe('sendOpsPush', () => {
   })
 
   it('pushes to this deployment’s own devices where no operator deployment is configured', async () => {
-    expect(await sendOpsPush('Token expiring', 'dataActions')).toEqual({ forwarded: false })
-    expect(sendPush).toHaveBeenCalledWith('always', 'Token expiring', 'dataActions')
+    expect(await sendOpsPush(ALERT)).toEqual({ forwarded: false })
+    expect(sendPush).toHaveBeenCalledWith('always', ALERT)
   })
 
   it('keeps pushing locally when only one half of the forwarding is set', async () => {
     vi.stubEnv('OPS_PUSH_URL', URL)
 
-    expect(await sendOpsPush('Token expiring', 'dataActions')).toEqual({ forwarded: false })
+    expect(await sendOpsPush(ALERT)).toEqual({ forwarded: false })
     expect(sendPush).toHaveBeenCalledOnce()
   })
 
@@ -38,7 +39,7 @@ describe('sendOpsPush', () => {
     vi.stubEnv('OPS_PUSH_URL', URL)
     vi.stubEnv('OPS_PUSH_SECRET', 'ops-secret')
 
-    expect(await sendOpsPush('Token expiring', 'dataActions')).toEqual({ forwarded: true })
+    expect(await sendOpsPush(ALERT)).toEqual({ forwarded: true })
     expect(sendPush).not.toHaveBeenCalled()
 
     const [url, init] = fetchMock.mock.calls[0]!
@@ -47,12 +48,29 @@ describe('sendOpsPush', () => {
     expect(JSON.parse((init as { body: string }).body)).toEqual({ title: 'Token expiring', body: 'dataActions', from: 'kestrel' })
   })
 
+  it('forwards the link as this deployment’s absolute URL, with the tag', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubEnv('OPS_PUSH_URL', URL)
+    vi.stubEnv('OPS_PUSH_SECRET', 'ops-secret')
+    vi.stubEnv('APP_URL', 'https://kestrel.example.com')
+
+    await sendOpsPush({ ...ALERT, link: '/settings', tag: 'token-expiry' })
+
+    expect(JSON.parse((fetchMock.mock.calls[0]![1] as { body: string }).body)).toEqual({
+      ...ALERT,
+      from: 'kestrel',
+      link: 'https://kestrel.example.com/settings',
+      tag: 'token-expiry',
+    })
+  })
+
   it('throws on a refusal, so the alert is not recorded as delivered', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
     vi.stubEnv('OPS_PUSH_URL', URL)
     vi.stubEnv('OPS_PUSH_SECRET', 'ops-secret')
 
-    await expect(sendOpsPush('Token expiring', 'dataActions')).rejects.toThrow('503')
+    await expect(sendOpsPush(ALERT)).rejects.toThrow('503')
   })
 })
 

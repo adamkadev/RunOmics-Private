@@ -1,16 +1,14 @@
 import fs from 'fs'
 import type {
+  ActivityEvaluationRequest,
   AdvisorRecommendation,
   BootstrapRequest,
   CoachingAdvisor,
   CoachingPlanDraft,
+  WeeklyReviewRequest,
 } from '@/application/ports/CoachingAdvisor'
-import { parseBootstrapPlanDraft } from './coachingAnswer'
-import {
-  BOOTSTRAP_PLAN_RESPONSE_SCHEMA,
-  BOOTSTRAP_SYSTEM_INSTRUCTION,
-  bootstrapUserPrompt,
-} from './coachingPrompt'
+import { parseBootstrapPlanDraft, parseRecommendation } from './coachingAnswer'
+import { activityEvaluationPrompt, bootstrapPrompt, weeklyReviewPrompt, type CoachingPromptParts } from './coachingPrompt'
 
 export class ManualPromptWritten extends Error {
   constructor(readonly promptPath: string) {
@@ -31,29 +29,41 @@ function jsonSchema(node: unknown): unknown {
   )
 }
 
-export function renderManualPrompt(input: BootstrapRequest): string {
+function renderPrompt({ systemInstruction, userPrompt, schema }: CoachingPromptParts, situation: string): string {
   return [
     'You are a running coach. Follow every rule below, then answer with JSON only.',
     '',
     '## Rules',
     '',
-    BOOTSTRAP_SYSTEM_INSTRUCTION,
+    systemInstruction,
     '',
-    '## Your athlete and the planning period',
+    `## ${situation}`,
     '',
-    bootstrapUserPrompt(input),
+    userPrompt,
     '',
     '## Answer format',
     '',
     'Reply with a single JSON object and nothing else - no explanation before or',
     'after it, and no markdown code fence. It must validate against this schema:',
     '',
-    JSON.stringify(jsonSchema(BOOTSTRAP_PLAN_RESPONSE_SCHEMA), null, 2),
+    JSON.stringify(jsonSchema(schema), null, 2),
     '',
   ].join('\n')
 }
 
-/** Coaching runs about once a month, too rarely to be worth an API key: the prompt goes to a file and a human pastes the reply back. */
+export function renderManualPrompt(input: BootstrapRequest): string {
+  return renderPrompt(bootstrapPrompt(input), 'Your athlete and the planning period')
+}
+
+export function renderEvaluationPrompt(input: ActivityEvaluationRequest): string {
+  return renderPrompt(activityEvaluationPrompt(input), 'Your athlete, the current plan and the completed run')
+}
+
+export function renderReviewPrompt(input: WeeklyReviewRequest): string {
+  return renderPrompt(weeklyReviewPrompt(input), 'Your athlete and the current plan')
+}
+
+/** The coach runs through Claude Code with no API key: the prompt goes to a file and the reply comes back as one. */
 export class ManualCoachingAdvisor implements CoachingAdvisor {
   readonly source = 'manual' as const
   private consumed = false
@@ -64,20 +74,33 @@ export class ManualCoachingAdvisor implements CoachingAdvisor {
   ) {}
 
   async bootstrap(input: BootstrapRequest): Promise<CoachingPlanDraft> {
+    return parseBootstrapPlanDraft(this.answerOrPrompt(() => renderManualPrompt(input)))
+  }
+
+  async evaluateActivity(input: ActivityEvaluationRequest): Promise<AdvisorRecommendation> {
+    return parseRecommendation(this.answerOrPrompt(() => renderEvaluationPrompt(input)), 'post_activity')
+  }
+
+  async reviewWeek(input: WeeklyReviewRequest): Promise<AdvisorRecommendation> {
+    return parseRecommendation(this.answerOrPrompt(() => renderReviewPrompt(input)), 'weekly_review')
+  }
+
+  /** The answer is read once: a rejected one is asked for again on disk rather than replayed. */
+  private answerOrPrompt(render: () => string): unknown {
     const answer = this.consumed ? undefined : this.readAnswer()
     if (answer !== undefined) {
       this.consumed = true
-      return parseBootstrapPlanDraft(answer)
+      return answer
     }
 
-    fs.writeFileSync(this.promptPath, renderManualPrompt(input))
+    fs.writeFileSync(this.promptPath, render())
     throw new ManualPromptWritten(this.promptPath)
   }
 
   private readAnswer(): unknown {
     if (!this.answerPath) return undefined
     if (!fs.existsSync(this.answerPath)) {
-      throw new Error(`--from-answer ${this.answerPath} does not exist; save the chat's reply there first`)
+      throw new Error(`--from-answer ${this.answerPath} does not exist; save the reply there first`)
     }
 
     const raw = fs.readFileSync(this.answerPath, 'utf-8').trim()
@@ -89,13 +112,5 @@ export class ManualCoachingAdvisor implements CoachingAdvisor {
     } catch (error) {
       throw new Error(`${this.answerPath} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`)
     }
-  }
-
-  async evaluateActivity(): Promise<AdvisorRecommendation> {
-    throw new Error('Manual coaching covers bootstrap only; run evaluate without --prompt-out')
-  }
-
-  async reviewWeek(): Promise<AdvisorRecommendation> {
-    throw new Error('Manual coaching covers bootstrap only; run weekly-review without --prompt-out')
   }
 }

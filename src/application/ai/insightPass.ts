@@ -28,7 +28,7 @@ export interface InsightPassDeps {
   >
   generate: (request: InsightRequest) => Promise<InsightResult>
   revalidate: (path: string) => void
-  notify: (insight: Insight) => Promise<unknown>
+  notify: (insight: Insight, activityId: string) => Promise<unknown>
   now: () => Date
 }
 
@@ -222,16 +222,16 @@ export async function writeVerdicts(
     )
     deps.revalidate(`/activities/${context.activity.id}`)
     written.push({ headline: attempt.insight.headline, body: attempt.insight.body, kind })
-    if (notifyIds.has(context.activity.id)) await notifyFreshVerdict(deps, attempt.insight)
+    if (notifyIds.has(context.activity.id)) await notifyFreshVerdict(deps, attempt.insight, context.activity.id)
   }
 
   return { generated: written.length - before, failures }
 }
 
 /** A push failure must never fail the pass: the verdict is already saved. */
-async function notifyFreshVerdict(deps: InsightPassDeps, insight: Insight): Promise<void> {
+async function notifyFreshVerdict(deps: InsightPassDeps, insight: Insight, activityId: string): Promise<void> {
   try {
-    await deps.notify(insight)
+    await deps.notify(insight, activityId)
   } catch (error) {
     console.error('[ai-insights] push notification failed', error)
   }

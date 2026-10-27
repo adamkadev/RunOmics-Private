@@ -3,6 +3,7 @@
     {"path": ".claude/", "reason": "Agent tooling: the coaching skill and its methodology are written for the two athletes"},
     {"path": ".github/workflows/sync.yml", "reason": "Needs each athlete's Garmin and data-repository secrets in a GitHub Environment"},
     {"path": ".github/workflows/capability-audit.yml", "reason": "Probes each athlete's Garmin account from a GitHub Environment"},
+    {"path": ".github/workflows/health-watchdog.yml", "reason": "Checks each athlete's deployment from a GitHub Environment"},
     {"path": "CHANGELOG.md", "reason": "Names the athletes' quartiers, cities and races; the public repo keeps its own changelog"},
     {"path": "README.md", "reason": "Private setup guide with an athlete's real zones; the public repo keeps its portfolio README"},
     {"path": "docs/", "reason": "Implementation notes written around the athletes' own deployments, races and data"},

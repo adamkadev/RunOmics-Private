@@ -7,7 +7,7 @@ from typing import Any
 import garth
 import httpx
 
-from .errors import GarminAPIError, GarminAuthError
+from .errors import GarminAPIError, GarminAuthError, GarminTokenExpired
 from .shared import collect_activity_starts, fit_from_archive
 
 os.environ.setdefault("GARTH_TELEMETRY_ENABLED", "false")
@@ -18,7 +18,7 @@ _TIMEOUT = httpx.Timeout(120.0, connect=30.0)
 _USER_AGENT = "Mozilla/5.0 (RunOmics/1.0)"
 
 
-__all__ = ["GarminAPIError", "GarminAuthError", "GarminClient"]
+__all__ = ["GarminAPIError", "GarminAuthError", "GarminClient", "GarminTokenExpired"]
 
 
 def _json_or_empty(resp: httpx.Response) -> dict[str, Any]:
@@ -80,6 +80,21 @@ _REFRESH_FAILED = (
 )
 
 
+def _refused_status(exc: Exception) -> int | None:
+    """The HTTP status of a refused token exchange: garth raises requests' HTTPError, or wraps it in GarthHTTPError."""
+    response = getattr(getattr(exc, "error", exc), "response", None)
+    return getattr(response, "status_code", None)
+
+
+def _refresh_oauth2() -> None:
+    # Only a 401 is the token: a 403 is Cloudflare refusing a datacenter IP, and a timeout is the network.
+    try:
+        garth.client.refresh_oauth2()
+    except Exception as exc:
+        error = GarminTokenExpired if _refused_status(exc) == 401 else GarminAuthError
+        raise error(_REFRESH_FAILED.format(exc=exc)) from exc
+
+
 def _auth_field(token: Any, name: str) -> Any:
     value = getattr(token, name, None)
     if value is None:
@@ -99,10 +114,7 @@ class GarminClient:
         garth.client.loads(secret_string)
 
         if garth.client.oauth2_token.expired:
-            try:
-                garth.client.refresh_oauth2()
-            except Exception as exc:
-                raise GarminAuthError(_REFRESH_FAILED.format(exc=exc)) from exc
+            _refresh_oauth2()
 
         self._base = _CONNECT_API
         self._http = httpx.Client(timeout=_TIMEOUT)
@@ -142,7 +154,7 @@ class GarminClient:
         resp = self._http.request(method, url, headers=self._headers(), **kwargs)
 
         if resp.status_code == 401:
-            garth.client.refresh_oauth2()
+            _refresh_oauth2()
             resp = self._http.request(method, url, headers=self._headers(), **kwargs)
 
         if resp.status_code >= 400:

@@ -1352,7 +1352,7 @@ export const fr = {
       gap: 'Ajustée pente',
       gapReading: (pace: string) => `ajustée ${pace}`,
       paceUnitHint: '/km, vers le haut = plus rapide',
-      paceZonesEstimated: 'Zones d’allure estimées par VDOT : la montre ne donne pas d’allure seuil.',
+      paceZonesEstimated: 'Zones d’allure estimées par VDOT : la montre ne donne pas d’allure seuil à jour.',
       elevation: 'Altitude',
       cadence: 'Cadence',
       elevationGain: (m: string) => `${m} m D+`,
@@ -1690,7 +1690,7 @@ export const fr = {
       verdict: { inRange: 'dans la cible', tooModerate: 'trop de modéré', tooHard: 'trop d’intense' },
       totalLine: (duration: string) => `${duration} au total · objectif 80 / 20`,
       soFar: 'semaine en cours',
-      estimatedPaces: (effort: string, date: string) => `Allures estimées par VDOT à partir de ton ${effort} du ${date} : la montre ne donne pas d’allure seuil.`,
+      estimatedPaces: (effort: string, date: string) => `Allures estimées par VDOT à partir de ton ${effort} du ${date} : la montre ne donne pas d’allure seuil à jour.`,
     },
   },
 
@@ -1807,10 +1807,23 @@ export const fr = {
       title: (name: string) => `${name} exploré`,
       body: (pct: string, done: number, total: number) => `${pct} de ses rues parcourues. ${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}.`,
     },
+    syncDispatchRefused: {
+      title: 'La synchro de nuit n’a pas démarré',
+      body: (status: number) => `GitHub a refusé son lancement (${status}). Vérifie le jeton et le dépôt du bouton Sync dans Vercel.`,
+    },
     tokenExpiring: {
       names: { dataActions: 'le jeton de données (GitHub Actions)', dataVercel: 'le jeton de données (Vercel)', syncVercel: 'le jeton du bouton Sync (Vercel)' },
       title: (days: number) => (days <= 0 ? 'Un jeton GitHub expire aujourd’hui' : `Un jeton GitHub expire dans ${days} jour${days === 1 ? '' : 's'}`),
       body: (names: string) => `Renouvelle ${names} avant que la synchro s’arrête : GitHub → Settings → Developer settings → Fine-grained tokens.`,
+    },
+    connectExpired: {
+      title: 'Garmin Connect ne répond plus',
+      body: (since: string) =>
+        `Le jeton garth a expiré le ${since}. Les courses arrivent toujours par l’API personnelle ; chaussures, calendrier, statut d’entraînement et prédictions de course, non. Marche à suivre : docs/data-and-sync.md, After garth.`,
+    },
+    garminKeyExpiring: {
+      title: (days: number) => (days <= 0 ? 'La clé Garmin expire aujourd’hui' : `La clé Garmin expire dans ${days} jour${days === 1 ? '' : 's'}`),
+      body: 'Crée une nouvelle clé sur connect.garmin.com/app/settings/personalApiToken, puis mets à jour GARMIN_PERSONAL_API_KEY et GARMIN_PERSONAL_API_KEY_EXPIRES dans l’Environment GitHub.',
     },
   },
 

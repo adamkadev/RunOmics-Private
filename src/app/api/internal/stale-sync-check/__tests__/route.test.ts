@@ -39,11 +39,12 @@ describe('POST /api/internal/stale-sync-check', () => {
     const res = await POST(request())
 
     expect(await res.json()).toEqual({ alert: { hoursSinceSync: 80 } })
-    expect(sendPush).toHaveBeenCalledWith(
-      'always',
-      'No data synced in a while',
-      'Your last sync was 80h ago - check that sync is still running.'
-    )
+    expect(sendPush).toHaveBeenCalledWith('always', {
+      title: 'No data synced in a while',
+      body: 'Your last sync was 80h ago - check that sync is still running.',
+      link: '/settings',
+      tag: 'stale-sync',
+    })
     expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPush.mock.invocationCallOrder[0]!)
   })
 

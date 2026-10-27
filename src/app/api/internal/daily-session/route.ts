@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { scheduledRoute } from '@/lib/internalRoute'
 import { sendPush } from '@/lib/sendPushNotification'
+import { pushPaths } from '@/lib/pushLinks'
 import { getDailySession } from '@/application/usecases/GetDailySession'
 import { sendOncePer } from '@/application/usecases/SendScheduledPush'
 import { DAILY_SESSION_PUSH, isDailySessionHour } from '@/lib/dailySessionPush'
@@ -27,11 +28,10 @@ export const { GET, POST } = scheduledRoute('daily-session', async (trigger) => 
   if (workout?.durationSecs) parts.push(formatDurationWords(workout.durationSecs))
   const detail = parts.length ? parts.join(' · ') : null
 
-  const sent = await sendOncePer('dailySession', today, () =>
-    workout
-      ? sendPush('training', t.notifications.todaySession.title, t.notifications.todaySession.body(workout.name, detail))
-      : sendPush('training', t.notifications.restDay.title, t.notifications.restDay.body)
-  )
+  const push = workout
+    ? { title: t.notifications.todaySession.title, body: t.notifications.todaySession.body(workout.name, detail) }
+    : { title: t.notifications.restDay.title, body: t.notifications.restDay.body }
+  const sent = await sendOncePer('dailySession', today, () => sendPush('training', { ...push, link: pushPaths.plan, tag: 'daily-session' }))
   if (!sent) return NextResponse.json({ skipped: 'already sent today' })
   return NextResponse.json({ sent: true, restDay: !workout, source: session.source })
 })

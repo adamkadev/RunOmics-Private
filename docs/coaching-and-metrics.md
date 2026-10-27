@@ -316,8 +316,13 @@ of DEM climb, muddy and steep, run into the dusk the day the clocks went back.
 
 ## AI insight generation
 
-**The adaptive coach bills its own Google project.** It reads `GEMINI_COACH_API_KEY`
-and never falls back to `GEMINI_API_KEY`: a fallback would silently spend the general AI
+**The coach runs through Claude Code; the app's copy runs through Gemini.** Every coach
+command writes its prompt to a file by default (the manual path: `--prompt-out` /
+`--from-answer`, see the [README](../README.md#adaptive-coach)), and the reply is held to
+the same validators. `GEMINI_API_KEY` stays the app's, for the deployed AI surfaces below.
+
+**Gemini for coaching is opt-in, and bills its own Google project.** With `--advisor gemini`
+the coach reads `GEMINI_COACH_API_KEY` and never falls back to `GEMINI_API_KEY`: a fallback would silently spend the general AI
 surfaces' free-tier quota on a coaching generation, merging two quotas that are kept apart
 on purpose. The key is therefore *passed into* the shared transport rather than read from
 the environment by it — a transport that picked its own key would quietly merge them again.
@@ -328,8 +333,8 @@ There is no fallback in either direction: neither key ever stands in for the oth
 
 | | `GEMINI_API_KEY` | `GEMINI_COACH_API_KEY` |
 |---|---|---|
-| What it powers | The deployed AI surfaces — Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The adaptive coaching CLI (`npm run coach`), which runs locally today |
-| `.env.local` | yes | yes |
+| What it powers | The deployed AI surfaces — Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The coaching CLI's `--advisor gemini` (`npm run coach`), which runs locally; the default manual path needs no key |
+| `.env.local` | yes | only for `--advisor gemini` |
 | Vercel | **yes** — the surfaces are server-rendered and the cron routes call Gemini | **no** — nothing deployed calls the coach |
 | GitHub Actions | not directly: the workflows only `curl` the deployed `/api/internal/*` routes, which use the deployment's own key | **no** — no workflow runs a coaching generation |
 

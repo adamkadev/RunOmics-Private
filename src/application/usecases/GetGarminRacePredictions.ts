@@ -1,6 +1,7 @@
 import { getRacePredictionDays } from '@/infrastructure/repositories/JsonRacePredictionRepository'
 import { RACE_DISTANCES, RACE_DISTANCE_KM, type RaceDistanceKey } from '@/domain/race/distances'
 import type { DatedPaces } from '@/domain/race/predictionWindow'
+import { isCurrentGarminReading } from '@/domain/sync/garminReadings'
 import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
 export interface GarminRacePredictionPoint extends DatedPaces {
@@ -48,6 +49,11 @@ export function getGarminRacePredictions(): GarminRacePredictionsData | null {
   }
 
   return { points, distances, latest, latestDate: lastDay.date }
+}
+
+/** Garmin's latest predictions, or none once the series has gone quiet. */
+export function freshGarminPredictions(predictions: GarminRacePredictionsData | null, today: string): Partial<Record<RaceDistanceKey, number>> {
+  return predictions && isCurrentGarminReading('racePrediction', predictions.latestDate, today) ? predictions.latest : {}
 }
 
 function paceOf(seconds: number | undefined, distance: RaceDistanceKey): number | null {

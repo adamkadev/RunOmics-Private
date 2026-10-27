@@ -1,7 +1,8 @@
 import 'server-only'
 import { en } from '@/i18n/en'
 import { withTimeout } from '@/infrastructure/withTimeout'
-import { sendPush } from './sendPushNotification'
+import { absolutePushLink } from './pushLinks'
+import { sendPush, type Push } from './sendPushNotification'
 
 /** Operator alerts are read by whoever runs the deployment, who is not always the athlete: English, whatever the locale. */
 export const opsStrings = en.notifications
@@ -37,10 +38,11 @@ export function opsSource(): string {
  * the ones registered here: with OPS_PUSH_URL set the alert is forwarded to
  * the operator's deployment instead of pushed locally.
  */
-export async function sendOpsPush(title: string, body: string): Promise<OpsPushResult> {
+export async function sendOpsPush(push: Push): Promise<OpsPushResult> {
+  const { title, body, tag } = push
   const forwarding = opsForwarding()
   if (!forwarding) {
-    await sendPush('always', title, body)
+    await sendPush('always', push)
     return { forwarded: false }
   }
 
@@ -48,7 +50,7 @@ export async function sendOpsPush(title: string, body: string): Promise<OpsPushR
     fetch(forwarding.url, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-ops-secret': forwarding.secret },
-      body: JSON.stringify({ title, body, from: opsSource() }),
+      body: JSON.stringify({ title, body, from: opsSource(), link: absolutePushLink(push.link), tag }),
     }),
     FORWARD_TIMEOUT_MS,
     null,

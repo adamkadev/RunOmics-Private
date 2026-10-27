@@ -2,10 +2,10 @@ import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getRecords, computeBestEfforts, EFFORTS } from './GetRecords'
 import { getVO2maxHistory, type VO2maxPoint } from './GetVO2maxHistory'
-import { getGarminRacePredictions } from './GetGarminRacePredictions'
+import { freshGarminPredictions, getGarminRacePredictions } from './GetGarminRacePredictions'
 import { isRaceDistanceKey } from '@/domain/race/distances'
 import { riegel, bestSourceFromMap } from '@/domain/training/riegel'
-import { addDays, isoDate } from '@/lib/calendarDate'
+import { addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 
 const PREDICTED_KEYS = EFFORTS.map((e) => e.key)
 const KM_BY_KEY = Object.fromEntries(EFFORTS.map((e) => [e.key, e.km])) as Record<string, number>
@@ -74,7 +74,7 @@ function rawPrediction(bestByKey: Map<string, number>, key: string, km: number):
   return source ? riegel(source.seconds, source.sourceKm, km) : null
 }
 
-export async function getRacePredictions(): Promise<RacePrediction[]> {
+export async function getRacePredictions(today: string = appTodayIso()): Promise<RacePrediction[]> {
   const activities = getAllActivities()
   const records = await getRecords()
   const recordByKey = new Map(records.filter((r) => r.seconds !== null).map((r) => [r.key, r.seconds as number]))
@@ -89,7 +89,7 @@ export async function getRacePredictions(): Promise<RacePrediction[]> {
     Array.from(computeBestEfforts(pastActivities), ([key, entry]) => [key, entry.seconds] as const),
   )
 
-  const garmin = getGarminRacePredictions()?.latest ?? {}
+  const garmin = freshGarminPredictions(getGarminRacePredictions(), today)
   const results: RacePrediction[] = []
 
   for (const key of PREDICTED_KEYS) {

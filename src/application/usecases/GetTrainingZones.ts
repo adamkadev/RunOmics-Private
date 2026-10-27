@@ -1,8 +1,11 @@
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getAthleteHistory } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
+import { getThresholdSamples } from '@/infrastructure/repositories/JsonThresholdHistoryRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import { estimatedThreshold, type ThresholdEstimate } from '@/domain/training/vdot'
+import { isCurrentGarminReading } from '@/domain/sync/garminReadings'
 import { appTodayIso } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 
@@ -17,7 +20,7 @@ export interface TrainingZone {
 
 export interface TrainingZonesData {
   thresholdPaceSecPerKm: number
-  /** Set when the watch gives no threshold pace and it was estimated from a recent best effort instead. */
+  /** Set when the watch gives no current threshold pace and it was estimated from a recent best effort instead. */
   estimate?: Omit<ThresholdEstimate, 'thresholdPaceSecPerKm'>
   zones: TrainingZone[]
 }
@@ -50,8 +53,27 @@ function zonesAt(thresholdPaceSecPerKm: number): TrainingZone[] {
     .map((zone) => ({ ...zone, ...t.trainingZones.zones[zone.key] }))
 }
 
-export async function getTrainingZones(today = appTodayIso()): Promise<TrainingZonesData | null> {
+/** When the pace took its current value: athlete history repeats it whenever another metric, the weight say, moves. */
+export function thresholdPaceSince(samples: readonly { date: string; thresholdPaceSecPerKm?: number }[], current: number): string | null {
+  let since: string | null = null
+  let previous: number | undefined
+  for (const { date, thresholdPaceSecPerKm: pace } of [...samples].sort((a, b) => a.date.localeCompare(b.date))) {
+    if (pace === undefined) continue
+    if (pace !== previous) since = pace === current ? date : null
+    previous = pace
+  }
+  return since
+}
+
+function currentGarminThreshold(today: string): number | null {
   const { thresholdPaceSecPerKm } = getAthleteProfile()
+  if (!thresholdPaceSecPerKm) return null
+  const since = thresholdPaceSince([...getAthleteHistory(), ...getThresholdSamples()], thresholdPaceSecPerKm)
+  return since === null || isCurrentGarminReading('thresholdPace', since, today) ? thresholdPaceSecPerKm : null
+}
+
+export async function getTrainingZones(today = appTodayIso()): Promise<TrainingZonesData | null> {
+  const thresholdPaceSecPerKm = currentGarminThreshold(today)
   if (thresholdPaceSecPerKm) return { thresholdPaceSecPerKm, zones: zonesAt(thresholdPaceSecPerKm) }
 
   const estimate = estimatedThreshold(getAllActivities(), officialResultsByActivityId(getOfficialRaceResults()), today)

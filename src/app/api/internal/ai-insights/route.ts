@@ -13,6 +13,7 @@ import {
 import { openSpender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 import { sendPush } from '@/lib/sendPushNotification'
+import { pushPaths } from '@/lib/pushLinks'
 import { loadData } from '@/application/usecases/LoadData'
 
 export const maxDuration = 300
@@ -32,7 +33,8 @@ export async function POST(req: NextRequest) {
       insights: { getCachedInsight, saveCachedInsight, listCachedKeys, readVerdictPhrasing, saveVerdictPhrasing },
       generate: generateInsight,
       revalidate: (path) => revalidatePath(path),
-      notify: (insight) => sendPush('training', insight.headline, insight.body),
+      notify: (insight, activityId) =>
+        sendPush('training', { title: insight.headline, body: insight.body, link: pushPaths.run(activityId), tag: `verdict:${activityId}` }),
       now: () => new Date(),
     }
 

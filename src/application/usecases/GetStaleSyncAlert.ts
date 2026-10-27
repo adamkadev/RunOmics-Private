@@ -1,10 +1,9 @@
 import { getLastSyncedAt } from './GetSyncStatus'
+import { hoursSinceSync, STALE_SYNC_HOURS } from '@/domain/sync/staleness'
 import {
   getLastStaleSyncState,
   saveLastStaleSyncState,
 } from '@/infrastructure/repositories/FirestoreConfigRepository'
-
-const STALE_SYNC_HOURS = 72
 
 export interface StaleSyncAlert {
   hoursSinceSync: number
@@ -18,14 +17,14 @@ export async function getStaleSyncAlert(): Promise<{ alert: StaleSyncAlert | nul
   const lastSyncedAt = getLastSyncedAt()
   if (!lastSyncedAt) return { alert: null, commit: async () => {} }
 
-  const hoursSinceSync = (Date.now() - new Date(lastSyncedAt).getTime()) / 3_600_000
-  const isStale = hoursSinceSync >= STALE_SYNC_HOURS
+  const hours = hoursSinceSync(lastSyncedAt, Date.now())
+  const isStale = hours >= STALE_SYNC_HOURS
 
   const lastState = await getLastStaleSyncState()
   const wasAlerted = lastState?.alerted ?? false
 
   return {
-    alert: isStale && !wasAlerted ? { hoursSinceSync: Math.round(hoursSinceSync) } : null,
+    alert: isStale && !wasAlerted ? { hoursSinceSync: Math.round(hours) } : null,
     commit: () => saveLastStaleSyncState({ alerted: isStale }),
   }
 }

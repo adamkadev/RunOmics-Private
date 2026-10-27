@@ -1445,7 +1445,7 @@ export const en = {
       gap: 'GAP',
       gapReading: (pace: string) => `GAP ${pace}`,
       paceUnitHint: '/km, up = faster',
-      paceZonesEstimated: 'Pace zones estimated by VDOT: the watch gives no threshold pace.',
+      paceZonesEstimated: 'Pace zones estimated by VDOT: the watch gives no current threshold pace.',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: string) => `+${m} m gain`,
@@ -1831,7 +1831,7 @@ export const en = {
       // The verdict's own target, Analytics' 80/20 (see intensityMix).
       totalLine: (duration: string) => `${duration} total · aim for 80 / 20`,
       soFar: 'this week so far',
-      estimatedPaces: (effort: string, date: string) => `Paces estimated by VDOT from your ${effort} on ${date}: the watch gives no threshold pace.`,
+      estimatedPaces: (effort: string, date: string) => `Paces estimated by VDOT from your ${effort} on ${date}: the watch gives no current threshold pace.`,
     },
   },
 
@@ -1959,10 +1959,23 @@ export const en = {
       title: (name: string) => `${name} explored`,
       body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
     },
+    syncDispatchRefused: {
+      title: 'Nightly sync did not start',
+      body: (status: number) => `GitHub refused its dispatch (${status}). Check the Sync button token and repository in Vercel.`,
+    },
     tokenExpiring: {
       names: { dataActions: 'the data token (GitHub Actions)', dataVercel: 'the data token (Vercel)', syncVercel: 'the Sync button token (Vercel)' },
       title: (days: number) => (days <= 0 ? 'A GitHub token expires today' : `A GitHub token expires in ${days} day${days === 1 ? '' : 's'}`),
       body: (names: string) => `Renew ${names} before the sync stops: GitHub → Settings → Developer settings → Fine-grained tokens.`,
+    },
+    connectExpired: {
+      title: 'Garmin Connect has stopped',
+      body: (since: string) =>
+        `garth's token expired on ${since}. Runs still sync through the Personal API; shoes, the calendar, training status and race predictions do not. Runbook: docs/data-and-sync.md, After garth.`,
+    },
+    garminKeyExpiring: {
+      title: (days: number) => (days <= 0 ? 'The Garmin key expires today' : `The Garmin key expires in ${days} day${days === 1 ? '' : 's'}`),
+      body: 'Create a new key at connect.garmin.com/app/settings/personalApiToken, then update GARMIN_PERSONAL_API_KEY and GARMIN_PERSONAL_API_KEY_EXPIRES in the GitHub Environment.',
     },
   },
 

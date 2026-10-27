@@ -2,10 +2,20 @@ import 'server-only'
 import { getMessaging } from 'firebase-admin/messaging'
 import { getAdminApp, getAdminFirestore } from '@/lib/firebase-admin'
 import { wantsPush, type PushAudience } from '@/lib/pushCategories'
+import { absolutePushLink } from '@/lib/pushLinks'
 
 const PUSH_TOKENS_COLLECTION = 'pushTokens'
 
 const DEAD_TOKEN_CODES = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'])
+
+export interface Push {
+  title: string
+  body: string
+  /** A path on this deployment or an absolute HTTPS URL, opened when the notification is tapped. */
+  link?: string
+  /** A later push with the same tag replaces this one on the device instead of stacking under it. */
+  tag?: string
+}
 
 export interface PushResult {
   sent: number
@@ -13,15 +23,20 @@ export interface PushResult {
 }
 
 /** Throws when no device took the push: FCM resolves on per-token failures, and callers record a resolved push as sent. */
-export async function sendPush(audience: PushAudience, title: string, body: string): Promise<PushResult> {
+export async function sendPush(audience: PushAudience, { title, body, link, tag }: Push): Promise<PushResult> {
   const db = getAdminFirestore()
   const snapshot = await db.collection(PUSH_TOKENS_COLLECTION).get()
   const tokens = snapshot.docs.filter((d) => wantsPush(d.get('categories'), audience)).map((d) => d.id)
   if (tokens.length === 0) return { sent: 0, failed: 0 }
 
+  const absoluteLink = absolutePushLink(link)
   const { responses } = await getMessaging(getAdminApp()).sendEachForMulticast({
     tokens,
     notification: { title, body },
+    webpush: {
+      ...(tag ? { notification: { tag } } : {}),
+      ...(absoluteLink ? { fcmOptions: { link: absoluteLink } } : {}),
+    },
   })
 
   const failures = tokens.flatMap((token, i) =>
@@ -38,18 +53,13 @@ export async function sendPush(audience: PushAudience, title: string, body: stri
   return { sent, failed: failures.length }
 }
 
-export interface Push {
-  title: string
-  body: string
-}
-
 /** Throws only once every push was tried: one transient FCM error must not cost the alerts queued behind it. */
 export async function sendPushes(audience: PushAudience, pushes: Push[]): Promise<void> {
   const failures: unknown[] = []
 
-  for (const { title, body } of pushes) {
+  for (const push of pushes) {
     try {
-      await sendPush(audience, title, body)
+      await sendPush(audience, push)
     } catch (error) {
       failures.push(error)
     }
