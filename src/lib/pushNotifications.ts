@@ -33,10 +33,10 @@ async function saveDevice(token: string, categories: PushCategories): Promise<vo
 /** Expects the permission already granted: the caller asks for it inside the tap. */
 export async function enablePushNotifications(categories: PushCategories): Promise<string> {
   if (!(await isSupported())) throw new Error('unsupported')
-  const registration = await navigator.serviceWorker.register('/sw.js')
   if (Notification.permission !== 'granted') throw new Error('permission-denied')
 
-  const token = await deviceToken(registration)
+  // Registering a script URL of its own would replace the build's worker, and its caches with it.
+  const token = await deviceToken(await navigator.serviceWorker.ready)
   await saveDevice(token, categories)
   return token
 }

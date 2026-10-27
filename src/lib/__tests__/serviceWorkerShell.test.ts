@@ -12,7 +12,10 @@ describe('the service worker shell', () => {
     expect(list).toBeDefined()
     const files = [...list!.matchAll(/'([^']+)'/g)].map((m) => m[1]!).filter((u) => u !== '/')
     expect(files.length).toBeGreaterThan(0)
-    for (const file of files) expect(existsSync(join(PUBLIC, file)), file).toBe(true)
+    for (const file of files) {
+      const route = join(process.cwd(), 'src', 'app', file, 'route.ts')
+      expect(existsSync(join(PUBLIC, file)) || existsSync(route), file).toBe(true)
+    }
   })
 })
 

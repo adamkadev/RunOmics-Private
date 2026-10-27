@@ -327,11 +327,13 @@ describe('morning check-ins and training breaks', () => {
         ['2026-09-01', { sleep: 1 }],
         ['2026-10-20', { sleep: 4, soreness: 2, niggle: { site: 'calf' as const, side: 'left' as const, pain: 4, changesRun: true } }],
         ['2026-10-22', { ill: true }],
+        ['2026-10-23', { skipped: 'ill' as const }],
         ['2026-10-26', { sleep: 5 }],
       ]),
     }, '2026-10-25')
 
     expect(context.wellness?.checkIns).toEqual([
+      { date: '2026-10-23', skipped: 'ill' },
       { date: '2026-10-22', ill: true },
       { date: '2026-10-20', sleep: 4, soreness: 2, niggle: { site: 'calf', side: 'left', pain: 4, changesRun: true } },
     ])

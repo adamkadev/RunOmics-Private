@@ -5,7 +5,7 @@ import { ChevronRight } from 'lucide-react'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from './planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import { isKeyPrescription, prescriptionDistanceMeters } from '@/components/coaching/presentation'
+import { isKeyPrescription } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
 import { zoneColor } from '@/lib/colors'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { PlanPeriodNav } from './PlanPeriodNav'
-import { monthDays, type MonthDayState } from './monthDays'
+import { monthDays, type MonthDayState } from '@/domain/training/monthDays'
+import { useSkippedDays } from '@/lib/skippedDays'
 import { planPhaseSpans, spanOfWeek, spanWeeks, type PhaseSpan } from './planPhaseSpans'
 import { dayKind, kindColor, kindLetter, type DayKind } from './sessionKind'
 import { sessionTitle } from './sessionTitle'
@@ -47,7 +48,7 @@ interface Planned {
 function plannedFor(date: string, byDatePlanned: Map<string, PlannedWorkout>, byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>): Planned | null {
   const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
   if (coach) {
-    const meters = prescriptionDistanceMeters(coach.prescription)
+    const meters = coach.distanceMeters
     const seconds = coach.prescription.totalDurationSeconds
     return { km: meters ? meters / 1000 : null, minutes: seconds ? Math.round(seconds / 60) : null }
   }
@@ -142,6 +143,7 @@ export function MonthView({
   const spans = useMemo(() => planPhaseSpans(coaching, planPhaseRanges), [coaching, planPhaseRanges])
   const currentSpan = spanOfWeek(spans, isoDate(startOfWeek(new Date(`${today}T00:00:00`))))
 
+  const skipped = useSkippedDays()
   const { rows, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes, hasLong } = useMemo(() => {
     const first = new Date(year, month, 1)
     const startOffset = (first.getDay() || 7) - 1
@@ -160,10 +162,11 @@ export function MonthView({
       const cells = dates.slice(r * 7, r * 7 + 7).map((date): Cell => {
         const acts = byDate.get(date) ?? []
         const kind = dayKind(date, acts, byDatePlanned, byDateCoach)
+        const state = states.get(date)?.state ?? 'rest'
         const cell: Cell = {
           date,
           outside: date < monthStart || date > monthEnd,
-          state: states.get(date)?.state ?? 'rest',
+          state: state === 'missed' && skipped.has(date) ? 'rest' : state,
           kind,
           ranKm: acts.reduce((s, a) => s + a.distanceKm, 0),
           planned: plannedFor(date, byDatePlanned, byDateCoach),
@@ -208,7 +211,7 @@ export function MonthView({
         ? { from: firstPlanned.date, to: lastPlanned.date }
         : null
     return { rows, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes: QUALITY_ORDER.filter((type) => quality.has(type)), hasLong }
-  }, [year, month, monthStart, monthEnd, byDate, byDatePlanned, byDateCoach, spans, today])
+  }, [year, month, monthStart, monthEnd, byDate, byDatePlanned, byDateCoach, spans, today, skipped])
 
   /** The km the plan's own days got, so the two sides of "of" are the same days. */
   const againstPlanKm = planSpan === null ? ranKm : ranInPlanKm

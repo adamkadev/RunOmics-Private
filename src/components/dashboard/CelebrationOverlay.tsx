@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { Trophy } from 'lucide-react'
@@ -80,6 +80,11 @@ export function CelebrationOverlay({
   // Decided after mount: it depends on the reader's clock and this browser's localStorage, which the server knows neither of.
   const mounted = useMounted()
   const [dismissed, setDismissed] = useState<string[]>([])
+  const markSeen = (key: string | null) => {
+    if (!key) return
+    window.localStorage.setItem(key, '1')
+    setDismissed((keys) => [...keys, key])
+  }
   const now = new Date()
   const item = mounted
     ? [recordCelebration(record, now), milestoneCelebration(milestone, now)].find(
@@ -88,23 +93,29 @@ export function CelebrationOverlay({
       ) ?? null
     : null
   const shownKey = item?.storageKey ?? null
+  const titleId = useId()
 
   useEffect(() => {
     if (shownKey) haptic('celebration')
   }, [shownKey, haptic])
 
+  useEffect(() => {
+    if (!shownKey) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') markSeen(shownKey)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [shownKey])
+
   if (!item) return null
 
-  function dismiss() {
-    if (!item) return
-    window.localStorage.setItem(item.storageKey, '1')
-    setDismissed((keys) => [...keys, item.storageKey])
-  }
+  const dismiss = () => markSeen(item.storageKey)
 
   const s = t.dashboard.celebration
 
   return createPortal(
-    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[60] flex items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={`${titleId}-eyebrow ${titleId}`}>
       <div
         ref={trapRef}
         className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-background px-6 text-center text-foreground"
@@ -132,8 +143,8 @@ export function CelebrationOverlay({
           <Trophy size={52} className="text-accent-foreground" />
         </div>
 
-        <div className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent-text">{item.eyebrow}</div>
-        <div className="mb-1 text-2xl font-bold">{item.title}</div>
+        <div className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent-text" id={`${titleId}-eyebrow`}>{item.eyebrow}</div>
+        <div className="mb-1 text-2xl font-bold" id={titleId}>{item.title}</div>
         {item.value && <div className="text-4xl font-bold tabular-nums">{item.value}</div>}
 
         {aiTake && item.isRecord && (

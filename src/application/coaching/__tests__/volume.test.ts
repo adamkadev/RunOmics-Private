@@ -48,6 +48,15 @@ describe('counting a week', () => {
     expect(weekKm(heavy)).toBeGreaterThan(50)
   })
 
+  it('runs an untargeted warm-up and cool-down at the week’s easy pace, unless it is walked', () => {
+    const steady = { kind: 'effort' as const, target: { durationSeconds: 900, paceSecPerKm: { min: 470, max: 525 } } }
+    const run = week('Return', [[{ kind: 'warmup', target: { durationSeconds: 300 } }, steady, { kind: 'cooldown', target: { durationSeconds: 300 } }]])
+    const walked = week('Return', [[{ kind: 'warmup', target: { durationSeconds: 300 }, notes: ['Brisk walk.'] }, steady, { kind: 'cooldown', target: { durationSeconds: 300 }, notes: ['Walk.'] }]])
+    expect(weekKm(run)).toBe(3.015)
+    expect(weekKm(walked)).toBe(1.809)
+    expect(weekKm(run, null)).toBe(1.809)
+  })
+
   it('ignores a partial week, which cannot be judged against a weekly figure', () => {
     const tail = { startDate: '2026-10-19', endDate: '2026-10-19', focus: 'boundary', workouts: [] }
     expect(() => validateDraftVolume(draft(tail), volumeBand(HISTORY), DAYS)).not.toThrow()

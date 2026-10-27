@@ -1,15 +1,14 @@
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { weekTarget, type WeekTarget, type WeekTargetDay } from '@/domain/training/weekTarget'
-import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatKm } from '@/lib/formatters'
 import { intendedType } from '@/lib/activityTitle'
 import type { PlanPrescriptionView } from './planCoachingView'
 
 type Run = Pick<ActivitySummary, 'date' | 'distanceKm'> & Partial<Pick<ActivitySummary, 'type' | 'description'>>
-type Prescription = Pick<PlanPrescriptionView, 'state'> & {
-  prescription: Pick<PlanPrescriptionView['prescription'], 'date' | 'type'> & Parameters<typeof prescriptionDistanceMeters>[0]
+type Prescription = Pick<PlanPrescriptionView, 'state' | 'distanceMeters'> & {
+  prescription: Pick<PlanPrescriptionView['prescription'], 'date' | 'type'>
 }
 
 // Hardest first: hardestType ranks by this order.
@@ -88,7 +87,7 @@ export function weekPlanDays(
     let plannedSessions = 0
     if (coach.length > 0) {
       plannedSessions = coach.length
-      const meters = coach.map((view) => prescriptionDistanceMeters(view.prescription))
+      const meters = coach.map((view) => view.distanceMeters)
       if (meters.some((m) => m !== null)) plannedKm = meters.reduce<number>((sum, m) => sum + (m ?? 0), 0) / 1000
     } else if (garmin) {
       plannedSessions = 1
@@ -110,9 +109,16 @@ export function weekPlanDays(
   })
 }
 
+/** With the day either side, so a session moved across the week's edge is matched as the Month view matches it. */
+export function planWeekTarget(dates: readonly string[], maps: PlanMaps, today: string, goalKm: number | null): WeekTarget {
+  const first = new Date(`${dates[0]}T00:00:00`)
+  const last = new Date(`${dates[dates.length - 1]}T00:00:00`)
+  const edges = weekPlanDays([isoDate(addDays(first, -1)), isoDate(addDays(last, 1))], maps)
+  return weekTarget(weekPlanDays(dates, maps), today, goalKm, edges)
+}
+
 export function currentWeekTarget(maps: PlanMaps, today: string, goalKm: number | null): WeekTarget {
-  const monday = startOfWeek(new Date(`${today}T00:00:00`))
-  return weekTarget(weekPlanDays(weekDates(monday), maps), today, goalKm)
+  return planWeekTarget(weekDates(startOfWeek(new Date(`${today}T00:00:00`))), maps, today, goalKm)
 }
 
 export function formatWeekKm(km: number): string {

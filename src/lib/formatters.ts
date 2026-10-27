@@ -65,7 +65,7 @@ export const PLUS_MINUS = '±'
 /** A real minus, not a hyphen: a hyphen at 10px next to a digit reads as part of the number. */
 export function formatDelta(value: number, unit?: string): string {
   const rounded = Math.round(value * 100) / 100
-  const magnitude = stableSpaces(numberFormat({ maximumFractionDigits: 2 }).format(Math.abs(rounded)))
+  const magnitude = numberSpaces(numberFormat({ maximumFractionDigits: 2 }).format(Math.abs(rounded)))
   const body = rounded === 0 ? `${PLUS_MINUS}0` : `${rounded > 0 ? '+' : MINUS}${magnitude}`
   return unit ? `${body} ${unit}` : body
 }
@@ -87,18 +87,18 @@ export function formatKm(km: number, decimals = 0): string {
 
 /** toFixed with the locale's decimal: toFixed always writes a point. */
 export function formatDecimal(value: number, decimals: number): string {
-  return stableSpaces(
+  return numberSpaces(
     numberFormat({ minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value)
   )
 }
 
 /** `percent` is already in per cent (45 for 45 %). */
 export function formatPercent(percent: number, maxDecimals = 0): string {
-  return stableSpaces(numberFormat({ style: 'percent', maximumFractionDigits: maxDecimals }).format(percent / 100))
+  return numberSpaces(numberFormat({ style: 'percent', maximumFractionDigits: maxDecimals }).format(percent / 100))
 }
 
 export function formatNumber(value: number, maxDecimals = 1): string {
-  return stableSpaces(numberFormat({ maximumFractionDigits: maxDecimals }).format(value))
+  return numberSpaces(numberFormat({ maximumFractionDigits: maxDecimals }).format(value))
 }
 
 /** Whole kilometres on every screen, so a prescription never rounds one way here and another there. */
@@ -107,7 +107,7 @@ export function formatPlannedKm(km: number): string {
 }
 
 export function formatRanKm(km: number): string {
-  return stableSpaces(numberFormat({ minimumFractionDigits: 0, maximumFractionDigits: km >= WHOLE_KM_FROM ? 0 : 1 }).format(km))
+  return numberSpaces(numberFormat({ minimumFractionDigits: 0, maximumFractionDigits: km >= WHOLE_KM_FROM ? 0 : 1 }).format(km))
 }
 
 /* Dates hand Intl an option set and let it place the fields: spelling out `day month` inverts the order in French. */
@@ -129,6 +129,11 @@ const UNICODE_SPACE_SEPARATORS = /[   -   　]/g
 
 function stableSpaces(text: string): string {
   return text.replace(UNICODE_SPACE_SEPARATORS, ' ')
+}
+
+/** U+00A0 inside a number, so French "1 705" or "45 %" never wraps; one character, so hydration still matches. */
+function numberSpaces(text: string): string {
+  return text.replace(UNICODE_SPACE_SEPARATORS, '\u00a0')
 }
 
 function atMidnight(isoDate: string): Date {

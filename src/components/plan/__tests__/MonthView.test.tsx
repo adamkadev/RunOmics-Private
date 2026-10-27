@@ -8,7 +8,7 @@ import { t } from '@/i18n'
 import { MonthView } from '../MonthView'
 
 function run(id: string, date: string, distanceKm: number, type: PlanRun['type'] = 'Base'): PlanRun {
-  return { id, date, type, description: '', distanceKm, durationSeconds: 2_700, paceSecPerKm: 320, avgHeartRate: 140, zonePercents: [] }
+  return { id, date, type, description: '', distanceKm, durationSeconds: 2_700, paceSecPerKm: 320, avgHeartRate: 140, zonePercents: [], shownType: type }
 }
 
 const TODAY = '2026-10-19'

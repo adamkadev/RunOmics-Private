@@ -4,7 +4,7 @@ import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { qualityKind } from '@/domain/training/qualitySession'
 import type { WeekTargetDay } from '@/domain/training/weekTarget'
-import { monthDays } from '@/components/plan/monthDays'
+import { monthDays } from '@/domain/training/monthDays'
 import { planMaps, resolvePlannedType, weekDates, weekPlanDays, type PlanMaps } from '@/components/plan/weekPlanDays'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 

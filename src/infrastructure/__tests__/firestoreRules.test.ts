@@ -7,7 +7,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore'
 
 /**
  * firestore.rules alone stands between the public web config and the database.
@@ -192,6 +192,21 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee', pain: 11 } }))
       await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee' } }))
       await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee', pain: 2, side: 'both' } }))
+    })
+
+    it('keeps a skipped session on its day, beside the check-in, the owner’s alone', async () => {
+      await assertFails(setDoc(doc(visitor(), 'wellness', '2026-10-24'), { skipped: 'ill' }, { merge: true }))
+      await assertFails(setDoc(doc(stranger(), 'wellness', '2026-10-24'), { skipped: 'ill' }, { merge: true }))
+      await assertSucceeds(setDoc(doc(owner(), 'wellness', '2026-10-24'), { skipped: 'ill' }, { merge: true }))
+      await assertSucceeds(setDoc(doc(owner(), 'wellness', '2026-10-26'), { skipped: 'life' }))
+      await assertSucceeds(updateDoc(doc(owner(), 'wellness', '2026-10-24'), { skipped: deleteField() }))
+      await assertSucceeds(getDocs(query(collection(owner(), 'wellness'), where('skipped', 'in', ['ill', 'rest', 'life']))))
+      await assertFails(getDocs(query(collection(stranger(), 'wellness'), where('skipped', 'in', ['ill', 'rest', 'life']))))
+    })
+
+    it('takes only a known reason for a skip', async () => {
+      await assertFails(setDoc(doc(owner(), 'wellness', '2026-10-25'), { skipped: 'tired' }))
+      await assertFails(setDoc(doc(owner(), 'wellness', '2026-10-25'), { skipped: true }))
     })
   })
 

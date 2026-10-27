@@ -20,6 +20,37 @@ All notable changes to this project are documented in this file.
   spot and a quartier; `GlobalMapClient`'s generator wiring moves to
   `useExploreGenerator`, with hook tests for it and `useRouteGenerator`.
   **Needs** a deploy of `firestore.rules` to both projects for `expiresOn`.
+- E2E's WebKit install gives each of its three apt tries 3 minutes of its own (the step 10, the job 20):
+  one 3-minute budget for all three let a slow mirror fail the job before any retry, red on main since #343.
+- Plan truth (F4). A session's distance counts an untargeted warm-up, cool-down
+  or recovery at the athlete's easy pace (their pace zone, else the plan's easy
+  range) unless its notes or pace say it is walked, on Plan, Today, the month
+  and Analytics, and in the coach's weekly volume rules outside a return: a
+  25-minute 5′/15′/5′ session reads about 3 km, not 2. "As planned" needs the
+  distance or duration within 15 %, the same session family and the average
+  heart rate under the cap, else "Shorter / Longer / Harder / Easier than
+  planned"; Plan's phase card counts "N of M sessions as planned". A session
+  run a day early or late is done on Today and Plan's week, as it already was
+  on the month and Analytics. "Skipped" takes a reason (ill, rest, life) and is
+  stored on Firestore `wellness/{date}`, read by Today, Plan's week and month
+  and the coach; this browser's old marks move there once. `firestore.rules`
+  changed: deploy it to both Firebase projects.
+- PWA states, accessibility and French (F6, F10, F11, manifest). Settings →
+  Notifications says "add to the Home Screen" where Safari offers no push and
+  "blocked in Settings" once permission is refused, with the switches disabled,
+  instead of the retry toast. The update banner shows only for another build's
+  worker, sits above the tab bar and can be dismissed. Turning notifications on
+  takes the token on the running worker (`serviceWorker.ready`) instead of
+  registering `/sw.js` without `?v=`, which replaced the build's worker and its
+  caches. Today resumed past midnight offers "Page d'hier, actualiser". The
+  celebration dialog is named and closes on Escape. `--axis-text` and the faint
+  greys reach 4.5:1 on the card, ground, raised and inset surfaces in both
+  themes, now tested for every text token. French numbers keep a no-break space
+  inside them ("1 705", "45 %"), dates keep U+0020. The workbook's Guide and
+  Context sheets are written in the build's language, column and item keys
+  unchanged. `/manifest.json` is now a route that adds `lang` and the localized
+  description to `id: "/"` and `scope: "/"`; `generate-brand` writes its base in
+  `src/app/manifest.json/manifest.base.json`.
 
 - Heart-rate trust and return-to-running progress (F2, F3). The sync reads the
   FIT's paired sensors into each run's `hrSource` (`external` or `wrist`), and
