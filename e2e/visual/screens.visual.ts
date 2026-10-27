@@ -27,6 +27,7 @@ const maps = (page: Page) => [page.locator('canvas.maplibregl-canvas')]
 /** The latest run that `has` something: the data is the fixed day's, so it is the same run every time. */
 async function latestRunWith(page: Page, t: Strings, has: (page: Page) => Locator): Promise<string | null> {
   await page.goto('/activities')
+  await expect(page.locator('main a[href^="/activities/"]').first()).toBeVisible()
   const hrefs = await page.locator('main a[href^="/activities/"]').evaluateAll((links) => links.map((a) => a.getAttribute('href')!))
   for (const href of hrefs.slice(0, 15)) {
     await page.goto(href)
@@ -91,6 +92,7 @@ test.describe('the share card at the phone’s 3x', () => {
   test('share card', async ({ page, t }, testInfo) => {
     test.skip(!testInfo.project.name.endsWith('light'), 'the card draws the same in either theme')
     const href = await latestRunWith(page, t, chartsTab(t))
+    expect(href, 'a run with a Charts tab among the latest fifteen').not.toBeNull()
     await open(page, href!, page.getByRole('button', { name: t.activity.share }))
     await page.getByRole('button', { name: t.activity.share }).click()
     const preview = page.getByTestId('share-preview')

@@ -24,7 +24,8 @@ npm run test:visual
   with `e2e/visual/fixedClock.mjs` preloaded, which moves Node's clock there, and the browser's clock is fixed to
   the same instant, so the data and the app's "today" never move.
 - **Their own builds and data**: ports 3200 and 3201, `.next-visual*` and `.visual-data*`, so an e2e run beside
-  them never swaps their data.
+  them never swaps their data. The Auth and Firestore emulators run too (Java 21), since a run page reads its
+  note from Firestore.
 - **Nothing that moves**: reduced motion, animations and transitions off, the caret hidden, UTC, and the maps'
   WebGL canvas masked. Playwright also waits for two identical frames before it compares.
 - **A tolerance**: a pixel may differ by the default colour threshold, and up to 0.2% of a screen's pixels may

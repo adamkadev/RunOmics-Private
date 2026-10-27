@@ -77,6 +77,19 @@ jobs:
           done
           exit 1
 
+      # A run page reads its note from the Firestore emulator, which needs Java 21; the runner ships it, not as default.
+      - name: Use the preinstalled JDK 21
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"
+
+      - name: Restore the Firebase emulators
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: firebase-emulators-${{ runner.os }}-
+
       - name: Run the visual checks
         env:
           UPDATE: ${{ inputs.update }}

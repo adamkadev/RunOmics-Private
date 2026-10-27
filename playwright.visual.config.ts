@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
 import type { AppOptions } from './e2e/fixtures'
+import { AUTH_EMULATOR_HOST, EMULATORS_COMMAND } from './e2e/owner'
 import { FIXED_NOW } from './e2e/visual/fixedNow'
 
 const PORT = 3200
@@ -44,6 +45,14 @@ export default defineConfig<AppOptions>({
     { name: 'sparse-fr-dark', use: { baseURL: `http://localhost:${SPARSE_PORT}`, colorScheme: 'dark', locale: 'fr-FR', appLocale: 'fr' } },
   ],
   webServer: [
+    // A run page reads its note from Firestore, which .env.e2e points at the emulator.
+    {
+      command: EMULATORS_COMMAND,
+      url: `http://${AUTH_EMULATOR_HOST}`,
+      wait: { stdout: /All emulators ready/ },
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
     server(PORT, { RUNOMICS_DATA_DIR: '.visual-data', NEXT_DIST_DIR: '.next-visual' }),
     server(SPARSE_PORT, {
       RUNOMICS_E2E_PROFILE: 'sparse',
