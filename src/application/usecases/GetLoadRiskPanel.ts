@@ -3,6 +3,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { latestLoadPair, loadRatio } from '@/domain/training/loadTrend'
 import { getLoadSeries } from './GetLoadRecovery'
 import { buildTimeSeries, dailyTrimpByDate, type HrBounds } from './GetTrainingLoad'
+import { hrBoundsOf } from '@/domain/training/trimp'
 import { acwr } from './GetTrainingStatus'
 import { appTodayIso, DAY_MS, addDays, isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
@@ -93,7 +94,7 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
   const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
-      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
+      ? hrBoundsOf(athlete)
       : undefined
 
   const refDate = new Date(latest.date + 'T00:00:00')

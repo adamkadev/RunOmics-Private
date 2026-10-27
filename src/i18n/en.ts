@@ -1544,6 +1544,7 @@ export const en = {
     // The compact top bar's, short enough to sit beside the ‹ 2026 › stepper.
     barTitle: 'Goals',
     empty: 'No goals configured yet.',
+    emptyHow: 'Goals are set in goals.json in the data repository: add the year with its annualDistanceKm and, if you like, a target time per race distance.',
     back: 'Progress',
     // The ‹ 2026 › stepper's arrows.
     prevYear: 'Previous year',
@@ -1784,6 +1785,14 @@ export const en = {
       shortAtPace: (km: string) => `${km} km short at this pace`,
       overAtPace: (km: string) => `${km} km over at this pace`,
       noRace: 'No race planned',
+      // The race card's stand-in while no race is planned: the coach's block.
+      currentBlock: 'Current block',
+      blockWeek: (week: number, total: number) => `Week ${week} of ${total}`,
+      blockSessions: (done: number, planned: number) => `${done} of ${planned} sessions done`,
+      // The year card without a goal: it opens the years, not an empty Goals.
+      thisYear: 'This year',
+      athleteZones: 'Athlete & zones',
+      athleteZonesDetail: 'Heart-rate and pace zones, VO₂ max',
       noRecords: 'No records yet',
       onPace: 'On pace for the goal.',
       // The tiles under the records.

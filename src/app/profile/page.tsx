@@ -7,6 +7,7 @@ import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getRecords } from '@/application/usecases/GetRecords'
 import { getExploredAreas } from '@/application/usecases/GetExploreGains'
 import { getCycleCheckpoint } from '@/application/usecases/GetCycleCheckpoint'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { ProgressHub } from '@/components/profile/ProgressHub'
@@ -42,6 +43,7 @@ export default async function ProfilePage() {
     heatmapDays: getHeatmapData(),
     streakWeeks: getWeeklyStreakData(new Date(`${today}T12:00:00`))?.currentWeeks ?? 0,
     shoes: data.shoes,
+    coaching: getCoachingOverview(today),
   })
 
   // Only the summaries reach the page: no home, no tracks. The area run in last leads.

@@ -95,9 +95,8 @@ export interface GoalRaceInput {
   targetSeconds: number | null
 }
 
-/** Year to date as Goals reads it: Goals is its home, so Volume prints its distance and projection from the same figures. */
+/** Year to date: the runs' distance, as Progress and Goals total it, with Goals' target and projection. */
 export interface YtdInput {
-  /** The year's distance, Goals' own total. */
   km: number
   vsLastYear: YearOverYear | null
   goalKm: number | null

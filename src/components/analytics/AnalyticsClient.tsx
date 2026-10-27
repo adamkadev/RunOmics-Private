@@ -12,6 +12,7 @@ import type { RecoveryDay } from '@/domain/training/recovery'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
+import { useUrlParam } from '@/lib/useUrlParam'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDateRange } from '@/lib/formatters'
@@ -21,6 +22,7 @@ import { CoachRead } from './CoachRead'
 import { tabRead } from './coachReadTabs'
 import {
   LOAD_PERIODS,
+  PERIODS,
   WEEK_PERIODS,
   dayWindow,
   weekRows,
@@ -85,28 +87,38 @@ export interface AnalyticsBoardData {
   weeklyAvgKm: number | null
 }
 
-interface TabWindow<P> {
-  period: P
-  offset: number
+const DEFAULT_PERIOD: Record<TabId, LoadPeriod> = { fitness: '4w', performance: '12w', volume: '12w', health: '12w' }
+
+function parseAnalyticsTab(value: string | null): TabId {
+  return TABS.find((tb) => tb.id === value)?.id ?? 'fitness'
 }
 
-const DEFAULTS = {
-  fitness: { period: '4w', offset: 0 } as TabWindow<LoadPeriod>,
-  performance: { period: '12w', offset: 0 } as TabWindow<LoadPeriod>,
-  volume: { period: '12w', offset: 0 } as TabWindow<WeekPeriod>,
-  health: { period: '12w', offset: 0 } as TabWindow<WeekPeriod>,
+function parseAnalyticsPeriod(value: string | null, tab: TabId): LoadPeriod {
+  return PERIODS.find((p) => p === value) ?? DEFAULT_PERIOD[tab]
 }
 
 export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsBoardData; today: string }) {
   const today = useToday(serverToday)
-  const [tab, setTab] = useState<TabId>('fitness')
-  const [windows, setWindows] = useState(DEFAULTS)
+  // Tab and period live in the URL, so Back returns to them and a push can open /analytics?tab=volume.
+  const [tabParam, setTabParam] = useUrlParam('tab')
+  const [periodParam, setPeriodParam] = useUrlParam('period')
+  const tab = parseAnalyticsTab(tabParam)
+  const period = parseAnalyticsPeriod(periodParam, tab)
+  const [periods, setPeriods] = useState<Partial<Record<TabId, LoadPeriod>>>({})
+  const [offsets, setOffsets] = useState<Partial<Record<TabId, number>>>({})
+  const offset = offsets[tab] ?? 0
   const tabsRef = useRef<HTMLDivElement>(null)
+
+  function writePeriod(next: TabId, value: LoadPeriod) {
+    setPeriodParam(value === DEFAULT_PERIOD[next] ? null : value)
+  }
 
   function selectTab(id: TabId) {
     // Before the new tab paints: a page left even 1-2 pt down sets off iOS's scroll-edge blur over the large title.
     if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
-    setTab(id)
+    setPeriods((all) => ({ ...all, [tab]: period }))
+    setTabParam(id === 'fitness' ? null : id)
+    writePeriod(id, periods[id] ?? DEFAULT_PERIOD[id])
   }
 
   // A tab swap changes the page under the title without a scroll: have the
@@ -129,38 +141,35 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
   // The oldest date any chart has, so a swipe can't go back past the data.
   const earliest = [data.load[0]?.date, data.weeks[0]?.date].filter((d): d is string => !!d).sort()[0] ?? today
-  const current = windows[tab]
   const loadTab = tab === 'fitness' || tab === 'performance'
-  const days = loadTab ? dayWindow(today, current.period as LoadPeriod, current.offset) : null
-  const weeks = loadTab ? null : weekWindow(today, current.period as WeekPeriod, current.offset)
+  const days = loadTab ? dayWindow(today, period, offset) : null
+  const weeks = loadTab ? null : weekWindow(today, period as WeekPeriod, offset)
 
   function shift(step: 1 | -1) {
-    setWindows((all) => {
-      const w = all[tab]
-      const next = w.offset + step
-      if (next < 0) return all
-      const start = loadTab ? dayWindow(today, w.period as LoadPeriod, next).end : weekWindow(today, w.period as WeekPeriod, next).end
-      if (start < earliest) return all
-      return { ...all, [tab]: { ...w, offset: next } }
-    })
+    const next = offset + step
+    if (next < 0) return
+    const start = loadTab ? dayWindow(today, period, next).end : weekWindow(today, period as WeekPeriod, next).end
+    if (start < earliest) return
+    setOffsets((all) => ({ ...all, [tab]: next }))
   }
 
-  function setPeriod(period: string) {
-    setWindows((all) => ({ ...all, [tab]: { period, offset: 0 } }))
+  function setPeriod(next: LoadPeriod) {
+    writePeriod(tab, next)
+    setOffsets((all) => ({ ...all, [tab]: 0 }))
   }
 
   const rows = weeks ? weekRows(data.weeks, data.plan, weeks, today) : []
   const range = days ?? weeks!
   // A year by its months: its days made the line too wide to sit beside the period control on a phone.
-  const rangeLabel = formatDateRange(range.start, range.live ? today : range.end, { year: 'always', precision: current.period === '1y' ? 'month' : 'day' })
+  const rangeLabel = formatDateRange(range.start, range.live ? today : range.end, { year: 'always', precision: period === '1y' ? 'month' : 'day' })
 
   // Each tab's own coach read over its own window, so a tab set to 4 weeks never reads "12 weeks".
   const coach = useMemo(() => {
-    const live = loadTab ? dayWindow(today, current.period as LoadPeriod, current.offset) : weekWindow(today, current.period as WeekPeriod, current.offset)
+    const live = loadTab ? dayWindow(today, period, offset) : weekWindow(today, period as WeekPeriod, offset)
     const weekly = loadTab ? [] : weekRows(data.weeks, data.plan, live as ReturnType<typeof weekWindow>, today)
-    return tabRead({ tab, data, today, period: current.period as LoadPeriod, days: loadTab ? (live as ReturnType<typeof dayWindow>) : null, rows: weekly, live: live.live })
-  }, [data, today, tab, current, loadTab])
-  const coachEyebrow = t.analytics.cards.coachRead.eyebrow(t.analytics.cards.period.words[current.period]!, t.analytics.tabs[tab])
+    return tabRead({ tab, data, today, period, days: loadTab ? (live as ReturnType<typeof dayWindow>) : null, rows: weekly, live: live.live })
+  }, [data, today, tab, period, offset, loadTab])
+  const coachEyebrow = t.analytics.cards.coachRead.eyebrow(t.analytics.cards.period.words[period]!, t.analytics.tabs[tab])
 
   return (
     <div className="flex flex-col gap-5">
@@ -175,7 +184,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             {rangeLabel}
           </p>
         </div>
-        <PeriodControl periods={loadTab ? LOAD_PERIODS : WEEK_PERIODS} value={current.period} onChange={setPeriod} />
+        <PeriodControl periods={loadTab ? LOAD_PERIODS : WEEK_PERIODS} value={period} onChange={setPeriod} />
       </header>
 
       {/* Its 8 pt of padding is for when it sticks; at rest the tabs sit the
@@ -188,12 +197,12 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
       <div {...analyticsTabs.panelProps} {...swipeHandlers}>
         {tab === 'fitness' && days && (
-          <LoadTab window={days} period={current.period as LoadPeriod} onShift={shift} today={today} data={data} />
+          <LoadTab window={days} period={period} onShift={shift} today={today} data={data} />
         )}
         {tab === 'performance' && days && (
           <PerformanceTab
             window={days}
-            period={current.period as LoadPeriod}
+            period={period}
             onShift={shift}
             today={today}
             weeks={data.weeks}
