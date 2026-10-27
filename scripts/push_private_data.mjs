@@ -6,6 +6,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BASE_REVISION_ENV, readBaseRevision, recordBaseRevision, sameRepository } from './private_data_revision.mjs'
 
+const REPO_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+
 function redact(text, secret) {
   if (!secret || !text) return text ?? ''
   return text.split(secret).join('***REDACTED***')
@@ -74,6 +76,19 @@ export function assertCompleteDataWorkspace(sourceDataDir, existingDataDir) {
   }
 }
 
+// The deployment checks each commit with the same contract and refuses one that breaks it, so it must never become HEAD.
+export function assertDataContract(sourceDataDir) {
+  try {
+    execFileSync(process.execPath, ['--import', 'tsx', 'scripts/validate-data.ts', path.resolve(sourceDataDir)], {
+      cwd: REPO_ROOT,
+      stdio: 'pipe',
+    })
+  } catch (err) {
+    const report = err?.stdout?.toString?.() || err?.stderr?.toString?.() || err?.message
+    throw new Error(`Refusing to push ${sourceDataDir}: it breaks the data contract.\n${report}`)
+  }
+}
+
 export function assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url, env = process.env) {
   const recorded = readBaseRevision(sourceDataDir, env)
 
@@ -110,6 +125,7 @@ export function pushPrivateData(sourceDataDir) {
   const url = process.env.RUNOMICS_DATA_REPO_URL
   const token = process.env.RUNOMICS_DATA_REPO_TOKEN
   if (!url) throw new Error('RUNOMICS_DATA_REPO_URL is not set - cannot push private data.')
+  assertDataContract(sourceDataDir)
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'runomics-data-push-'))
   try {

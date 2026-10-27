@@ -140,7 +140,7 @@ class TestDownload:
 class TestHrZones:
     def test_builds_connects_shape_from_the_list_row_and_the_running_zones(self):
         client = FakeApi().client()
-        client.get_activity_starts()
+        client.get_activity_rows()
 
         zones = parse_hr_zones(client.get_hr_zones("101"))
 

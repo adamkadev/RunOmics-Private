@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Runs deleted, re-typed or renamed in Garmin Connect follow in the app (R17).
+  After a complete listing, a stored run missing from it moves to
+  `removed_activities.json` (at most 5 a night; a list that looks cut short
+  removes nothing and makes the night partial), a run re-typed to walking
+  lands in Other training, and stored names follow Connect's. Sync data guards
+  (R10): a push validates the data contract first, a run that changes month
+  leaves its old month file, one id in two month files stops the sync, best
+  efforts cap GPS jumps as duration bests do, and the mapper and reprocess
+  share `fit_derived_fields()`. The Forerunner 55 profile stops re-asking
+  Garmin for 18 empty training-status windows every night (G9).
 - The sync survives garth's token dying (G1). A 401 on the token exchange is
   `GarminTokenExpired`: the sync writes `connect_status.json`, carries on
   through the Personal API with exit 0, stops marking new runs gear-pending

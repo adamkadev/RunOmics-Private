@@ -51,6 +51,14 @@ auditable.
 The concurrency check runs *before* the workspace replaces the clone's `data/`, so a
 refusal leaves both the clone and the remote untouched.
 
+**A push checks the data contract first.** `push_private_data.mjs` runs
+`scripts/validate-data.ts` on the workspace before it clones, and refuses to push when an
+error rule fails, printing the rules that did. The deployment checks every commit with the
+same contract and keeps serving the previous one on a refusal, and the next code deploy
+would fail its build, so a dataset that breaks the contract must never become HEAD. The
+nightly workflow restores `node_modules` from CI's cache, or runs `npm ci --ignore-scripts`,
+for `tsx`.
+
 `scripts/loadPalette.mjs` stages `src/lib/<entry>.ts` for use from plain Node. Every
 module it is asked to load must be alias-free (`./x`, never `@/x`), and dependencies
 must be listed before the modules that import them.
@@ -132,6 +140,22 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   and from the full-resolution records. A step faster than 8 m/s (2:05/km) is capped as a GPS
   jump. The window is exact on a piecewise-linear track: the best one starts or ends on a
   sample, so both anchorings are tried.
+- **Best efforts** (`bestEfforts`, the fastest 1 km, mile, 5 km and so on): read on the same
+  GPS-jump-capped distance as the duration bests, so a jump can make neither faster.
+- **Runs removed in Garmin Connect** (`removed_activities.json`, `scripts/garmin/listing_reconcile.py`).
+  After a complete listing (never with `--limit`, `--id` or `--dry-run`), a stored run missing from
+  it is checked against Garmin: a 404 means deleted, another sport means re-typed (a run changed to
+  walking). Either moves it out of `activities/` into the tombstone file with its id, date, name,
+  distance and reason, at most 5 a night; the cross-training step then reads back to the re-typed
+  run's date, so the walk lands in Other training. A run Garmin still calls a run, or one it does
+  not answer for, stays and makes the night partial. More than 20 missing runs, or an empty list,
+  reads as a list cut short: nothing is removed and the night is partial.
+- **Names follow Garmin Connect.** Each night the stored description takes the list row's name,
+  cleaned and matched against the plan as a new run's is, and a renamed run's type is inferred
+  again when its FIT is cached (without it the type stays, as the summary alone would drop
+  Garmin's race flag).
+- **A run that changes month** on a re-fetch leaves its old month file, which is deleted when
+  nothing is left in it. One id in two month files stops the sync before anything is written.
 - **Grade-adjusted pace** (`gapSecPerKm`, with a GAP pace series for the chart): each step
   counted as the metres of flat running that would cost the same energy, by Minetti et al.
   (2002)'s cost of running against gradient. See
@@ -139,7 +163,9 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
 
 **Existing runs get the new fields by reprocessing.** Dispatch *Sync Garmin Activities* with
 `reprocess` for the profile: `scripts/reprocess.py` rebuilds every stored run from the
-workflow's FIT cache with the current parser and calls Garmin for nothing. A run without a
+workflow's FIT cache with the current parser and calls Garmin for nothing. It writes the FIT
+fields through `fit_derived_fields()`, the mapper's own, so a reprocessed run matches a
+freshly synced one (a parity test holds them together). A run without a
 cached FIT keeps what it had, and the log counts them; when it reports any, dispatch once more
 with `force`, which downloads every FIT again.
 
@@ -351,6 +377,10 @@ caveat worth knowing:
   itself declined to give. A watch that sends no loads or status at all (a Forerunner 55) gets
   both from the app's own TRIMP load instead: acute the last 7 days, chronic the 28-day weekly
   average, and the status Today already estimates, replayed day by day and marked "Estimated".
+  The file's `checkedFrom` and `checkedThrough` mark the unbroken span from the first run that
+  Garmin has answered, empty days included, so such a watch asks for the last week each night
+  instead of every 28-day window since its first run. A window that fails stops the span before
+  it, and a run older than `checkedFrom` drops the mark.
 - **VO₂max history** is Garmin's own series and keeps the decimal the per-activity readings
   round away — the difference between a trend line and a staircase. The per-activity readings
   are the fallback until `vo2max_history.json` has been synced. The four-week daily view is

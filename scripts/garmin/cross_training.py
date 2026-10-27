@@ -88,10 +88,12 @@ def sync_cross_training(
     today: date | None = None,
     store: CrossTrainingStore | None = None,
     pause: Callable[[float], None] | None = None,
+    since: date | None = None,
 ) -> int:
     """Store tonight's new sessions; a session that fails is left for the next night, and the step then raises."""
     store = store or CrossTrainingStore()
-    since = listing_start(store.newest_date(), today or date.today())
+    start = listing_start(store.newest_date(), today or date.today())
+    since = min(start, since) if since else start
     print(f"Syncing cross-training since {since.isoformat()}…")
     rows = rows_since(client, since)
     retyped = store.remove(run_ids)

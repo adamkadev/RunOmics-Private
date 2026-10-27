@@ -181,12 +181,12 @@ def prefer_planned_name(description: str, plan: dict) -> str | None:
 
 def enrich_description_from_plan(activity: ActivityData, store: PlannedWorkoutStore) -> None:
     """So the detail survives permanently, independent of the store's window."""
-    plan = store.get(activity.date)
-    if not plan:
-        return
-    better = prefer_planned_name(activity.description, plan)
-    if better:
-        activity.description = better
+    activity.description = planned_description(activity.description, activity.date, store)
+
+
+def planned_description(description: str, day: str, store: PlannedWorkoutStore) -> str:
+    plan = store.get(day)
+    return (prefer_planned_name(description, plan) if plan else None) or description
 
 
 def _load_easy_pace_sec_per_km(data_dir: Path | None = None) -> float:

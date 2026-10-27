@@ -49,6 +49,7 @@ class FakeGarmin:
             "101": _summary(101, "2026-09-20 07:00:00"),
             "102": _summary(102, "2026-09-21 18:30:00"),
         }
+        self.unlisted: dict[str, dict] = {}
         self.gear: dict[str, list[dict]] = {}
         self.failures: dict[tuple[str, str], Exception] = {}
 
@@ -68,11 +69,15 @@ class FakeGarmin:
             raise failure
         return value
 
-    def get_activity_starts(self, *, running_only: bool = True) -> dict[str, str | None]:
-        return {aid: detail.get("startTimeLocal") for aid, detail in self.details.items()}
+    def get_activity_rows(self, *, running_only: bool = True) -> dict[str, dict]:
+        return copy.deepcopy(self.details)
 
     def get_activity_detail(self, activity_id: str) -> dict:
-        return self._answer("get_activity_detail", activity_id, self.details[activity_id])
+        return self._answer("get_activity_detail", activity_id, {**self.unlisted, **self.details}.get(activity_id))
+
+    def get_activities(self, start=0, limit=100, *, running_only=True, since=None) -> list[dict]:
+        rows = [*self.details.values(), *self.unlisted.values()]
+        return copy.deepcopy(rows[start:start + limit])
 
     def download_fit(self, activity_id: str, *, strict_errors: bool = False):
         return self._answer("download_fit", activity_id, None)
@@ -329,6 +334,7 @@ class TestGearRefresh:
         self, workspace, garmin, steps, monkeypatch, activity_factory
     ):
         _store_todays_run(workspace, activity_factory, gear_id="shoe1")
+        garmin.details["090"] = _summary(90, f"{date.today()} 07:00:00")
         garmin.failures[("get_activity_gear", "090")] = httpx.ConnectError("connection reset")
 
         assert _run(monkeypatch) == 0
@@ -359,7 +365,7 @@ def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
         raise error
 
     client._get = get
-    client.get_activity_starts = lambda *, running_only=True: {}
+    client.get_activity_rows = lambda *, running_only=True: {"090": _summary(90, f"{date.today()} 07:00:00")}
     monkeypatch.setattr(sync, "GarminClient", lambda _secret: client)
     return client
 
@@ -531,7 +537,8 @@ class TestVo2maxWithoutConnect:
         (workspace / "athlete.json").write_text(json.dumps({"vo2maxMlKgMin": 38.0, "vmaKmh": 10.9}))
         return path
 
-    def _store_run(self, workspace, activity_factory, day, vo2max):
+    def _store_run(self, workspace, activity_factory, day, vo2max, listed):
+        listed.details["090"] = _summary(90, f"{day} 07:00:00")
         run = activity_factory("090", day)
         run.vo2max_garmin = vo2max
         store = JsonActivityStore(workspace / "activities")
@@ -540,7 +547,7 @@ class TestVo2maxWithoutConnect:
 
     def test_a_run_after_connects_last_sample_moves_it(self, workspace, personal, steps, monkeypatch, activity_factory, history):
         history.write_text(json.dumps({"months": {"2026-09": {"date": "2026-09-15", "vo2max": 37.6}}, "days": {}}))
-        self._store_run(workspace, activity_factory, "2026-09-25", 37.3)
+        self._store_run(workspace, activity_factory, "2026-09-25", 37.3, personal)
 
         assert _run(monkeypatch) == 0
 
@@ -549,7 +556,7 @@ class TestVo2maxWithoutConnect:
 
     def test_without_a_newer_run_connects_value_stays(self, workspace, personal, steps, monkeypatch, activity_factory, history):
         history.write_text(json.dumps({"months": {"2026-09": {"date": "2026-09-30", "vo2max": 37.6}}, "days": {}}))
-        self._store_run(workspace, activity_factory, "2026-09-25", 37.3)
+        self._store_run(workspace, activity_factory, "2026-09-25", 37.3, personal)
 
         assert _run(monkeypatch) == 0
 
@@ -640,3 +647,98 @@ class TestExpiredConnect:
             _run(monkeypatch)
 
         assert _connect_status(workspace)["state"] == "expired"
+
+
+class TestRunsChangedInConnect:
+    @pytest.fixture
+    def stored(self, workspace, monkeypatch, activity_factory):
+        from garmin import listing_reconcile
+
+        monkeypatch.setattr(listing_reconcile, "_REMOVED_PATH", workspace / "removed_activities.json")
+        store = JsonActivityStore(workspace / "activities")
+        for activity_id, day in [("101", "2026-09-20"), ("102", "2026-09-21"), ("103", "2026-03-10")]:
+            store.upsert(activity_factory(activity_id, day))
+        store.save()
+        return workspace
+
+    def _tombstones(self, workspace) -> list[dict]:
+        return json.loads((workspace / "removed_activities.json").read_text())["removed"]
+
+    def test_a_run_deleted_in_connect_moves_to_the_tombstones(self, stored, garmin, steps, monkeypatch):
+        garmin.failures[("get_activity_detail", "103")] = GarminAPIError(404, "https://example.test/activity")
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_ids(stored) == {"101", "102"}
+        assert not (stored / "activities" / "2026-03.json").exists()
+        [tombstone] = self._tombstones(stored)
+        assert (tombstone["id"], tombstone["date"], tombstone["reason"]) == ("103", "2026-03-10", "deleted")
+
+    def test_a_run_retyped_to_walking_leaves_the_runs_for_cross_training(self, stored, garmin, steps, monkeypatch):
+        from garmin.cross_training import sync_cross_training
+        from repository.cross_training_store import CrossTrainingStore
+
+        monkeypatch.setattr(sync, "sync_cross_training", sync_cross_training)
+        walk = {**_summary(103, "2026-03-10 08:00:00"), "activityType": {"typeKey": "walking", "typeId": 9}}
+        garmin.unlisted["103"] = {**walk, "activityTypeDTO": walk["activityType"]}
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_ids(stored) == {"101", "102"}
+        assert self._tombstones(stored)[0]["reason"] == "retyped:walking"
+        sessions = CrossTrainingStore(stored / "cross_training").all_sessions()
+        assert [(s["id"], s["sport"], s["date"]) for s in sessions] == [("103", "walking", "2026-03-10")]
+
+    def test_a_run_connect_still_has_as_a_run_is_kept_and_the_night_is_partial(self, stored, garmin, steps, monkeypatch):
+        garmin.unlisted["103"] = {**_summary(103, "2026-03-10 08:00:00"), "activityTypeDTO": {"typeKey": "running"}}
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(stored) == {"101", "102", "103"}
+        assert not (stored / "removed_activities.json").exists()
+
+    def test_a_truncated_listing_changes_nothing(self, stored, garmin, steps, monkeypatch, activity_factory):
+        store = JsonActivityStore(stored / "activities")
+        for n in range(25):
+            store.upsert(activity_factory(f"2{n:02d}", "2026-08-01"))
+        store.save()
+        months_before = {path.name: path.read_text() for path in (stored / "activities").glob("*.json")}
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(stored) >= {"103", *(f"2{n:02d}" for n in range(25))}
+        assert not (stored / "removed_activities.json").exists()
+        assert (stored / "activities" / "2026-08.json").read_text() == months_before["2026-08.json"]
+        assert (stored / "activities" / "2026-03.json").read_text() == months_before["2026-03.json"]
+
+    @pytest.mark.parametrize("args", [("--limit", "1"), ("--id", "101")])
+    def test_a_partial_listing_never_removes_a_run(self, stored, garmin, steps, monkeypatch, args):
+        garmin.failures[("get_activity_detail", "103")] = GarminAPIError(404, "https://example.test/activity")
+
+        _run(monkeypatch, *args)
+
+        assert "103" in _stored_ids(stored)
+        assert not (stored / "removed_activities.json").exists()
+
+    def test_at_most_five_runs_leave_a_night(self, stored, garmin, steps, monkeypatch, activity_factory):
+        store = JsonActivityStore(stored / "activities")
+        for n in range(6):
+            store.upsert(activity_factory(f"3{n}", f"2026-07-0{n + 1}"))
+        store.save()
+        for n in range(6):
+            garmin.failures[("get_activity_detail", f"3{n}")] = GarminAPIError(404, "https://example.test/activity")
+        garmin.failures[("get_activity_detail", "103")] = GarminAPIError(404, "https://example.test/activity")
+
+        assert _run(monkeypatch) == 0
+
+        assert len(self._tombstones(stored)) == 5
+        assert len(_stored_ids(stored)) == 2 + 7 - 5
+
+    def test_a_name_changed_in_connect_reaches_the_stored_run(self, stored, garmin, steps, monkeypatch):
+        garmin.details["101"]["activityName"] = "Luxembourg - Sortie longue + gainage"
+        garmin.failures[("get_activity_detail", "103")] = GarminAPIError(404, "https://example.test/activity")
+
+        assert _run(monkeypatch) == 0
+
+        stored_runs = {a["id"]: a for a in JsonActivityStore(stored / "activities").all_activities()}
+        assert stored_runs["101"]["description"] == "Sortie longue"
