@@ -19,6 +19,13 @@ All notable changes to this project are documented in this file.
   baselines. A `project-rules` skill gives cloud sessions the repository's
   standing rules. The demo data no longer archives a six-week plan when
   generated on a Wednesday, which failed the e2e build that day.
+- Race-day form and watch alerts on Plan (F8, G5 display). The race page carries
+  fitness, fatigue and form to race day through the planned sessions' estimated
+  load, with the last four weeks drawn solid and the forecast dashed; it gives no
+  number before 42 days of running since the start or a long break, or while the
+  plan stops more than a week before the race. Each structured Plan session says
+  on one line what the watch alerts on: the Run/Walk times of a run/walk session
+  and the running pace range.
 - Races and goals editor (G4). Settings → Races & goals (owner only) adds, edits
   and removes races (name, date, distance, a goal time or "just finish", priority
   A/B/C, place) and sets each season's distance and target times, in English and

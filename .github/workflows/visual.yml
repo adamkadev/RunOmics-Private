@@ -96,7 +96,7 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           if [ "$EVENT" = push ]; then
-            npm run test:visual -- --update-snapshots=missing
+            npm run test:visual -- --update-snapshots=changed
           elif [ "$UPDATE" = true ]; then
             npm run test:visual -- --update-snapshots=changed
           else

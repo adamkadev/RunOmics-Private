@@ -2010,6 +2010,14 @@ export const fr = {
     pace: 'Allure',
     finish: 'Arrivée',
     none: 'Aucune course à venir. Ajoute-en une dans Garmin Connect, elle s’affichera ici après la prochaine synchro.',
+    formTitle: 'Forme le jour de la course',
+    formToday: (tsb: string) => `Aujourd’hui ${tsb}.`,
+    formCaption: 'Prévue à partir des séances planifiées jusqu’à la course, à la charge que portent tes sorties de chaque type.',
+    formRaceDay: 'Jour J',
+    formShortHistory: (days: number, needed: number) =>
+      `Pas encore assez de course pour la prévoir : la forme se lit sur ${needed} jours d’entraînement, ${days} pour l’instant depuis le début ou la dernière longue pause.`,
+    formNoPlan: 'Aucune séance planifiée jusqu’à la course pour l’instant : rien pour la prévoir.',
+    formPlanShort: (date: string) => `Le plan s’arrête le ${date} : la prévision attend des séances jusqu’à la semaine de la course.`,
   },
 
   nextRace: {
@@ -2168,6 +2176,9 @@ export const fr = {
       hrCap: (bpm: number) => `≤ ${bpm}`,
       findRoute: 'Trouver un parcours',
       coachNote: 'Mot du coach',
+      watchAlerts: 'Montre :',
+      runWalkAlert: (run: string, walk: string) => `Course/Marche ${run} / ${walk}`,
+      paceAlert: (range: string) => `Allure ${range}`,
     },
     restCard: {
       eyebrow: 'Repos',

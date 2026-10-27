@@ -24,6 +24,7 @@ import type { PlanWorkoutView } from './planWorkoutView'
 import { kindLabel, type DayKind } from './sessionKind'
 import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
 import { paceLabel, workoutSummary } from './workoutSummary'
+import { watchAlerts, watchAlertsLine } from './watchAlerts'
 
 const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
@@ -115,6 +116,7 @@ export function PlannedWorkoutCard({
   const hrCap = sessionHrCapBpm(workout.hr, hrZoneBoundsBpm)
   const hrZone = workout.hr?.zone ?? null
   const routeHref = exploreAvailable && kind.type !== 'Race' ? findRouteHref(workout) : null
+  const alerts = structured ? watchAlerts(workout.structure, kind.kind) : null
 
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
@@ -140,6 +142,12 @@ export function PlannedWorkoutCard({
             </span>
           )}
         </div>
+      )}
+      {alerts && (
+        <p className="mt-1 text-[13px] text-[var(--text-2)]" data-testid="watch-alerts">
+          <span className="text-muted-foreground">{s.watchAlerts}</span>{' '}
+          <span className="tabular-nums">{watchAlertsLine(alerts)}</span>
+        </p>
       )}
       {words && <CoachNote words={words} />}
       {structured && (
