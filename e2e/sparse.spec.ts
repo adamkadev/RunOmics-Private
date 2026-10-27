@@ -51,10 +51,12 @@ test('the owner marks a missed session skipped, which Firestore keeps, and takes
   await expect(day.getByTestId('skipped-mark')).toHaveText(s.skippedFor(s.skipReasons.ill))
   await expect.poll(async () => (await readDocument(`wellness/${missed}`))?.skipped?.stringValue).toBe('ill')
 
-  await page.reload()
-  await expect(day.getByTestId('skipped-mark')).toHaveText(s.skippedFor(s.skipReasons.ill))
-  await day.getByRole('button', { name: s.undoSkip }).click()
-  await expect(day).toContainText(t.sessionState.missed)
+  const later = await page.context().newPage()
+  await later.goto(`/plan?date=${missed}`)
+  const sameDay = later.getByTestId(`plan-day-done-${missed}`)
+  await expect(sameDay.getByTestId('skipped-mark')).toHaveText(s.skippedFor(s.skipReasons.ill))
+  await sameDay.getByRole('button', { name: s.undoSkip }).click()
+  await expect(sameDay).toContainText(t.sessionState.missed)
   await expect.poll(async () => (await readDocument(`wellness/${missed}`))?.skipped).toBeUndefined()
 })
 

@@ -61,14 +61,14 @@ async function ownerSession(apiKey: string) {
 
 /**
  * Signed in as the Auth SDK finds a returning owner, rather than through Google's popup, whose script comes from
- * apis.google.com even against the emulator. Every page the test opens from then on is the owner's.
+ * apis.google.com even against the emulator. Every page the test opens from then on, in any tab, is the owner's.
  */
 export async function signInAsOwner(page: Page): Promise<void> {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
   // The public demo's .env.e2e has no Firebase web config, so its build has no owner to sign in.
   if (!apiKey) return test.skip(true, 'NEXT_PUBLIC_FIREBASE_API_KEY is unset: no owner to sign in')
   const session = await ownerSession(apiKey)
-  await page.addInitScript(
+  await page.context().addInitScript(
     ([key, value]) => {
       try {
         localStorage.setItem(key, value)
