@@ -34,7 +34,9 @@ npm run test:visual
 ## Update the baselines
 
 The baselines in `e2e/visual/baselines/<project>/` are drawn on GitHub's Ubuntu runner: macOS and other Linux
-images draw text a few pixels differently, so never commit baselines made on a laptop.
+images draw text differently (the app uses the device's system font, so the runner draws its own; text
+wraps elsewhere), so never commit baselines made on a laptop. The checks compare layout, colour and charts, not
+the phone's typeface.
 
 1. Push the branch with the change.
 2. **Actions → Visual → Run workflow**, on that branch, with **Update the baselines** ticked. It rewrites only the
