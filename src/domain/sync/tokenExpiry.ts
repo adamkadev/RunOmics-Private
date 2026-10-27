@@ -18,7 +18,7 @@ export function parseGitHubExpiry(header: string | null | undefined): Date | nul
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-/** A bare `YYYY-MM-DD`, as an operator types a key's expiry into a GitHub Environment variable: midnight UTC that day. */
+/** A bare `YYYY-MM-DD`, as typed into a GitHub Environment variable: midnight UTC that day. */
 export function parseBareDate(value: string | null | undefined): Date | null {
   const m = value?.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!m) return null

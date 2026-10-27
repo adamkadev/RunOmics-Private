@@ -10,7 +10,7 @@ const SERVER_TOKENS: readonly [string, TokenKey][] = [
   ['GITHUB_SYNC_TOKEN', 'syncVercel'],
 ]
 
-/** `reported` is what the workflow read: `[{ name: "dataActions", expiresAt: <the header> }, { name: "garminKey", expiresAt: "2027-10-01" }]`. */
+/** `reported` is what the workflow read: a GitHub expiry header per token, or a bare date for `garminKey`. */
 export async function checkTokenExpiry(reported: unknown, now = new Date()) {
   const tokens: TokenExpiry[] = []
   for (const entry of Array.isArray(reported) ? reported : []) {

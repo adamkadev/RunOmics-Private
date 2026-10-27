@@ -21,7 +21,7 @@ export function appOrigin(): string | null {
   }
 }
 
-/** FCM refuses a `webpush.fcmOptions.link` that is not an absolute HTTPS URL, so a path needs this deployment's origin. */
+/** FCM refuses a `webpush.fcmOptions.link` that is not an absolute HTTPS URL. */
 export function absolutePushLink(link: string | undefined): string | undefined {
   if (!link) return undefined
   if (link.startsWith('/') && !link.startsWith('//')) {
