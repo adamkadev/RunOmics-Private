@@ -101,6 +101,7 @@ jobs:
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
           GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          GARMIN_KEY_EXPIRES: ${{ vars.GARMIN_PERSONAL_API_KEY_EXPIRES }}
           QUICK: ${{ inputs.quick }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
@@ -126,6 +127,11 @@ jobs:
             echo "personal_api=false" >> "$GITHUB_OUTPUT"
           else
             echo "personal_api=true" >> "$GITHUB_OUTPUT"
+            if [ -z "$GARMIN_KEY_EXPIRES" ]; then
+              echo "::warning::Environment '${{ matrix.profile }}' has no GARMIN_PERSONAL_API_KEY_EXPIRES variable: nothing will warn before its Garmin key expires."
+            elif ! printf '%s' "$GARMIN_KEY_EXPIRES" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+              echo "::warning::GARMIN_PERSONAL_API_KEY_EXPIRES in '${{ matrix.profile }}' must be a date like 2027-10-01 (got '$GARMIN_KEY_EXPIRES')."
+            fi
           fi
           if [ "$QUICK" != "true" ]; then
             echo "quick=false" >> "$GITHUB_OUTPUT"
@@ -543,11 +549,15 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
           DATA_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+          GARMIN_KEY_EXPIRES: ${{ steps.config.outputs.personal_api == 'true' && vars.GARMIN_PERSONAL_API_KEY_EXPIRES || '' }}
         run: |
           EXPIRY=$(printf 'Authorization: Bearer %s\n' "$DATA_TOKEN" \
             | curl -fsS --max-time 20 -o /dev/null -D - https://api.github.com/rate_limit -H @- \
             | tr -d '\r' | sed -n 's/^github-authentication-token-expiration: //Ip')
-          jq -n --arg e "$EXPIRY" '{tokens: (if $e == "" then [] else [{name: "dataActions", expiresAt: $e}] end)}' > "$RUNNER_TEMP/token-expiry.json"
+          jq -n --arg e "$EXPIRY" --arg g "$GARMIN_KEY_EXPIRES" '{tokens: (
+            (if $e == "" then [] else [{name: "dataActions", expiresAt: $e}] end)
+            + (if $g == "" then [] else [{name: "garminKey", expiresAt: $g}] end)
+          )}' > "$RUNNER_TEMP/token-expiry.json"
           printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
             | curl -fsS --max-time 60 -X POST "$APP_URL/api/internal/token-expiry" -H @- --data @"$RUNNER_TEMP/token-expiry.json" \
             | jq -r '.tokens[] | "- \(.name) expires \(.expiresAt)"' >> "$GITHUB_STEP_SUMMARY"

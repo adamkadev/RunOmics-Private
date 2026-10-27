@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { sendPushes } from '@/lib/sendPushNotification'
+import { pushPaths } from '@/lib/pushLinks'
 import { getExploreMilestones } from '@/application/usecases/GetExploreGains'
 import { formatPercent } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -15,7 +16,12 @@ export async function POST(req: NextRequest) {
     // Stored only once every push went out, as in pr-check.
     await sendPushes(
       'records',
-      milestones.map(({ unit, completeCount, unitCount }) => ({ title: n.title(unit.name), body: n.body(formatPercent(unit.pct), completeCount, unitCount) })),
+      milestones.map(({ unit, completeCount, unitCount }) => ({
+        title: n.title(unit.name),
+        body: n.body(formatPercent(unit.pct), completeCount, unitCount),
+        link: pushPaths.map,
+        tag: `quartier:${unit.id}`,
+      })),
     )
     await commit()
 

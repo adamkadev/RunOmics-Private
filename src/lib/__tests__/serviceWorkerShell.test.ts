@@ -69,3 +69,51 @@ describe('the service worker on a slow network', () => {
     expect(event.answer).toBeUndefined()
   })
 })
+
+describe('the service worker’s notifications', () => {
+  function worker() {
+    const listeners: Record<string, (event: unknown) => void> = {}
+    const shown: { title: string; options: Record<string, unknown> }[] = []
+    const window = { focus: vi.fn(), navigate: vi.fn() }
+    const clients = { openWindow: vi.fn(), matchAll: vi.fn(async () => [window]) }
+    const scope = {
+      location: { href: 'https://runomics.example/sw.js?v=test', hostname: 'runomics.example', origin: 'https://runomics.example' },
+      addEventListener: (type: string, listener: (event: unknown) => void) => (listeners[type] = listener),
+      registration: { showNotification: async (title: string, options: Record<string, unknown>) => void shown.push({ title, options }) },
+      clients,
+    }
+    new Function('self', 'caches', 'fetch', readFileSync(join(PUBLIC, 'sw.js'), 'utf8'))(scope, {}, () => {})
+    return { listeners, shown, clients, window }
+  }
+
+  async function dispatch(listener: (event: unknown) => void, event: Record<string, unknown>) {
+    let work: Promise<unknown> = Promise.resolve()
+    listener({ ...event, waitUntil: (promise: Promise<unknown>) => (work = promise) })
+    await work
+  }
+
+  it('shows the push under its tag and keeps its link for the tap', async () => {
+    const { listeners, shown } = worker()
+    const payload = {
+      notification: { title: 'New PR: 5K', body: '19:10', tag: 'record:5k' },
+      fcmOptions: { link: 'https://runomics.example/activities/a1' },
+    }
+
+    await dispatch(listeners.push!, { data: { json: () => payload } })
+
+    expect(shown[0]!.title).toBe('New PR: 5K')
+    expect(shown[0]!.options).toMatchObject({ tag: 'record:5k', data: { url: 'https://runomics.example/activities/a1' } })
+  })
+
+  it('opens the app’s own link in its window, and a GitHub run in a new one', async () => {
+    const { listeners, clients, window } = worker()
+    const tap = (url: string) => dispatch(listeners.notificationclick!, { notification: { close: () => {}, data: { url } } })
+
+    await tap('https://runomics.example/plan')
+    expect(window.navigate).toHaveBeenCalledWith('https://runomics.example/plan')
+
+    await tap('https://github.com/adamkadev/RunOmics-Private/actions/runs/1')
+    expect(clients.openWindow).toHaveBeenCalledWith('https://github.com/adamkadev/RunOmics-Private/actions/runs/1')
+    expect(window.navigate).toHaveBeenCalledTimes(1)
+  })
+})

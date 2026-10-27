@@ -41,7 +41,7 @@ describe('POST /api/internal/shoe-wear-check', () => {
 
     expect(await res.json()).toEqual({ newAlerts: WORN })
     expect(sendPushes).toHaveBeenCalledWith('shoes', [
-      { title: 'Shoe wear alert: Cloudrun 4', body: '712 km - past its 700 km alert threshold' },
+      { title: 'Shoe wear alert: Cloudrun 4', body: '712 km - past its 700 km alert threshold', link: '/shoes/g1', tag: 'shoe-wear:g1' },
     ])
     expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushes.mock.invocationCallOrder[0]!)
   })

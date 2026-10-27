@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { scheduledRoute } from '@/lib/internalRoute'
 import { dispatchSync, readSyncGate, syncConfig } from '@/lib/githubSync'
 import { opsStrings, sendOpsPush } from '@/lib/opsPush'
+import { pushPaths } from '@/lib/pushLinks'
 
 /** Each deployment dispatches its own athlete's full sync; the button's cooldown and daily cap throttle taps, not this. */
 export const { GET, POST } = scheduledRoute('nightly-sync', async () => {
@@ -17,7 +18,7 @@ export const { GET, POST } = scheduledRoute('nightly-sync', async () => {
   if (!dispatched.ok) {
     // No run means no workflow-failure push either: this is the only alert a refused dispatch gets.
     const n = opsStrings.syncDispatchRefused
-    await sendOpsPush(n.title, n.body(dispatched.status))
+    await sendOpsPush({ title: n.title, body: n.body(dispatched.status), link: pushPaths.settings, tag: 'sync-dispatch-refused' })
     return NextResponse.json({ error: `GitHub refused the dispatch (${dispatched.status})` }, { status: 502 })
   }
   return NextResponse.json({ dispatched: true, profile: config.profile ?? 'all' })

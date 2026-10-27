@@ -18,6 +18,14 @@ export function parseGitHubExpiry(header: string | null | undefined): Date | nul
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+/** A bare `YYYY-MM-DD`, as typed into a GitHub Environment variable: midnight UTC that day. */
+export function parseBareDate(value: string | null | undefined): Date | null {
+  const m = value?.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return null
+  const date = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  return date.toISOString().startsWith(value!.trim()) ? date : null
+}
+
 export function expiringSoon(tokens: readonly TokenExpiry[], now: Date, withinDays = TOKEN_WARN_DAYS): (TokenExpiry & { daysLeft: number })[] {
   return tokens
     .map((token) => ({ ...token, daysLeft: Math.floor((token.expiresAt.getTime() - now.getTime()) / DAY_MS) }))

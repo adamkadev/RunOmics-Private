@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { sendPushes } from '@/lib/sendPushNotification'
+import { pushPaths } from '@/lib/pushLinks'
 import { getNewActivities } from '@/application/usecases/GetNewActivities'
 import { formatDistance, formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
       newActivities.map((activity) => ({
         title: t.notifications.newActivity.title(activity.description),
         body: [formatDistance(activity.distanceKm), formatDuration(activity.durationSeconds), t.activityTypes[activity.type]].join(' · '),
+        link: pushPaths.run(activity.id),
+        tag: `run:${activity.id}`,
       }))
     )
     await commit()

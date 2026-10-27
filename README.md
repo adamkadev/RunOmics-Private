@@ -73,7 +73,9 @@ The sync reads your runs through Garmin's **Personal API**, with a key you creat
 yourself, on [Garmin Connect's Personal API page](https://connect.garmin.com/app/settings/personalApiToken): accept the terms and
 create a key. Garmin shows it once; copy it as
 `GARMIN_PERSONAL_API_KEY`. Choose the longest lifetime offered (a year at most)
-and diary its renewal: an expired key fails the night with a message saying so
+and note its expiry date as `GARMIN_PERSONAL_API_KEY_EXPIRES` (see
+[Set environment variables](#3-set-environment-variables)) so the nightly sync warns two weeks
+ahead: an expired key fails the night with a message saying so
 (with `GARMIN_SECRET` also set, garth reads the runs meanwhile and the night is
 reported as a partial one), and a new key from the same page is all it takes.
 
@@ -556,6 +558,7 @@ from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `
 | `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService loops) - see [Explore](docs/interface.md#explore) |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | The private data repository the build clones; a fine-grained token with Contents: Read only |
 | `RUNOMICS_DATA_SOURCE` | `github`: reads that repository at run time. The sync never rebuilds a deployment, so without it a deployment keeps the data of its last build - see [Reading the data at run time](docs/data-and-sync.md#reading-the-data-at-run-time) |
+| `APP_URL` | Optional: this deployment's `https://` origin, for the links pushes open. On Vercel it defaults to the project's production domain (`VERCEL_PROJECT_PRODUCTION_URL`); without either, a tapped push opens the app's home page |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | Optional: `true` lets search engines index the site (the public demo); anything else answers `noindex` |
 
 > `GARMIN_PERSONAL_API_KEY` and `GARMIN_SECRET` are only used by the sync script - neither runs on Vercel.
@@ -570,7 +573,10 @@ after the deployment's profile (GitHub → Settings → Environments), not from
 repository secrets: `GARMIN_PERSONAL_API_KEY` (and optionally `GARMIN_SECRET`), `RUNOMICS_DATA_REPO_URL`,
 `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash) and
 `INTERNAL_NOTIFY_SECRET`, plus an environment *variable* `PROFILE` holding the environment's
-own name. These are separate from the Vercel env vars above, and `INTERNAL_NOTIFY_SECRET`
+own name. With a Garmin key, add the *variable* `GARMIN_PERSONAL_API_KEY_EXPIRES`: the key's
+expiry date as Garmin showed it when you created it, as `YYYY-MM-DD` (e.g. `2027-10-01`). The
+nightly sync then pushes from 14 days before that date, and warns in the run's annotations while
+the variable is missing; update it with each new key. These are separate from the Vercel env vars above, and `INTERNAL_NOTIFY_SECRET`
 must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per

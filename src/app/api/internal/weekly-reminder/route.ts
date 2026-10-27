@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { scheduledRoute } from '@/lib/internalRoute'
 import { sendPush } from '@/lib/sendPushNotification'
+import { pushPaths } from '@/lib/pushLinks'
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getCoachingReminder } from '@/application/usecases/GetCoachingReminder'
 import { opsStrings, sendOpsPush } from '@/lib/opsPush'
@@ -21,7 +22,7 @@ async function remindAboutTheBlock(today: string): Promise<boolean> {
     !reminder.reviewOverdue ? null : reminder.daysSinceReview === null ? c.reviewNever : c.reviewAge(reminder.daysSinceReview),
   ].filter((reason): reason is string => reason !== null)
 
-  return sendOncePer('coachBlock', today, () => sendOpsPush(c.title, c.body(reasons.join(' · '))))
+  return sendOncePer('coachBlock', today, () => sendOpsPush({ title: c.title, body: c.body(reasons.join(' · ')), link: pushPaths.plan, tag: 'coach-block' }))
 }
 
 export const { GET, POST } = scheduledRoute('weekly-reminder', async () => {
@@ -37,11 +38,12 @@ export const { GET, POST } = scheduledRoute('weekly-reminder', async () => {
 
   const n = t.notifications.weeklyGoal
   const sent = await sendOncePer('weeklyReminder', today, () =>
-    sendPush(
-      'training',
-      n.title,
-      n.body(n.status[projection.status], formatNumber(projection.weeklyRate), formatNumber(projection.weeklyNeeded))
-    )
+    sendPush('training', {
+      title: n.title,
+      body: n.body(n.status[projection.status], formatNumber(projection.weeklyRate), formatNumber(projection.weeklyNeeded)),
+      link: pushPaths.goals,
+      tag: 'weekly-goal',
+    })
   )
 
   return NextResponse.json(sent ? { sent: true, status: projection.status, coachBlock } : { skipped: 'already sent today', coachBlock })

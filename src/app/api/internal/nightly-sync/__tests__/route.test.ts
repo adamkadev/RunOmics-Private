@@ -107,11 +107,12 @@ describe('/api/internal/nightly-sync', () => {
 
     expect(res.status).toBe(502)
     expect(await res.json()).toEqual({ error: 'GitHub refused the dispatch (401)' })
-    expect(sendPush).toHaveBeenCalledWith(
-      'always',
-      'Nightly sync did not start',
-      'GitHub refused its dispatch (401). Check the Sync button token and repository in Vercel.'
-    )
+    expect(sendPush).toHaveBeenCalledWith('always', {
+      title: 'Nightly sync did not start',
+      body: 'GitHub refused its dispatch (401). Check the Sync button token and repository in Vercel.',
+      link: '/settings',
+      tag: 'sync-dispatch-refused',
+    })
   })
 
   it('forwards the refusal to the operator’s deployment when one is set', async () => {
@@ -126,6 +127,7 @@ describe('/api/internal/nightly-sync', () => {
       title: 'Nightly sync did not start',
       body: 'GitHub refused its dispatch (403). Check the Sync button token and repository in Vercel.',
       from: 'runner',
+      tag: 'sync-dispatch-refused',
     })
   })
 })

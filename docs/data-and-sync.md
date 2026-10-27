@@ -95,9 +95,12 @@ the data of its last build, and `data-revalidate` answers it with a 409.
   month far under the 2 MB a fetch may cache. A month takes the format the next
   time the sync writes it.
 - **A token is announced before it expires.** On scheduled runs the sync reads
-  GitHub's `github-authentication-token-expiration` header for each data token
-  and posts the dates to `POST /api/internal/token-expiry`, which pushes when one
-  has 14 days or fewer left.
+  GitHub's `github-authentication-token-expiration` header for each data token,
+  and the Garmin key's date from the Environment variable
+  `GARMIN_PERSONAL_API_KEY_EXPIRES` (a bare `YYYY-MM-DD`: Garmin's API does not
+  report it), and posts them to `POST /api/internal/token-expiry`, which pushes
+  when one has 14 days or fewer left - the GitHub tokens in one push, the Garmin
+  key in its own, both through `sendOpsPush`.
 
 ## What a sync writes
 
@@ -173,7 +176,7 @@ off. A device registered before categories existed has none stored and keeps get
 | `training` | The morning session or rest day, the Monday digest, the Friday goal check-in, a new run, the AI verdict of a run that just landed, an overreaching alert |
 | `shoes` | Shoe wear |
 | `records` | A new record, a quartier past 90 % |
-| `always` | A failed workflow, a stale sync, a data token about to expire, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
+| `always` | A failed workflow, a stale sync, a data token or the Garmin key about to expire, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
 
 **Operator alerts leave the athlete's deployment.** A second athlete's deployment registers
 her devices, so an `always` push about a dead token or a failed workflow reaches her and not
@@ -187,6 +190,26 @@ holds a secret that opens nothing else. The alert arrives titled with the sendin
 not load must not need that workspace to say who it is about - and its words come from the
 English locale whatever that deployment speaks. A refusal or a timeout throws, so the calling route answers 500 rather than record an
 alert nobody read. A stale sync is **not** an operator alert: the athlete can act on it.
+
+**Every push opens a page and carries a tag.** `sendPush` sends the push's `link` as
+`webpush.fcmOptions.link`, which FCM accepts only as an absolute HTTPS URL, so a path is
+prefixed with `APP_URL` or Vercel's `VERCEL_PROJECT_PRODUCTION_URL`; `public/sw.js` opens it
+on a tap, a link off the app's origin (a workflow run on GitHub) in a new window. The `tag`
+goes out as `webpush.notification.tag`, so a later push with the same tag replaces the one
+still on the lock screen. A warning has one tag per kind; an event's tag also names its subject,
+so two runs synced in one night stay two notifications. A forwarded operator alert keeps its
+link and gets its tag prefixed with the sending profile.
+
+| Push | Opens | Tag |
+|------|-------|-----|
+| A new run, its AI verdict, a new record | That run's page | `run:<id>`, `verdict:<id>`, `record:<distance>` |
+| Shoe wear | `/shoes/<gearId>` | `shoe-wear:<gearId>` |
+| A quartier past 90 % | The Activities map | `quartier:<unit id>` |
+| The morning session, the Monday digest, the coaching-block reminder | `/plan` | `daily-session`, `weekly-digest`, `coach-block` |
+| The Friday goal check-in | `/goals` | `weekly-goal` |
+| An overreaching alert | `/analytics` | `overreaching` |
+| A failed workflow | Its run on GitHub | `workflow-failure:<workflow>` |
+| A token or the Garmin key about to expire, a refused nightly dispatch, a stale sync, the digest of phone errors | `/settings` | `token-expiry`, `garmin-key-expiry`, `sync-dispatch-refused`, `stale-sync`, `client-errors` |
 
 ## Garmin write path (coaching sync)
 
