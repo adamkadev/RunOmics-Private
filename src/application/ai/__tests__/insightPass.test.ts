@@ -318,7 +318,7 @@ describe('runSurface', () => {
       job('today')
     )
 
-    expect(outcome).toEqual({ generated: false, reason: `${BEST}: em-dash` })
+    expect(outcome).toEqual({ generated: false, reason: `${BEST}: em-dash`, missed: true })
     expect(store.saved).toEqual([])
     expect(revalidate).not.toHaveBeenCalled()
   })
@@ -594,6 +594,17 @@ describe('runInsightPass', () => {
     expect(report.today).toEqual({ generated: true })
     expect(report.shoeVerdicts).toEqual({ pegasus: 'no time left in this invocation' })
     expect(report.runVerdicts).toMatchObject({ generated: 0, failures: ['last-month: no time left in this invocation'] })
+    expect(report.missed).toBe(2)
+  })
+
+  it('names each model Google closed during the pass, with its answer', async () => {
+    const generate = vi.fn(async ({ model }: InsightRequest) => (model === BEST ? fail('http 429: quota exceeded') : ok('Today')))
+
+    const report = await runInsightPass(deps({ generate }), surfaces({ today: async () => job('today') }), OPTIONS)
+
+    expect(report.today).toEqual({ generated: true })
+    expect(report.closedModels).toEqual([{ model: BEST, reason: 'http 429: quota exceeded' }])
+    expect(report.missed).toBe(0)
   })
 
   it('checks the PB celebration window against the pass clock', async () => {
@@ -616,6 +627,8 @@ describe('runInsightPass', () => {
       pbCelebration: { generated: false, reason: 'no fresh record' },
       shoeVerdicts: {},
       runVerdicts: { outstanding: 0, eligible: 0, fresh: 0, rest: 0, generated: 0, failures: [] },
+      missed: 0,
+      closedModels: [],
       spend: {},
     })
   })

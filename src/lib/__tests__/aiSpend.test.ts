@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
+import { BACKFILL_POOL, MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 
 const ledger = vi.hoisted(() => ({ current: {} as Record<string, number> }))
 
@@ -61,7 +61,7 @@ describe('openSpender', () => {
 
   it('stops spending on a model the API refused', async () => {
     const spender = await openSpender()
-    spender.exhaust(BEST)
+    spender.exhaust(BEST, 'http 429: quota')
 
     expect(await spender.reserve(MODEL_POOL)).toBe(SECOND)
     expect(ledger.current[spendField(BEST)]).toBeUndefined()
@@ -88,5 +88,28 @@ describe('openSpender', () => {
     const spender = await openSpender()
     expect(await spender.reserve([BEST])).toBeNull()
     expect(await spender.reserve([SECOND])).toBe(SECOND)
+  })
+
+  it('stands GEMINI_MODEL in for the main pool alone, and GEMINI_BACKFILL_MODEL for the backfill pool', async () => {
+    vi.stubEnv('GEMINI_MODEL', 'gemini-main-override')
+    vi.stubEnv('GEMINI_BACKFILL_MODEL', 'gemini-backfill-override')
+    try {
+      const spender = await openSpender()
+      expect(await spender.reserve(MODEL_POOL)).toBe('gemini-main-override')
+      expect(await spender.reserve(BACKFILL_POOL)).toBe('gemini-backfill-override')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('leaves the backfill pool alone when only GEMINI_MODEL is set', async () => {
+    vi.stubEnv('GEMINI_MODEL', 'gemini-main-override')
+    vi.stubEnv('GEMINI_BACKFILL_MODEL', '')
+    try {
+      const spender = await openSpender()
+      expect(await spender.reserve(BACKFILL_POOL)).toBe(BACKFILL_POOL[0])
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 })

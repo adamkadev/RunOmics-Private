@@ -486,6 +486,12 @@ export const fr = {
       jobsLoadFailed: 'Impossible de charger les exécutions.',
       outcome: { sent: 'Fait', skipped: 'Rien à faire', error: 'Échec' },
       trigger: { cron: 'cron', manual: 'à la main', sync: 'synchro' },
+      ai: {
+        title: 'Dernière passe IA',
+        counts: (generated: number, missed: number) => `${generated} écrit${generated > 1 ? 's' : ''} · ${missed} en attente`,
+        idleNights: (nights: number) => `rien d’écrit depuis ${nights} nuit${nights > 1 ? 's' : ''}`,
+        closed: (model: string, reason: string) => `${model} fermé : ${reason}`,
+      },
     },
     sync: {
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
@@ -1822,6 +1828,11 @@ export const fr = {
     exploreComplete: {
       title: (name: string) => `${name} exploré`,
       body: (pct: string, done: number, total: number) => `${pct} de ses rues parcourues. ${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}.`,
+    },
+    aiIdle: {
+      title: (nights: number) => `Aucun texte IA écrit depuis ${nights} nuits`,
+      body: (closed: string) =>
+        closed ? `Gemini a fermé ${closed}. L’app affiche les textes à base de règles jusqu’à ce qu’un modèle réponde.` : 'Chaque passe a laissé son travail en plan. L’app affiche les textes à base de règles jusqu’à ce qu’un modèle réponde.',
     },
     syncDispatchRefused: {
       title: 'La synchro de nuit n’a pas démarré',
