@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -29,6 +30,7 @@ def main() -> int:
     type_context = load_type_context(get_data_dir())
 
     updated = uncached = 0
+    hr_sources: Counter[str] = Counter()
     for a in store.all_activities():
         fit_path = _FIT_DIR / f"{a['id']}.fit"
         if not fit_path.exists():
@@ -42,6 +44,7 @@ def main() -> int:
         type_inference = infer_type_with_source(
             a.get("description", ""),
             parsed,
+            activity_id=a["id"],
             hr_zones=a.get("hrZones") or [],
             duration_seconds=a.get("durationSeconds"),
             date=a.get("date"),
@@ -52,7 +55,10 @@ def main() -> int:
         a.update(stored_fit_fields(parsed, a.get("paceSecPerKm")))
         store.touch(a["id"])
         updated += 1
+        hr_sources[parsed.hr_source or "none"] += 1
 
+    if hr_sources:
+        print("Heart rate by sensor: " + ", ".join(f"{source} {count}" for source, count in sorted(hr_sources.items())))
     if uncached:
         print(f"{uncached} activities have no cached FIT file and keep what they had: a forced sync downloads them.")
     if args.dry_run:

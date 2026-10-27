@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Heart-rate trust and return-to-running progress (F2, F3). The sync reads the
+  FIT's paired sensors into each run's `hrSource` (`external` or `wrist`), and
+  `athlete.json` takes an optional `hrReliableFrom`: a run before it, a wrist
+  run after it, or one the owner marks "HR unreliable" in its note (a new switch
+  in the notes sheet, kept with the note and in the nightly backup) loses its
+  heart rate everywhere: load, time in zones, easy and workout heart rate,
+  efficiency, drift and the classifier's zone rule. Its load is session RPE ×
+  minutes, scaled to TRIMP and labelled "estimated from effort" on the run and
+  in the workbook (`load_source`). The sync also stores each run's
+  `longestContinuousRunSec`, `longestContinuousRunM` and `runningSec`, from
+  cadence (or speed, or the splits) with walking left out. From the end of the
+  latest break of four weeks or more, Records gets a Comeback tab (first 10, 20
+  and 30 minutes non-stop, first 3 and 5 km without walking, first block
+  completed), Plan a card with running minutes per week and the longest
+  non-stop run, and each new milestone gets the celebration overlay and a push
+  in the records category. **Needs** a reprocess of both profiles to fill the
+  new fields, and a deploy of `firestore.rules` for the switch.
+
 - Route guards, AI status, rules drift and CI (R11 part, R12, R13, R16). A test
   walks every API route: each `/api/internal/*` handler must go through
   `handleInternalRoute` or `scheduledRoute`, every other one through the owner

@@ -81,6 +81,13 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       await assertFails(setDoc(doc(db, 'activityNotes', '103'), { note: 'x', tags: Array(11).fill('t') }))
       await assertFails(setDoc(doc(db, 'activityNotes', '103'), { note: 42, tags: [] }))
       await assertFails(setDoc(doc(db, 'activityNotes', '103'), { note: 'x', tags: 'easy' }))
+      await assertFails(setDoc(doc(db, 'activityNotes', '103'), { note: '', tags: [], hrUnreliable: false }))
+      await assertFails(setDoc(doc(db, 'activityNotes', '103'), { note: '', tags: [], hrUnreliable: 'yes' }))
+    })
+
+    it('lets the owner mark a run\'s heart rate unreliable', async () => {
+      await assertSucceeds(setDoc(doc(owner(), 'activityNotes', '104'), { note: '', tags: [], hrUnreliable: true }))
+      await assertFails(setDoc(doc(visitor(), 'activityNotes', '105'), { note: '', tags: [], hrUnreliable: true }))
     })
 
     it('only lets the owner delete', async () => {

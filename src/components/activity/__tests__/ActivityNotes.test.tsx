@@ -18,6 +18,7 @@ let mockUser: MockUser | null = null
 let mockAllNotes: { note: string; tags: string[] }[] = []
 let mockNotesById: Record<string, { note: string; tags: string[] }> = {}
 let mockLastRequestedId = ''
+let mockSaved: unknown[] = []
 
 const ACTIVITY_ID = 'a1'
 
@@ -55,7 +56,9 @@ vi.mock('firebase/firestore', () => ({
     return { exists: () => stored !== null, data: () => stored }
   },
   getDocs: async () => ({ docs: mockAllNotes.map((note) => ({ data: () => note })) }),
-  setDoc: async () => {},
+  setDoc: async (_ref: unknown, data: unknown) => {
+    mockSaved.push(data)
+  },
 }))
 
 /** The note chip: it opens the editor, or shows the note and then Edit for the owner. */
@@ -85,6 +88,7 @@ beforeEach(() => {
   mockAllNotes = []
   mockNotesById = {}
   mockLastRequestedId = ''
+  mockSaved = []
   mockNotesUnavailable = false
   mockFirestoreReads = 0
   mockFirestoreDenied = false
@@ -174,6 +178,35 @@ describe('ActivityNotes sheet', () => {
     // The sheet slides away before it goes.
     await userEvent.click(screen.getByRole('button', { name: t.common.close }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('saves only the note and its tags when the HR-unreliable switch is left off', async () => {
+    render(<ActivityNotes activityId="a1" />)
+    await openNotes()
+
+    await userEvent.type(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder), 'easy')
+    await userEvent.click(screen.getByRole('button', { name: t.settings.actions.save }))
+    await waitFor(() => expect(mockSaved).toHaveLength(1))
+    expect(Object.keys(mockSaved[0] as object).sort()).toEqual(['note', 'tags'])
+  })
+
+  it('saves the HR-unreliable mark with the note, and clears it when switched off', async () => {
+    mockNotesById = { [ACTIVITY_ID]: { note: 'Strap slipped', tags: [] } }
+    render(<ActivityNotes activityId="a1" />)
+    await openNotes()
+
+    await userEvent.click(await screen.findByRole('switch', { name: t.activity.notes.hrUnreliable }))
+    await userEvent.click(screen.getByRole('button', { name: t.settings.actions.save }))
+    await waitFor(() => expect(mockSaved).toEqual([{ note: 'Strap slipped', tags: [], hrUnreliable: true }]))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(screen.getByTestId('note-text')).toHaveTextContent(t.activity.notes.hrUnreliable)
+    await userEvent.click(screen.getByRole('button', { name: t.activity.noteRow.edit }))
+    const toggle = await screen.findByRole('switch', { name: t.activity.notes.hrUnreliable })
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await userEvent.click(toggle)
+    await userEvent.click(screen.getByRole('button', { name: t.settings.actions.save }))
+    await waitFor(() => expect(mockSaved.at(-1)).toEqual({ note: 'Strap slipped', tags: [] }))
   })
 
   it('discards the draft on cancel rather than keeping it for next time', async () => {

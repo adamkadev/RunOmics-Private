@@ -4,6 +4,9 @@ import { dataFs, dataGeneration } from '../dataFs'
 import type { Activity } from '@/domain/activity/types'
 import { displayTitle } from '@/domain/activity/title'
 import { plausibleBestEfforts } from '@/domain/activity/bestEfforts'
+import { withHrTrust } from '@/domain/activity/hrTrust'
+import { getAthleteProfile } from './JsonAthleteRepository'
+import { getHrUnreliableIds } from './JsonActivityNoteRepository'
 
 let cache: { generation: string; activities: Activity[] } | null = null
 
@@ -48,6 +51,9 @@ function readActivities(dirPath: string): Activity[] {
 export function getAllActivities(dirPath?: string): Activity[] {
   if (dirPath) return readActivities(dirPath)
   const generation = dataGeneration()
-  if (cache?.generation !== generation) cache = { generation, activities: readActivities(dataPath('activities')) }
+  if (cache?.generation !== generation) {
+    const trust = { reliableFrom: getAthleteProfile().hrReliableFrom, unreliableIds: getHrUnreliableIds() }
+    cache = { generation, activities: withHrTrust(readActivities(dataPath('activities')), trust) }
+  }
   return cache.activities
 }

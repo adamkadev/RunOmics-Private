@@ -6,8 +6,10 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.owner == true;
     }
 
+    // hrUnreliable is only ever true: an unmarked run leaves the field out.
     function isWellFormedNote() {
-      return request.resource.data.keys().hasOnly(['note', 'tags'])
+      return request.resource.data.keys().hasOnly(['note', 'tags', 'hrUnreliable'])
+        && (!('hrUnreliable' in request.resource.data) || request.resource.data.hrUnreliable == true)
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 500
         && request.resource.data.tags is list

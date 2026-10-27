@@ -60,6 +60,10 @@ def _parsed() -> ParsedFit:
         gap_samples=[365.4, 361.2, 358.9],
         cadence_samples=[170.0, 172.0, 174.0],
         splits=[ActivitySplit("lap", 1832, 5000.0, 2.73, 147, [SplitLap(366, 1000.0, 2.73, 145)])],
+        hr_source="external",
+        longest_continuous_run_sec=2650,
+        longest_continuous_run_m=7310.5,
+        running_sec=2690,
     )
 
 

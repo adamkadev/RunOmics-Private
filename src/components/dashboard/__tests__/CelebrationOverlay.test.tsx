@@ -44,4 +44,21 @@ describe('CelebrationOverlay', () => {
     render(<CelebrationOverlay record={RECENT_RECORD} aiTake={null} />)
     expect(screen.queryByRole('dialog')).toBeNull()
   })
+
+  it('celebrates a milestone since the return, after the record it shares the days with', () => {
+    const milestone = { key: 'continuous20' as const, date: todayIso(), activityId: 'act-2' }
+    render(<CelebrationOverlay record={RECENT_RECORD} milestone={milestone} aiTake={null} />)
+    fireEvent.click(screen.getByText(/later/i))
+
+    expect(screen.getByRole('dialog')).toHaveTextContent('First 20 minutes non-stop')
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/activities/act-2')
+    fireEvent.click(screen.getByText(/later/i))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(window.localStorage.getItem(`ro-celebration-seen:return-continuous20-${milestone.date}`)).toBe('1')
+  })
+
+  it('does not celebrate an old milestone since the return', () => {
+    render(<CelebrationOverlay record={null} milestone={{ key: 'nonstop3k', date: '2020-01-01', activityId: null }} aiTake={null} />)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 })

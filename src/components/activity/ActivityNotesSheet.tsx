@@ -4,6 +4,7 @@ import { Plus, X } from 'lucide-react'
 import { inputCls } from '@/lib/formStyles'
 import { Sheet } from '@/components/ui/Sheet'
 import { StatusPill } from '@/components/ui/StatusPill'
+import { Toggle } from '@/components/ui/Toggle'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
 import { t } from '@/i18n'
 import { NOTE_MAX_LENGTH, TAG_MAX_LENGTH, TAGS_MAX_COUNT, type ActivityNote } from './activityNote'
@@ -22,6 +23,7 @@ interface SheetProps {
   onTagInput: (value: string) => void
   onAddTag: (tag: string) => void
   onRemoveTag: (tag: string) => void
+  onHrUnreliableChange: (unreliable: boolean) => void
   onSave: () => void
 }
 
@@ -37,6 +39,7 @@ export function NotesSheet({
   onTagInput,
   onAddTag,
   onRemoveTag,
+  onHrUnreliableChange,
   onSave,
 }: SheetProps) {
   const suggestions = (knownTags ?? []).filter((tag) => !draft.tags.includes(tag))
@@ -122,6 +125,14 @@ export function NotesSheet({
               />
               <p className="mt-1 text-caption text-subtle">{t.activity.notes.tagHint}</p>
             </div>
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <div>
+                <p className="text-sm font-medium text-foreground">{t.activity.notes.hrUnreliable}</p>
+                <p className="mt-0.5 text-caption text-subtle">{t.activity.notes.hrUnreliableHint}</p>
+              </div>
+              <Toggle checked={!!draft.hrUnreliable} onChange={onHrUnreliableChange} label={t.activity.notes.hrUnreliable} />
+            </div>
           </div>
         ) : (
           <div className="space-y-2 pt-3">
@@ -133,6 +144,7 @@ export function NotesSheet({
                 ))}
               </div>
             )}
+            {saved.hrUnreliable && <p className="text-caption text-subtle">{t.activity.notes.hrUnreliable}</p>}
           </div>
         )}
     </Sheet>

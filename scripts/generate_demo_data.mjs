@@ -1060,7 +1060,7 @@ const RETURN_WEEKDAY_OFFSETS = [2, 4, 6]
 // Garmin names a run after the workout sent to the watch, and spells its primes in ASCII.
 const watchName = (reps, minutes) => `Footing · ${reps} × ${minutes}'`
 
-function sparseRun(rng, { id, date, type, description, segments }) {
+function sparseRun(rng, { id, date, type, description, segments, hrSource = 'wrist' }) {
   const bounds = SPARSE_ATHLETE.hrZoneBoundsBpm
   const samples = segments.flatMap((segment) => Array.from({ length: Math.max(1, Math.round(segment.seconds / SPARSE_SAMPLE_SECONDS)) }, () => ({
     hr: Math.round(segment.hr + between(rng, -4, 4)),
@@ -1078,6 +1078,20 @@ function sparseRun(rng, { id, date, type, description, segments }) {
     if (zone >= 0) zoneSeconds[zone] += SPARSE_SAMPLE_SECONDS
   }
   const runningSpeed = Math.max(...segments.map((s) => s.speed))
+  const bouts = []
+  let bout = null
+  for (const segment of segments) {
+    if (segment.speed >= 1.6) {
+      bout ??= { seconds: 0, metres: 0 }
+      bout.seconds += segment.seconds
+      bout.metres += segment.seconds * segment.speed
+    } else if (bout) {
+      bouts.push(bout)
+      bout = null
+    }
+  }
+  if (bout) bouts.push(bout)
+  const longestBout = bouts.reduce((best, b) => (b.seconds > best.seconds ? b : best), { seconds: 0, metres: 0 })
   const tempC = round(between(rng, 6, 18), 1)
   const activity = {
     id: String(id),
@@ -1100,6 +1114,7 @@ function sparseRun(rng, { id, date, type, description, segments }) {
       maxBpm: i + 1 < bounds.length ? bounds[i + 1] - 1 : null,
     })),
     avgHeartRate,
+    hrSource,
     rpe: rng() < 0.4 ? Math.round(between(rng, 3, 6)) : null,
     comment: rng() < 0.25 ? pick(rng, ['Bonnes sensations.', 'Jambes lourdes.', 'Il pleuvait, sortie courte.']) : '',
     route: generateRoute(rng, distanceKm, SPARSE_CENTER),
@@ -1119,6 +1134,9 @@ function sparseRun(rng, { id, date, type, description, segments }) {
     vo2maxGarmin: SPARSE_ATHLETE.vo2maxMlKgMin,
     avgTemperature: null,
     cadenceSamples: samples.map((s) => s.cadence),
+    longestContinuousRunSec: longestBout.seconds,
+    longestContinuousRunM: round(longestBout.metres, 1),
+    runningSec: bouts.reduce((sum, b) => sum + b.seconds, 0),
     splits: segments.map((segment) => ({
       type: segment.type,
       durationSec: segment.seconds,
@@ -1208,6 +1226,8 @@ export function generateSparseDataset({ now = new Date() } = {}) {
   const blockStart = addDays(monday, -14)
   const breakEnd = addDays(blockStart, -1)
   const breakStart = addDays(blockStart, -200)
+  // The armband arrives at the start of the block's second week, as hers did mid-block.
+  const hrReliableFrom = addDays(blockStart, 7)
   const historyStart = addDays(breakStart, -180)
 
   const activities = []
@@ -1246,6 +1266,7 @@ export function generateSparseDataset({ now = new Date() } = {}) {
       type: index < 3 ? 'VO2Max' : 'Base',
       description: index === 3 ? 'Course à pied' : watchName(reps, repMinutes),
       segments: runWalkSegments(rng, reps, repMinutes),
+      hrSource: workout.date >= isoDate(hrReliableFrom) ? 'external' : 'wrist',
     }))
   }
 
@@ -1312,6 +1333,7 @@ export function generateSparseDataset({ now = new Date() } = {}) {
     'athlete.json': {
       ...SPARSE_ATHLETE,
       trainingBreaks: [{ start: isoDate(breakStart), end: isoDate(breakEnd), reason: 'illness', note: 'Arrêt fictif du profil de test.' }],
+      hrReliableFrom: isoDate(hrReliableFrom),
       injuryHistory: { reviewedOn: isoDate(breakEnd), injuries: [] },
       lastUpdate: endDate.toISOString(),
     },

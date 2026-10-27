@@ -8,6 +8,8 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
+import type { ReturnProgress } from '@/application/usecases/GetReturnProgress'
+import { ReturnProgressCard } from './ReturnProgressCard'
 import { lastPlannedDate } from './blockLifecycle'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -27,6 +29,7 @@ interface Props {
   trainingZones: TrainingZonesData | null
   hrZoneBoundsBpm: readonly number[] | null
   coaching: PlanCoachingView | null
+  returnProgress?: ReturnProgress | null
   /** The date the page was prerendered on; see useToday. */
   today: string
   exploreAvailable?: boolean
@@ -44,7 +47,7 @@ export function planDateParam(value: string | null): string | null {
 const monthKeyOf = (date: string) => date.slice(0, 7)
 
 /** No `?date=` is today, following it over midnight; no `?view=` is the week. */
-export function PlanClient({ activities, crossTraining = [], plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, today: serverToday, exploreAvailable = false }: Props) {
+export function PlanClient({ activities, crossTraining = [], plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, returnProgress = null, today: serverToday, exploreAvailable = false }: Props) {
   const today = useToday(serverToday)
   const [viewParam, setViewParam] = useUrlParam('view')
   const [dateParam, setDateParam] = useUrlParam('date')
@@ -201,6 +204,8 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
           />
         )}
       </div>
+
+      {returnProgress && <ReturnProgressCard progress={returnProgress} today={today} />}
     </div>
   )
 }

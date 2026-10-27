@@ -17,7 +17,7 @@ import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import { officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { MIN_REP_SECONDS, repStats, sessionExecution } from '@/domain/activity/sessionExecution'
 import { groupSessions, mainPart, mergeSession } from '@/domain/activity/sessions'
-import { trimp, hrBoundsOf, type HrBounds } from '@/domain/training/trimp'
+import { trimp, hrBoundsOf, loadSource, type HrBounds } from '@/domain/training/trimp'
 import { loadSeries } from '@/domain/training/loadSeries'
 import { prescriptionsByDate } from '@/application/coaching/autoregulation'
 import { round } from '@/lib/math'
@@ -238,6 +238,12 @@ function buildLoadSeries(activities: Activity[], through: string, hrBounds: HrBo
   return series
 }
 
+function workbookLoadSource(parts: Activity[]): string | null {
+  const sources = parts.map((part) => loadSource(part))
+  if (sources.includes('effort')) return 'estimated from effort'
+  return sources.includes('heartRate') ? 'heart rate' : null
+}
+
 function guideRows(generatedAt: Date): RowData[] {
   return [
     { section: 'Export', item: 'schema_version', description: SCHEMA_VERSION },
@@ -252,6 +258,7 @@ function guideRows(generatedAt: Date): RowData[] {
     { section: 'Caveat', item: 'daily_plan_completion', description: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.' },
     { section: 'Caveat', item: 'hr_zones', description: 'Athlete HR zone columns are Garmin zone floors: a zone runs from its own lower bound up to one below the next zone\'s, and zone 5 up to max_hr_bpm.' },
     { section: 'Caveat', item: 'sessions', description: 'A session the watch saved as several back-to-back runs (warm-up, test, cool-down) is one Activities row: activity_id is its main run, merged_activity_ids the others. The row reads as the main run (the race or the test itself): its distance, time, pace, heart rate, running dynamics, type, execution and weather. session_distance_km and session_duration_seconds add the runs saved apart, filled on merged rows only; zones, TRIMP, calories and elevation count the whole session. Runs synced before start times were stored stay one row each.' },
+    { section: 'Caveat', item: 'load_source', description: 'trimp comes from heart rate, or is "estimated from effort" (session RPE × minutes, scaled to TRIMP) where the heart rate is not trusted: recorded before athlete hr_reliable_from, on the wrist sensor after it, or marked unreliable in the app. Such a run\'s heart-rate and zone columns are blank.' },
     { section: 'Caveat', item: 'type', description: 'type is Garmin\'s label from training effect, or Runomics\' from the workout name when type_source is runomics; it often differs from the intent. description and planned_type say what the session was meant to be.' },
     { section: 'Caveat', item: 'planned_columns', description: 'planned_* are the Runomics coach\'s prescription for that day when there is one (purpose, pace guide, heart-rate cap), else the workout on the Garmin calendar. They sit on the day\'s main session; compare them with the execution_* columns.' },
     { section: 'Caveat', item: 'race_results', description: 'race_official_* are published results (chip time, certified distance). distance_km and pace_sec_per_km stay what the watch measured, which runs long on GPS.' },
@@ -282,6 +289,7 @@ function athleteRows(athlete: AthleteProfile): RowData[] {
     bmi: athlete.bmi ?? null,
     resting_hr_bpm: athlete.restingHrBpm ?? null,
     max_hr_bpm: athlete.maxHrBpm ?? null,
+    hr_reliable_from: athlete.hrReliableFrom ? excelDate(athlete.hrReliableFrom) : null,
     lactate_threshold_hr_bpm: athlete.lthrBpm ?? null,
     threshold_pace_sec_per_km: athlete.thresholdPaceSecPerKm ?? null,
     vma_kmh: athlete.vmaKmh ?? null,
@@ -474,6 +482,7 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds, sessions =
       aerobic_training_effect: activity.aerTrainingEffect,
       anaerobic_training_effect: activity.anaTrainingEffect,
       trimp: round(parts.reduce((sum, part) => sum + trimp(part, hrBounds), 0), 1),
+      load_source: workbookLoadSource(parts),
       calories_kcal: activity.calories,
       cadence_spm: activity.cadenceSpm,
       ground_contact_ms: activity.groundContactMs,
@@ -909,7 +918,7 @@ const ACTIVITY_COLUMNS = columns(
     'day_of_week', 'start_time_local', 'iso_week', 'type', 'type_source',
     { key: 'description', width: 28, wrap: true }, 'duration_seconds', 'distance_km', 'pace_sec_per_km',
     'avg_heart_rate_bpm', 'session_distance_km', 'session_duration_seconds', 'rpe_1_10', 'elevation_gain_m', 'aerobic_training_effect', 'anaerobic_training_effect',
-    'trimp', 'calories_kcal', 'cadence_spm', 'ground_contact_ms', 'vertical_oscillation_mm', 'vertical_ratio_pct',
+    'trimp', 'load_source', 'calories_kcal', 'cadence_spm', 'ground_contact_ms', 'vertical_oscillation_mm', 'vertical_ratio_pct',
     'stride_length_m', 'vo2max', 'watch_temperature_c', 'hr_zone_1_seconds', 'hr_zone_2_seconds',
     'hr_zone_3_seconds', 'hr_zone_4_seconds', 'hr_zone_5_seconds', 'hard_minutes_z4_z5',
     'weather_temperature_c', 'weather_apparent_temperature_c', 'weather_humidity_pct', 'weather_wind_kph',
@@ -943,7 +952,7 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
 
   addDataSheet(workbook, 'Athlete', columns(
     'display_name', 'age_years', 'sex', 'height_cm', 'weight_kg', 'bmi', 'resting_hr_bpm', 'max_hr_bpm',
-    'lactate_threshold_hr_bpm', 'threshold_pace_sec_per_km', 'vma_kmh', 'vo2max_ml_kg_min',
+    { key: 'hr_reliable_from', ...DATE_COLUMN }, 'lactate_threshold_hr_bpm', 'threshold_pace_sec_per_km', 'vma_kmh', 'vo2max_ml_kg_min',
     'fitness_age_years', 'achievable_fitness_age_years', 'hr_zone_1_lower_bpm', 'hr_zone_2_lower_bpm',
     'hr_zone_3_lower_bpm', 'hr_zone_4_lower_bpm', 'hr_zone_5_lower_bpm', 'device_name',
     { key: 'device_since', ...DATE_COLUMN }, { key: 'last_profile_update', ...DATE_COLUMN },
