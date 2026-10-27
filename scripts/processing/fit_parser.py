@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from garmin_fit_sdk import Decoder, Stream
 
-from processing.pace_profile import duration_bests, flat_equivalent
+from processing.pace_profile import duration_bests, flat_equivalent, jump_capped
 
 _SEMICIRCLE_TO_DEG = 180.0 / 2**31
 _MAX_ROUTE_POINTS = 2000
@@ -459,11 +459,12 @@ def _moving_clock(dists: list[float], times: list[float], pauses: list[tuple[flo
     return out
 
 
-def _best_efforts(dists: list[float], times: list[float]) -> dict[str, float]:
+def _best_efforts(raw_dists: list[float], raw_times: list[float]) -> dict[str, float]:
     out: dict[str, float] = {}
-    n = len(dists)
+    n = len(raw_dists)
     if n < 2:
         return out
+    dists, times = jump_capped(raw_dists, raw_times)
 
     for key, target in _EFFORT_TARGETS_M.items():
         if dists[-1] - dists[0] < target:

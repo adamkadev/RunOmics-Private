@@ -172,6 +172,23 @@ describe('private data optimistic concurrency', { timeout: 20_000 }, () => {
   })
 })
 
+describe('the data contract before a push', { timeout: 20_000 }, () => {
+  it('refuses a workspace that breaks an error rule and leaves the remote head where it was', () => {
+    const root = temporaryRoot()
+    const remote = createRemote(root)
+    process.env.RUNOMICS_DATA_REPO_URL = remote.url
+    const workspace = path.join(root, 'workspace', 'data')
+    fetchPrivateData(workspace)
+    const head = remoteHead(remote)
+
+    write(path.join(workspace, 'sync_meta.json'), '{"lastSyncedAt":"not a date"}\n')
+
+    expect(() => pushPrivateData(workspace)).toThrow(/breaks the data contract[\s\S]*sync_meta\.json \$\.lastSyncedAt/)
+    expect(remoteHead(remote)).toBe(head)
+    expect(remoteFiles(remote)).not.toContain('data/sync_meta.json')
+  })
+})
+
 describe('assertBaseRevisionCurrent', () => {
   it('refuses a workspace with no recorded base rather than guessing', () => {
     const root = temporaryRoot()

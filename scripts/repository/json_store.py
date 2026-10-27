@@ -104,6 +104,20 @@ class JsonActivityStore:
         if month:
             self._dirty_months.add(month)
 
+    def update(self, activity_id: str, fields: dict[str, Any]) -> bool:
+        activity = self._by_id.get(activity_id)
+        if activity is None or all(activity.get(key) == value for key, value in fields.items()):
+            return False
+        activity.update(fields)
+        self.touch(activity_id)
+        return True
+
+    def remove(self, activity_id: str) -> dict[str, Any] | None:
+        if activity_id not in self._by_id:
+            return None
+        self.touch(activity_id)
+        return self._by_id.pop(activity_id)
+
     def update_gear(self, activity_id: str, gear_id: str | None) -> bool:
         activity = self._by_id.get(activity_id)
         if activity is None:
@@ -160,6 +174,8 @@ class JsonActivityStore:
         if keep_gear and gear_pending:
             new_dict["gearPending"] = True
 
+        if existing is not None:
+            self.touch(activity.id)
         self._by_id[activity.id] = new_dict
         self.touch(activity.id)
         return existing is None
@@ -176,7 +192,10 @@ class JsonActivityStore:
 
         self._dir.mkdir(parents=True, exist_ok=True)
         for month in self._dirty_months:
-            activities = sorted(by_month.get(month, []), key=lambda a: a.get("date", ""), reverse=True)
+            if month not in by_month:
+                (self._dir / f"{month}.json").unlink(missing_ok=True)
+                continue
+            activities = sorted(by_month[month], key=lambda a: a.get("date", ""), reverse=True)
             _atomic_write_json(self._dir / f"{month}.json", {"activities": activities})
         self._dirty_months.clear()
 
@@ -188,10 +207,18 @@ class JsonActivityStore:
     def _load(self) -> None:
         if not self._dir.exists():
             return
+        found_in: dict[str, Path] = {}
         for path in sorted(self._dir.glob("*.json")):
             if path.name == "index.json":
                 continue
             for activity in _read_entries(path, "activities", "id"):
+                first = found_in.setdefault(activity["id"], path)
+                if first != path:
+                    # One of the two copies would win silently and the other month keep counting the run.
+                    raise HistoryFileError(
+                        f"Activity {activity['id']} is in both {first.name} and {path.name}. Refusing to continue: "
+                        f"delete the stale copy in the data repository, then re-run."
+                    )
                 self._by_id[activity["id"]] = activity
 
 

@@ -8,7 +8,7 @@ import garth
 import httpx
 
 from .errors import GarminAPIError, GarminAuthError, GarminTokenExpired
-from .shared import collect_activity_starts, fit_from_archive
+from .shared import collect_activity_rows, fit_from_archive
 
 os.environ.setdefault("GARTH_TELEMETRY_ENABLED", "false")
 
@@ -191,8 +191,8 @@ class GarminClient:
             params=params,
         ).json()
 
-    def get_activity_starts(self, *, running_only: bool = True) -> dict[str, str | None]:
-        return collect_activity_starts(self.get_activities, running_only=running_only)
+    def get_activity_rows(self, *, running_only: bool = True) -> dict[str, dict[str, Any]]:
+        return collect_activity_rows(self.get_activities, running_only=running_only)
 
     def get_activity_detail(self, activity_id: str) -> dict[str, Any]:
         return self._get(

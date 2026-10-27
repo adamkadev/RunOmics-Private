@@ -10,11 +10,11 @@ from collections.abc import Callable
 from typing import Any
 
 
-def collect_activity_starts(
+def collect_activity_rows(
     get_activities: Callable[..., list[dict[str, Any]]], *, running_only: bool = True
-) -> dict[str, str | None]:
-    """Every activity id with its local start as the list gives it, a page of 100 at a time, from either client."""
-    starts: dict[str, str | None] = {}
+) -> dict[str, dict[str, Any]]:
+    """Every activity's list row by id, a page of 100 at a time, from either client."""
+    rows: dict[str, dict[str, Any]] = {}
     start = 0
     limit = 100
 
@@ -22,14 +22,14 @@ def collect_activity_starts(
         batch = get_activities(start=start, limit=limit, running_only=running_only)
         if not batch:
             break
-        starts.update((str(a["activityId"]), a.get("startTimeLocal")) for a in batch)
-        print(f"  Fetched {len(starts)} activity IDs...", end="\r", flush=True)
+        rows.update((str(a["activityId"]), a) for a in batch)
+        print(f"  Fetched {len(rows)} activity IDs...", end="\r", flush=True)
         if len(batch) < limit:
             break
         start += limit
 
-    print(f"  Found {len(starts)} total activities on Garmin.       ")
-    return starts
+    print(f"  Found {len(rows)} total activities on Garmin.       ")
+    return rows
 
 
 def fit_from_archive(content: bytes) -> bytes | None:
