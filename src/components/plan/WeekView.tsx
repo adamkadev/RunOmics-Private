@@ -29,11 +29,12 @@ import { DaySelector, type SelectorDay } from './DaySelector'
 import { sessionLabel } from '@/lib/activityTitle'
 import { BlockFinishedCard, ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 import { blockCovers, blockLifecycle } from './blockLifecycle'
+import { sessionWords, useCoachWords, weekFocus } from '@/components/coaching/useCoachWords'
 
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
-function PhaseCard({ name, week, total, race, href, note = null }: { name: string; week: number; total: number; race: string | null; href?: string; note?: string | null }) {
+function PhaseCard({ name, week, total, race, href, focus = null, note = null }: { name: string; week: number; total: number; race: string | null; href?: string; focus?: string | null; note?: string | null }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   const className = cardClass({ padding: 'none', clickable: !!href, className: 'flex flex-col gap-2.5 px-3.5 py-3' })
@@ -54,6 +55,7 @@ function PhaseCard({ name, week, total, race, href, note = null }: { name: strin
           <span key={i} data-done={i < week || undefined} className={cn('h-[5px] flex-1 rounded-full', i < week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
         ))}
       </div>
+      {focus && <p className="text-[13px] leading-snug text-[var(--text-2)] text-pretty" data-testid="phase-focus">{focus}</p>}
       {note && <p className="text-xs text-muted-foreground" data-testid="phase-note">{note}</p>}
     </>
   )
@@ -200,6 +202,9 @@ export function WeekView({
     : null
 
   const phase = useMemo(() => phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay), [coaching, planPhaseRanges, firstDay])
+  const words = useCoachWords(coaching !== null)
+  const blockName = phase?.span.key === 'general' ? words?.block.name || null : null
+  const focus = weekFocus(words, firstDay) ?? (blockCovers(block, firstDay) ? words?.block.focus || null : null)
   const race = useMemo(() => {
     const next = planRace(coaching, nextRace, today)
     return next ? raceCountdown(next, today) : null
@@ -247,7 +252,14 @@ export function WeekView({
     dayCard = (
       <div className="flex flex-col gap-3">
         {workouts.map((workout) => (
-          <PlannedWorkoutCard key={workout.key} workout={workout} kind={kind} hrZoneBoundsBpm={hrZoneBoundsBpm} exploreAvailable={exploreAvailable} />
+          <PlannedWorkoutCard
+            key={workout.key}
+            workout={workout}
+            kind={kind}
+            hrZoneBoundsBpm={hrZoneBoundsBpm}
+            exploreAvailable={exploreAvailable}
+            words={workout.state ? sessionWords(words, workout.key, workout.title) : null}
+          />
         ))}
       </div>
     )
@@ -272,7 +284,17 @@ export function WeekView({
 
   return (
     <div className="flex flex-col gap-3.5">
-      {phase && <PhaseCard name={phase.span.name} week={phase.week} total={phase.total} race={race} href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined} note={blockEnds} />}
+      {phase && (
+        <PhaseCard
+          name={blockName ?? phase.span.name}
+          week={phase.week}
+          total={phase.total}
+          race={race}
+          href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined}
+          focus={focus}
+          note={blockEnds}
+        />
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="week-row">
         <div className="flex min-w-0 items-center gap-0.5">

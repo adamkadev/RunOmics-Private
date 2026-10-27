@@ -81,3 +81,36 @@ describe('the steps list', () => {
     expect(stepLength(20)).toBe('20s')
   })
 })
+
+describe('walking in the steps list', () => {
+  const WALK: [number, number] = [660, 840]
+  const runWalk = (walkPace?: [number, number]): WorkoutStep[] => [
+    { kind: 'warmup', minutes: 5, seconds: 300, ...(walkPace ? { paceSecPerKm: walkPace } : {}) },
+    ...[1, 2, 3].flatMap((rep): WorkoutStep[] => [
+      { kind: 'effort', minutes: 3, seconds: 180, rep },
+      { kind: 'recovery', minutes: 1, seconds: 60, rep, ...(walkPace ? { paceSecPerKm: walkPace } : {}) },
+    ]),
+    { kind: 'cooldown', minutes: 5, seconds: 300, ...(walkPace ? { paceSecPerKm: walkPace } : {}) },
+  ]
+  const details = (steps: WorkoutStep[], kind: 'easy' | 'quality', type: 'Base' | 'Threshold' = 'Base') =>
+    stepRows({ steps, type, kind, color: COLOR, totalSeconds: 1_380 }).map((r) => r.detail)
+
+  it('calls a run/walk session’s untargeted warm-up, breaks and cool-down a walk', () => {
+    expect(details(runWalk(), 'easy')).toEqual([t.plan.steps.walk, `Z2 · ${t.plan.row.walk('1:00')}`, t.plan.steps.walk])
+  })
+
+  it('calls any break at a walking pace a walk, whatever the session', () => {
+    expect(details(runWalk(WALK), 'easy')).toEqual([t.plan.steps.walk, `Z2 · ${t.plan.row.walk('1:00')}`, t.plan.steps.walk])
+    expect(details(runWalk(WALK), 'quality', 'Threshold')).toEqual([t.plan.steps.walk, `Z4 · ${t.plan.row.walk('1:00')}`, t.plan.steps.walk])
+  })
+
+  it('keeps a quality session’s untargeted jogs and a jogging pace as they were', () => {
+    expect(details(THRESHOLD, 'quality', 'Threshold')).toEqual([t.plan.steps.easy, `Z4 · 4:32–4:40 /km · ${t.plan.row.recovery('1:30')}`, t.plan.steps.easy])
+    expect(details(runWalk([330, 384]), 'easy')).toEqual([t.plan.row.pace('5:30–6:24'), `Z2 · ${t.plan.row.recovery('1:00')}`, t.plan.row.pace('5:30–6:24')])
+  })
+
+  it('keeps the jog between strides', () => {
+    const rows = stepRows({ steps: STRIDES, type: 'Base', kind: 'easy', color: 'var(--zone-2)', totalSeconds: 2_720 })
+    expect(rows[1]!.detail).toContain(t.plan.row.recovery('1:00'))
+  })
+})

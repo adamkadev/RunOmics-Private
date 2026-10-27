@@ -96,6 +96,8 @@ describe('heroWorkoutView', () => {
     // What the hero's session row needs ("25 min Z4", "planned 6 km"); the
     // prose stays behind.
     expect(hero).toEqual({
+      key: 'workout-threshold',
+      state: 'completed',
       title: '3 × 8 min threshold',
       type: 'Threshold',
       duration: { seconds: 3600, estimated: false },
