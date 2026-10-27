@@ -93,6 +93,30 @@ test('Plan names the coach’s block and shows its words, none of them in the pa
   expect(html).not.toContain('minutes de course')
 })
 
+test('Plan folds the coach’s words to their first line, a tap opening and closing each', async ({ page, t }) => {
+  const { upcoming } = nextSession()
+  await page.goto(`/plan?date=${upcoming.date}`)
+  const note = page.getByTestId(`plan-workout-${upcoming.id}`).getByTestId('coach-note')
+  const toggle = note.getByRole('button', { name: t.plan.session.coachNote })
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  const folded = (await note.boundingBox())!.height
+  const phaseTop = (await page.getByTestId('phase-line').boundingBox())!.y
+
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  expect((await note.boundingBox())!.height).toBeGreaterThan(folded)
+  expect((await page.getByTestId('phase-line').boundingBox())!.y).toBe(phaseTop)
+
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  expect((await note.boundingBox())!.height).toBe(folded)
+
+  const focus = page.getByTestId('phase-line').getByRole('button', { name: t.plan.session.coachNote })
+  await focus.click()
+  await expect(focus).toHaveAttribute('aria-expanded', 'true')
+  await expect(page).toHaveURL(/\/plan\?/)
+})
+
 test('Today’s session card carries one line of the coach’s words', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('session-card').getByTestId('session-coach-line')).toContainText('minutes de course')

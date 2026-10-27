@@ -12,6 +12,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { cardClass } from '@/components/ui/Card'
+import { CollapsibleNote } from '@/components/ui/CollapsibleNote'
 import { CHECKPOINT_HREF } from '@/components/checkpoint/checkpointHref'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
@@ -37,13 +38,16 @@ const NAV_BUTTON =
 function PhaseCard({ name, week, total, race, href, focus = null, note = null }: { name: string; week: number; total: number; race: string | null; href?: string; focus?: string | null; note?: string | null }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
-  const className = cardClass({ padding: 'none', clickable: !!href, className: 'flex flex-col gap-2.5 px-3.5 py-3' })
-  const body = (
-    <>
+  return (
+    <section className={cardClass({ padding: 'none', clickable: !!href, className: 'relative flex flex-col gap-2.5 px-3.5 py-3' })} data-testid="phase-line">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="flex items-center gap-1 text-headline text-foreground">
-          {name}
-          {href && <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />}
+        <h2 className="text-headline text-foreground">
+          {href ? (
+            <Link href={href} className="flex items-center gap-1 after:absolute after:inset-0">
+              {name}
+              <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+            </Link>
+          ) : name}
         </h2>
         <p className="text-xs text-muted-foreground">
           {weekOf.before} {week} {weekOf.after}
@@ -55,14 +59,9 @@ function PhaseCard({ name, week, total, race, href, focus = null, note = null }:
           <span key={i} data-done={i < week || undefined} className={cn('h-[5px] flex-1 rounded-full', i < week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
         ))}
       </div>
-      {focus && <p className="text-[13px] leading-snug text-[var(--text-2)] text-pretty" data-testid="phase-focus">{focus}</p>}
+      {focus && <CollapsibleNote label={t.plan.session.coachNote} className="text-[13px] leading-snug text-[var(--text-2)] text-pretty" testId="phase-focus">{focus}</CollapsibleNote>}
       {note && <p className="text-xs text-muted-foreground" data-testid="phase-note">{note}</p>}
-    </>
-  )
-  return href ? (
-    <Link href={href} className={className} data-testid="phase-line">{body}</Link>
-  ) : (
-    <section className={className} data-testid="phase-line">{body}</section>
+    </section>
   )
 }
 

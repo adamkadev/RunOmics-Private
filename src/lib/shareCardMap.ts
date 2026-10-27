@@ -1,5 +1,3 @@
-import type { ShareActivity } from '@/lib/shareCardStats'
-
 export type LngLat = [number, number]
 
 /** The route's room on each side of the card's map, in px. */
@@ -80,83 +78,4 @@ export function bandFencePoints(w: number, ys: readonly number[], step = 16): [n
     out.push([w, y])
   }
   return out
-}
-
-/** The card leaves out the first and last 250 m by default, so a shared image does not show the door the run left from. */
-export const SHARE_TRIM_M = 250
-
-const EARTH_M = 6_371_000
-
-export function metresBetween([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): number {
-  const rad = Math.PI / 180
-  const dLat = (lat2 - lat1) * rad
-  const dLng = (lng2 - lng1) * rad
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2
-  return 2 * EARTH_M * Math.asin(Math.min(1, Math.sqrt(a)))
-}
-
-interface Exit { index: number; point: LngLat; along: number }
-
-function lerp([x1, y1]: LngLat, [x2, y2]: LngLat, k: number): LngLat {
-  return [x1 + (x2 - x1) * k, y1 + (y2 - y1) * k]
-}
-
-/** Where the line first leaves the circle; kept on its outer side, so the cut is never nearer the centre than the radius. */
-function exitCircle(route: LngLat[], radius: number): Exit | null {
-  const centre = route[0]!
-  let along = 0
-  for (let i = 1; i < route.length; i++) {
-    const a = route[i - 1]!
-    const b = route[i]!
-    const span = metresBetween(a, b)
-    if (metresBetween(centre, b) >= radius) {
-      let lo = 0
-      let hi = 1
-      for (let n = 0; n < 24; n++) {
-        const mid = (lo + hi) / 2
-        if (metresBetween(centre, lerp(a, b, mid)) >= radius) hi = mid
-        else lo = mid
-      }
-      return { index: i, point: lerp(a, b, hi), along: along + span * hi }
-    }
-    along += span
-  }
-  return null
-}
-
-export interface TrimmedRoute {
-  route: LngLat[]
-  /** The kept part, as shares of the recorded line's length. */
-  from: number
-  to: number
-}
-
-/** A run that never strays far keeps the outer half of its reach. */
-export function trimRouteEnds(route: LngLat[], metres = SHARE_TRIM_M): TrimmedRoute {
-  const whole = { route, from: 0, to: 1 }
-  if (route.length < 2) return whole
-  let total = 0
-  for (let i = 1; i < route.length; i++) total += metresBetween(route[i - 1]!, route[i]!)
-  const reversed = [...route].reverse()
-  const reach = (line: LngLat[]) => Math.max(...line.map((c) => metresBetween(line[0]!, c)))
-  const start = exitCircle(route, Math.min(metres, reach(route) / 2))
-  const end = exitCircle(reversed, Math.min(metres, reach(reversed) / 2))
-  if (total <= 0 || !start || !end) return whole
-  const endAlong = total - end.along
-  if (endAlong <= start.along) return { route: [start.point, end.point], from: start.along / total, to: start.along / total }
-  const inner = route.slice(start.index, route.length - end.index)
-  return { route: [start.point, ...inner, end.point], from: start.along / total, to: endAlong / total }
-}
-
-/** The reps' shares follow the trimmed line, so each rep stays on the road it was run on. */
-export function trimShareRoute(activity: ShareActivity, metres = SHARE_TRIM_M): ShareActivity {
-  if (!activity.route || activity.route.length < 2) return activity
-  const { route, from, to } = trimRouteEnds(activity.route, metres)
-  if (!activity.reps) return { ...activity, route }
-  const span = to - from
-  const share = (f: number) => (span > 0 ? Math.min(Math.max((f - from) / span, 0), 1) : 0)
-  const windows = activity.reps.windows
-    .map(([a, b]): [number, number] => [share(a), share(b)])
-    .filter(([a, b]) => b > a)
-  return { ...activity, route, reps: { ...activity.reps, windows } }
 }

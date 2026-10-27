@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Plan folds the coach's words to their first line: the session's note on its
+  card and the week's or block's focus on the phase card. A tap on the note
+  opens it whole and the next folds it back (a button with `aria-expanded` and a
+  chevron); a note that fits on one line has no toggle. The phase card of
+  general preparation keeps its link to the checkpoint on the card, beside the
+  note's button rather than around it. The share card is back to its state
+  before R8: no "Show full route" switch, the whole route drawn, and no map
+  credit on the image.
 - PWA states, accessibility and French (F6, F10, F11, manifest). Settings →
   Notifications says "add to the Home Screen" where Safari offers no push and
   "blocked in Settings" once permission is refused, with the switches disabled,
@@ -54,12 +62,9 @@ All notable changes to this project are documented in this file.
   the repository's `firestore.rules`. CI builds pull requests against the E2E
   data, the weekly coverage run prepares the data first, and E2E's apt step
   gives up after 3 minutes, retrying twice.
-- Privacy and backups (R8, R14, R18). Share cards leave out the first and last
-  250 m of the route (line, map bounds and markers) unless "Show full route" is
-  on, and an image drawn on a basemap now carries the MapTiler and OpenStreetMap
-  credit. Settings fetches height and weight from an owner-only route instead of
-  rendering them into the cached page, and signing out of a private site clears
-  the HTTP cache. The nightly sync also backs up route names and avoid spots
+- Privacy and backups (R14, R18). Settings fetches height and weight from an
+  owner-only route instead of rendering them into the cached page, and signing
+  out of a private site clears the HTTP cache. The nightly sync also backs up route names and avoid spots
   (`route_names.json`, `avoid_spots.json`), and `scripts/restore_firestore.mjs`
   (a dry run unless `--apply`) can put notes, check-ins, route names and avoid
   spots back. The security doc gains an owner/viewer table and a "Third
