@@ -180,6 +180,16 @@ describe('ActivityNotes sheet', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
+  it('saves only the note and its tags when the HR-unreliable switch is left off', async () => {
+    render(<ActivityNotes activityId="a1" />)
+    await openNotes()
+
+    await userEvent.type(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder), 'easy')
+    await userEvent.click(screen.getByRole('button', { name: t.settings.actions.save }))
+    await waitFor(() => expect(mockSaved).toHaveLength(1))
+    expect(Object.keys(mockSaved[0] as object).sort()).toEqual(['note', 'tags'])
+  })
+
   it('saves the HR-unreliable mark with the note, and clears it when switched off', async () => {
     mockNotesById = { [ACTIVITY_ID]: { note: 'Strap slipped', tags: [] } }
     render(<ActivityNotes activityId="a1" />)
