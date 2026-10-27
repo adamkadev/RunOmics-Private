@@ -389,7 +389,10 @@ in `targetValueOne` and the faster in `targetValueTwo`. Garmin has no dedicated 
 step, so strides ride on `interval`, which preserves their repetition count, duration and
 form cues where the plain `other` bucket would lose them. One target per step: a
 prescription carrying both pace and heart rate keeps pace as the executed target and
-preserves the HR bound in the step description. A segment with no pace and no HR target
+preserves the HR bound in the step description. An easy, recovery or long run sends neither:
+the pace guides it, so its paced steps drop the heart rate, and any line of its description,
+notes or step notes that names a heart rate or zone stays off the watch. A step whose only
+target is a heart-rate zone, as a return to running prescribes it, keeps it. A segment with no pace and no HR target
 maps to Garmin's explicit `no.target`, never to an invented range. Garmin's estimates are
 only ever the prescription's own totals — an absent total stays absent and Garmin computes
 its own.

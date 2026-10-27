@@ -172,6 +172,7 @@ describe('heart-rate targets', () => {
 
   it('keeps pace as the executed target and preserves the heart-rate bound in the description', () => {
     const workout = prescription({
+      type: 'threshold',
       blocks: [
         {
           kind: 'effort',
@@ -183,6 +184,63 @@ describe('heart-rate targets', () => {
 
     expect(step.targetType.workoutTargetTypeKey).toBe('pace.zone')
     expect(step.description).toContain('HR 160-172 bpm')
+  })
+})
+
+describe('easy runs', () => {
+  const zoned = { distanceMeters: 8_000, paceSecPerKm: { min: 300, max: 340 }, hrZone: 2 }
+
+  it.each(['easy', 'recovery', 'long_run'] as const)('send a %s run paced, with no heart-rate target or note', (type) => {
+    const step = executable(steps(prescription({ type, blocks: [{ kind: 'effort', target: zoned }] }))[0]!)
+
+    expect(step.targetType.workoutTargetTypeKey).toBe('pace.zone')
+    expect(step.zoneNumber).toBeUndefined()
+    expect(step.description).toBe('')
+  })
+
+  it('drop the heart-rate lines from the step notes, the workout notes and the description, and keep the rest', () => {
+    const workout = prescription({
+      description: 'Stay in Z2 throughout.',
+      notes: ['Keep your HR under 145 bpm.', 'Relaxed shoulders.'],
+      blocks: [
+        { kind: 'warmup', target: { durationSeconds: 300 }, notes: ['1 minute de marche.'] },
+        {
+          kind: 'repeat',
+          repetitions: 4,
+          steps: [
+            { kind: 'effort', target: { durationSeconds: 360, paceSecPerKm: { min: 470, max: 525 }, hrBpm: { min: 124, max: 144 } }, notes: ['Zone FC 2, au rythme où tu peux parler.', 'Course très lente.'] },
+            { kind: 'recovery', target: { durationSeconds: 60 }, notes: ['Reste sous la fréquence cardiaque cible.'] },
+          ],
+        },
+      ],
+    })
+    const payload = toGarminWorkoutPayload(workout)
+    const [warmup, group] = payload.workoutSegments[0]!.workoutSteps as [GarminExecutableStep, GarminRepeatStep]
+
+    expect(payload.description).toBe('Relaxed shoulders.')
+    expect(warmup.description).toBe('1 minute de marche.')
+    expect(group.workoutSteps.map((step) => step.description)).toEqual(['Course très lente.', ''])
+    expect(group.workoutSteps[0]!.targetType.workoutTargetTypeKey).toBe('pace.zone')
+    expect(JSON.stringify(payload)).not.toMatch(/heart\.rate|zoneNumber|bpm|FC|Z2/)
+  })
+
+  it('keep a heart-rate zone that is the step’s only target', () => {
+    const step = executable(steps(prescription({ blocks: [{ kind: 'effort', target: { durationSeconds: 1_800, hrZone: 2 } }] }))[0]!)
+
+    expect(step.targetType.workoutTargetTypeKey).toBe('heart.rate.zone')
+    expect(step.zoneNumber).toBe(2)
+  })
+
+  it('leave a quality session’s heart rate and notes as they were', () => {
+    const workout = prescription({
+      type: 'threshold',
+      notes: ['Heart rate under the ceiling.'],
+      blocks: [{ kind: 'effort', target: { durationSeconds: 360, paceSecPerKm: { min: 270, max: 280 }, hrBpm: { min: 150, max: 165 } } }],
+    })
+    const payload = toGarminWorkoutPayload(workout)
+
+    expect(payload.description).toContain('Heart rate under the ceiling.')
+    expect(executable(payload.workoutSegments[0]!.workoutSteps[0]!).description).toBe('HR 150-165 bpm')
   })
 })
 
