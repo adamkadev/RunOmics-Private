@@ -3,8 +3,8 @@ name: Deployment Health Watchdog
 # Every other alert is sent by the deployment it watches; a failed run here emails the repository owner instead.
 on:
   schedule:
-    # 14:47 UTC: one missed 01:00 nightly sync is 36 h old by then, and GitHub delays runs set on the hour.
-    - cron: "47 14 * * *"
+    # 17:47 UTC: one missed 04:00 nightly sync is 36 h old by then, and GitHub delays runs set on the hour.
+    - cron: "47 17 * * *"
   workflow_dispatch:
 
 permissions:

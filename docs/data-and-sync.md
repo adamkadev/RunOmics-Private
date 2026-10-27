@@ -215,7 +215,7 @@ with `force`, which downloads every FIT again.
 hours late and the morning push arrived around lunchtime. Each deployment runs the crons for
 its own athlete:
 
-- `nightly-sync` at 01:00 UTC dispatches `sync.yml` with `nightly` (and the deployment's
+- `nightly-sync` at 04:00 UTC dispatches `sync.yml` with `nightly` (and the deployment's
   `GITHUB_SYNC_PROFILE`), unless the sync gate says a run is already going. `nightly` is what
   turns on the token-expiry warning, which a dispatch from the Sync button leaves off.
 - `daily-session` runs at 06:00 and 07:00 UTC. Paris is UTC+2 in summer and UTC+1 in winter,
