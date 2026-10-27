@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Races and goals editor (G4). Settings → Races & goals (owner only) adds, edits
+  and removes races (name, date, distance, a goal time or "just finish", priority
+  A/B/C, place) and sets each season's distance and target times, in English and
+  French, with an empty state for an athlete with no race. Entries live in
+  Firestore `raceEntries` and `goalEntries`; the nightly sync mirrors them to
+  `race_entries.json` and `goal_entries.json`, laid over `upcoming_races.json`
+  and `goals.json`, which keep working unchanged. Plan, Today, the race page,
+  Goals and the coach all read the merged list; a Garmin race removed in the app
+  stays hidden, and the coach's dump warns when the app holds edits the last
+  sync has not mirrored. The Goals page's empty state links to the editor.
+  `firestore.rules` changed: deploy it to both Firebase projects.
 - Shoes without garth and Garmin warnings (G3, G6). The owner picks a run's
   shoe on its page and sets a default shoe on Shoes, stored in Firestore
   (`runShoes`, `shoeSettings/default`, owner-only rules) and committed nightly as

@@ -3,6 +3,7 @@ import {
   finishSecondsFromPace,
   formatRaceTime,
   paceSecondsPerKmFromFinish,
+  raceDistanceMeters,
   raceTargetFacts,
 } from '../raceTarget'
 
@@ -22,5 +23,9 @@ describe('coaching race target calculations', () => {
 
   it('does not fabricate target facts for an event without its own goal', () => {
     expect(raceTargetFacts({ distanceLabel: '10K' })).toEqual({ hasExplicitGoal: false })
+  })
+
+  it('reads a race’s distance from a standard label or one in km', () => {
+    expect(['10K', 'Half-Marathon', '15 km', '8.5 km', 'Trail'].map(raceDistanceMeters)).toEqual([10_000, 21_098, 15_000, 8_500, undefined])
   })
 })
