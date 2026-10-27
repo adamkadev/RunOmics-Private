@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { scheduledRoute } from '@/lib/internalRoute'
 import { sendPush } from '@/lib/sendPushNotification'
+import { pushPaths } from '@/lib/pushLinks'
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
@@ -26,6 +27,6 @@ export const { GET, POST } = scheduledRoute('weekly-digest', async () => {
   )
   if (!push) return NextResponse.json({ sent: false })
 
-  const sent = await sendOncePer('weeklyDigest', today, () => sendPush('training', push.title, push.body))
+  const sent = await sendOncePer('weeklyDigest', today, () => sendPush('training', { ...push, link: pushPaths.plan, tag: 'weekly-digest' }))
   return NextResponse.json(sent ? { sent: true } : { skipped: 'already sent today' })
 })

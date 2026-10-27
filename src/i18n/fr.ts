@@ -1812,6 +1812,10 @@ export const fr = {
       title: (days: number) => (days <= 0 ? 'Un jeton GitHub expire aujourd’hui' : `Un jeton GitHub expire dans ${days} jour${days === 1 ? '' : 's'}`),
       body: (names: string) => `Renouvelle ${names} avant que la synchro s’arrête : GitHub → Settings → Developer settings → Fine-grained tokens.`,
     },
+    garminKeyExpiring: {
+      title: (days: number) => (days <= 0 ? 'La clé Garmin expire aujourd’hui' : `La clé Garmin expire dans ${days} jour${days === 1 ? '' : 's'}`),
+      body: 'Crée une nouvelle clé sur connect.garmin.com/app/settings/personalApiToken, puis mets à jour GARMIN_PERSONAL_API_KEY et GARMIN_PERSONAL_API_KEY_EXPIRES dans l’Environment GitHub.',
+    },
   },
 
   race: {

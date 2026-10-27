@@ -1964,6 +1964,10 @@ export const en = {
       title: (days: number) => (days <= 0 ? 'A GitHub token expires today' : `A GitHub token expires in ${days} day${days === 1 ? '' : 's'}`),
       body: (names: string) => `Renew ${names} before the sync stops: GitHub → Settings → Developer settings → Fine-grained tokens.`,
     },
+    garminKeyExpiring: {
+      title: (days: number) => (days <= 0 ? 'The Garmin key expires today' : `The Garmin key expires in ${days} day${days === 1 ? '' : 's'}`),
+      body: 'Create a new key at connect.garmin.com/app/settings/personalApiToken, then update GARMIN_PERSONAL_API_KEY and GARMIN_PERSONAL_API_KEY_EXPIRES in the GitHub Environment.',
+    },
   },
 
   race: {

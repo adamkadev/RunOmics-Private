@@ -387,7 +387,7 @@ describe('writeVerdicts', () => {
       { surface: runVerdictSurface('just-run'), headline: 'Verdict 1', hash: runVerdictInsightHash(JUST_RUN), previous: null },
     ])
     expect(revalidate).toHaveBeenCalledWith('/activities/just-run')
-    expect(notify).toHaveBeenCalledWith({ headline: 'Verdict 1', body: 'Verdict 1, and why.' })
+    expect(notify).toHaveBeenCalledWith({ headline: 'Verdict 1', body: 'Verdict 1, and why.' }, 'just-run')
   })
 
   it('never pushes a backfilled verdict', async () => {
@@ -547,7 +547,7 @@ describe('runInsightPass', () => {
     )
 
     expect(notify).toHaveBeenCalledTimes(1)
-    expect(notify).toHaveBeenCalledWith({ headline: 'Verdict 1', body: 'Verdict 1, and why.' })
+    expect(notify).toHaveBeenCalledWith({ headline: 'Verdict 1', body: 'Verdict 1, and why.' }, 'just-run')
   })
 
   it('writes the phrasing back once, newest first, as headline, body and the kind of session', async () => {

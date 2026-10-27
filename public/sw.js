@@ -137,6 +137,7 @@ self.addEventListener('push', (event) => {
       body: notification.body ?? '',
       icon: '/icons/apple-touch-icon.png',
       badge: '/icons/apple-touch-icon.png',
+      tag: notification.tag,
       data: { url },
     })
   )
@@ -145,6 +146,11 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const url = event.notification.data?.url ?? '/'
+  // A GitHub run link would take the app's own window off the app.
+  if (new URL(url, self.location.origin).origin !== self.location.origin) {
+    event.waitUntil(self.clients.openWindow(url))
+    return
+  }
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       const existing = clients.find((c) => 'focus' in c)

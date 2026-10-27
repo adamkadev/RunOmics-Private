@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Every push opens its page (R6). A new run, its verdict or a record opens that
+  run; shoe wear the shoe; a quartier the map; the morning session and the
+  digest the plan; a failed workflow its run on GitHub; token and error alerts
+  Settings. Each push carries a tag, so a repeated warning replaces the last
+  one on the lock screen instead of stacking. The links are absolute HTTPS
+  URLs built from `APP_URL` or Vercel's production domain, as FCM requires.
+- The Garmin key is announced before it expires (G7). The nightly sync posts
+  the Environment variable `GARMIN_PERSONAL_API_KEY_EXPIRES` (a bare date) as
+  `garminKey`, and the operator gets a push from 14 days ahead saying where to
+  make a new key. A profile with a key and no date gets a warning in the run.
 - A change to the live plan is held to "no stop signals" too. A weekly
   review's ADJUST or REPLAN and a run's evaluation are now told the athlete's
   guidance, as a new block is, and one that adds a stop rule or a symptom

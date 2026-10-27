@@ -45,7 +45,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    await sendOpsPush(opsStrings.workflowFailed.title(workflow), opsStrings.workflowFailed.body(runUrl))
+    await sendOpsPush({
+      title: opsStrings.workflowFailed.title(workflow),
+      body: opsStrings.workflowFailed.body(runUrl),
+      link: runUrl,
+      tag: `workflow-failure:${workflow}`,
+    })
     return NextResponse.json({ sent: true })
   })
 }

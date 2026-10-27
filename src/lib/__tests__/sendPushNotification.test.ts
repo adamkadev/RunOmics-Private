@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { sendEachForMulticast, deleted, devices } = vi.hoisted(() => ({
   sendEachForMulticast: vi.fn(),
@@ -78,13 +78,13 @@ describe('sendPush', () => {
     ]
     const tokens = () => sendEachForMulticast.mock.lastCall![0].tokens
 
-    await sendPush('shoes', 'Shoe wear alert', '640 km')
+    await sendPush('shoes', { title: 'Shoe wear alert', body: '640 km' })
     expect(tokens()).toEqual(['registered-before-categories'])
 
-    await sendPush('records', 'New PR: 5K', '19:10')
+    await sendPush('records', { title: 'New PR: 5K', body: '19:10' })
     expect(tokens()).toEqual(['registered-before-categories', 'shoes-off'])
 
-    await sendPush('always', 'Sync failed', 'Open the run')
+    await sendPush('always', { title: 'Sync failed', body: 'Open the run' })
     expect(tokens()).toEqual(['registered-before-categories', 'shoes-off', 'training-only'])
   })
 
@@ -104,7 +104,7 @@ describe('sendPush', () => {
       ],
     })
 
-    await expect(sendPush('always', 'Sync failed', 'Open the run')).resolves.toEqual({ sent: 1, failed: 3 })
+    await expect(sendPush('always', { title: 'Sync failed', body: 'Open the run' })).resolves.toEqual({ sent: 1, failed: 3 })
     expect(deleted).toEqual(['uninstalled', 'garbled'])
   })
 
@@ -112,6 +112,52 @@ describe('sendPush', () => {
     devices.list = [{ id: 'phone', categories: undefined }]
     sendEachForMulticast.mockResolvedValue({ responses: [refused('messaging/third-party-auth-error')] })
 
-    await expect(sendPush('always', 'Sync failed', 'Open the run')).rejects.toThrow('messaging/third-party-auth-error')
+    await expect(sendPush('always', { title: 'Sync failed', body: 'Open the run' })).rejects.toThrow('messaging/third-party-auth-error')
+  })
+})
+
+describe('sendPush links and tags', () => {
+  const message = () => sendEachForMulticast.mock.lastCall![0]
+
+  beforeEach(() => {
+    sendEachForMulticast.mockReset()
+    sendEachForMulticast.mockResolvedValue(DELIVERED)
+    devices.list = [{ id: 'phone-token', categories: undefined }]
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('sends a path as an absolute HTTPS link on this deployment, and the tag', async () => {
+    vi.stubEnv('APP_URL', 'https://runomics.example')
+
+    await sendPush('records', { title: 'New PR: 5K', body: '19:10', link: '/activities/a1', tag: 'record:5k' })
+
+    expect(message().webpush).toEqual({
+      notification: { tag: 'record:5k' },
+      fcmOptions: { link: 'https://runomics.example/activities/a1' },
+    })
+  })
+
+  it('builds the link from Vercel’s production domain when APP_URL is unset', async () => {
+    vi.stubEnv('APP_URL', '')
+    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'runomics.vercel.app')
+
+    await sendPush('training', { title: 'Plan', body: 'Easy run', link: '/plan' })
+
+    expect(message().webpush).toEqual({ fcmOptions: { link: 'https://runomics.vercel.app/plan' } })
+  })
+
+  it('sends no link FCM would refuse, and still sends the push', async () => {
+    vi.stubEnv('APP_URL', '')
+    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', '')
+
+    await sendPush('always', { title: 'Sync failed', body: 'Open Settings', link: '/settings' })
+    expect(message().webpush).toEqual({})
+
+    await sendPush('always', { title: 'Sync failed', body: 'Open the run', link: 'http://github.com/run' })
+    expect(message().webpush).toEqual({})
+    expect(message().notification).toEqual({ title: 'Sync failed', body: 'Open the run' })
   })
 })
