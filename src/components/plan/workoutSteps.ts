@@ -39,7 +39,7 @@ function paceText(step: WorkoutStep | undefined): string | null {
 }
 
 /** A break without a target is a walk only in an easy session: a quality session's jog recoveries carry none either. */
-export function isWalk(step: WorkoutStep, runWalk: boolean): boolean {
+function isWalk(step: WorkoutStep, runWalk: boolean): boolean {
   const pace = step.paceSecPerKm
   return pace ? pace[0] >= WALK_PACE_FLOOR_SEC_PER_KM : runWalk
 }

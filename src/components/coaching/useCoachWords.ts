@@ -53,11 +53,6 @@ export function useCoachWords(enabled = true): CoachWords | null {
   return words
 }
 
-export function weekFocus(words: CoachWords | null, date: string): string | null {
-  const week = words?.weeks.find((w) => w.startDate <= date && date <= w.endDate)
-  return week?.focus || null
-}
-
 /** What the card shows: a description that only repeats the session's title says nothing. */
 export function sessionWords(words: CoachWords | null, id: string, title: string): CoachSessionWords | null {
   const session = words?.sessions[id]
