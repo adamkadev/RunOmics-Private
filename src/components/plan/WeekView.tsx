@@ -30,6 +30,7 @@ import { sessionLabel } from '@/lib/activityTitle'
 import { BlockFinishedCard, ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 import { blockCovers, blockLifecycle } from './blockLifecycle'
 import { sessionWords, useCoachWords, weekFocus } from '@/components/coaching/useCoachWords'
+import { useSkippedDays } from '@/lib/skippedDays'
 
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
@@ -180,13 +181,14 @@ export function WeekView({
     [dates, byDate, byDatePlanned, byDateCoach, today]
   )
 
+  const skipped = useSkippedDays()
   const selectorDays = useMemo<SelectorDay[]>(
     () =>
       target.days.map((day) => {
         const kind = dayKind(day.date, byDate.get(day.date) ?? [], byDatePlanned, byDateCoach)
         return {
           date: day.date,
-          state: day.state,
+          state: day.state === 'missed' && skipped.has(day.date) ? 'rest' : day.state,
           km: day.state === 'done' ? (day.runs > 0 ? day.ranKm : null) : day.plannedKm,
           color: kind?.color ?? null,
           letter: kind && day.state !== 'rest' ? kindLetter(kind.type, kind.kind) : null,
@@ -194,7 +196,7 @@ export function WeekView({
           other: (byDateOther?.get(day.date) ?? []).map((entry) => entry.kind),
         }
       }),
-    [target, byDate, byDateOther, byDatePlanned, byDateCoach, today]
+    [target, byDate, byDateOther, byDatePlanned, byDateCoach, today, skipped]
   )
 
   const block = useMemo(() => blockLifecycle(coaching, today), [coaching, today])

@@ -1,9 +1,12 @@
 'use client'
-import { setDaySkipped, useSkippedDays } from '@/lib/skippedDays'
 
 import Link from 'next/link'
 import { Check, ChevronRight, MapPin } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { setDaySkipped, useSkippedDays } from '@/lib/skippedDays'
+import { useOwnerAuth } from '@/lib/useOwnerAuth'
+import { SKIP_REASONS, type SkipReason } from '@/domain/wellness/checkIn'
+import { Toast, useToast } from '@/components/ui/Toast'
 import type { PlanRun } from './planRun'
 import { sessionZone } from '@/lib/colors'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
@@ -232,25 +235,37 @@ function Line({ label, children, testId }: { label: string; children: ReactNode;
   )
 }
 
-/** A skipped day is drawn as rest on Today and stops counting as missed. */
+/** A skipped day is drawn as rest on Today, Plan and the month, and stops counting as missed. */
 function MissedLine({ date }: { date: string }) {
-  const skipped = useSkippedDays().has(date)
+  const skipped = useSkippedDays().get(date) ?? null
+  const { isOwner } = useOwnerAuth()
+  const [choosing, setChoosing] = useState(false)
+  const { toast, leaving, showToast } = useToast()
   const s = t.plan.dayCard
+  const mark = (reason: SkipReason | null) => {
+    setChoosing(false)
+    setDaySkipped(date, reason).catch(() => showToast(t.settings.actions.error, false))
+  }
+  const action = 'ml-2 text-[13px] font-medium text-accent-text'
   return (
     <Line label={t.plan.dayCard.done} testId="done-line">
       {skipped ? (
-        <span className="font-semibold text-muted-foreground" data-testid="skipped-mark">{s.skipped}</span>
+        <span className="font-semibold text-muted-foreground" data-testid="skipped-mark">{s.skippedFor(s.skipReasons[skipped])}</span>
       ) : (
         <span className="font-semibold text-[var(--warn)]">{t.sessionState.missed}</span>
       )}
-      <button
-        type="button"
-        onClick={() => setDaySkipped(date, !skipped)}
-        className="ml-2 text-[13px] font-medium text-accent-text"
-        data-testid="skip-toggle"
-      >
-        {skipped ? s.undoSkip : s.markSkipped}
-      </button>
+      {isOwner && (skipped ? (
+        <button type="button" onClick={() => mark(null)} className={action} data-testid="skip-toggle">{s.undoSkip}</button>
+      ) : choosing ? (
+        SKIP_REASONS.map((reason) => (
+          <button key={reason} type="button" onClick={() => mark(reason)} className={action} data-testid={`skip-${reason}`}>
+            {s.skipReasons[reason]}
+          </button>
+        ))
+      ) : (
+        <button type="button" onClick={() => setChoosing(true)} className={action} data-testid="skip-toggle">{s.markSkipped}</button>
+      ))}
+      <Toast toast={toast} leaving={leaving} />
     </Line>
   )
 }
