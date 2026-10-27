@@ -3,6 +3,9 @@ name: Visual
 # On demand only: before a perf or visual pull request, run it on the branch (Actions → Visual → Run workflow).
 # "Update the baselines" rewrites the screens that changed and commits them to the branch; see e2e/visual/README.md.
 on:
+  # TEMPORARY: draws this branch's first baselines on the runner; removed before merge.
+  push:
+    branches: [test/owner-e2e-visual-skill]
   workflow_dispatch:
     inputs:
       update:
@@ -34,7 +37,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: ${{ inputs.update }}
+          persist-credentials: ${{ inputs.update || github.event_name == 'push' }}
 
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -77,15 +80,18 @@ jobs:
       - name: Run the visual checks
         env:
           UPDATE: ${{ inputs.update }}
+          EVENT: ${{ github.event_name }}
         run: |
-          if [ "$UPDATE" = true ]; then
+          if [ "$EVENT" = push ]; then
+            npm run test:visual -- --update-snapshots=missing
+          elif [ "$UPDATE" = true ]; then
             npm run test:visual -- --update-snapshots=changed
           else
             npm run test:visual
           fi
 
       - name: Commit the new baselines
-        if: inputs.update
+        if: inputs.update || github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898244+github-actions[bot]@users.noreply.github.com"
