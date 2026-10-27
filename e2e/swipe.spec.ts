@@ -1,8 +1,17 @@
 import type { Locator } from '@playwright/test'
 import { test, expect } from './fixtures'
 
+// Desktop Chrome runs with motion, so a box measured while the sheet still rises is not where the pointer lands.
+async function settledBox(target: Locator) {
+  await expect(target).toBeVisible()
+  await target.page().waitForFunction(() =>
+    document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
+  )
+  return (await target.boundingBox())!
+}
+
 async function touchSwipe(target: Locator, dx: number) {
-  const box = (await target.boundingBox())!
+  const box = await settledBox(target)
   const x = box.x + box.width / 2
   const y = box.y + box.height / 2
   const at = (clientX: number) => [{ identifier: 1, clientX, clientY: y + 4 }]
@@ -12,7 +21,7 @@ async function touchSwipe(target: Locator, dx: number) {
 }
 
 async function mouseSwipe(target: Locator, dx: number) {
-  const box = (await target.boundingBox())!
+  const box = await settledBox(target)
   const page = target.page()
   const x = box.x + box.width / 2
   const y = box.y + box.height / 2
@@ -54,7 +63,7 @@ test('a vertical drag leaves the week sheet\'s month alone', async ({ page, isMo
   await page.getByTestId('week-column').last().click()
   const calendar = page.getByTestId('week-calendar')
   const month = (await calendar.getAttribute('data-month'))!
-  const box = (await calendar.boundingBox())!
+  const box = await settledBox(calendar)
   const x = box.x + box.width / 2
   const y = box.y + 20
   const at = (clientX: number, clientY: number) => [{ identifier: 1, clientX, clientY }]
@@ -72,9 +81,11 @@ test('a vertical drag leaves the week sheet\'s month alone', async ({ page, isMo
 
 test('a horizontal swipe pages the Plan month', async ({ page, t, isMobile }) => {
   await page.goto('/plan?view=month')
-  const panel = page.getByRole('tabpanel').first()
-  const title = page.getByRole('button', { name: t.plan.prevPeriod, exact: true }).locator('..')
+  await expect(page.getByRole('tab', { name: t.plan.switcher.month })).toHaveAttribute('aria-selected', 'true')
+  const panel = page.getByRole('tabpanel').filter({ has: page.getByTestId('month-grid') })
+  const title = panel.getByRole('button', { name: t.plan.prevPeriod, exact: true }).locator('..')
   const before = await title.innerText()
   await swipe(isMobile)(panel, 120)
   await expect(title).not.toHaveText(before)
+  await expect(page.getByRole('tab', { name: t.plan.switcher.month })).toHaveAttribute('aria-selected', 'true')
 })
