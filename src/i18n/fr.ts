@@ -1187,8 +1187,6 @@ export const fr = {
       repsLegend: 'Fractions',
       // L’interrupteur d’une séance de fractionné : éteint, la carte est celle d’une sortie facile.
       showReps: 'Allure des fractions',
-      // Éteint, la carte laisse de côté les 250 premiers et derniers mètres, là où la sortie commence et finit.
-      showFullRoute: 'Afficher tout le parcours',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',
       photoHint: 'Ce cadre est le recadrage exact',
