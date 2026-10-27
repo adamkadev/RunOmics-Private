@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Plan truth (F4). A session's distance counts an untargeted warm-up, cool-down
+  or recovery at the athlete's easy pace (their pace zone, else the plan's easy
+  range) unless its notes or pace say it is walked, on Plan, Today, the month
+  and Analytics, and in the coach's weekly volume rules outside a return: a
+  25-minute 5′/15′/5′ session reads about 3 km, not 2. "As planned" needs the
+  distance or duration within 15 %, the same session family and the average
+  heart rate under the cap, else "Shorter / Longer / Harder / Easier than
+  planned"; Plan's phase card counts "N of M sessions as planned". A session
+  run a day early or late is done on Today and Plan's week, as it already was
+  on the month and Analytics. "Skipped" takes a reason (ill, rest, life) and is
+  stored on Firestore `wellness/{date}`, read by Today, Plan's week and month
+  and the coach; this browser's old marks move there once. `firestore.rules`
+  changed: deploy it to both Firebase projects.
 - Runs deleted, re-typed or renamed in Garmin Connect follow in the app (R17).
   After a complete listing, a stored run missing from it moves to
   `removed_activities.json` (at most 5 a night; a list that looks cut short
