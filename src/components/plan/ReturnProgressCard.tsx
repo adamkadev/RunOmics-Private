@@ -34,16 +34,19 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
           <span>{r.runningPerWeek}</span>
           {thisWeek && <span className="font-semibold tabular-nums text-foreground">{r.minutes(Math.round(thisWeek.runningSec / 60))}</span>}
         </figcaption>
-        <ol className="flex items-end gap-[2px]" style={{ height: BAR_AREA_PX }}>
+        <ol className="flex items-end gap-2">
           {weeks.map((week, i) => {
             const minutes = Math.round(week.runningSec / 60)
             const label = `${r.weekOf(formatDate(week.weekStart, { style: 'bare', now }))}: ${r.minutes(minutes)}`
             return (
-              <li key={week.weekStart} className="flex h-full flex-1 items-end" title={label} aria-label={label} data-testid="return-week">
-                <span
-                  className={cn('block w-full rounded-t-[4px]', i === weeks.length - 1 ? 'bg-accent' : 'bg-accent/45')}
-                  style={{ height: minutes > 0 ? Math.max(2, (week.runningSec / peak) * BAR_AREA_PX) : 0 }}
-                />
+              <li key={week.weekStart} className="flex max-w-9 flex-1 flex-col items-stretch gap-1" title={label} aria-label={label} data-testid="return-week">
+                <span className="flex items-end" style={{ height: BAR_AREA_PX }} aria-hidden>
+                  <span
+                    className={cn('block w-full rounded-t-[4px]', minutes === 0 ? 'bg-[var(--track)]' : i === weeks.length - 1 ? 'bg-accent' : 'bg-accent/45')}
+                    style={{ height: minutes > 0 ? Math.max(4, (week.runningSec / peak) * BAR_AREA_PX) : 2 }}
+                  />
+                </span>
+                <span className="text-center text-[11px] tabular-nums text-muted-foreground" aria-hidden>{minutes}</span>
               </li>
             )
           })}
