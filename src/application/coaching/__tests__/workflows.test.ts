@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, BootstrapRequest, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
@@ -754,6 +754,30 @@ describe('coaching workflows', () => {
       horizonEndDate: '2026-09-05',
     })
     expect(proposal.proposedPlan?.targetEvent?.id).toBe('29837036')
+  })
+
+  it('dates an evaluation from today in the athlete’s zone, not in UTC', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TIME_ZONE', 'Europe/Luxembourg')
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const asked: string[] = []
+    const advisor: CoachingAdvisor = {
+      bootstrap: async () => { throw new Error('not called') },
+      evaluateActivity: async (input) => {
+        asked.push(input.effectiveDate)
+        return { outcome: 'KEEP', reasonCodes: ['SESSION_COMPLETED'], summary: 'Done.', evidence: [], changes: [] }
+      },
+      reviewWeek: async () => { throw new Error('not called') },
+    }
+    const context = buildCoachingContext(contextInput(repository.plan), '2026-09-11')
+
+    try {
+      await createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids(), now: () => new Date('2026-09-11T22:30:00Z') })
+    } finally {
+      vi.unstubAllEnvs()
+    }
+
+    expect(asked).toEqual(['2026-09-12'])
   })
 
   it('records a KEEP evaluation without changing the plan revision', async () => {

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'fs'
 import path from 'path'
+import { appTodayIso } from '@/lib/calendarDate'
 import { dataWorkspace, pushWorkspace, removeWorkspace, type DataWorkspace } from './coachingWorkspace'
 import { interopImport } from './interopImport'
 
@@ -93,7 +94,7 @@ async function sync(args: string[], workspace: DataWorkspace): Promise<void> {
   const plan = repository.getCurrentPlan()
   if (!plan) throw new Error(`No coaching plan found in ${path.join(root, 'coaching')}`)
 
-  const today = isoDate(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
+  const today = isoDate(args, '--reference-date') ?? appTodayIso()
   const from = isoDate(args, '--from')
   const to = isoDate(args, '--to')
   if (to && from && to < from) throw new Error('--to must not precede --from')
