@@ -48,7 +48,7 @@ await Promise.all([
   png(favicon, 16, 'web-16.png'),
 ])
 
-const manifestPath = join(ROOT, 'public/manifest.json')
+const manifestPath = join(ROOT, 'src/app/manifest.json/manifest.base.json')
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 manifest.background_color = BG
 manifest.theme_color = BG

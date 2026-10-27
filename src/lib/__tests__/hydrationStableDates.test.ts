@@ -31,8 +31,8 @@ describe('date output is byte-stable across ICU builds', () => {
     }
   })
 
-  it('groups thousands without an exotic space, which fr ICU builds disagree on', () => {
-    expect(formatKm(1705)).not.toMatch(EXOTIC_SPACE)
-    expect(formatKm(1705)).toMatch(/1705|1,705|1 705/)
+  it('groups thousands with U+00A0 alone, where fr ICU builds disagree between U+202F and U+00A0', () => {
+    expect(formatKm(1705).replace(/\u00a0/g, '')).not.toMatch(EXOTIC_SPACE)
+    expect(formatKm(1705)).toMatch(/^(1705|1,705|1\u00a0705)$/)
   })
 })

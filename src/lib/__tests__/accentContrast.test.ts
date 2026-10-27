@@ -122,11 +122,14 @@ describe('missed text', () => {
   })
 })
 
+const TEXT_TOKENS = ['text', 'body', 'text2', 'subtle', 'axisText'] as const
+const TEXT_GROUNDS = ['card', 'background', 'raised', 'seg'] as const
+
 describe('screen audit contrast floors', () => {
-  it.each(['dark', 'light'] as const)('faint text reads at 4.5:1 or more on the card and the ground, %s', (mode) => {
-    const s = SURFACES[mode]
-    expect(contrast(s.subtle, s.card)).toBeGreaterThanOrEqual(4.5)
-    expect(contrast(s.subtle, s.background)).toBeGreaterThanOrEqual(4.5)
+  it.each(
+    (['dark', 'light'] as const).flatMap((mode) => TEXT_TOKENS.flatMap((text) => TEXT_GROUNDS.map((ground) => ({ mode, text, ground })))),
+  )('$mode $text reads at 4.5:1 or more on the $ground', ({ mode, text, ground }) => {
+    expect(contrast(SURFACES[mode][text], SURFACES[mode][ground])).toBeGreaterThanOrEqual(4.5)
   })
 
   it.each(['dark', 'light'] as const)('warn text reads at 4.5:1 or more on the card, %s', (mode) => {

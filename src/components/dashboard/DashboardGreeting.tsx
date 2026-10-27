@@ -152,6 +152,7 @@ export function headerDate(isoDate: string): string {
 export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Props) {
   const displayName = name ?? t.profile.hero.namePlaceholder
   const today = useToday(serverToday ?? appTodayIso())
+  const router = useRouter()
 
   // After mount: an age worked out on the server is as old as the cached page (React #418 hydration mismatch).
   const mounted = useMounted()
@@ -196,6 +197,7 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
   )
 
   return (
+    <>
     <header data-testid="today-header" className="flex items-end justify-between gap-3">
       <div className="flex min-w-0 flex-col">
         <p data-title-sub data-testid="today-date" className="text-[15px] leading-5 text-muted-foreground">
@@ -214,5 +216,17 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
         )}
       </div>
     </header>
+    {serverToday && today !== serverToday && (
+      <button
+        type="button"
+        onClick={router.refresh}
+        data-testid="today-stale"
+        className="hit-44 flex items-center gap-1.5 self-start text-xs font-medium text-accent"
+      >
+        <RotateCw size={12} aria-hidden />
+        {t.dashboard.stalePage}
+      </button>
+    )}
+    </>
   )
 }
