@@ -104,3 +104,18 @@ describe('getGarminRacePredictions', () => {
     expect(data?.latestDate).toBe(dayAt(1199))
   })
 })
+
+describe('freshGarminPredictions', () => {
+  const data = (latestDate: string) => ({ points: [], distances: ['5k' as const], latest: { '5k': 1200 }, latestDate })
+
+  it("gives Garmin's latest predictions while the series is at most a fortnight old", async () => {
+    const { freshGarminPredictions } = await import('../GetGarminRacePredictions')
+    expect(freshGarminPredictions(data('2026-10-13'), '2026-10-27')).toEqual({ '5k': 1200 })
+  })
+
+  it('gives none once the series has gone quiet, or when there is none', async () => {
+    const { freshGarminPredictions } = await import('../GetGarminRacePredictions')
+    expect(freshGarminPredictions(data('2026-10-12'), '2026-10-27')).toEqual({})
+    expect(freshGarminPredictions(null, '2026-10-27')).toEqual({})
+  })
+})

@@ -5,6 +5,7 @@ import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTr
 import { getTrainingLoad } from './GetTrainingLoad'
 import { round } from '@/lib/math'
 import { buildingBack } from '@/domain/training/buildingBack'
+import { isCurrentGarminReading } from '@/domain/sync/garminReadings'
 import { LOAD_TREND_DAYS, STATUS_DELTA_DAYS, type TrainingStatusType, type RiskLevel, type LoadTrend, type TrainingStatus } from '@/domain/training/status'
 
 export type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
@@ -82,7 +83,8 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   // Today, not the last run: anchored on the run, a week off still reads as a full acute week.
   const today = appTodayIso()
 
-  const garmin = getLatestTrainingStatusDay()
+  const lastGarminDay = getLatestTrainingStatusDay()
+  const garmin = isCurrentGarminReading('trainingStatus', lastGarminDay?.date, today) ? lastGarminDay : null
   const garminType = garminStatusType(garmin?.status) ?? undefined
 
   const localRatio = acwr(activities, new Date(today + 'T00:00:00'))

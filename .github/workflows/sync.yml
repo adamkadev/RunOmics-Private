@@ -284,6 +284,9 @@ jobs:
             ARGS+=(--quick)
           fi
 
+          connect_state() { jq -r '.state // ""' data/connect_status.json 2>/dev/null || true; }
+          CONNECT_BEFORE=$(connect_state)
+
           # Exit 3 is "some activities or steps failed, everything else is on
           # disk". Failing the step here would skip the commit below and
           # discard it.
@@ -291,6 +294,14 @@ jobs:
           python scripts/sync.py "${ARGS[@]}"
           STATUS=$?
           set -e
+
+          # sync.py records garth's token death in connect_status.json: the operator is told once, the night it turns.
+          if [ "$(connect_state)" = "expired" ]; then
+            echo "connect_expired=true" >> "$GITHUB_OUTPUT"
+            if [ "$CONNECT_BEFORE" != "expired" ]; then
+              echo "connect_newly_expired=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
 
           if [ "$STATUS" -eq 3 ]; then
             echo "partial_failure=true" >> "$GITHUB_OUTPUT"
@@ -302,7 +313,7 @@ jobs:
       # Through WARP, like every garth call; a failure keeps the stored shoe list and counts the night as partial.
       - name: Sync shoes
         id: shoes
-        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && steps.warp.outcome == 'success'
+        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && steps.warp.outcome == 'success' && steps.sync.outputs.connect_expired != 'true'
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
           GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
@@ -414,6 +425,19 @@ jobs:
               echo "data_changed=true" >> "$GITHUB_OUTPUT"
             fi
           fi
+
+      # Once the expiry is committed, so the next night reads it and stays quiet: one push, best effort.
+      - name: Tell the operator Garmin Connect has stopped
+        if: steps.sync.outputs.connect_newly_expired == 'true' && steps.commit.outcome == 'success'
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          jq '{since}' data/connect_status.json > "$RUNNER_TEMP/connect-expired.json"
+          printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
+            | curl -fsS --max-time 30 -X POST "$APP_URL/api/internal/connect-expired" -H @- --data @"$RUNNER_TEMP/connect-expired.json"
+          echo "::warning::garth's token has expired: Garmin Connect is off until a new one is minted. See 'After garth' in docs/data-and-sync.md."
 
       # Both deployments read the data repository at run time: no rebuild, only their cached commit expired.
       - name: Expire the app's data cache

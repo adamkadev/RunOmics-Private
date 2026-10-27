@@ -2,7 +2,7 @@ import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcoming
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
-import { getGarminRacePredictions, type GarminRacePredictionsData } from './GetGarminRacePredictions'
+import { freshGarminPredictions, getGarminRacePredictions } from './GetGarminRacePredictions'
 import { DISTANCE_KEY, getRecords } from './GetRecords'
 import { RACE_DISTANCE_KM, isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances'
 import type { PredictionPoint } from '@/domain/race/pacing'
@@ -12,8 +12,6 @@ import { bestRecentEffort, secondsForVdot } from '@/domain/training/vdot'
 import { DAY_MS, appTodayIso } from '@/lib/calendarDate'
 
 export const RACE_TREND_DAYS = 84
-/** Garmin's series is daily while garth reads it; a fortnight without a day means it has stopped. */
-export const STALE_PREDICTION_DAYS = 14
 const ESTIMATE_STEP_DAYS = 7
 
 /** What the estimate stands on when Garmin's predictions are missing or stale. */
@@ -55,12 +53,6 @@ export function raceTarget(race: UpcomingRace, goalYears: readonly GoalYear[]): 
 
 const daysBefore = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) - days * DAY_MS).toISOString().slice(0, 10)
 
-/** Garmin's latest prediction for the distance, unless the series has gone quiet. */
-export function freshGarminPrediction(predictions: GarminRacePredictionsData | null, distance: RaceDistanceKey, today: string): number | null {
-  if (!predictions?.latestDate || predictions.latestDate < daysBefore(today, STALE_PREDICTION_DAYS)) return null
-  return predictions.latest[distance] ?? null
-}
-
 /** Each week's VDOT estimate as it stood that day, so the line moves only when a better effort was run or one aged out. */
 function estimatedTrend(distanceKm: number, today: string): { latest: number; estimate: RaceEstimate; trend: PredictionPoint[] } | null {
   const activities = getAllActivities()
@@ -85,7 +77,7 @@ export async function getRacePageData(today: string = appTodayIso()): Promise<Ra
 
   const predictions = getGarminRacePredictions()
   const record = (await getRecords()).find((r) => r.key === distance)
-  const garmin = freshGarminPrediction(predictions, distance, today)
+  const garmin = freshGarminPredictions(predictions, today)[distance] ?? null
   const from = daysBefore(today, RACE_TREND_DAYS)
   const estimated = garmin === null ? estimatedTrend(RACE_DISTANCE_KM[distance], today) : null
   const trend = estimated?.trend ?? (predictions?.points ?? []).flatMap((p) => {

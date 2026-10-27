@@ -15,3 +15,7 @@ class GarminAPIError(Exception):
     def __init__(self, status_code: int, url: str) -> None:
         super().__init__(f"HTTP {status_code} from {url}")
         self.status_code = status_code
+
+
+class GarminTokenExpired(GarminAuthError):
+    """Garmin refused garth's OAuth1 token: Connect is gone until a new token is minted, which garth no longer can."""
