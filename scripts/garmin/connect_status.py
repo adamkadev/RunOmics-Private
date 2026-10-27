@@ -1,4 +1,4 @@
-"""connect_status.json: whether garth's token still opens Garmin Connect. The workflow pushes once when it turns expired."""
+"""Whether garth's token still opens Garmin Connect; the workflow pushes once when it turns expired."""
 
 from __future__ import annotations
 

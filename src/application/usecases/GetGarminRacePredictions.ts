@@ -51,7 +51,7 @@ export function getGarminRacePredictions(): GarminRacePredictionsData | null {
   return { points, distances, latest, latestDate: lastDay.date }
 }
 
-/** Garmin's latest predictions, or none once the series has gone quiet: the Race page, Records and Goals all ask this. */
+/** Garmin's latest predictions, or none once the series has gone quiet. */
 export function freshGarminPredictions(predictions: GarminRacePredictionsData | null, today: string): Partial<Record<RaceDistanceKey, number>> {
   return predictions && isCurrentGarminReading('racePrediction', predictions.latestDate, today) ? predictions.latest : {}
 }

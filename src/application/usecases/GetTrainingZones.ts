@@ -53,10 +53,7 @@ function zonesAt(thresholdPaceSecPerKm: number): TrainingZone[] {
     .map((zone) => ({ ...zone, ...t.trainingZones.zones[zone.key] }))
 }
 
-/**
- * The day the watch's threshold pace took its current value, or null when no history holds it. A change, not a
- * mention: athlete history snapshots every tracked metric whenever one of them (the weight, say) moves.
- */
+/** When the pace took its current value: athlete history repeats it whenever another metric, the weight say, moves. */
 export function thresholdPaceSince(samples: readonly { date: string; thresholdPaceSecPerKm?: number }[], current: number): string | null {
   let since: string | null = null
   let previous: number | undefined

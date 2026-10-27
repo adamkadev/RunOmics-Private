@@ -566,8 +566,6 @@ def _connect_status(workspace) -> dict:
 
 
 class TestExpiredConnect:
-    """Once garth's token has died, Connect is absent rather than failing: the night is clean, and it says so once."""
-
     def test_the_runs_come_from_the_key_the_night_is_clean_and_the_expiry_is_recorded(
         self, workspace, personal, steps, monkeypatch, capsys
     ):

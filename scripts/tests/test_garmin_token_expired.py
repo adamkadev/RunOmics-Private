@@ -1,5 +1,3 @@
-"""A dead garth token turns Connect off for good; anything else that stops a refresh is a night's failure."""
-
 from types import SimpleNamespace
 
 import garth
@@ -19,7 +17,6 @@ def _http_error(status: int) -> requests.HTTPError:
 
 @pytest.fixture
 def refresh(monkeypatch):
-    """garth's client with an expired OAuth2 token, whose refresh raises what the test sets."""
     outcome: dict[str, Exception] = {}
 
     def refresh_oauth2():

@@ -1,6 +1,6 @@
 import { DAY_MS } from '@/lib/calendarDate'
 
-/** Past these, a reading mirrored from Garmin Connect is frozen (garth's token died, or the watch stopped sending it). */
+/** Past these, a Garmin Connect reading is frozen: garth's token died, or the watch stopped sending it. */
 export const GARMIN_READING_MAX_AGE_DAYS = {
   trainingStatus: 3,
   thresholdPace: 56,
