@@ -7,6 +7,7 @@ import pytest
 
 from processing import fit_parser
 from processing.fit_parser import (
+    ActivitySplit,
     ParsedFit,
     _best_efforts,
     _moving_clock,
@@ -14,6 +15,9 @@ from processing.fit_parser import (
     _decimate,
     _extract_splits,
     _extract_vo2max,
+    _hr_source,
+    _longest_continuous_run,
+    _longest_running_splits,
     _local_start_time,
     _pace_samples,
     _perpendicular_distance,
@@ -482,3 +486,83 @@ class TestGradeAdjusted:
 
     def test_a_run_without_altitude_gives_no_grade_adjusted_pace(self):
         assert flat_equivalent([0.0, 10.0, 20.0], [None, None, None]) is None
+
+
+class TestHrSource:
+    def test_a_paired_armband_is_external(self):
+        infos = [
+            {"device_index": "creator", "source_type": "local", "local_device_type": "whr"},
+            {"device_index": 1, "source_type": "antplus", "antplus_device_type": "heart_rate"},
+        ]
+        assert _hr_source(infos, has_hr=True) == "external"
+
+    def test_a_bluetooth_strap_is_external(self):
+        assert _hr_source([{"source_type": "bluetooth_low_energy", "ble_device_type": "heart_rate"}], has_hr=True) == "external"
+
+    def test_heart_rate_with_no_paired_heart_rate_sensor_is_the_wrist(self):
+        infos = [
+            {"source_type": "local", "local_device_type": "whr"},
+            {"source_type": "antplus", "antplus_device_type": "stride_speed_distance"},
+        ]
+        assert _hr_source(infos, has_hr=True) == "wrist"
+        assert _hr_source([], has_hr=True) == "wrist"
+
+    def test_no_heart_rate_has_no_source(self):
+        assert _hr_source([{"source_type": "antplus", "antplus_device_type": "heart_rate"}], has_hr=False) is None
+
+
+def _gait(segments, *, step=1.0):
+    """[(seconds, cadence spm, speed m/s)] into (time, distance, cadence, speed) samples one `step` apart."""
+    samples, t, d = [], 0.0, 0.0
+    for seconds, cadence, speed in segments:
+        for _ in range(int(seconds / step)):
+            samples.append((t, d, cadence, speed))
+            t += step
+            d += speed * step
+    return samples
+
+
+class TestLongestContinuousRun:
+    def test_walk_breaks_split_the_bouts_by_cadence(self):
+        samples = _gait([(300, 160, 2.2), (60, 110, 1.4), (600, 158, 2.1), (60, 112, 1.3), (240, 162, 2.2)])
+
+        seconds, metres = _longest_continuous_run(samples)
+
+        assert seconds == pytest.approx(600, abs=2)
+        assert metres == pytest.approx(600 * 2.1, abs=5)
+
+    def test_a_short_cadence_dropout_does_not_end_the_bout(self):
+        samples = _gait([(300, 160, 2.2), (5, 0, 2.2), (300, 160, 2.2)])
+
+        assert _longest_continuous_run(samples)[0] == pytest.approx(605, abs=2)
+
+    def test_a_timer_pause_ends_the_bout(self):
+        before = _gait([(300, 160, 2.2)])
+        after = [(t + 400, d + 700, c, s) for t, d, c, s in _gait([(200, 160, 2.2)])]
+
+        assert _longest_continuous_run(before + after)[0] == pytest.approx(300, abs=2)
+
+    def test_a_smart_recording_gap_covered_at_running_speed_does_not_end_the_bout(self):
+        samples = _gait([(300, 160, 2.2)], step=15.0)
+
+        assert _longest_continuous_run(samples)[0] == pytest.approx(285, abs=1)
+
+    def test_speed_decides_without_cadence(self):
+        samples = _gait([(400, None, 2.1), (90, None, 1.4), (200, None, 2.1)])
+
+        assert _longest_continuous_run(samples)[0] == pytest.approx(400, abs=2)
+
+    def test_no_cadence_or_speed_answers_nothing(self):
+        assert _longest_continuous_run([(0.0, 0.0, None, None), (1.0, 2.0, None, None)]) is None
+
+    def test_splits_answer_without_records(self):
+        splits = [
+            ActivitySplit("interval_warmup", 300, 500.0, 1.6, None),
+            ActivitySplit("interval_active", 180, 400.0, 2.2, None),
+            ActivitySplit("interval_active", 120, 260.0, 2.2, None),
+            ActivitySplit("interval_recovery", 60, 80.0, 1.3, None),
+            ActivitySplit("interval_active", 240, 520.0, 2.2, None),
+        ]
+
+        assert _longest_running_splits(splits) == (300, 660.0)
+        assert _longest_running_splits([]) is None

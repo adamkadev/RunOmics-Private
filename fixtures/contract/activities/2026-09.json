@@ -23,6 +23,7 @@
         }
       ],
       "avgHeartRate": 148,
+      "hrSource": "external",
       "rpe": null,
       "comment": "",
       "route": [[20.5,5.1],[20.5005,5.1003],[20.501,5.1006],[20.5015,5.100899999999999],[20.502,5.1011999999999995],[20.5025,5.1015],[20.503,5.1018],[20.5035,5.1021],[20.504,5.102399999999999],[20.5045,5.1027],[20.505,5.103],[20.5055,5.1033]],
@@ -52,6 +53,8 @@
       "vo2maxGarmin": null,
       "avgTemperature": null,
       "cadenceSamples": [170.0,172.0,174.0],
+      "longestContinuousRunSec": 2650,
+      "longestContinuousRunM": 7310.5,
       "splits": [
         {
           "type": "lap",

@@ -51,6 +51,16 @@ class TypeContext:
     lthr_bpm: int | None = None
     z4_floor_bpm: int | None = None
     sessions_by_date: Mapping[str, tuple[PlannedSession, ...]] = field(default_factory=dict)
+    hr_reliable_from: str | None = None
+    hr_unreliable_ids: frozenset[str] = frozenset()
+
+    def hr_trusted(self, activity_id: str | None, date: str | None, hr_source: str | None) -> bool:
+        """As the app's isHrTrusted: once a reliable sensor is in use, a run on the wrist sensor alone is not trusted."""
+        if activity_id and activity_id in self.hr_unreliable_ids:
+            return False
+        if not self.hr_reliable_from:
+            return True
+        return (date or "")[:10] >= self.hr_reliable_from and hr_source != "wrist"
 
 
 @dataclass(frozen=True)
@@ -65,6 +75,7 @@ def infer_type_with_source(
     name: str,
     parsed: ParsedFit | None,
     *,
+    activity_id: str | None = None,
     hr_zones: Sequence[Any] = (),
     duration_seconds: int | None = None,
     date: str | None = None,
@@ -78,12 +89,15 @@ def infer_type_with_source(
     if parsed and parsed.primary_benefit in _PRIMARY_BENEFIT_TYPES:
         return TypeInference(_PRIMARY_BENEFIT_TYPES[parsed.primary_benefit], "garmin")
 
+    context = context or TypeContext()
+    trusted = context.hr_trusted(activity_id, date, parsed.hr_source if parsed else None)
     inferred = _infer_runomics_type(
         parsed,
-        hr_zones=hr_zones,
+        hr_zones=hr_zones if trusted else (),
+        hr_trusted=trusted,
         duration_seconds=duration_seconds,
         date=date,
-        context=context or TypeContext(),
+        context=context,
     )
     return TypeInference(inferred, "runomics")
 
@@ -111,6 +125,7 @@ def _infer_runomics_type(
     parsed: ParsedFit | None,
     *,
     hr_zones: Sequence[Any],
+    hr_trusted: bool,
     duration_seconds: int | None,
     date: str | None,
     context: TypeContext,
@@ -121,7 +136,7 @@ def _infer_runomics_type(
         if _matches_session(reps, session):
             return session.activity_type
 
-    if reps and _is_intense(reps, context):
+    if reps and _is_intense(reps, context, hr_trusted=hr_trusted):
         typical_effort = median(rep.seconds for rep in reps)
         active_seconds = sum(rep.seconds for rep in reps)
         recovery_ratio = recovery_seconds / active_seconds if active_seconds else 0.0
@@ -193,7 +208,7 @@ def _close(actual: float, planned: float) -> bool:
     return abs(actual - planned) <= _PLAN_REP_TOLERANCE * planned
 
 
-def _is_intense(reps: list[_Rep], context: TypeContext) -> bool:
+def _is_intense(reps: list[_Rep], context: TypeContext, *, hr_trusted: bool) -> bool:
     # A profile with no threshold reference keeps the structure-only reading it always had.
     if context.threshold_speed_ms is None and context.lthr_bpm is None:
         return True
@@ -201,7 +216,7 @@ def _is_intense(reps: list[_Rep], context: TypeContext) -> bool:
     if context.threshold_speed_ms and speeds:
         if median(speeds) >= _INTENSE_SHARE_OF_THRESHOLD_SPEED * context.threshold_speed_ms:
             return True
-    heart_rates = [rep.hr for rep in reps if rep.hr]
+    heart_rates = [rep.hr for rep in reps if rep.hr and hr_trusted]
     return bool(context.lthr_bpm and context.z4_floor_bpm and heart_rates and median(heart_rates) >= context.z4_floor_bpm)
 
 
