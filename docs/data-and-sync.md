@@ -94,6 +94,9 @@ the data of its last build, and `data-revalidate` answers it with a 409.
 - **If GitHub is unreachable,** an instance keeps serving the commit it has;
   a new one cannot start serving and answers with an error, and cached pages
   stay up.
+- **The functions ship without the data.** With the mode set at build,
+  `next.config.ts` stops tracing `./data/**` into them; the build itself still
+  reads its clone to prerender.
 - **Local runs never read GitHub:** the mode needs `VERCEL=1`, and the build
   reads its clone, so dev, E2E and the CLIs work from files as before.
 - **Month files are written one key a line, with number arrays on one line**
