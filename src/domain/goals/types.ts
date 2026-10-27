@@ -22,6 +22,9 @@ export interface GoalYear {
   targets: GoalTarget[]
 }
 
+/** A is the race the block builds to, C a tune-up run as training (Garmin's primary and training events). */
+export type RacePriority = 'A' | 'B' | 'C'
+
 export interface UpcomingRace {
   courseContext?: import('@/domain/coaching/types').RaceCourseContext
   garminEventUuid?: string
@@ -33,6 +36,11 @@ export interface UpcomingRace {
   targetSeconds?: number | null
   isPrimaryEvent?: boolean
   isTrainingEvent?: boolean
+  /** Set on a race added in the app: its Firestore id. */
+  entryId?: string
+  priority?: RacePriority
+  /** Chosen in the app: no time goal, so the season's target for the distance does not apply either. */
+  justFinish?: true
 }
 
 export interface UpcomingRaceYear {

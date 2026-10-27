@@ -14,7 +14,7 @@ vi.mock('@/infrastructure/repositories/JsonGoalRepository', () => ({ getGoalYear
 vi.mock('@/infrastructure/repositories/JsonPbRepository', () => ({ getPbYears: () => [] }))
 vi.mock('@/infrastructure/repositories/JsonRaceResultRepository', () => ({ getOfficialRaceResults: () => [] }))
 
-const { getRacePageData } = await import('../GetRacePage')
+const { getRacePageData, raceTarget } = await import('../GetRacePage')
 
 const TODAY = '2026-10-25'
 const run = (id: string, date: string, bestEfforts: Record<string, number>) =>
@@ -44,5 +44,18 @@ describe('getRacePageData', () => {
     expect(data!.predictedSeconds).toBe(3113)
     expect(data!.trend.at(-1)).toEqual({ date: TODAY, seconds: 3113 })
     expect(data!.trend[0]!.seconds).toBeLessThan(3113)
+  })
+})
+
+describe('raceTarget', () => {
+  const goals = [{ year: 2026, annualDistanceKm: 1_200, targets: [{ distance: '10K', targetSeconds: 2_700 }] }]
+  const race = { date: '2026-12-13', name: 'Winter 10K', distance: '10K' }
+
+  it('takes the race’s own time, else the season’s for its distance, and none for a just-finish race', () => {
+    expect([
+      raceTarget({ ...race, targetSeconds: 2_600 }, goals),
+      raceTarget(race, goals),
+      raceTarget({ ...race, targetSeconds: null, justFinish: true }, goals),
+    ]).toEqual([2_600, 2_700, null])
   })
 })

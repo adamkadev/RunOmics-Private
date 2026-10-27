@@ -11,7 +11,7 @@ A personal running dashboard that pulls your data from Garmin Connect and turns 
 - **Analytics** - Load (fitness, fatigue, form, training status, the watch's load focus), Performance (best pace for every duration from 30 s to 2 h with a critical speed, running form, pace trend, efficiency, heat cost, race predictions), Volume (weekly distance, long run) and Intensity (80/20 split, time in zones, easy and workout heart rate by week, quality sessions)
 - **Athlete** - zones (pace zones estimated by VDOT from a recent best effort when the watch has no threshold pace), VO₂max grade, a fitness age card with a year of history, four weeks of morning check-ins and twelve weeks of niggles
 - **Consistency** - a year of weeks, runs and other training (strength, cycling, swimming…) side by side
-- **Goals & PBs** - annual distance goal, race targets, official personal bests
+- **Goals & PBs** - annual distance goal, race targets, official personal bests; races (A/B/C priority, a time or just finish) and goals are edited in Settings
 - **All-time records** - best 1K/5K/10K/half/marathon detected from FIT files
 - **Race page** - the next race: Garmin's prediction against your target and best, its 12-week trend, and even splits at both times; a VDOT estimate from your best recent effort when Garmin's predictions are missing or two weeks old
 - **Explore** - quartier coverage on the Activities map (Districts layer), a loop-route generator for unexplored quartiers (flat and traffic-free on a reps day), GPX export, the quartiers each run pushed forward, and a push when one passes 90 %
@@ -177,14 +177,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Configuration: goals, PBs, athlete profile {#goals-pbs-athlete-profile}
 
-Annual goals, official personal bests, and your athlete profile (HR zones, threshold
-pace, etc.) are **not** in Firestore - they're hand-edited JSON files in the private
-`RunOmics-data` repository, fetched into `data/` and read server-side. An edit pushed to
-that repository is served like a sync's (see [Sync and deploy](#5-sync-and-deploy)), with
-no rebuild.
-(Upcoming races are the similar exception: synced from Garmin Connect into
-`upcoming_races.json` by `scripts/sync_upcoming_races.py` - see that file's
-docstring.)
+Races and season goals are set in the app: **Settings → Races & goals** (owner only)
+adds, edits and removes races and sets each year's distance and target times. They are
+kept in Firestore, and the nightly sync mirrors them into `race_entries.json` and
+`goal_entries.json`, laid over the two files below (see
+[docs/data-and-sync.md](docs/data-and-sync.md#what-a-sync-writes)).
+
+Official personal bests and your athlete profile (HR zones, threshold pace, etc.) are
+**not** in Firestore - they're hand-edited JSON files in the private `RunOmics-data`
+repository, fetched into `data/` and read server-side, as is `goals.json`, which still
+works under the editor. An edit pushed to that repository is served like a sync's (see
+[Sync and deploy](#5-sync-and-deploy)), with no rebuild. Races synced from Garmin Connect
+land in `upcoming_races.json` (`scripts/sync_upcoming_races.py`); the editor can change
+or hide them without touching that file.
 
 ```json
 // data/goals.json

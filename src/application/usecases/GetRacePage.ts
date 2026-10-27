@@ -47,6 +47,7 @@ export function nextKnownRace(races: readonly UpcomingRace[], today: string): Up
 /** The race's own target first, else the season's for that distance. */
 export function raceTarget(race: UpcomingRace, goalYears: readonly GoalYear[]): number | null {
   if (race.targetSeconds) return race.targetSeconds
+  if (race.justFinish) return null
   const year = Number(race.date.slice(0, 4))
   return goalYears.find((g) => g.year === year)?.targets.find((t) => t.distance === race.distance)?.targetSeconds ?? null
 }
