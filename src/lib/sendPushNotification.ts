@@ -8,6 +8,15 @@ const PUSH_TOKENS_COLLECTION = 'pushTokens'
 
 const DEAD_TOKEN_CODES = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'])
 
+/** FCM expires a token its app has not refreshed in 270 days; the app re-saves a live one monthly. */
+export const STALE_TOKEN_MS = 270 * 24 * 60 * 60 * 1000
+
+/** A document saved before `updatedAt` existed has none, and is kept. */
+function isStaleToken(updatedAt: unknown, now: number): boolean {
+  const millis = (updatedAt as { toMillis?: () => number } | undefined)?.toMillis?.()
+  return typeof millis === 'number' && now - millis > STALE_TOKEN_MS
+}
+
 export interface Push {
   title: string
   body: string
@@ -26,7 +35,12 @@ export interface PushResult {
 export async function sendPush(audience: PushAudience, { title, body, link, tag }: Push): Promise<PushResult> {
   const db = getAdminFirestore()
   const snapshot = await db.collection(PUSH_TOKENS_COLLECTION).get()
-  const tokens = snapshot.docs.filter((d) => wantsPush(d.get('categories'), audience)).map((d) => d.id)
+  const now = Date.now()
+  const stale = snapshot.docs.filter((d) => isStaleToken(d.get('updatedAt'), now))
+  await Promise.all(stale.map((d) => d.ref.delete()))
+  const tokens = snapshot.docs
+    .filter((d) => !stale.includes(d) && wantsPush(d.get('categories'), audience))
+    .map((d) => d.id)
   if (tokens.length === 0) return { sent: 0, failed: 0 }
 
   const absoluteLink = absolutePushLink(link)

@@ -39,5 +39,5 @@ export async function GET(req: NextRequest) {
       },
       { status: stale ? 503 : 200 }
     )
-  })
+  }, undefined, { probe: true })
 }

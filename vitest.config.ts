@@ -15,6 +15,7 @@ const alias = {
 const DOM_EXTRA = [
   'src/lib/__tests__/accent.test.ts',
   'src/lib/__tests__/fileExport.test.ts',
+  'src/lib/__tests__/pushPrefs.test.ts',
   'src/domain/explore/__tests__/gpx.test.ts',
 ]
 const DOM_TESTS = ['src/**/*.test.tsx', ...DOM_EXTRA]

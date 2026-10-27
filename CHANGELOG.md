@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A durable trace of server jobs (R4). Every scheduled run and every internal
+  5xx is kept in a capped Firestore collection, `jobEvents` (route, trigger,
+  outcome, status and error class only; the last 200). Settings → Diagnostics
+  shows each job's last run and outcome beside the phone errors, the nightly
+  error digest counts server errors too, and the later morning cron sends the
+  daily session when the 08:xx Paris run failed, until 10:00. `firestore.rules`
+  lets the owner read the trace and no client write it.
+- Push tokens stay fresh (R5). On app start, a device with pushes on re-saves
+  its FCM token when it changed or was saved over 30 days ago, keeping its
+  switches; Settings says when the device could not be registered. The server
+  drops tokens not saved in 270 days.
 - Runs deleted, re-typed or renamed in Garmin Connect follow in the app (R17).
   After a complete listing, a stored run missing from it moves to
   `removed_activities.json` (at most 5 a night; a list that looks cut short
