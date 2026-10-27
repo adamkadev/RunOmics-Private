@@ -63,12 +63,16 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
   optional `categories`, a map of `training`, `shoes` and `records` to booleans. Create, update
   and delete only; nothing on a phone reads the list.
 - `jobEvents`: the server jobs' trace (see [Job trace](#job-trace)). The owner reads it; no client writes it.
+- `aiStatus/lastPass`: the last AI insight pass. No rule matches it, so only the server (Admin SDK) reads or writes it.
 
 **The rules are deployed by hand,** never with the app: after any change, run
 `firebase deploy --only firestore:rules --project <id>` once per Firebase project (each
 deployment has its own). Until then the old rules refuse the new writes: a check-in, or a phone
 saving its push categories. `npm run test:rules` runs `src/infrastructure/__tests__/firestoreRules.test.ts`
 against the Firestore emulator (Java 21), and CI runs it on every push and pull request.
+Health reports the live ruleset's SHA-256 (`firestoreRulesHash`, read with the Admin SDK's
+security rules API, which needs the Firebase Rules Viewer role) and the nightly sync warns when
+it is not the hash of the repository's `firestore.rules`.
 
 ## Content Security Policy
 

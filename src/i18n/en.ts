@@ -514,6 +514,12 @@ export const en = {
       jobsLoadFailed: 'The runs couldn’t be loaded.',
       outcome: { sent: 'Done', skipped: 'Nothing to do', error: 'Failed' },
       trigger: { cron: 'cron', manual: 'by hand', sync: 'sync' },
+      ai: {
+        title: 'Last AI pass',
+        counts: (generated: number, missed: number) => `${generated} written · ${missed} left`,
+        idleNights: (nights: number) => `nothing written for ${nights} night${nights === 1 ? '' : 's'}`,
+        closed: (model: string, reason: string) => `${model} closed: ${reason}`,
+      },
     },
     sync: {
       subtitle: 'Pull in today’s runs without waiting for tonight.',
@@ -1969,6 +1975,11 @@ export const en = {
     exploreComplete: {
       title: (name: string) => `${name} explored`,
       body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
+    },
+    aiIdle: {
+      title: (nights: number) => `No AI copy written for ${nights} nights`,
+      body: (closed: string) =>
+        closed ? `Gemini closed ${closed}. The app shows rule-based copy until a model answers again.` : 'Every pass left its work undone. The app shows rule-based copy until a model answers again.',
     },
     syncDispatchRefused: {
       title: 'Nightly sync did not start',

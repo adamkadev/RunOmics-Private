@@ -23,6 +23,12 @@ export const MODEL_POOL = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3-fla
 // 3.5 Flash-Lite, Google's named replacement for 3.1 Flash-Lite (shut down from May 7, 2027), leads.
 export const BACKFILL_POOL = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
 
+/** GEMINI_BACKFILL_MODEL stands in for the backfill pool and GEMINI_MODEL for the main one; the two pools share no model. */
+export function poolOverride(pool: readonly string[], env: Readonly<Record<string, string | undefined>>): string | undefined {
+  const backfill = pool.some((model) => BACKFILL_POOL.includes(model))
+  return (backfill ? env.GEMINI_BACKFILL_MODEL : env.GEMINI_MODEL)?.trim() || undefined
+}
+
 const RESERVE = 2
 
 const QUOTA_TIME_ZONE = 'America/Los_Angeles'

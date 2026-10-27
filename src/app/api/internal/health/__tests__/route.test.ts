@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { loadData, getAllActivities, getLastSyncedAt } = vi.hoisted(() => ({
+const { loadData, getAllActivities, getLastSyncedAt, lastAiPass, liveFirestoreRulesHash } = vi.hoisted(() => ({
   loadData: vi.fn(),
   getAllActivities: vi.fn(),
   getLastSyncedAt: vi.fn(),
+  lastAiPass: vi.fn(),
+  liveFirestoreRulesHash: vi.fn(),
 }))
 
 vi.mock('@/application/usecases/LoadData', () => ({
@@ -13,6 +15,8 @@ vi.mock('@/application/usecases/LoadData', () => ({
 }))
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities }))
 vi.mock('@/application/usecases/GetSyncStatus', () => ({ getLastSyncedAt }))
+vi.mock('@/application/usecases/AiPassStatus', () => ({ lastAiPass }))
+vi.mock('@/infrastructure/firestoreRulesHash', () => ({ liveFirestoreRulesHash }))
 
 const { GET } = await import('../route')
 
@@ -128,6 +132,41 @@ describe('GET /api/internal/health', () => {
     vi.stubEnv('CRON_SECRET', '')
 
     expect((await health()).body.integrations).toMatchObject({ cron: false })
+  })
+
+  it('reports the last AI pass and the live rules hash once Firestore is configured', async () => {
+    vi.stubEnv('FIREBASE_PROJECT_ID', 'demo')
+    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'admin@demo.iam')
+    vi.stubEnv('FIREBASE_PRIVATE_KEY', 'key')
+    const pass = { at: '2026-10-27T01:40:00Z', generated: 0, missed: 3, closedModels: [], idleDays: ['2026-10-27'], alerted: false }
+    lastAiPass.mockResolvedValue(pass)
+    liveFirestoreRulesHash.mockResolvedValue('abc123')
+
+    const { status, body } = await health()
+
+    expect(status).toBe(200)
+    expect(body).toMatchObject({ ai: pass, firestoreRulesHash: 'abc123' })
+  })
+
+  it('answers null for the rules hash it may not read, and stays ok', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    vi.stubEnv('FIREBASE_PROJECT_ID', 'demo')
+    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'admin@demo.iam')
+    vi.stubEnv('FIREBASE_PRIVATE_KEY', 'key')
+    lastAiPass.mockResolvedValue(null)
+    liveFirestoreRulesHash.mockRejectedValue(new Error('PERMISSION_DENIED'))
+
+    const { status, body } = await health()
+
+    expect(status).toBe(200)
+    expect(body).toMatchObject({ ai: null, firestoreRulesHash: null })
+  })
+
+  it('reads neither without Firestore credentials', async () => {
+    vi.stubEnv('FIREBASE_PROJECT_ID', '')
+
+    expect((await health()).body).toMatchObject({ ai: null, firestoreRulesHash: null })
+    expect(lastAiPass).not.toHaveBeenCalled()
   })
 
   it('refuses a caller without the internal secret', async () => {

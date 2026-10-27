@@ -49,4 +49,28 @@ describe('ScheduledJobs', () => {
     await userEvent.click(toggle)
     expect(await screen.findByText(d.jobsLoadFailed)).toBeInTheDocument()
   })
+
+  it('shows the last AI pass above the jobs, with each model Google closed', async () => {
+    authorizedFetch.mockResolvedValue(
+      Response.json({
+        jobs: [],
+        ai: {
+          at: '2026-10-27T01:40:00.000Z',
+          generated: 0,
+          missed: 3,
+          closedModels: [{ model: 'gemini-3.8-flash', reason: 'http 404: not found' }],
+          idleDays: ['2026-10-26', '2026-10-27'],
+          alerted: false,
+        },
+      })
+    )
+
+    render(<ScheduledJobs user={user} />)
+    await userEvent.click(screen.getByRole('button', { name: d.scheduledJobs }))
+
+    const pass = await screen.findByTestId('ai-pass')
+    expect(pass.textContent).toContain(d.ai.counts(0, 3))
+    expect(pass.textContent).toContain(d.ai.idleNights(2))
+    expect(pass.textContent).toContain(d.ai.closed('gemini-3.8-flash', 'http 404: not found'))
+  })
 })

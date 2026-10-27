@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Route guards, AI status, rules drift and CI (R11 part, R12, R13, R16). A test
+  walks every API route: each `/api/internal/*` handler must go through
+  `handleInternalRoute` or `scheduledRoute`, every other one through the owner
+  guard or onto an explicit gate-only list, and every `vercel.json` cron must
+  export GET through `scheduledRoute`; client-errors, sync dispatch,
+  data-revalidate, job-events, version and location-override get route tests.
+  Each AI insight pass keeps its status in Firestore `aiStatus/lastPass`
+  (written, missed, models Google closed); health and Settings → Diagnostics
+  show it, and the operator gets one push after three nights that wrote
+  nothing while work was left. `GEMINI_MODEL` now replaces the main pool only;
+  the new `GEMINI_BACKFILL_MODEL` replaces the backfill pool. Health reports
+  the live Firestore ruleset's hash and the nightly sync warns when it is not
+  the repository's `firestore.rules`. CI builds pull requests against the E2E
+  data, the weekly coverage run prepares the data first, and E2E's apt step
+  gives up after 3 minutes, retrying twice.
 - Cleanup (C2, C3, C5, C8). A run's Overview shows its records once, in Best
   efforts, at the top when the run holds a ranked effort. Dead code goes
   (RaceFooter, ListRow, MetricGrid, ChartCard, activityTypeStyle, the unused

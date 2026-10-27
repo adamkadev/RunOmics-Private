@@ -100,14 +100,14 @@ export async function generateFromPool(
       // Only the untried models were refused; the tried ones may still answer the next item.
       return { ok: false, reason: attempts.join(' | '), reserved: tried.size > 0 }
     }
-    // A model the pool does not name is GEMINI_MODEL standing in for all of it: one model, one chance.
+    // A model the pool does not name is an override standing in for all of it: one model, one chance.
     for (const asked of pool.includes(model) ? [model] : pool) tried.add(asked)
 
     const result = await deps.generate({ ...request, model })
     if (result.ok) return { ok: true, model, insight: result.insight }
 
     attempts.push(`${model}: ${result.reason}`)
-    if (isModelClosed(result.reason)) deps.spender.exhaust(model)
+    if (isModelClosed(result.reason)) deps.spender.exhaust(model, result.reason)
     if (!shouldTryAnotherModel(result.reason)) break
   }
 
@@ -117,6 +117,7 @@ export async function generateFromPool(
 interface SurfaceOutcome {
   generated: boolean
   reason?: string
+  missed?: boolean
 }
 
 export async function runSurface(deps: InsightPassDeps, job: SurfaceJob): Promise<SurfaceOutcome> {
@@ -128,26 +129,49 @@ export async function runSurface(deps: InsightPassDeps, job: SurfaceJob): Promis
     prompt: job.prompt(cached?.recentHeadlines ?? []),
     limits: job.limits,
   })
-  if (!attempt.ok) return { generated: false, reason: attempt.reason }
+  if (!attempt.ok) return { generated: false, reason: attempt.reason, missed: true }
 
   await deps.insights.saveCachedInsight(job.surface, attempt.insight, job.hash, cached, job.guard)
   job.paths.forEach((path) => deps.revalidate(path))
   return { generated: true }
 }
 
-async function runPlan(deps: InsightPassDeps, plan: SurfacePlan): Promise<SurfaceOutcome> {
-  return typeof plan === 'string' ? { generated: false, reason: plan } : runSurface(deps, plan)
+interface Tally {
+  missed: number
 }
 
-async function runPlans(deps: InsightPassDeps, plans: Record<string, SurfacePlan>): Promise<Record<string, string>> {
+async function runPlan(deps: InsightPassDeps, plan: SurfacePlan, tally: Tally): Promise<SurfaceOutcome> {
+  if (typeof plan === 'string') return { generated: false, reason: plan }
+  const { missed, ...outcome } = await runSurface(deps, plan)
+  if (missed) tally.missed += 1
+  return outcome
+}
+
+async function runPlans(deps: InsightPassDeps, plans: Record<string, SurfacePlan>, tally: Tally): Promise<Record<string, string>> {
   const results: Record<string, string> = {}
 
   for (const [key, plan] of Object.entries(plans)) {
-    const outcome = await runPlan(deps, plan)
+    const outcome = await runPlan(deps, plan, tally)
     results[key] = outcome.generated ? 'generated' : (outcome.reason ?? 'skipped')
   }
 
   return results
+}
+
+const CLOSED_REASON_CHARS = 120
+
+/** The models Google closed during the pass, each with what it answered, kept for the pass's status. */
+function trackClosedModels(deps: InsightPassDeps) {
+  const closed = new Map<string, string>()
+  const spender: Spender = {
+    reserve: (pool) => deps.spender.reserve(pool),
+    exhaust: (model, reason) => {
+      closed.set(model, reason.slice(0, CLOSED_REASON_CHARS))
+      deps.spender.exhaust(model, reason)
+    },
+    report: () => deps.spender.report(),
+  }
+  return { deps: { ...deps, spender }, closed: () => [...closed].map(([model, reason]) => ({ model, reason })) }
 }
 
 export interface VerdictQueue {
@@ -238,7 +262,9 @@ async function notifyFreshVerdict(deps: InsightPassDeps, insight: Insight, activ
 }
 
 /** Priority order: fresh verdicts, the displayed cards, then the backlog; what the clock or quota cuts off, the next pass picks up. */
-export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSurfaces, options: InsightPassOptions) {
+export async function runInsightPass(passDeps: InsightPassDeps, surfaces: InsightSurfaces, options: InsightPassOptions) {
+  const { deps, closed } = trackClosedModels(passDeps)
+  const tally: Tally = { missed: 0 }
   const cached = await deps.insights.listCachedKeys(RUN_VERDICT_PREFIX)
   const queue = verdictQueue(await surfaces.runVerdicts(), cached, deps.now(), options.ignoreHorizon)
   const phrasing = await deps.insights.readVerdictPhrasing()
@@ -250,9 +276,9 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
   // A verdict written again after a prompt change or a new note is not worth a second push.
   const firstVerdicts = new Set(fresh.filter((c) => !cached.has(runVerdictSurface(c.activity.id))).map((c) => c.activity.id))
   const freshVerdicts = await writeVerdicts(deps, fresh, written, phrasing, MODEL_POOL, firstVerdicts)
-  const today = await runPlan(deps, await surfaces.today())
-  const pbCelebration = await runPlan(deps, await surfaces.pbCelebration(deps.now()))
-  const shoeVerdicts = await runPlans(deps, surfaces.shoeVerdicts())
+  const today = await runPlan(deps, await surfaces.today(), tally)
+  const pbCelebration = await runPlan(deps, await surfaces.pbCelebration(deps.now()), tally)
+  const shoeVerdicts = await runPlans(deps, surfaces.shoeVerdicts(), tally)
   const backfill = await writeVerdicts(
     deps,
     [...queue.fresh.slice(fresh.length), ...queue.rest].slice(0, options.limit),
@@ -277,6 +303,8 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
       rest: queue.rest.length,
       ...backfill,
     },
+    missed: tally.missed + freshVerdicts.failures.length + backfill.failures.length,
+    closedModels: closed(),
     spend: deps.spender.report(),
   }
 }

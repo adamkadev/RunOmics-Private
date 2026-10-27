@@ -66,8 +66,15 @@ jobs:
           exit 1
 
       # The iPhone and sparse-fr projects run in WebKit, whose system libraries the runner image does not ship.
+      # apt on the runner has hung for the job's whole 15 minutes; a stuck try is cut short and tried again.
       - name: Install WebKit's system libraries
-        run: npx playwright install-deps webkit
+        timeout-minutes: 3
+        run: |
+          for try in 1 2 3; do
+            npx playwright install-deps webkit && exit 0
+            sleep 5
+          done
+          exit 1
 
       - name: Name the week
         id: week
