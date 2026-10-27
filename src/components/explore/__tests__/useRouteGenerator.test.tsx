@@ -17,7 +17,7 @@ const M = 1 / 111_320
 const ORIGIN: LonLat = [-150, 0]
 const QUARTIER_START: LonLat = [-149.99, 0.01]
 const DEBOUNCE = 400
-const PREFS: RoutePreferences = { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false, trailsOk: false }
+const PREFS: RoutePreferences = { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false }
 const CONTEXT: RouteContext = { day: NO_SESSION, dark: false }
 
 const east = (m: number): number[] => [ORIGIN[0] + m * M, ORIGIN[1]]

@@ -35,7 +35,7 @@ const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
   day: { session: null, beforeQuality: false },
   darkness: null,
   avoid,
-  prefs: { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false, trailsOk: false },
+  prefs: { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false },
   onPrefsChange: () => {},
   status: 'generating',
   failure: null,

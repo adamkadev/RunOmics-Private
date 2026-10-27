@@ -392,12 +392,8 @@ export const en = {
         newStreetsFirst: 'New streets first',
         // On by itself on a reps or tempo day: flat ground, on paths and cycleways rather than across streets.
         flatForReps: 'Flat for the reps',
-        // Off by default: lets loops take forest paths, dirt, grass and steps in daylight.
-        trailsOk: 'Trails OK',
-        // Under Trails OK on a quality day or the day before one, where it does not apply.
-        trailsLocked: 'Not on or before a quality day',
         // The options row's summary, "Loop · Avoid busy roads · New streets first": one line on a 393 pt phone.
-        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat', trailsOk: 'Trails' },
+        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat' },
         // The climb a loop may hold for the day's session. `max` and `perKm` are whole metres a km, "20".
         climb: {
           sessions: {

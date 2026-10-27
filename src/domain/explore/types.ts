@@ -148,8 +148,6 @@ export interface RoutePreferences {
   newStreetsFirst: boolean
   /** Reps want flat ground and no crossings: on by itself on a quality day. */
   flatForReps: boolean
-  /** Lifts the trail penalty in daylight, never on a quality day or the day before one. */
-  trailsOk: boolean
 }
 
 export interface ScoredRoute {
