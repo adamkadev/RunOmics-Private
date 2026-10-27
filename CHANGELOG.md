@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The coach's own words reach the app (F1). Plan's phase card names the
+  coach's block ("Reprise en douceur") instead of « Préparation générale » and
+  adds the week's focus; a planned session's card carries the coach's note,
+  its description and notes; Today's session card gives the description's
+  first sentence. The text comes from a new route, `/api/coaching/words`,
+  behind the private site's sign-in gate, never in a page's HTML. In the step
+  list, a warm-up, cool-down or break at a walking pace, or with no target in
+  an easy session, reads "walk" (« marche ») instead of "1:00 rec".
 - A change to the live plan is held to "no stop signals" too. A weekly
   review's ADJUST or REPLAN and a run's evaluation are now told the athlete's
   guidance, as a new block is, and one that adds a stop rule or a symptom
