@@ -17,8 +17,8 @@ describe('GET /api/location-override', () => {
   it('answers the name the athlete gave a place, or null', async () => {
     getLocationOverride.mockReturnValueOnce('Home loop').mockReturnValueOnce(null)
 
-    expect(await (await get('?name=Metz')).json()).toEqual({ name: 'Home loop' })
-    expect(await (await get('?name=Nancy')).json()).toEqual({ name: null })
+    expect(await (await get('?name=Riverside')).json()).toEqual({ name: 'Home loop' })
+    expect(await (await get('?name=Old%20Town')).json()).toEqual({ name: null })
   })
 
   it('answers 400 without a name, or with one over 120 characters', async () => {

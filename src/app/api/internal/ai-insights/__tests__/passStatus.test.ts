@@ -40,7 +40,7 @@ describe('POST /api/internal/ai-insights, the pass status', () => {
     vi.stubEnv('INTERNAL_NOTIFY_SECRET', SECRET)
     vi.stubEnv('GEMINI_API_KEY', 'key')
     vi.stubEnv('FIREBASE_PROJECT_ID', 'demo')
-    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'admin@demo.iam')
+    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'firebase-admin')
     vi.stubEnv('FIREBASE_PRIVATE_KEY', 'key')
     vi.stubEnv('OPS_PUSH_URL', '')
     runInsightPass.mockResolvedValue(REPORT)

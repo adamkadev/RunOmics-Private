@@ -136,7 +136,7 @@ describe('GET /api/internal/health', () => {
 
   it('reports the last AI pass and the live rules hash once Firestore is configured', async () => {
     vi.stubEnv('FIREBASE_PROJECT_ID', 'demo')
-    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'admin@demo.iam')
+    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'firebase-admin')
     vi.stubEnv('FIREBASE_PRIVATE_KEY', 'key')
     const pass = { at: '2026-10-27T01:40:00Z', generated: 0, missed: 3, closedModels: [], idleDays: ['2026-10-27'], alerted: false }
     lastAiPass.mockResolvedValue(pass)
@@ -151,7 +151,7 @@ describe('GET /api/internal/health', () => {
   it('answers null for the rules hash it may not read, and stays ok', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.stubEnv('FIREBASE_PROJECT_ID', 'demo')
-    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'admin@demo.iam')
+    vi.stubEnv('FIREBASE_CLIENT_EMAIL', 'firebase-admin')
     vi.stubEnv('FIREBASE_PRIVATE_KEY', 'key')
     lastAiPass.mockResolvedValue(null)
     liveFirestoreRulesHash.mockRejectedValue(new Error('PERMISSION_DENIED'))
