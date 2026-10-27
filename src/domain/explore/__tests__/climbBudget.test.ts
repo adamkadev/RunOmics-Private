@@ -9,8 +9,8 @@ describe('climbBudget', () => {
     ['the day before a quality session', day('easy', true), 12],
     ['a recovery run', day('recovery'), 12],
     ['a long run', day('long'), 15],
-    ['an easy run', day('easy'), 30],
-    ['no known session', day(null), 30],
+    ['an easy run', day('easy'), 20],
+    ['no known session', day(null), 20],
   ])('allows %s %s m/km', (_label, session, max) => {
     expect(climbBudget(session).maxMPerKm).toBe(max)
   })

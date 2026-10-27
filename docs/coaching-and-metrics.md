@@ -306,7 +306,7 @@ it is scored as an easy run.
 | The day before a quality session | ≤ 12 m/km | |
 | Recovery run | ≤ 12 m/km | |
 | Long run | ≤ 15 m/km | steep descents (7 % or more) scored like steep climbs |
-| Easy run, or no session | ≤ 30 m/km | |
+| Easy run, or no session | ≤ 20 m/km | |
 
 These are [convention], not research thresholds. The reasoning behind them: walking grades steeper
 than about 15-20 % costs about as much energy as running them (Minetti et al. 2002's cost curves), so

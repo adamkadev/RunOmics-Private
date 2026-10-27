@@ -23,7 +23,7 @@ export const CLIMB_BUDGET_M_PER_KM = {
   beforeQuality: 12,
   recovery: 12,
   long: 15,
-  easy: 30,
+  easy: 20,
 } as const
 
 export function climbBudget({ session, beforeQuality }: SessionDay): ClimbBudget {

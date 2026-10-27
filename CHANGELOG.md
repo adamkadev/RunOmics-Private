@@ -14,9 +14,9 @@ All notable changes to this project are documented in this file.
 - Explore's route generator always allows trails: the "Trails OK" switch
   (« Sentiers OK ») is gone from the route options, and in daylight forest
   paths, dirt and grass cost nothing on any day, a quality day and the day
-  before one included. An easy run's climb budget is 30 m/km, the one trails
-  had. After dark loops still keep to streets; the other quality-day rules
-  (flat for the reps, 12 m/km the day before) are unchanged.
+  before one included. After dark loops still keep to streets; the climb
+  budgets (flat for the reps, 12 m/km the day before a quality session, 20
+  on an easy run) are unchanged.
 - Easy runs on the watch carry no heart rate. An easy, recovery or long run sent
   to Garmin keeps its pace target and steps but drops the "HR zone 2" step note,
   a heart-rate target riding on a paced step, and any line of its description or
@@ -448,7 +448,7 @@ All notable changes to this project are documented in this file.
 
 - Explore's loops keep to runnable ground: steep climbs count on
   every loop, and each session has a climb budget (flat for reps, 12 m/km
-  the day before them and on a recovery run, 15 on a long run, 30 on an
+  the day before them and on a recovery run, 15 on a long run, 20 on an
   easy one). A loop that would finish after dusk keeps off mud, dirt, grass,
   steps and forest paths, and the panel names the sunset.
   The panel shows the budget, each loop's climb against it and its share

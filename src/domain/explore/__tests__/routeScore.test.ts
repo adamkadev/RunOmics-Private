@@ -208,7 +208,7 @@ describe('scoreRoutes', () => {
   })
 
   it('puts a loop over the day’s climb budget behind one inside it with less new ground', () => {
-    const hilly = fresh(1, { ascentM: 48 })
+    const hilly = fresh(1, { ascentM: 36 })
     const rolling = known(2, { ascentM: 12 })
     const order = (session: 'easy' | 'recovery') =>
       scoreRoutes(index, visited, [hilly, rolling], 1200, { ...OFF, newStreetsFirst: true }, { day: { session, beforeQuality: false }, dark: false }).map(
