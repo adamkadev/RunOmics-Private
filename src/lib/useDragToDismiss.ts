@@ -18,6 +18,7 @@ export function useDragToDismiss(onDismiss: () => void) {
 
   const triggerClose = useCallback(() => {
     setClosing(true)
+    if (closeTimer.current) clearTimeout(closeTimer.current)
     closeTimer.current = setTimeout(() => {
       onDismiss()
       setClosing(false)

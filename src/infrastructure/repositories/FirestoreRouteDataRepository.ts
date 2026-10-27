@@ -2,7 +2,7 @@ import { getAdminFirestore } from '@/lib/firebase-admin'
 import { AVOID_SPOTS_COLLECTION, readAvoidSpot } from '@/lib/avoidSpots'
 import { ROUTE_NAMES_COLLECTION } from '@/lib/routeNames'
 import type { AvoidSpot } from '@/domain/explore/avoidSpots'
-import { withTimeout } from '../withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 
 /** The nightly backup's first Firestore call is cold. */
 const READ_TIMEOUT_MS = 10_000

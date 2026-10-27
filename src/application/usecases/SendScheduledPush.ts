@@ -1,12 +1,13 @@
 import { claimNotificationKey, releaseNotificationKey } from '@/infrastructure/repositories/FirestoreConfigRepository'
 
-export type ScheduledPush = 'dailySession' | 'weeklyReminder' | 'weeklyDigest' | 'coachBlock'
+export type ScheduledPush = 'dailySession' | 'weeklyReminder' | 'weeklyDigest' | 'coachBlock' | 'goalYear'
 
 const DOCUMENT: Record<ScheduledPush, string> = {
   dailySession: 'lastDailySession',
   weeklyReminder: 'lastWeeklyReminder',
   weeklyDigest: 'lastWeeklyDigest',
   coachBlock: 'lastCoachBlock',
+  goalYear: 'lastGoalYear',
 }
 
 /** Once per key: Vercel Cron may deliver a run twice, and a run by hand may follow the cron's. False when already sent. */

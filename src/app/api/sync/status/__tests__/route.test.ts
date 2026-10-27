@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
 const verdictStatus = vi.hoisted(() => vi.fn())
-vi.mock('@/lib/verdictStatus', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/verdictStatus')>()),
+vi.mock('@/application/usecases/VerdictStatus', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/application/usecases/VerdictStatus')>()),
   verdictStatus,
 }))
 vi.mock('@/lib/ownerRoute', () => ({

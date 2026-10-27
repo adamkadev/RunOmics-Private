@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleOwnerRoute } from '@/lib/ownerRoute'
-import { parseSince, verdictStatus } from '@/lib/verdictStatus'
+import { parseSince, verdictStatus } from '@/application/usecases/VerdictStatus'
 import { loadData } from '@/application/usecases/LoadData'
 
 export async function GET(req: NextRequest) {

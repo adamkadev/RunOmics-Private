@@ -16,7 +16,7 @@ import {
 } from '@/domain/ai/runVerdictInsight'
 import type * as InsightsRepository from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import type { CachedKeys, VerdictPhrasing } from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import type { Spender } from '@/lib/aiSpend'
+import type { Spender } from '@/application/ai/aiSpend'
 import type { Insight, InsightRequest, InsightResult } from '@/lib/gemini'
 import type { InsightSurfaces, SurfaceJob, SurfacePlan } from './surfaces'
 

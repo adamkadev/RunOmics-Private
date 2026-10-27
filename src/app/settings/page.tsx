@@ -1,12 +1,11 @@
 import { SettingsClient } from '@/components/settings/SettingsClient'
 import { getGarminSeriesStatus, getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getActivities } from '@/application/usecases/GetActivities'
+import { getAthleteProfile } from '@/application/usecases/GetAthleteProfile'
 import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
 import { isSitePrivate } from '@/lib/siteAccess'
-import { getSyncedRaces } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
-import { getWrittenGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
+import { getGoalsRacesSources } from '@/application/usecases/GetGoalsRacesSources'
 import { appTodayIso } from '@/lib/calendarDate'
 
 export const revalidate = 3600
@@ -18,12 +17,12 @@ export const metadata = {
 export default async function SettingsPage() {
   await loadData()
   const lastSyncedAt = getLastSyncedAt()
-  const activityCount = getAllActivities().length
+  const activityCount = getActivities().length
   const { deviceName, lthrBpm, maxHrBpm } = getAthleteProfile()
 
   return (
     <SettingsClient
-      goalsRaces={{ syncedRaces: getSyncedRaces(), writtenGoals: getWrittenGoalYears(), today: appTodayIso() }}
+      goalsRaces={{ ...getGoalsRacesSources(), today: appTodayIso() }}
       lastSyncedAt={lastSyncedAt}
       activityCount={activityCount}
       device={deviceName ? { name: deviceName } : undefined}

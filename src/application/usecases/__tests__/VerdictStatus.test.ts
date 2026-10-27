@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseSince, verdictReadiness } from '../verdictStatus'
+import { parseSince, verdictReadiness } from '../VerdictStatus'
 
 const DISPATCHED_AT = Date.parse('2026-09-19T21:04:07Z')
 

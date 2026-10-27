@@ -1,5 +1,4 @@
 import { DAY_MS } from '@/lib/calendarDate'
-import ExcelJS from 'exceljs'
 import type { Activity, ActivitySplit, PlannedWorkout } from '@/domain/activity/types'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { AthleteHistoryEntry } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
@@ -39,24 +38,17 @@ import { getTrainingPlan } from '@/infrastructure/repositories/JsonTrainingPlanR
 import { getTrainingStatusDays } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
+import { writeXlsx } from '@/infrastructure/export/xlsxWorkbook'
+import type { WorkbookColumn, WorkbookRow, WorkbookSheet, WorkbookSpec } from '@/application/ports/Workbook'
 
 export const TRAINING_WORKBOOK_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 const SCHEMA_VERSION = '1.2'
-const HEADER_FILL = '17324D'
-const HEADER_TEXT = 'FFFFFF'
-const ACCENT = '37B6A5'
 
 type Primitive = string | number | boolean | Date | null
-type RowData = Record<string, Primitive>
-
-interface ColumnDefinition {
-  key: string
-  width?: number
-  numberFormat?: string
-  wrap?: boolean
-}
+type RowData = WorkbookRow
+type ColumnDefinition = WorkbookColumn
 
 export interface TrainingWorkbookData {
   activities: Activity[]
@@ -134,53 +126,6 @@ function groupByDate<T extends { date: string }>(items: T[]): Map<string, T[]> {
 
 function minDate(dates: Array<string | null | undefined>, fallback: string): string {
   return dates.filter((date): date is string => Boolean(date)).reduce((min, date) => date < min ? date : min, fallback)
-}
-
-function tableName(sheetName: string): string {
-  return `Export${sheetName.replace(/[^A-Za-z0-9]/g, '')}`
-}
-
-function addDataSheet(
-  workbook: ExcelJS.Workbook,
-  name: string,
-  columns: ColumnDefinition[],
-  rows: RowData[],
-): ExcelJS.Worksheet {
-  const sheet = workbook.addWorksheet(name, {
-    views: [{ state: 'frozen', ySplit: 1 }],
-    properties: { defaultRowHeight: 19 },
-  })
-  sheet.properties.tabColor = { argb: ACCENT }
-  sheet.pageSetup = { orientation: columns.length > 10 ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1 }
-
-  const values = rows.map((row) => columns.map((column) => row[column.key] ?? null))
-  sheet.addTable({
-    name: tableName(name),
-    ref: 'A1',
-    headerRow: true,
-    totalsRow: false,
-    style: { theme: 'TableStyleMedium2', showRowStripes: true },
-    columns: columns.map((column) => ({ name: column.key, filterButton: true })),
-    rows: values,
-  })
-
-  columns.forEach((column, index) => {
-    const excelColumn = sheet.getColumn(index + 1)
-    excelColumn.width = Math.min(column.width ?? Math.max(12, column.key.length + 2), 42)
-    if (column.numberFormat) excelColumn.numFmt = column.numberFormat
-    if (column.wrap) excelColumn.alignment = { vertical: 'top', wrapText: true }
-  })
-
-  const header = sheet.getRow(1)
-  header.height = 28
-  header.eachCell((cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_FILL } }
-    cell.font = { bold: true, color: { argb: HEADER_TEXT } }
-    cell.alignment = { vertical: 'middle' }
-    cell.border = { bottom: { style: 'medium', color: { argb: ACCENT } } }
-  })
-
-  return sheet
 }
 
 function hrZoneSeconds(activity: Activity, zone: number): number | null {
@@ -919,22 +864,17 @@ const ACTIVITY_COLUMNS = columns(
     'execution_rep_avg_hr_bpm', 'execution_rep_avg_seconds', { key: 'comment', width: 36, wrap: true }, { key: 'tags', width: 24, wrap: true }, 'notes_status',
 )
 
-export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = new Date()): ExcelJS.Workbook {
-  const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Runomics'
-  workbook.company = 'Runomics'
-  workbook.created = generatedAt
-  workbook.modified = generatedAt
-  workbook.subject = 'Training data export for coaching and analysis'
-  workbook.title = 'Runomics Training Export'
+export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = new Date()): WorkbookSpec {
+  const sheets: WorkbookSheet[] = []
+  const addDataSheet = (name: string, columns: ColumnDefinition[], rows: RowData[]) => sheets.push({ name, columns, rows })
 
   const athleteHrBounds = hrBoundsOf(data.athlete)
 
-  addDataSheet(workbook, 'Guide', columns(
+  addDataSheet('Guide', columns(
     { key: 'section', width: 14 }, { key: 'item', width: 28 }, { key: 'description', width: 80, wrap: true },
   ), guideRows(generatedAt))
 
-  addDataSheet(workbook, 'Athlete', columns(
+  addDataSheet('Athlete', columns(
     'display_name', 'age_years', 'sex', 'height_cm', 'weight_kg', 'bmi', 'resting_hr_bpm', 'max_hr_bpm',
     { key: 'hr_reliable_from', ...DATE_COLUMN }, 'lactate_threshold_hr_bpm', 'threshold_pace_sec_per_km', 'vma_kmh', 'vo2max_ml_kg_min',
     'fitness_age_years', 'achievable_fitness_age_years', 'hr_zone_1_lower_bpm', 'hr_zone_2_lower_bpm',
@@ -942,19 +882,19 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
     { key: 'device_since', ...DATE_COLUMN }, { key: 'last_profile_update', ...DATE_COLUMN },
   ), athleteRows(data.athlete))
 
-  addDataSheet(workbook, 'Context', columns(
+  addDataSheet('Context', columns(
     { key: 'section', width: 16 }, { key: 'item', width: 36 }, { key: 'value', width: 90, wrap: true },
   ), contextRows(data, generatedAt))
 
   const sessions = sessionsOf(data.activities)
-  addDataSheet(workbook, 'Activities', ACTIVITY_COLUMNS, activityRows(data, athleteHrBounds, sessions))
+  addDataSheet('Activities', ACTIVITY_COLUMNS, activityRows(data, athleteHrBounds, sessions))
 
-  addDataSheet(workbook, 'Intervals', columns(
+  addDataSheet('Intervals', columns(
     { key: 'activity_id', width: 24 }, { key: 'date', ...DATE_COLUMN }, { key: 'description', width: 28, wrap: true },
     'segment_index', 'segment', 'rep_index', 'duration_seconds', 'distance_m', 'pace_sec_per_km', 'avg_heart_rate_bpm',
   ), intervalRows(data))
 
-  addDataSheet(workbook, 'Daily Status', columns(
+  addDataSheet('Daily Status', columns(
     { key: 'date', ...DATE_COLUMN }, 'actual_session_count', 'actual_distance_km', 'actual_duration_seconds',
     'daily_trimp', 'fitness_ctl', 'fatigue_atl', 'form_tsb_start_of_day', 'training_break',
     'garmin_training_status',
@@ -964,20 +904,20 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
     'planned_day_completed', 'training_plan_phase', { key: 'race_names', width: 28, wrap: true },
   ), dailyRows(data, generatedAt, athleteHrBounds, sessions))
 
-  addDataSheet(workbook, 'Records', columns(
+  addDataSheet('Records', columns(
     'record_key', 'year', 'distance_label', 'distance_km', 'time_seconds', 'pace_sec_per_km',
     { key: 'activity_id', width: 24 }, { key: 'activity_date', ...DATE_COLUMN }, { key: 'event_name', width: 28 },
     'official', 'is_all_time',
   ), recordRows(data))
 
-  addDataSheet(workbook, 'Races', columns(
+  addDataSheet('Races', columns(
     'status', { key: 'date', ...DATE_COLUMN }, { key: 'name', width: 30 }, 'distance_label', 'distance_km',
     { key: 'location', width: 24 }, 'target_time_seconds', 'predicted_time_seconds', 'official_time_seconds',
     'gun_time_seconds', 'overall_place', 'finisher_count', 'watch_time_seconds', 'watch_distance_km',
     { key: 'activity_id', width: 24 },
   ), raceRows(data, generatedAt))
 
-  addDataSheet(workbook, 'Training Plan', columns(
+  addDataSheet('Training Plan', columns(
     'plan_id', { key: 'plan_name', width: 28 }, { key: 'plan_start_date', ...DATE_COLUMN },
     { key: 'plan_end_date', ...DATE_COLUMN }, { key: 'workout_date', ...DATE_COLUMN }, 'phase',
     { key: 'workout_name', width: 32 }, 'workout_type', 'planned_distance_m', 'planned_duration_seconds',
@@ -985,35 +925,41 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
     { key: 'coach_purpose', width: 40, wrap: true }, 'effort_hr_bpm',
   ), trainingPlanRows(data))
 
-  addDataSheet(workbook, 'Fitness History', columns(
+  addDataSheet('Fitness History', columns(
     { key: 'date', ...DATE_COLUMN }, 'vo2max_ml_kg_min', 'fitness_age_years', 'lactate_threshold_hr_bpm',
     'threshold_pace_sec_per_km', 'weight_kg', { key: 'sources', width: 36 },
   ), fitnessHistoryRows(data))
 
-  addDataSheet(workbook, 'Race Predictions', columns(
+  addDataSheet('Race Predictions', columns(
     { key: 'date', ...DATE_COLUMN }, 'predicted_5k_seconds', 'predicted_10k_seconds',
     'predicted_half_marathon_seconds', 'predicted_marathon_seconds',
   ), racePredictionRows(data.racePredictions))
 
-  addDataSheet(workbook, 'Shoes', columns(
+  addDataSheet('Shoes', columns(
     { key: 'gear_id', width: 22 }, 'brand', { key: 'model', width: 24 }, { key: 'first_use_date', ...DATE_COLUMN },
     'activity_count', 'total_distance_km', 'max_distance_km', 'remaining_distance_km',
     { key: 'wear_pct', width: 12, numberFormat: '0.0%' }, 'retired',
   ), shoeRows(data))
 
-  addDataSheet(workbook, 'Goals', columns(
+  addDataSheet('Goals', columns(
     'year', 'annual_distance_goal_km', 'actual_distance_km',
     { key: 'annual_goal_progress_pct', width: 24, numberFormat: '0.0%' }, 'target_distance',
     'target_time_seconds', 'best_time_seconds', 'target_achieved',
   ), goalRows(data))
 
-  addDataSheet(workbook, 'Load Balance', columns(
+  addDataSheet('Load Balance', columns(
     { key: 'date', ...DATE_COLUMN }, { key: 'feedback', width: 28, wrap: true }, 'low_aerobic_load',
     'low_aerobic_target_min', 'low_aerobic_target_max', 'high_aerobic_load', 'high_aerobic_target_min',
     'high_aerobic_target_max', 'anaerobic_load', 'anaerobic_target_min', 'anaerobic_target_max',
   ), loadBalanceRows(data.trainingLoadBalance))
 
-  return workbook
+  return {
+    title: 'Runomics Training Export',
+    subject: 'Training data export for coaching and analysis',
+    author: 'Runomics',
+    createdAt: generatedAt,
+    sheets,
+  }
 }
 
 export async function loadTrainingWorkbookData(): Promise<TrainingWorkbookData> {
@@ -1043,8 +989,7 @@ export async function loadTrainingWorkbookData(): Promise<TrainingWorkbookData> 
 }
 
 export async function writeTrainingWorkbook(data: TrainingWorkbookData, generatedAt = new Date()): Promise<Buffer> {
-  const workbook = buildTrainingWorkbook(data, generatedAt)
-  return Buffer.from(await workbook.xlsx.writeBuffer())
+  return writeXlsx(buildTrainingWorkbook(data, generatedAt))
 }
 
 export const ACTIVITIES_CSV_MIME = 'text/csv; charset=utf-8'

@@ -2,7 +2,7 @@ import { FieldPath } from 'firebase-admin/firestore'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { activeLocale } from '@/i18n'
 import type { Insight } from '@/lib/gemini'
-import { withTimeout } from '../withTimeout'
+import { withTimeout } from '@/lib/withTimeout'
 
 const COLLECTION = 'aiInsights'
 const HISTORY_SIZE = 5

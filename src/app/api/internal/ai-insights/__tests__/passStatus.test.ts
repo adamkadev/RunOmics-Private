@@ -18,7 +18,7 @@ vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({
   saveVerdictPhrasing: vi.fn(),
 }))
 vi.mock('@/infrastructure/repositories/FirestoreJobEventRepository', () => ({ keepJobEvent: vi.fn() }))
-vi.mock('@/lib/aiSpend', () => ({ openSpender: vi.fn(async () => ({})) }))
+vi.mock('@/application/ai/aiSpend', () => ({ openSpender: vi.fn(async () => ({})) }))
 vi.mock('@/lib/sendPushNotification', () => ({ sendPush }))
 
 const { POST } = await import('../route')

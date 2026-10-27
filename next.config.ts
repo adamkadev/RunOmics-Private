@@ -39,9 +39,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_BUILD_COMMIT: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) || "local",
   },
-  outputFileTracingIncludes: {
-    "/**": ["./data/**/*"],
-  },
+  // Reading GitHub at run time, a function never opens ./data (dataFs throws first), so it ships without the copy.
+  ...(process.env.RUNOMICS_DATA_SOURCE === "github" ? {} : { outputFileTracingIncludes: { "/**": ["./data/**/*"] } }),
   // A config redirect, not a page calling redirect(): the client router's redirect lands before the URL shows ?tab=.
   async redirects() {
     return [{ source: "/milestones", destination: "/records?tab=milestones", permanent: false }];
