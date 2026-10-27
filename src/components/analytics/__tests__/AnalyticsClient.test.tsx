@@ -1,7 +1,7 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { t } from '@/i18n'
@@ -75,6 +75,8 @@ const data: AnalyticsBoardData = {
   },
 }
 
+beforeEach(() => window.history.replaceState(null, '', '/analytics'))
+
 async function renderBoard() {
   render(<AnalyticsClient data={data} today={TODAY} />)
   await screen.findByTestId('form-card')
@@ -93,6 +95,32 @@ describe('Analytics (v4.5)', () => {
     vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
   })
   afterAll(() => vi.useRealTimers())
+
+  it('keeps the tab and a chosen period in the URL, leaving the defaults out', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.volume, 'weekly-card')
+    expect(window.location.search).toBe('?tab=volume')
+    fireEvent.click(screen.getByRole('radio', { name: t.analytics.cards.period.words['1y'] }))
+    expect(window.location.search).toBe('?tab=volume&period=1y')
+    await openTab(t.analytics.tabs.fitness, 'form-card')
+    expect(window.location.search).toBe('')
+    await openTab(t.analytics.tabs.volume, 'weekly-card')
+    expect(window.location.search).toBe('?tab=volume&period=1y')
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('1Y')
+  })
+
+  it('opens the tab and period a link names, and the default for one it does not know', async () => {
+    window.history.replaceState(null, '', '/analytics?tab=volume&period=4w')
+    render(<AnalyticsClient data={data} today={TODAY} />)
+    await screen.findByTestId('weekly-card')
+    expect(screen.getByRole('tab', { selected: true }).textContent).toBe(t.analytics.tabs.volume)
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4W')
+    cleanup()
+    window.history.replaceState(null, '', '/analytics?tab=nope&period=2y')
+    await renderBoard()
+    expect(screen.getByRole('tab', { selected: true }).textContent).toBe(t.analytics.tabs.fitness)
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4W')
+  })
 
   it('names its tabs in whole words', async () => {
     await renderBoard()

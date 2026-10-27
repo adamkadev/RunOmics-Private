@@ -2,7 +2,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
-import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
+import { trimp, hrBoundsOf, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import { ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
 import { loadSeries, type LoadDay } from '@/domain/training/loadSeries'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -28,8 +28,7 @@ export interface TrainingLoadData {
 }
 
 export function athleteHrBounds(): HrBounds {
-  const athlete = getAthleteProfile()
-  return { maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr, restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr }
+  return hrBoundsOf(getAthleteProfile())
 }
 
 /** Each day's load from the first run to today, unrounded. */
@@ -52,7 +51,7 @@ const seriesCache = new WeakMap<Activity[], Map<string, Map<string, LoadSnapshot
 /** Shared between callers: read it, never change it. */
 export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
   const today = appTodayIso()
-  const key = `${hrBounds.maxHr}|${hrBounds.restingHr}|${today}`
+  const key = `${hrBounds.maxHr}|${hrBounds.restingHr}|${hrBounds.sex ?? ''}|${today}`
   let byKey = seriesCache.get(activities)
   if (!byKey) seriesCache.set(activities, (byKey = new Map()))
   let series = byKey.get(key)

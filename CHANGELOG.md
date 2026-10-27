@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Analytics keeps its tab and period in the URL (F5), defaults left out as
+  Records does, so Back returns to the tab you left and `/analytics?tab=volume`
+  opens Volume. Volume's "Since January" now totals the runs, as Progress does:
+  it read 0 km without a goals, PBs or races file, and every 1 January until
+  `goals.json` had the new year; the goal and projection still come from Goals.
+- Progress without a race (F5) shows the current block in the race card's place
+  (Plan's phase name, week n of N, sessions done of planned); a year card without
+  a goal opens All time; a new "Athlete & zones" row opens the athlete page; and
+  Goals with nothing configured says how to set a goal in `goals.json`.
+- TRIMP uses Banister's female weighting, 0.86·e^(1.67·HRR), when `athlete.json`
+  has `sex: "female"` (F9). **One-time shift:** for a female athlete every
+  session's load rises by about 7–19 % (more at easy effort), so fitness (CTL),
+  fatigue (ATL) and the planned-session load estimates step up once on the first
+  deploy; form (TSB) and ACWR, being differences and ratios, barely move.
+
 - The sync survives garth's token dying (G1). A 401 on the token exchange is
   `GarminTokenExpired`: the sync writes `connect_status.json`, carries on
   through the Personal API with exit 0, stops marking new runs gear-pending

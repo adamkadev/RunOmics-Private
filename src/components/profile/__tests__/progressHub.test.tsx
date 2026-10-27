@@ -5,6 +5,8 @@ import { t } from '@/i18n'
 import { yearOverYear } from '@/lib/yearOverYear'
 import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHubView'
 import { ProgressHub } from '../ProgressHub'
+import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
+import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 
 function shoe(overrides: Partial<ShoeStats>): ShoeStats {
   return {
@@ -131,6 +133,52 @@ describe('the hub helpers', () => {
     const rest = { level: 0, today: false, future: false }
     const mid = { level: 2, today: false, future: false }
     expect(weeks.at(-1)).toEqual([rest, rest, mid, mid, rest, { level: 0, today: true, future: false }, { level: 0, today: false, future: true }])
+  })
+})
+
+const GENERAL_BLOCK: CoachingOverview = {
+  plan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined, block: { ...plan().block, name: 'Base rebuild', endDate: '2026-10-04' } },
+  currentWeekId: null,
+  workouts: [
+    { prescription: workout({ id: 'a', date: '2026-09-22' }), state: 'completed', activityId: 'run-a' },
+    { prescription: workout({ id: 'b', date: '2026-09-24' }), state: 'missed', activityId: null },
+    { prescription: workout({ id: 'c', date: '2026-09-25' }), state: 'cancelled', activityId: null },
+    { prescription: workout({ id: 'd', date: '2026-09-29' }), state: 'prescribed', activityId: null },
+  ],
+}
+
+describe('the hub without a race, a goal or PBs', () => {
+  const sparse: HubInput = { ...INPUT, spotlight: null, goal: null, records: [], coaching: GENERAL_BLOCK }
+
+  it('shows the current block in the race card\'s place, as Plan names and counts it', () => {
+    expect(progressHubView(sparse).block).toEqual({ name: t.plan.weekPurpose.generalPreparation, week: 4, total: 5, done: 1, planned: 3 })
+    render(<ProgressHub view={progressHubView(sparse)} />)
+    expect(screen.queryByTestId('race-tile')).toBeNull()
+    const tile = screen.getByTestId('block-tile')
+    expect(tile.getAttribute('href')).toBe('/plan')
+    expect(tile.textContent).not.toContain('Base rebuild')
+    expect(screen.getByTestId('block-week').textContent).toBe(t.profile.hub.blockWeek(4, 5))
+    expect(screen.getByTestId('block-sessions').textContent).toBe(t.profile.hub.blockSessions(1, 3))
+  })
+
+  it('keeps the race card while a race is planned, and the empty one without a block', () => {
+    expect(progressHubView({ ...INPUT, coaching: GENERAL_BLOCK }).block).toBeNull()
+    expect(progressHubView({ ...sparse, today: '2026-10-06' }).block).toBeNull()
+    render(<ProgressHub view={progressHubView({ ...sparse, coaching: null })} />)
+    expect(screen.getByTestId('race-tile').textContent).toBe(t.profile.hub.noRace)
+  })
+
+  it('opens the years from a goal-less year card', () => {
+    render(<ProgressHub view={progressHubView(sparse)} />)
+    const year = screen.getByTestId('year-hero')
+    expect(year.getAttribute('href')).toBe('/all-time')
+    expect(year.textContent).toContain(t.profile.hub.thisYear)
+  })
+
+  it('opens Athlete & zones from its own row', () => {
+    render(<ProgressHub view={progressHubView(sparse)} />)
+    expect(screen.getByTestId('athlete-row').getAttribute('href')).toBe('/athlete')
+    expect(screen.getByTestId('athlete-row').textContent).toContain(t.profile.hub.athleteZones)
   })
 })
 

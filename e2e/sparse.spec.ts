@@ -48,3 +48,17 @@ test('no run in the list reads VO2 max', async ({ page, t }) => {
   await expect(page.getByTestId('thumb-row').first()).toBeVisible()
   await expect(page.locator('main')).not.toContainText(t.activityTypes.VO2Max)
 })
+
+test('Analytics counts the year from the runs without a goals file', async ({ page }) => {
+  await page.goto('/analytics?tab=volume')
+  await expect(page.getByTestId('ytd-km')).toBeVisible()
+  await expect(page.getByTestId('ytd-km')).not.toContainText(/·\s0\s/)
+})
+
+test('Progress shows the current block where a race would be, and Athlete & zones', async ({ page, t }) => {
+  await page.goto('/profile')
+  await expect(page.getByTestId('block-tile')).toHaveAttribute('href', '/plan')
+  await expect(page.getByTestId('race-tile')).toHaveCount(0)
+  await expect(page.getByTestId('year-hero')).toHaveAttribute('href', '/all-time')
+  await expect(page.getByTestId('athlete-row')).toContainText(t.profile.hub.athleteZones)
+})

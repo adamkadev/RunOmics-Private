@@ -1,6 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import { DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
+import { hrBoundsOf } from '@/domain/training/trimp'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { DAY_MS } from '@/lib/calendarDate'
 import { dailyTrimpByDate } from './GetTrainingLoad'
@@ -79,12 +79,7 @@ export function getRecentLoad(today: string, status: TrainingStatus | null): Rec
 
   if (!status || status.ctl <= 0) return null
 
-  const athlete = getAthleteProfile()
-  const hrBounds: HrBounds = {
-    maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
-    restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
-  }
-  const byDate = dailyTrimpByDate(activities, hrBounds)
+  const byDate = dailyTrimpByDate(activities, hrBoundsOf(getAthleteProfile()))
   const types = dayTypes(activities)
 
   const days = lastDays(today, RECENT_LOAD_DAYS).map((date) => ({

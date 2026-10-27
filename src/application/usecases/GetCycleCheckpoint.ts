@@ -2,7 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import type { OfficialRaceResult } from '@/domain/activity/raceResult'
 import type { CoachingPlan, NumberRange } from '@/domain/coaching/types'
 import type { RecoveryDay } from '@/domain/training/recovery'
-import { DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
+import { hrBoundsOf, type HrBounds } from '@/domain/training/trimp'
 import { vdotFromEffort } from '@/domain/training/vdot'
 import {
   checkpointCycle,
@@ -255,6 +255,6 @@ export function getCycleCheckpoint(today = appTodayIso()): CycleCheckpoint {
     vo2max: vo2maxSamples(activities),
     threshold: thresholdSamples(),
     restingHr: getRecoveryHistory(),
-    hrBounds: { maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr, restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr },
+    hrBounds: hrBoundsOf(athlete),
   }, today)
 }
