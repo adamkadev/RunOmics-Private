@@ -19,7 +19,7 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -66,12 +66,12 @@ jobs:
           exit 1
 
       # The iPhone and sparse-fr projects run in WebKit, whose system libraries the runner image does not ship.
-      # apt on the runner has hung for the job's whole 15 minutes; a stuck try is cut short and tried again.
+      # apt has hung for a whole job and crawled on a slow mirror: each try gets its own 3 minutes.
       - name: Install WebKit's system libraries
-        timeout-minutes: 3
+        timeout-minutes: 10
         run: |
           for try in 1 2 3; do
-            npx playwright install-deps webkit && exit 0
+            timeout -k 10 180 npx playwright install-deps webkit && exit 0
             sleep 5
           done
           exit 1
