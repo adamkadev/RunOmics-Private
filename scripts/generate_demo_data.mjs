@@ -1048,6 +1048,8 @@ const SPARSE_ATHLETE = {
 const SPARSE_GEAR_ID = 'demo-shoe-sparse-000000000001'
 const SPARSE_SAMPLE_SECONDS = 30
 const WALK_PACE = { min: 660, max: 840 }
+// The watch's pace alert for the running minutes, with no heart-rate target.
+const RUN_PACE = { min: 470, max: 525 }
 // Reps × minutes for each session, Wednesday, Friday and Sunday, over the five weeks of the return block.
 const RETURN_WEEKS = [
   [[6, 3], [6, 3], [5, 4]],
@@ -1196,13 +1198,13 @@ function returnWorkout(date, week, index, [reps, minutes], provenance) {
         kind: 'repeat',
         repetitions: reps,
         steps: [
-          { kind: 'effort', target: { durationSeconds: minutes * 60, hrZone: 2 }, notes: ['Course très lente, au rythme où tu peux parler.'] },
+          { kind: 'effort', target: { durationSeconds: minutes * 60, paceSecPerKm: RUN_PACE }, notes: ['Course très lente, au rythme où tu peux parler.'] },
           { kind: 'recovery', target: { durationSeconds: 60 }, notes: ['1 minute de marche.'] },
         ],
       },
       { kind: 'cooldown', target: { durationSeconds: 300 }, notes: ['5 minutes de marche pour finir en douceur.'] },
     ],
-    notes: ['Au moindre signe inhabituel, passe à la marche et arrête la séance.'],
+    notes: ['Un verre d’eau en rentrant.'],
     provenance,
   }
 }
@@ -1211,7 +1213,7 @@ function plannedFromWorkout(workout) {
   const { reps, repMinutes } = workout.structure
   const steps = [{ kind: 'warmup', minutes: 5, seconds: 300, paceSecPerKm: [WALK_PACE.min, WALK_PACE.max] }]
   for (let rep = 1; rep <= reps; rep++) {
-    steps.push({ kind: 'effort', minutes: repMinutes, rep })
+    steps.push({ kind: 'effort', minutes: repMinutes, rep, paceSecPerKm: [RUN_PACE.min, RUN_PACE.max] })
     if (rep < reps) steps.push({ kind: 'recovery', minutes: 1, rep, paceSecPerKm: [WALK_PACE.min, WALK_PACE.max] })
   }
   steps.push({ kind: 'cooldown', minutes: 5, seconds: 300, paceSecPerKm: [WALK_PACE.min, WALK_PACE.max] })

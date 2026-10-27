@@ -2176,6 +2176,15 @@ export const en = {
     pace: 'Pace',
     finish: 'Finish',
     none: 'No race coming up. Add one in Garmin Connect and it shows here after the next sync.',
+    // Form (fitness minus fatigue) carried to race day by the sessions planned before it.
+    formTitle: 'Form on race day',
+    formToday: (tsb: string) => `Today ${tsb}.`,
+    formCaption: 'Projected from the sessions planned up to the race, at the load your runs of each type carry.',
+    formRaceDay: 'Race day',
+    formShortHistory: (days: number, needed: number) =>
+      `Not enough running yet to forecast it: fitness reads ${needed} days of training, ${days} so far since the start or the last long break.`,
+    formNoPlan: 'No sessions planned up to the race yet, so there is nothing to forecast it from.',
+    formPlanShort: (date: string) => `The plan stops on ${date}: the forecast waits for sessions up to the race week.`,
   },
 
   nextRace: {
@@ -2342,6 +2351,10 @@ export const en = {
       findRoute: 'Find a route',
       // Above the session's description and notes, in the coach's own words.
       coachNote: 'Coach’s note',
+      // What the watch alerts on during the session, as its own settings name it.
+      watchAlerts: 'Watch:',
+      runWalkAlert: (run: string, walk: string) => `Run/Walk ${run} / ${walk}`,
+      paceAlert: (range: string) => `Pace ${range}`,
     },
     // The rest day on one line, then the week's sessions still to come.
     restCard: {

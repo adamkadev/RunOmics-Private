@@ -321,10 +321,17 @@ describe('a session still to come', () => {
   })
 
   it('has no send-to-watch and no list of the week under it', () => {
-    const { container } = renderWeek({ coaching: overview() })
+    renderWeek({ coaching: overview() })
 
-    expect(container.textContent).not.toMatch(/watch/i)
+    expect(screen.queryByRole('button', { name: /watch/i })).toBeNull()
+    expect(screen.queryByRole('link', { name: /watch/i })).toBeNull()
     expect(screen.queryByTestId('week-sessions')).toBeNull()
+  })
+
+  it('says on one line what the watch alerts on', () => {
+    renderWeek({ coaching: overview() })
+
+    expect(screen.getByTestId('watch-alerts')).toHaveTextContent(`${t.plan.session.watchAlerts} ${t.plan.session.paceAlert(`4:25–4:30 ${t.units.perKm}`)}`)
   })
 })
 
