@@ -11,6 +11,16 @@ All notable changes to this project are documented in this file.
   the last run, so a training break no longer reads as stale, answers 503 when
   stale, and reports `cron`. A nightly dispatch GitHub refuses sends an operator
   push.
+- The coach runs through Claude Code by default (N9). `weekly-review` and
+  `evaluate` gain the manual path bootstrap had (`--prompt-out` /
+  `--from-answer`), sharing the prompts with the Gemini advisor, and every
+  coach command now writes its prompt rather than calling an API; Gemini
+  coaching needs an explicit `--advisor gemini`. The app's AI copy stays on
+  Gemini. A review is no longer told to keep a four-week horizon: it gets the
+  weeks left up to the block's end, so a late-block REPLAN no longer throws,
+  and a rejected review or evaluation is sent back with the reason, as a new
+  block is. Changes to the live plan are also told the notes, check-in and
+  return-to-running rules.
 - A change to the live plan is held to "no stop signals" too. A weekly
   review's ADJUST or REPLAN and a run's evaluation are now told the athlete's
   guidance, as a new block is, and one that adds a stop rule or a symptom

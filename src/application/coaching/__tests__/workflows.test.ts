@@ -850,7 +850,11 @@ describe('coaching workflows', () => {
 
     const refused = await review(noStopSignals)
     await expect(refused.proposal).rejects.toThrow(/asks for no stop signals/)
-    expect(refused.told).toEqual([noStopSignals])
+    expect(refused.told[0]).toBe(noStopSignals)
+    expect(refused.told.slice(1)).toEqual([
+      expect.stringMatching(/^Write no stop signals[\s\S]*Your previous answer was rejected: .*no stop signals/),
+      expect.stringMatching(/^Write no stop signals[\s\S]*Your previous answer was rejected: .*no stop signals/),
+    ])
     await expect((await review(null)).proposal).resolves.toMatchObject({ decision: { outcome: 'ADJUST' } })
   })
 
@@ -874,6 +878,38 @@ describe('coaching workflows', () => {
     expect(result.weeks[0]!.workouts[0]).toEqual(plan().weeks[0]!.workouts[0])
     expect(result.weeks[1]!.workouts[0]).toEqual(existingFuture)
     expect(repository.state?.lastWeeklyReviewAt).toBe(proposal.createdAt)
+  })
+
+  it('sends a late-block replan that runs past the block back, and keeps the corrected one inside it', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const asked: { effectiveDate: string; guidance?: string }[] = []
+    const week = (startDate: string, endDate: string, date: string): TrainingWeek => ({
+      id: `week-${startDate}`, index: 1, startDate, endDate, focus: 'Aerobic support',
+      workouts: [{ ...plan().weeks[1]!.workouts[0]!, id: `easy-${date}`, date }],
+    })
+    const pastTheEnd = [week('2026-09-28', '2026-10-04', '2026-09-29'), week('2026-10-05', '2026-10-11', '2026-10-06'), week('2026-10-12', '2026-10-18', '2026-10-13')]
+    const advisor: CoachingAdvisor = {
+      bootstrap: async () => { throw new Error('not called') },
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async (input) => {
+        asked.push({ effectiveDate: input.effectiveDate, ...(input.guidance ? { guidance: input.guidance } : {}) })
+        return {
+          outcome: 'REPLAN', reasonCodes: ['ROLLING_HORIZON'], summary: 'Plan the last week.', evidence: [],
+          changes: [{ kind: 'replace_future', effectiveDate: input.effectiveDate, weeks: asked.length === 1 ? pastTheEnd : pastTheEnd.slice(0, 1) }],
+        }
+      },
+    }
+    const context = buildCoachingContext(contextInput(repository.plan), '2026-09-28')
+
+    const proposal = await createWeeklyReviewProposal(context, { repository, advisor, id: ids() })
+    const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+
+    expect(asked).toHaveLength(2)
+    expect(asked[0]).toEqual({ effectiveDate: '2026-09-28' })
+    expect(asked[1]!.guidance).toMatch(/Your previous answer was rejected: .*block/)
+    expect(result.weeks.at(-1)!.endDate <= result.block.endDate).toBe(true)
+    expect(result.weeks.flatMap((week) => week.workouts).map((workout) => workout.date)).toContain('2026-09-29')
   })
 
   it('never lets a model-supplied id rewrite a prescription outside the future it replaces', async () => {

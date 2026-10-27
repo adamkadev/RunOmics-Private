@@ -1,14 +1,25 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import { hasCoursePacing } from '@/domain/coaching/coursePacing'
 import { raceTargetFacts } from '@/domain/coaching/raceTarget'
-import { WEEK_REDUCTION_REASONS, type BootstrapRequest } from '@/application/ports/CoachingAdvisor'
+import {
+  WEEK_REDUCTION_REASONS,
+  type ActivityEvaluationRequest,
+  type BootstrapRequest,
+  type WeeklyReviewRequest,
+} from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
+import type { Activity } from '@/domain/activity/types'
+import { garminMeasured } from '@/domain/activity/raceResult'
 import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidation'
-import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
+import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows, type WeekWindow } from '@/domain/coaching/weekWindows'
 import { macrocyclePhases, phaseOn } from '@/domain/coaching/macrocycle'
 import { CONTROLLED_THRESHOLD } from '@/application/coaching/controlledThreshold'
 
-import { BOOTSTRAP_SYSTEM_INSTRUCTION as BOOTSTRAP_RULES, WORKOUT_NAMING_INSTRUCTION } from './coachingRules.generated'
+import {
+  ADAPTATION_READING_INSTRUCTION,
+  BOOTSTRAP_SYSTEM_INSTRUCTION as BOOTSTRAP_RULES,
+  WORKOUT_NAMING_INSTRUCTION,
+} from './coachingRules.generated'
 import { activeLocale } from '@/i18n'
 
 /**
@@ -216,4 +227,117 @@ export function bootstrapUserPrompt(input: BootstrapRequest): string {
     : 'none - general preparation, progressing fitness over time rather than toward a race'
 
   return `${contextPrompt(input.context)}\nPOST_RACE_RECOVERY: ${JSON.stringify(recovery)}\nPRIMARY_TARGET: ${target}\nTUNE_UP_EVENTS (each goal is independent): ${JSON.stringify(input.tuneUpEvents.map(bootstrapEventPrompt))}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nrunsPerWeek (normal desired frequency): ${input.runsPerWeek ?? "unspecified; do not infer from availability"}\nMACROCYCLE (the season this rolling block is one slice of): ${macrocyclePrompt(input, windows)}\nCONTROLLED_THRESHOLD_DOSE: ${JSON.stringify(CONTROLLED_THRESHOLD.dose)}\nPlan starts: ${input.planningStartDate}${input.planningStartDate > input.context.referenceDate && input.context.currentPlan ? ` (sessions from ${input.context.referenceDate} until then stay as currentPlan has them)` : ''}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'} using these exact startDate/endDate pairs, in this order: ${JSON.stringify(windows)}. Weeks run Monday to Sunday; the first may be shorter because the plan starts mid-week. Do not invent other boundaries, and keep every workout inside its own week.\nUser target override: ${input.targetEventId ?? 'none'}\nAdditional athlete guidance (volume ranges are guidance, not mandatory quotas): ${input.guidance ?? 'none'}`
+}
+
+const EVIDENCE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    code: { type: 'STRING' },
+    message: { type: 'STRING' },
+    value: { type: 'STRING' },
+    unit: { type: 'STRING' },
+  },
+  required: ['code', 'message'],
+}
+
+const CHANGE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    kind: { type: 'STRING', enum: ['upsert_workout', 'cancel_workout', 'replace_future'] },
+    workoutId: { type: 'STRING' },
+    workout: ADAPTATION_WORKOUT_SCHEMA,
+    effectiveDate: { type: 'STRING' },
+    weeks: { type: 'ARRAY', items: ADAPTATION_WEEK_SCHEMA },
+  },
+  required: ['kind'],
+}
+
+export const RECOMMENDATION_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    outcome: { type: 'STRING', enum: ['KEEP', 'ADJUST', 'REPLAN'] },
+    reasonCodes: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1 },
+    summary: { type: 'STRING' },
+    evidence: { type: 'ARRAY', items: EVIDENCE_SCHEMA },
+    changes: { type: 'ARRAY', items: CHANGE_SCHEMA },
+  },
+  required: ['outcome', 'reasonCodes', 'summary', 'evidence', 'changes'],
+}
+
+export interface CoachingPromptParts {
+  systemInstruction: string
+  userPrompt: string
+  schema: Record<string, unknown>
+}
+
+export function completedActivityPrompt(context: CoachingContext, activity: Activity): Record<string, unknown> {
+  const compact = context.recentActivities.find((entry) => entry.id === activity.id)
+  const raceExecution = compact?.raceExecution ? { raceExecution: compact.raceExecution } : {}
+
+  if (compact?.performance?.source === 'official') {
+    return {
+      id: activity.id,
+      date: activity.date,
+      type: activity.type,
+      performance: compact.performance,
+      garminMeasured: compact.garminMeasured ?? garminMeasured(activity),
+      ...raceExecution,
+      avgHeartRate: activity.avgHeartRate,
+      rpe: activity.rpe,
+    }
+  }
+
+  return {
+    id: activity.id,
+    date: activity.date,
+    type: activity.type,
+    ...(compact?.intendedType ? { intendedType: compact.intendedType } : {}),
+    distanceKm: activity.distanceKm,
+    durationSeconds: activity.durationSeconds,
+    paceSecPerKm: activity.paceSecPerKm,
+    ...raceExecution,
+    avgHeartRate: activity.avgHeartRate,
+    rpe: activity.rpe,
+  }
+}
+
+/** The plan's own week windows, so a REPLAN lands on weeks the block already has and never past its end. */
+export function remainingWeekWindows(context: CoachingContext, effectiveDate: string): WeekWindow[] {
+  const block = context.currentPlan?.block
+  if (!block) return []
+  return isoWeekWindows(block.startDate, block.endDate).filter((window) => window.endDate >= effectiveDate)
+}
+
+const ADAPTATION_RULES = `Never alter completed or past sessions. ${ADAPTATION_NAMING_RULE} ${ADAPTATION_READING_INSTRUCTION}`
+
+function adaptationHorizon(context: CoachingContext, effectiveDate: string): string {
+  const windows = remainingWeekWindows(context, effectiveDate)
+  const from = `\nChanges take effect from: ${effectiveDate}; every session you add, move or rewrite falls on or after it.`
+  if (windows.length === 0) return `${from}\nThe block has no week left, so answer KEEP: a new block is planned separately.`
+  return `${from}\nThe block ends ${context.currentPlan!.block.endDate}. A REPLAN's replace_future starts at ${effectiveDate} and returns exactly these weeks, using these exact startDate/endDate pairs, in this order: ${JSON.stringify(windows)}. Never add a week past the block's end, and keep every workout inside its own week.`
+}
+
+/** A change to the live plan is held to the guidance too, so it has to be told it. */
+function guidancePrompt(guidance: string | undefined): string {
+  return guidance ? `\nAdditional athlete guidance: ${guidance}` : ''
+}
+
+export function activityEvaluationPrompt(input: ActivityEvaluationRequest): CoachingPromptParts {
+  return {
+    systemInstruction: withCoachingLanguage(`Evaluate the completed run and choose KEEP, ADJUST, or REPLAN. Normal runs should usually be KEEP. Use ADJUST only for small future workout changes and REPLAN only for meaningful events. Reasons and evidence must cite supplied facts. ${ADAPTATION_RULES}`),
+    userPrompt: `${contextPrompt(input.context)}\nCompleted activity: ${JSON.stringify(completedActivityPrompt(input.context, input.activity))}\nMatched prescription: ${JSON.stringify(input.prescription)}${adaptationHorizon(input.context, input.effectiveDate)}${guidancePrompt(input.guidance)}`,
+    schema: RECOMMENDATION_SCHEMA,
+  }
+}
+
+export function weeklyReviewPrompt(input: WeeklyReviewRequest): CoachingPromptParts {
+  return {
+    systemInstruction: withCoachingLanguage(`Review the rolling running plan. Prefer KEEP when the current future prescription remains appropriate, ADJUST for small workout changes, and REPLAN only for a material change. ${ADAPTATION_RULES}`),
+    userPrompt: `${contextPrompt(input.context)}${adaptationHorizon(input.context, input.effectiveDate)}${guidancePrompt(input.guidance)}`,
+    schema: RECOMMENDATION_SCHEMA,
+  }
+}
+
+export function bootstrapPrompt(input: BootstrapRequest): CoachingPromptParts {
+  return { systemInstruction: BOOTSTRAP_SYSTEM_INSTRUCTION, userPrompt: bootstrapUserPrompt(input), schema: BOOTSTRAP_PLAN_RESPONSE_SCHEMA }
 }
