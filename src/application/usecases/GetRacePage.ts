@@ -10,6 +10,9 @@ import type { GoalYear, UpcomingRace } from '@/domain/goals/types'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import { bestRecentEffort, secondsForVdot } from '@/domain/training/vdot'
 import { DAY_MS, appTodayIso } from '@/lib/calendarDate'
+import { forecastForm, type FormForecast } from '@/domain/training/formForecast'
+import { athleteHrBounds, dailyTrimpByDate } from './GetTrainingLoad'
+import { getPlannedWorkouts } from './GetPlannedWorkouts'
 
 export const RACE_TREND_DAYS = 84
 const ESTIMATE_STEP_DAYS = 7
@@ -33,6 +36,7 @@ export interface RacePageData {
   trend: PredictionPoint[]
   /** Set when the prediction and its trend are a VDOT estimate from the athlete's own efforts, not Garmin's. */
   estimate: RaceEstimate | null
+  form: FormForecast
 }
 
 function distanceOf(race: UpcomingRace): RaceDistanceKey | null {
@@ -71,6 +75,12 @@ function estimatedTrend(distanceKm: number, today: string): { latest: number; es
   return { latest, estimate: { effort: now.effort, date: now.date, vdot: Math.round(now.vdot * 10) / 10 }, trend }
 }
 
+async function raceDayForm(raceDate: string, today: string): Promise<FormForecast> {
+  const activities = getAllActivities().filter((a) => a.date <= today)
+  const planned = (await getPlannedWorkouts()).map((w) => ({ date: w.date, load: w.estimatedLoad ?? 0 }))
+  return forecastForm({ dailyLoad: dailyTrimpByDate(activities, athleteHrBounds()), runDates: activities.map((a) => a.date), planned, today, raceDate })
+}
+
 export async function getRacePageData(today: string = appTodayIso()): Promise<RacePageData | null> {
   const race = nextKnownRace(getUpcomingRaceYears().flatMap((y) => y.races), today)
   const distance = race ? distanceOf(race) : null
@@ -99,5 +109,6 @@ export async function getRacePageData(today: string = appTodayIso()): Promise<Ra
     pb: best ? { seconds: best, date: record?.date ?? null } : null,
     trend,
     estimate: estimated?.estimate ?? null,
+    form: await raceDayForm(race.date, today),
   }
 }

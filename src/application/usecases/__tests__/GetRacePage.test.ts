@@ -13,6 +13,7 @@ vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllA
 vi.mock('@/infrastructure/repositories/JsonGoalRepository', () => ({ getGoalYears: () => [] }))
 vi.mock('@/infrastructure/repositories/JsonPbRepository', () => ({ getPbYears: () => [] }))
 vi.mock('@/infrastructure/repositories/JsonRaceResultRepository', () => ({ getOfficialRaceResults: () => [] }))
+vi.mock('@/infrastructure/repositories/JsonPlannedWorkoutRepository', () => ({ getAllPlannedWorkouts: () => [] }))
 
 const { getRacePageData, raceTarget } = await import('../GetRacePage')
 
@@ -44,6 +45,12 @@ describe('getRacePageData', () => {
     expect(data!.predictedSeconds).toBe(3113)
     expect(data!.trend.at(-1)).toEqual({ date: TODAY, seconds: 3113 })
     expect(data!.trend[0]!.seconds).toBeLessThan(3113)
+  })
+
+  it('gives no race-day form from two runs', async () => {
+    const data = await getRacePageData(TODAY)
+
+    expect(data!.form).toMatchObject({ kind: 'shortHistory' })
   })
 })
 

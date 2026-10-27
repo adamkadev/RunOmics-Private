@@ -2,12 +2,14 @@ import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { CardTitle, EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { shortDist } from '@/components/goals/shortDistance'
-import { MINUS, formatClock, formatDate, formatDuration, formatPace } from '@/lib/formatters'
+import { MINUS, formatClock, formatDate, formatDelta, formatDuration, formatPace } from '@/lib/formatters'
 import { deltaColor } from '@/lib/deltaTone'
 import { linePath } from '@/lib/linePath'
 import { cn } from '@/lib/utils'
 import { closingPace, daysBetween, evenSplit, pacingCheckpoints, predictionChange, type PredictionPoint } from '@/domain/race/pacing'
 import { RACE_TREND_DAYS, type RacePageData } from '@/application/usecases/GetRacePage'
+import { formBand } from '@/domain/training/formBand'
+import type { FormForecast, FormPoint } from '@/domain/training/formForecast'
 import { t } from '@/i18n'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
@@ -47,9 +49,70 @@ function TrendLine({ points, target }: { points: PredictionPoint[]; target: numb
   )
 }
 
+function FormLine({ points }: { points: FormPoint[] }) {
+  const values = points.map((p) => p.tsb)
+  const pad = 5
+  const lo = Math.min(...values, 0) - pad
+  const hi = Math.max(...values, 0) + pad
+  const W = 1000
+  const H = 64
+  const todayIndex = points.findLastIndex((p) => !p.planned)
+  const done = values.map((v, i) => (i <= todayIndex ? v : null))
+  const ahead = values.map((v, i) => (i >= todayIndex ? v : null))
+  const zero = H - ((0 - lo) / (hi - lo)) * H
+  return (
+    <div className="flex flex-col gap-1">
+      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block" aria-hidden data-testid="race-form-line">
+        <line x1={0} x2={W} y1={zero} y2={zero} stroke="var(--border)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+        <path d={linePath(done, lo, hi, W, H)} fill="none" stroke="var(--foreground)" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />
+        <path d={linePath(ahead, lo, hi, W, H)} fill="none" stroke="var(--accent)" strokeWidth="1.75" strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div className="flex justify-between text-[11px] text-muted-foreground">
+        <span>{bare(points[0]!.date)}</span>
+        <span>{t.race.formRaceDay}</span>
+      </div>
+    </div>
+  )
+}
+
+function RaceDayForm({ form }: { form: FormForecast }) {
+  const r = t.race
+  const readiness = t.dashboard.readiness
+  return (
+    <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="race-form" data-state={form.kind}>
+      <CardTitle as="h2">{r.formTitle}</CardTitle>
+      {form.kind === 'forecast' ? (
+        <>
+          <StatGrid columns={3}>
+            <Stat
+              label={readiness.formLabel}
+              value={<span data-testid="race-form-tsb">{formatDelta(Math.round(form.raceDay.tsb))}</span>}
+              meaning={t.formBand[formBand(form.raceDay.tsb)]}
+            />
+            <Stat label={readiness.ctl} value={Math.round(form.raceDay.ctl)} />
+            <Stat label={readiness.atl} value={Math.round(form.raceDay.atl)} />
+          </StatGrid>
+          {form.points.length >= 2 && <FormLine points={form.points} />}
+          <p className="text-[12px] text-muted-foreground text-pretty">
+            {r.formToday(formatDelta(Math.round(form.tsbToday)))} {r.formCaption}
+          </p>
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground text-pretty" data-testid="race-form-unavailable">
+          {form.kind === 'shortHistory'
+            ? r.formShortHistory(form.runningDays, form.neededDays)
+            : form.plannedThrough
+              ? r.formPlanShort(formatDate(form.plannedThrough))
+              : r.formNoPlan}
+        </p>
+      )}
+    </section>
+  )
+}
+
 export function RaceView({ data }: { data: RacePageData }) {
   const r = t.race
-  const { race, distanceKm, daysUntil, predictedSeconds, targetSeconds, pb, trend, estimate } = data
+  const { race, distanceKm, daysUntil, predictedSeconds, targetSeconds, pb, trend, estimate, form } = data
   const predicted = estimate ? r.estimated : r.predicted
   const gap = predictedSeconds !== null && targetSeconds !== null ? predictedSeconds - targetSeconds : null
   const closing = gap !== null ? closingPace(gap, daysUntil) : null
@@ -90,6 +153,8 @@ export function RaceView({ data }: { data: RacePageData }) {
           </p>
         )}
       </section>
+
+      <RaceDayForm form={form} />
 
       {trend.length >= 2 && (
         <section className={cardClass({ className: 'flex flex-col gap-2' })} data-testid="race-trend">
