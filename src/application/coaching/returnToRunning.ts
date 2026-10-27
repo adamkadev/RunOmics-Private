@@ -1,5 +1,6 @@
-import type { Activity, ActivitySplit } from '@/domain/activity/types'
+import type { Activity } from '@/domain/activity/types'
 import { DAY_MS } from '@/lib/calendarDate'
+import { longestContinuousRunSeconds } from '@/domain/training/returnProgress'
 import type { TrainingBreak, TrainingBreakReason } from '@/infrastructure/repositories/JsonAthleteRepository'
 
 const GRADUAL_RETURN: readonly TrainingBreakReason[] = ['injury', 'illness', 'pregnancy']
@@ -7,24 +8,12 @@ const GRADUAL_RETURN: readonly TrainingBreakReason[] = ['injury', 'illness', 'pr
 const MIN_BREAK_DAYS = 28
 // The end point of the common run/walk programmes; convention, not a tested threshold.
 const RETURNED_SECONDS = 30 * 60
-const RUNNING: ReadonlySet<ActivitySplit['type']> = new Set(['lap', 'interval_active'])
 
 export interface ReturnToRunning {
   reason: TrainingBreakReason
   breakStart: string
   breakEnd: string
   longestContinuousMinutesSince: number
-}
-
-/** From the splits alone: no walking-speed cutoff, since a returning athlete's jog can be as slow as a brisk walk. */
-export function longestContinuousRunSeconds(run: Activity): number {
-  let longest = 0
-  let current = 0
-  for (const split of run.splits ?? []) {
-    current = RUNNING.has(split.type) ? current + split.durationSec : 0
-    longest = Math.max(longest, current)
-  }
-  return longest
 }
 
 const breakDays = (pause: TrainingBreak) => Math.round((Date.parse(pause.end) - Date.parse(pause.start)) / DAY_MS) + 1

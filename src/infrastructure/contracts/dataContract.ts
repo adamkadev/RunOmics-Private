@@ -31,7 +31,8 @@ const KNOWN_BREAK_REASONS = ['injury', 'illness', 'pregnancy', 'heat', 'travel',
 const NULLABLE_NUMBERS = [
   'paceSecPerKm', 'avgHeartRate', 'rpe', 'elevationGain', 'aerTrainingEffect', 'anaTrainingEffect',
   'calories', 'cadenceSpm', 'groundContactMs', 'verticalOscillationMm', 'verticalRatioPct',
-  'strideLengthM', 'vo2maxGarmin', 'avgTemperature', 'gapSecPerKm',
+  'strideLengthM', 'vo2maxGarmin', 'avgTemperature', 'gapSecPerKm', 'longestContinuousRunSec', 'longestContinuousRunM',
+  'runningSec',
 ]
 const NULLABLE_NUMBER_ARRAYS = ['hrSamples', 'elevationProfile', 'paceSamples', 'cadenceSamples', 'gapSamples']
 
@@ -122,6 +123,9 @@ function checkActivity(activity: unknown, at: string, month: string, report: Rep
     if (value !== null && value !== undefined && !(Array.isArray(value) && value.every(isNumber))) {
       report.warn(`${at}.${key}`, 'expected an array of numbers or null')
     }
+  }
+  if (activity.hrSource !== null && activity.hrSource !== undefined && activity.hrSource !== 'external' && activity.hrSource !== 'wrist') {
+    report.warn(`${at}.hrSource`, 'expected "external", "wrist" or null')
   }
   if (activity.splits !== null && activity.splits !== undefined && !Array.isArray(activity.splits)) {
     report.error(`${at}.splits`, 'expected an array or null')
@@ -233,6 +237,8 @@ function checkAthlete(dir: string, problems: Problem[]) {
       report.error('$.hrZoneBoundsBpm', 'expected five numbers')
     }
     if (athlete.sex !== undefined && athlete.sex !== 'male' && athlete.sex !== 'female') report.warn('$.sex', 'expected "male" or "female"')
+    // A misspelt date would silently trust or distrust every run.
+    if (athlete.hrReliableFrom !== undefined && !isIsoDate(athlete.hrReliableFrom)) report.error('$.hrReliableFrom', 'expected YYYY-MM-DD')
     const injuries = athlete.injuryHistory
     if (injuries !== undefined && !(isObject(injuries) && Array.isArray(injuries.injuries))) {
       report.error('$.injuryHistory', 'expected { reviewedOn, injuries: [] }')

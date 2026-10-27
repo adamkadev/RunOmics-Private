@@ -31,6 +31,15 @@ _INTERVAL_SPLIT_TYPES = {
 
 _LAP_SPLIT_TYPE = "lap"
 _MIN_LAP_SPLITS = 2
+_RUNNING_SPLIT_TYPES = {_LAP_SPLIT_TYPE, "interval_active"}
+
+_EXTERNAL_SENSOR_SOURCES = {"ant", "antplus", "bluetooth", "bluetooth_low_energy"}
+# A brisk walk reaches about 130 steps/min, a returning athlete's slowest jog about 150.
+_RUNNING_CADENCE_SPM = 140.0
+# Only without cadence: a slow jog and a brisk walk overlap, so the bar sits at 9:00/km.
+_RUNNING_SPEED_MS = 1000 / 540
+# A cadence dropout or a kerb is not a walk break.
+_WALK_TOLERANCE_S = 10.0
 
 
 @dataclass
@@ -100,6 +109,10 @@ class ParsedFit:
     avg_temperature: int | None = None
     cadence_samples: list[float] = field(default_factory=list)
     splits: list[ActivitySplit] = field(default_factory=list)
+    hr_source: str | None = None
+    longest_continuous_run_sec: int | None = None
+    longest_continuous_run_m: float | None = None
+    running_sec: int | None = None
 
     @property
     def has_data(self) -> bool:
@@ -129,6 +142,7 @@ def parse_fit(content: bytes) -> ParsedFit:
     dist_samples: list[float] = []
     time_samples: list[float] = []
     cadence_samples: list[float] = []
+    gait: list[tuple[float, float, float | None, float | None]] = []
     prev_alt: float | None = None
     record_ascent = 0.0
 
@@ -160,9 +174,17 @@ def parse_fit(content: bytes) -> ParsedFit:
             time_samples.append(ts.timestamp())
 
         cad = rec.get("cadence")
+        spm: float | None = None
         if cad is not None:
             frac = rec.get("fractional_cadence") or 0
-            cadence_samples.append(round((float(cad) + float(frac)) * 2, 1))
+            spm = round((float(cad) + float(frac)) * 2, 1)
+            cadence_samples.append(spm)
+
+        if dist is not None and isinstance(ts, datetime):
+            speed = rec.get("enhanced_speed")
+            if speed is None:
+                speed = rec.get("speed")
+            gait.append((ts.timestamp(), float(dist), spm, float(speed) if speed is not None else None))
 
     result = ParsedFit(
         route=_decimate(raw_coords, max_points=_MAX_ROUTE_POINTS),
@@ -250,6 +272,8 @@ def parse_fit(content: bytes) -> ParsedFit:
         result.start_time_local = _local_start_time(session, activities)
 
     result.splits = _extract_splits(messages)
+    result.hr_source = _hr_source(messages.get("device_info_mesgs", []), has_hr=bool(heart_rates or result.avg_heart_rate))
+    _add_running_time(result, gait)
     _add_pace_profile(result, records, messages.get("event_mesgs", []))
 
     return result
@@ -305,6 +329,77 @@ def _extract_splits(messages: dict) -> list[ActivitySplit]:
             laps=laps,
         ))
     return result
+
+
+def _hr_source(device_infos: list[dict], *, has_hr: bool) -> str | None:
+    """'external' when a paired chest strap or armband is listed, else 'wrist': the watch lists its own sensor inconsistently."""
+    if not has_hr:
+        return None
+    for info in device_infos:
+        if info.get("source_type") not in _EXTERNAL_SENSOR_SOURCES:
+            continue
+        kinds = ("antplus_device_type", "ble_device_type", "ant_device_type", "device_type")
+        if any(info.get(kind) == "heart_rate" for kind in kinds):
+            return "external"
+    return "wrist"
+
+
+def _running_bouts(samples: list[tuple[float, float, float | None, float | None]]) -> list[tuple[float, float]] | None:
+    """(seconds, metres) of each stretch run without a walk or a stop, by cadence, or by speed without one."""
+    by_cadence = any(cadence for _, _, cadence, _ in samples)
+    if not by_cadence and not any(speed is not None for *_, speed in samples):
+        return None
+
+    bouts: list[tuple[float, float]] = []
+    start: tuple[float, float] | None = None
+    last: tuple[float, float] | None = None
+    previous: tuple[float, float, bool] | None = None
+    for t, d, cadence, speed in samples:
+        running = (cadence or 0) >= _RUNNING_CADENCE_SPM if by_cadence else (speed or 0) >= _RUNNING_SPEED_MS
+        if running:
+            # Smart recording leaves gaps while running; a gap covered at running speed is not a stop.
+            ran_through = (
+                previous is not None and previous[2] and t > previous[0]
+                and (d - previous[1]) / (t - previous[0]) >= _RUNNING_SPEED_MS
+            )
+            if start is None or last is None or (t - last[0] > _WALK_TOLERANCE_S and not ran_through):
+                if start is not None and last is not None:
+                    bouts.append((last[0] - start[0], last[1] - start[1]))
+                start = (t, d)
+            last = (t, d)
+        previous = (t, d, running)
+    if start is not None and last is not None:
+        bouts.append((last[0] - start[0], last[1] - start[1]))
+    return bouts
+
+
+def _split_bouts(splits: list[ActivitySplit]) -> list[tuple[float, float]] | None:
+    if not splits:
+        return None
+    bouts: list[tuple[float, float]] = []
+    current: tuple[float, float] | None = None
+    for split in splits:
+        if split.type in _RUNNING_SPLIT_TYPES:
+            current = (current or (0, 0.0))
+            current = (current[0] + split.duration_sec, current[1] + split.distance_m)
+        elif current is not None:
+            bouts.append(current)
+            current = None
+    if current is not None:
+        bouts.append(current)
+    return bouts
+
+
+def _add_running_time(result: ParsedFit, samples: list[tuple[float, float, float | None, float | None]]) -> None:
+    bouts = _running_bouts(samples)
+    if bouts is None:
+        bouts = _split_bouts(result.splits)
+    if bouts is None:
+        return
+    seconds, metres = max(bouts, default=(0, 0.0))
+    result.longest_continuous_run_sec = int(round(seconds))
+    result.longest_continuous_run_m = round(max(0.0, metres), 1)
+    result.running_sec = int(round(sum(bout[0] for bout in bouts)))
 
 
 def _parse_laps(raw_laps: list[dict]) -> list[dict]:

@@ -3,11 +3,16 @@ import type { RecurringRoute, RouteRun } from '@/application/usecases/GetRecurri
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-export const RECORD_TABS = ['best', 'milestones', 'routes'] as const
+export const RECORD_TABS = ['best', 'milestones', 'return', 'routes'] as const
 export type RecordTab = (typeof RECORD_TABS)[number]
 
-export function parseRecordTab(value: string | null): RecordTab {
-  return RECORD_TABS.find((tab) => tab === value) ?? 'best'
+/** `return` only while a return from a long break is under way. */
+export function recordTabs(hasReturn: boolean): readonly RecordTab[] {
+  return hasReturn ? RECORD_TABS : RECORD_TABS.filter((tab) => tab !== 'return')
+}
+
+export function parseRecordTab(value: string | null, tabs: readonly RecordTab[] = RECORD_TABS): RecordTab {
+  return tabs.find((tab) => tab === value) ?? 'best'
 }
 
 export const EFFORT_LIST_MAX = 20

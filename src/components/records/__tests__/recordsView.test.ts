@@ -6,6 +6,7 @@ import {
   formatGap,
   groupMilestonesByMonth,
   parseRecordTab,
+  recordTabs,
   predictionGap,
   routeLatest,
   trailBars,
@@ -13,6 +14,15 @@ import {
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import { t } from '@/i18n'
+
+describe('recordTabs', () => {
+  it('offers the comeback tab only while a return is under way', () => {
+    expect(recordTabs(true)).toEqual(['best', 'milestones', 'return', 'routes'])
+    expect(recordTabs(false)).toEqual(['best', 'milestones', 'routes'])
+    expect(parseRecordTab('return', recordTabs(false))).toBe('best')
+    expect(parseRecordTab('return', recordTabs(true))).toBe('return')
+  })
+})
 
 describe('parseRecordTab', () => {
   it('reads the tab from ?tab=, Best times by default', () => {

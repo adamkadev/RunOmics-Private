@@ -87,4 +87,17 @@ describe('/api/session', () => {
     expect(await response.json()).toEqual({ private: true })
     expect(response.headers.get('set-cookie')).toMatch(new RegExp(`${SESSION_COOKIE}=;.*Max-Age=0`, 'i'))
   })
+
+  it('clears the HTTP cache, and only the cache, on a private site\'s sign-out', async () => {
+    vi.stubEnv('RUNOMICS_PRIVATE', '1')
+    const response = await DELETE(new NextRequest('https://run.example/api/session', { method: 'DELETE' }))
+    expect(response.headers.get('clear-site-data')).toBe('"cache"')
+  })
+
+  it('clears nothing on a public site\'s sign-out', async () => {
+    vi.stubEnv('RUNOMICS_PRIVATE', '')
+    const response = await DELETE(new NextRequest('https://run.example/api/session', { method: 'DELETE' }))
+    expect(await response.json()).toEqual({ private: false })
+    expect(response.headers.get('clear-site-data')).toBeNull()
+  })
 })

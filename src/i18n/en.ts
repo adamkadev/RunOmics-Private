@@ -1,4 +1,4 @@
-import type { ActivityType } from '@/domain/activity/types'
+import type { ActivityType, HrDistrust } from '@/domain/activity/types'
 import type { NiggleSide, NiggleSite } from '@/domain/wellness/checkIn'
 
 function ordinal(n: number): string {
@@ -1265,6 +1265,8 @@ export const en = {
       repsLegend: 'Reps',
       // The switch on an interval session: off, the card is an easy run's.
       showReps: 'Rep pace',
+      // Off, the card leaves out the first and last 250 m, where the run starts and ends.
+      showFullRoute: 'Show full route',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
       photoHint: 'This frame is the exact crop',
@@ -1350,6 +1352,11 @@ export const en = {
     },
     dataQuality: {
       estimated: 'Estimated',
+      hrUntrusted: {
+        marked: 'HR unreliable · load from effort',
+        beforeReliable: 'HR before the strap · load from effort',
+        wrist: 'Wrist HR · load from effort',
+      } satisfies Record<HrDistrust, string>,
     },
     similarRuns: {
       summary: (n: number, rank: number) =>
@@ -1376,6 +1383,8 @@ export const en = {
       usedBefore: 'Used before',
       removeTag: (tag: string) => `Remove tag ${tag}`,
       addTag: (tag: string) => `Add tag ${tag}`,
+      hrUnreliable: 'HR unreliable',
+      hrUnreliableHint: 'Leaves this run’s heart rate out of load, zones and efficiency from the next sync. Load is then estimated from effort.',
     },
     zones: {
       short: 'Heart-rate zones',
@@ -1909,6 +1918,34 @@ export const en = {
     allEfforts: (distance: string) => `All ${distance} efforts ›`,
     topEfforts: (n: number, distance: string) => `Top ${n} ${distance} efforts ›`,
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
+  },
+
+  // Progress since the end of the latest long break in athlete.json (trainingBreaks).
+  returnProgress: {
+    milestones: {
+      continuous10: 'First 10 minutes non-stop',
+      continuous20: 'First 20 minutes non-stop',
+      continuous30: 'First 30 minutes non-stop',
+      nonstop3k: 'First 3 km without walking',
+      nonstop5k: 'First 5 km without walking',
+      blockCompleted: 'First block completed',
+    },
+    tab: 'Comeback',
+    since: (date: string) => `Since your return on ${date}`,
+    longest: 'Longest non-stop run',
+    reached: 'Reached',
+    next: 'Still ahead',
+    cardTitle: 'Your return',
+    runningPerWeek: 'Minutes running per week',
+    // A bar's label: the week's Monday.
+    weekOf: (date: string) => `Week of ${date}`,
+    minutes: (n: number) => `${n} min`,
+    nothingYet: 'No run since the return yet.',
+    celebration: 'Since your return',
+    push: {
+      title: 'A milestone since your return',
+      body: (label: string) => `${label}!`,
+    },
   },
 
   pbAlerts: {

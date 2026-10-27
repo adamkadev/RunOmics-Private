@@ -40,6 +40,7 @@ const DETAIL_FIELDS = [
   'verticalOscillationMm',
   'verticalRatioPct',
   'strideLengthM',
+  'hrUntrusted',
 ] as const satisfies readonly (keyof Activity)[]
 
 const SHARE_FIELDS = [

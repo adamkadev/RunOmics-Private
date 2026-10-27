@@ -30,6 +30,9 @@ function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser
   }
 }
 
+const { authorizedFetch } = vi.hoisted(() => ({ authorizedFetch: vi.fn() }))
+vi.mock('@/lib/ownerFetch', () => ({ authorizedFetch }))
+
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: true }))
 vi.mock('@/lib/siteSession', async (original) => ({ ...(await original<object>()), replacePage: vi.fn() }))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
@@ -73,6 +76,7 @@ describe('SettingsClient owner gate', () => {
   beforeEach(() => {
     mockUser = null
     resolveClaims = null
+    authorizedFetch.mockReset().mockResolvedValue(new Response(null, { status: 404 }))
   })
 
   it('offers sign-in when signed out', async () => {
@@ -113,13 +117,15 @@ describe('SettingsClient owner gate', () => {
     expect(screen.getByText(t.settings.rowAction.signIn)).toBeInTheDocument()
   })
 
-  it('draws height and weight as read-only facts, then the row to Athlete & zones', async () => {
-    render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70 }} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
-    await screen.findByText(t.settings.auth.signIn)
+  it('draws the owner\'s height and weight as read-only facts, fetched after sign-in, then the row to Athlete & zones', async () => {
+    mockUser = signedIn(OWNER_EMAIL, { owner: true })
+    authorizedFetch.mockResolvedValue(Response.json({ heightCm: 178, weightKg: 70 }))
+    render(<SettingsClient lastSyncedAt={null} activityCount={0} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
 
-    const profile = screen.getByTestId('settings-profile')
+    const profile = await screen.findByTestId('settings-profile')
     expect(within(profile).queryByRole('button')).toBeNull()
-    const values = within(profile).getAllByTestId('profile-value')
+    const values = await within(profile).findAllByTestId('profile-value')
+    expect(authorizedFetch).toHaveBeenCalledWith(mockUser, '/api/athlete/body')
     expect(values.map((value) => value.textContent)).toEqual([`178${t.units.cm}`, `70${t.units.kg}`])
     for (const value of values) expect(value.className).toContain('text-muted-foreground')
     expect(profile.textContent).not.toContain('BMI')
@@ -135,9 +141,21 @@ describe('SettingsClient owner gate', () => {
     expect(garmin.className).not.toContain('accent')
   })
 
-  it('lays every grouped row out as the group\'s own child, with no lines of its own', async () => {
-    render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70 }} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
+  it('shows a signed-out viewer no height or weight, and asks the server for none', async () => {
+    render(<SettingsClient lastSyncedAt={null} activityCount={0} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
     await screen.findByText(t.settings.auth.signIn)
+    expect(within(screen.getByTestId('settings-profile')).queryAllByTestId('profile-value')).toEqual([])
+    expect(screen.getByTestId('athlete-zones-row')).toBeInTheDocument()
+    expect(authorizedFetch).not.toHaveBeenCalled()
+    // data-row-thumb: the separator under the row starts under its text.
+    expect(screen.getByTestId('garmin-row').hasAttribute('data-row-thumb')).toBe(true)
+  })
+
+  it('lays every grouped row out as the group\'s own child, with no lines of its own', async () => {
+    mockUser = signedIn(OWNER_EMAIL, { owner: true })
+    authorizedFetch.mockResolvedValue(Response.json({ heightCm: 178, weightKg: 70 }))
+    render(<SettingsClient lastSyncedAt={null} activityCount={0} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
+    await screen.findAllByTestId('profile-value')
 
     const groups = document.querySelectorAll<HTMLElement>('.inset-group')
     expect(groups.length).toBeGreaterThan(0)
@@ -148,8 +166,6 @@ describe('SettingsClient owner gate', () => {
     const group = profile[0]!.parentElement!
     expect(group.className).toContain('inset-group')
     expect([...group.children]).toEqual([...profile, screen.getByTestId('athlete-zones-row')])
-    // data-row-thumb: the separator under the row starts under its text.
-    expect(screen.getByTestId('garmin-row').hasAttribute('data-row-thumb')).toBe(true)
   })
 
   it('names only the heart rate Garmin has on the Athlete & zones row', () => {

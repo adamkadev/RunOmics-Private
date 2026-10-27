@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import type { User } from 'firebase/auth'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
@@ -8,6 +9,7 @@ import { SectionDivider } from '@/components/ui/SectionLabel'
 import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
 import { loadAuth } from '@/lib/loadAuth'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
+import { authorizedFetch } from '@/lib/ownerFetch'
 import { SIGN_IN_PATH, endSiteSession, replacePage } from '@/lib/siteSession'
 import { formatRelativeAgo } from '@/lib/formatters'
 import { useMounted } from '@/lib/useMounted'
@@ -42,14 +44,13 @@ interface Props {
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
-  body?: Body
   zones?: Zones
   privateSite?: boolean
 }
 
 export const ATHLETE_HREF = '/athlete'
 
-export function SettingsClient({ lastSyncedAt, activityCount, device, body, zones, privateSite = false }: Props) {
+export function SettingsClient({ lastSyncedAt, activityCount, device, zones, privateSite = false }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
   // Signed out from the first render (no Firebase), a page cached hours ago would not hydrate on a relative time.
   const mounted = useMounted()
@@ -106,7 +107,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
       <div className="flex flex-col gap-3.5">
         <SettingsHeader />
         <AppearanceSection />
-        <ProfileSection body={body} zones={zones} />
+        <ProfileSection zones={zones} />
 
         <Section title={t.settings.sections.data}>
           <div className={GROUP_CARD}>
@@ -161,7 +162,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
     <div className="flex flex-col gap-3.5">
       <SettingsHeader />
       <AppearanceSection />
-      <ProfileSection body={body} zones={zones} />
+      <ProfileSection owner={user} zones={zones} />
 
       <Section title={t.settings.sections.data}>
         <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} onDataLive={router.refresh} />
@@ -241,7 +242,23 @@ export function zonesSummary(zones: Zones | undefined): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
-function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
+/** Health data stays the owner's: it comes from an owner-only route, never from the cached page. */
+function useOwnerBody(owner: User | null): Body | null {
+  const [body, setBody] = useState<Body | null>(null)
+  useEffect(() => {
+    if (!owner) return
+    let alive = true
+    authorizedFetch(owner, '/api/athlete/body')
+      .then((res) => (res.ok ? (res.json() as Promise<{ heightCm: number | null; weightKg: number | null }>) : null))
+      .then((data) => { if (alive && data) setBody({ heightCm: data.heightCm ?? undefined, weightKg: data.weightKg ?? undefined }) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [owner])
+  return body
+}
+
+function ProfileSection({ owner = null, zones }: { owner?: User | null; zones?: Zones }) {
+  const body = useOwnerBody(owner)
   const rows = body ? bodyMetrics(body) : []
   const summary = zonesSummary(zones)
   return (

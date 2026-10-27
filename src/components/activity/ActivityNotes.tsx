@@ -10,7 +10,7 @@ import { Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { RUN_CHIP_CLASS } from './RunVerdict'
-import { EMPTY_NOTE as EMPTY, NOTE_MAX_LENGTH, TAG_MAX_LENGTH, TAGS_MAX_COUNT, type ActivityNote } from './activityNote'
+import { EMPTY_NOTE as EMPTY, NOTE_MAX_LENGTH, TAG_MAX_LENGTH, TAGS_MAX_COUNT, hasNoteContent, type ActivityNote } from './activityNote'
 
 const SUGGESTED_TAGS_MAX = 12
 
@@ -31,7 +31,10 @@ async function readNote(activityId: string): Promise<ActivityNote | null> {
   const response = await fetch(`/api/activities/${encodeURIComponent(activityId)}/note`)
   if (!response.ok) return null
   const data = (await response.json()) as ({ available: true } & ActivityNote) | { available: false }
-  if (data.available) return data.note !== '' || data.tags.length > 0 ? { note: data.note, tags: data.tags } : null
+  if (data.available) {
+    const note: ActivityNote = { note: data.note, tags: data.tags, ...(data.hrUnreliable ? { hrUnreliable: true } : {}) }
+    return hasNoteContent(note) ? note : null
+  }
   if (!isClientFirebaseConfigured) return null
   const { firestore: { doc, getDoc }, db } = await notesStore()
   const snap = await getDoc(doc(db, 'activityNotes', activityId))
@@ -100,7 +103,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
       .catch(() => setKnownTags([]))
   }, [open, isOwner, knownTags])
 
-  const hasNote = saved.note !== '' || saved.tags.length > 0
+  const hasNote = hasNoteContent(saved)
 
   const cancel = useCallback(() => {
     setDraft(saved)
@@ -113,6 +116,11 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     const clean = tag.trim().slice(0, TAG_MAX_LENGTH)
     if (!clean || draft.tags.includes(clean) || draft.tags.length >= TAGS_MAX_COUNT) return
     setDraft((d) => ({ ...d, tags: [...d.tags, clean] }))
+    setSaveState('idle')
+  }
+
+  function setHrUnreliable(unreliable: boolean) {
+    setDraft((d) => (unreliable ? { ...d, hrUnreliable: true } : { note: d.note, tags: d.tags }))
     setSaveState('idle')
   }
 
@@ -167,6 +175,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
         <div className="flex basis-full flex-col gap-1.5 rounded-lg bg-background px-3 py-2.5 text-sm" data-testid="note-text">
           {saved.note && <p className="whitespace-pre-line text-foreground">{saved.note}</p>}
           {saved.tags.length > 0 && <p className="text-xs text-muted-foreground">{saved.tags.join(' · ')}</p>}
+          {saved.hrUnreliable && <p className="text-xs text-muted-foreground">{t.activity.notes.hrUnreliable}</p>}
           {isOwner && (
             <button
               type="button"
@@ -193,6 +202,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
           onTagInput={setTagInput}
           onAddTag={addTag}
           onRemoveTag={removeTag}
+          onHrUnreliableChange={setHrUnreliable}
           onSave={handleSave}
         />
       )}

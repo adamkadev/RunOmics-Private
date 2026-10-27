@@ -36,6 +36,10 @@ export interface ActivityWeather {
   code: number
 }
 
+export type HrSource = 'external' | 'wrist'
+
+export type HrDistrust = 'marked' | 'beforeReliable' | 'wrist'
+
 export interface HrZone {
   zone: number
   seconds: number
@@ -60,6 +64,10 @@ export interface Activity {
   paceSecPerKm: number | null
   hrZones: HrZone[]
   avgHeartRate: number | null
+  /** From the FIT's paired sensors; null without heart rate, absent until a reprocess. */
+  hrSource?: HrSource | null
+  /** Set on load when the heart rate is not trusted; its readings are then removed. */
+  hrUntrusted?: HrDistrust
   rpe: number | null
   comment: string
   route: [number, number][] | null
@@ -86,6 +94,11 @@ export interface Activity {
   vo2maxGarmin: number | null
   avgTemperature: number | null
   cadenceSamples: number[] | null
+  /** The longest stretch run without walking or stopping; absent until a reprocess. */
+  longestContinuousRunSec?: number | null
+  longestContinuousRunM?: number | null
+  /** Time spent running, walk breaks and stops left out; absent until a reprocess. */
+  runningSec?: number | null
   gearId: string | null
   gearPending?: true
   weather: ActivityWeather | null
