@@ -10,6 +10,17 @@ export const CONTROLLED_THRESHOLD = {
   },
   /** The week the dose stops growing at: two sessions, in about the volume sustained over four weeks. */
   fullWeek: { sessions: 2, sessionMinutes: 30, kmEitherSide: 1 },
+  /** Between blocks, never inside one: a block completed without a break lets the next full week grow this much. */
+  blockGrowth: {
+    ratio: 1.05,
+    /** A block run for less than this was replaced, not completed. */
+    minBlockDays: 21,
+    /** This many days without a run inside the block is a gap. */
+    gapDays: 7,
+    /** A week counts as full at this share of the dose, so a rounded repetition still reaches it. */
+    fullDoseShare: 0.9,
+    niggle: { lookbackDays: 28, daysReported: 3, pain: 4 },
+  },
   /** Short repetitions are guided in the band of this width that holds threshold pace. */
   shortGuideBandSecPerKm: 5,
   /** The shortest repetition of each class, in seconds: 8-10 minutes is long, 5-6 medium, shorter is short. */
@@ -83,29 +94,55 @@ export function repLengthClass(seconds: number): RepLengthClass {
   return 'short'
 }
 
+export type GrowthHoldReason =
+  | 'returning'
+  | 'short_block'
+  | 'illness'
+  | 'injury'
+  | 'gap'
+  | 'check_ins_unread'
+  | 'niggle'
+  | 'fatigue'
+  | 'ceiling'
+  | 'ramp'
+  | 'long_run'
+
+/** baseline: no earlier controlled threshold block reached the full week, so the full week is the best four weeks. */
+export type FullWeekGrowth =
+  | { status: 'baseline' }
+  | { status: 'grown'; previousWeekKm: number; weekKm: number }
+  | { status: 'held'; previousWeekKm: number; weekKm: number; reason: GrowthHoldReason; detail: string }
+
 export interface ControlledThresholdFacts {
   heartRate: ControlledThresholdHr & { lthrBpm: number }
-  fullWeek: { sessions: number; minutesPerSession: number; weekKm: NumberRange | null }
+  fullWeek: { sessions: number; minutesPerSession: number; weekKm: NumberRange | null; growth: FullWeekGrowth }
   shortRepetitionGuideSecPerKm: NumberRange | null
 }
+
+const tenth = (km: number) => Math.round(km * 10) / 10
 
 /** This athlete's numbers for the planner, from their own data, so no athlete's prompt carries another's. */
 export function controlledThresholdFacts(
   lthrBpm: number | null | undefined,
   thresholdPaceSecPerKm: number | null | undefined,
   best4WeekAverageKm: number,
+  growth: FullWeekGrowth = { status: 'baseline' },
+  maxWeekKm = Infinity,
 ): ControlledThresholdFacts | null {
   const heartRate = controlledThresholdHr(lthrBpm)
   if (!heartRate) return null
   const { fullWeek, shortGuideBandSecPerKm: band } = CONTROLLED_THRESHOLD
-  const km = Math.round(best4WeekAverageKm)
+  const km = growth.status === 'baseline' ? Math.round(best4WeekAverageKm) : growth.weekKm
   const fastest = thresholdPaceSecPerKm ? Math.floor(thresholdPaceSecPerKm / band) * band : null
   return {
     heartRate,
     fullWeek: {
       sessions: fullWeek.sessions,
       minutesPerSession: fullWeek.sessionMinutes,
-      weekKm: km > fullWeek.kmEitherSide ? { min: km - fullWeek.kmEitherSide, max: km + fullWeek.kmEitherSide } : null,
+      weekKm: km > fullWeek.kmEitherSide
+        ? { min: tenth(km - fullWeek.kmEitherSide), max: tenth(Math.min(km + fullWeek.kmEitherSide, maxWeekKm)) }
+        : null,
+      growth,
     },
     shortRepetitionGuideSecPerKm: fastest === null ? null : { min: fastest, max: fastest + band },
   }

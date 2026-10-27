@@ -27,7 +27,7 @@ import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import { raceKey } from '@/domain/goals/entries'
 import { BOOTSTRAP_START_WINDOW_DAYS } from '@/domain/coaching/renewal'
 import { GENERAL_PREPARATION, macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
-import { fatigueBasis, lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
+import { blockGuideProposals, fatigueBasis, lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
@@ -233,6 +233,7 @@ function normalizeBootstrapPlan(
     }
   }
   const blockStart = keptWeeks[0]?.startDate ?? strategy.planningStartDate
+  const guideProposals = strategy.primary ? [] : blockGuideProposals(context.autoregulation, normalizedWeeks.flatMap((week) => week.workouts))
   return parseCoachingPlan({
     schemaVersion: COACHING_SCHEMA_VERSION,
     id: planId,
@@ -250,6 +251,7 @@ function normalizeBootstrapPlan(
       startDate: blockStart,
       endDate: horizonEnd,
       focus: draft.focus,
+      ...(guideProposals.length ? { guideProposals } : {}),
     },
     weeks: [...keptWeeks, ...normalizedWeeks],
     provenance: provenance(source, 'bootstrap', createdAt),

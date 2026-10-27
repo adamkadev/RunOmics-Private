@@ -74,6 +74,20 @@ sessions of 30 minutes, in a week of the best 4-week average ± 1 km) and the gu
 repetitions: a 5 s/km band from threshold pace rounded down to the next 5 s. It is null without
 an LTHR, and the context then holds no controlled threshold facts for the planner to use.
 
+**The full week grows between blocks, never inside one.** `blockGrowth()`
+(`src/application/coaching/blockGrowth.ts`) reads the block being renewed: its heaviest week
+holding both 30-minute sessions is the level, and the new block's full week is 5% above it when
+the block ran at least 21 days with no injury, illness or pregnancy break, no 7 days without a
+run, no illness check-in or skip, no niggle on 3 or more days, at pain 4 or more or changing a
+run in the last four weeks, and no easy-run fatigue flag. Otherwise it holds that level, as it
+does where the grown week would pass the volume ceiling, the block-opening ramp or the long-run
+limit; unreadable check-ins also hold it. The planner reads `fullWeek.growth` as grown, held with
+the reason, or baseline (no earlier full week, so the best 4-week average), and `weekKm` never
+passes what the validators accept. The threshold dose does not grow: a guide gets faster only
+from two agreeing sessions or a 5K check, which a new block stores as `block.guideProposals`.
+Plan shows the open ones under the phase card, and bootstrap refuses a plan focus that leaves an
+open one unnamed.
+
 **A session is judged against the ceiling it prescribed,** which is what the watch held the
 athlete to, not today's LTHR. Heart rate lags a change of pace, so each repetition is read from
 minute 3 to its end. Over: a repetition past its target or touching the ceiling without having

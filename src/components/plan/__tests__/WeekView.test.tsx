@@ -563,6 +563,23 @@ describe('the coach’s words', () => {
     expect(card).not.toHaveTextContent(WORDS.block.focus)
   })
 
+  it('shows each open pace-guide proposal of a general block under its name', async () => {
+    const proposal = { repClass: 'long' as const, source: 'sessions' as const, guide: { min: 272, max: 280 }, proposedGuide: { min: 268, max: 276 }, dates: ['2026-09-01', '2026-09-03'], adopted: false }
+    serve({ ...WORDS, block: { ...WORDS.block, guideProposals: [proposal] } })
+    renderWeek({ coaching: overview({ coachingPlan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined } }) })
+
+    const line = await screen.findByTestId('phase-proposal')
+    const p = t.plan.phase
+    expect(line.textContent).toBe(p.guideProposal(p.repClass.long, '4:32–4:40', '4:28–4:36', p.proposalSource.sessions))
+  })
+
+  it('shows no proposal line without one', async () => {
+    const fetch = serve(WORDS)
+    renderWeek({ coaching: overview({ coachingPlan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined } }) })
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
+    expect(screen.queryByTestId('phase-proposal')).toBeNull()
+  })
+
   it('keeps a race block’s phase name, with no focus under it', async () => {
     const fetch = serve(WORDS)
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })

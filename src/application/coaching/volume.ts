@@ -56,6 +56,19 @@ export function volumeBand(history: TrainingHistory): VolumeBand {
   }
 }
 
+/** The bounds a whole week answers to as a block's first week, before any peak of its own. */
+export function fullWeekLimits(band: VolumeBand): { ceilingKm: number; rampKm: number } {
+  return {
+    ceilingKm: round(band.capacityKm * CEILING_RATIO + CEILING_ALLOWANCE_KM),
+    rampKm: band.baselineKm * RAMP_RATIO + RAMP_ALLOWANCE_KM,
+  }
+}
+
+export function longSessionLimitKm(band: VolumeBand, fullWeekKm: number): number {
+  const recentBound = band.longestRunKm > 0 ? band.longestRunKm * LONG_RUN_STEP : Infinity
+  return Math.max(Math.min(fullWeekKm * LONG_RUN_SHARE, recentBound), LONG_RUN_ALLOWANCE_KM)
+}
+
 export function segments(blocks: WorkoutBlock[]): { segment: WorkoutSegment; repetitions: number }[] {
   return blocks.flatMap((block) => block.kind === 'repeat'
     ? block.steps.map((step) => ({ segment: step, repetitions: block.repetitions }))
@@ -98,7 +111,7 @@ function longestSession(week: BootstrapWeekDraft, weekTotalKm: number, share: nu
   // tail holds two runs, and one of them being most of it is arithmetic.
   const shareBound = (weekTotalKm / share) * LONG_RUN_SHARE
   const recentBound = band.longestRunKm > 0 ? band.longestRunKm * LONG_RUN_STEP : Infinity
-  const limit = Math.max(Math.min(shareBound, recentBound), LONG_RUN_ALLOWANCE_KM)
+  const limit = longSessionLimitKm(band, weekTotalKm / share)
 
   for (const workout of week.workouts) {
     const km = round(blocksMeters(workout.blocks, easyPace) / 1_000)

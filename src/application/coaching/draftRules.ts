@@ -8,6 +8,7 @@ import type {
   WorkoutSegment,
 } from '@/domain/coaching/types'
 import type { CoachingContext } from './context'
+import { blockGuideProposals } from './autoregulation'
 import { validateBootstrapDraftSemantics, type BootstrapEvents } from './bootstrapValidation'
 import { validateDraftFrequency } from './frequency'
 import { intensityBand, validateDraftIntensity } from './intensity'
@@ -174,6 +175,17 @@ function validateReturnTargets(draft: CoachingPlanDraft): void {
   }))
 }
 
+/** "propos" opens the word in English and French alike, so the check needs no language of its own. */
+const NAMES_A_PROPOSAL = /propos/i
+
+/** Pace figures stay out of the focus, so it names the proposal and the app shows its guides from the block. */
+export function validateProposalsNamed(draft: CoachingPlanDraft, context: CoachingContext): void {
+  const open = blockGuideProposals(context.autoregulation, draft.weeks.flatMap((week) => week.workouts)).filter((proposal) => !proposal.adopted)
+  if (open.length === 0 || NAMES_A_PROPOSAL.test(draft.focus)) return
+  const named = open.map((proposal) => `${proposal.repClass} repetitions from ${proposal.source === 'sessions' ? 'two agreeing sessions' : 'the 5K check'}`)
+  throw new Error(`plan.focus: name the open pace-guide proposal (${named.join('; ')}) so the athlete can accept it, without stating a pace`)
+}
+
 export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: BootstrapRules): void {
   draft.weeks.forEach((week, weekIndex) => week.workouts.forEach((workout, workoutIndex) =>
     validateWorkoutDraft(workout, `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`)
@@ -184,6 +196,7 @@ export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: Bootstra
   validateBootstrapDraftSemantics(draft, rules.events, rules.context)
   if (rules.context.returnToRunning) validateReturnTargets(draft)
   if (asksNoStopSignals(rules.guidance)) validateNoStopSignals(draft)
+  if (rules.events.primary === null) validateProposalsNamed(draft, rules.context)
   validateAvailableWeekdays(draft.weeks.flatMap((week) => week.workouts), rules.availableWeekdays)
   // Last: a name is the cheapest thing to put right, so the substance is
   // judged first and a repair is asked for it first.

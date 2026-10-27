@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { CoachingPlan, NumberRange, WorkoutPrescription } from '@/domain/coaching/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
-import { assessFatigue, autoregulationReport, proposeGuideChanges, readControlledSession, type EasyRunReading } from '../autoregulation'
+import { assessFatigue, autoregulationReport, blockGuideProposals, proposeGuideChanges, readControlledSession, type EasyRunReading } from '../autoregulation'
 import { controlledThresholdFacts, controlledThresholdHr } from '../controlledThreshold'
+import { validateProposalsNamed } from '../draftRules'
+import type { CoachingContext } from '../context'
 
 const LONG: NumberRange = { min: 272, max: 280 }
 
@@ -282,5 +284,47 @@ describe('the fitness check', () => {
 
   it('says nothing about a check older than the look-back', () => {
     expect(autoregulationReport([race('2026-08-01', 1_274)], [current], '2026-11-15').fitnessCheck).toBeNull()
+  })
+
+  it('moves the guides the check was run under, so a guide adopted from it is not moved again', () => {
+    const adopted = plan({
+      id: 'next',
+      weeks: [{ id: 'next:w', index: 1, startDate: '2026-11-16', endDate: '2026-11-22', focus: 'f', workouts: [controlledPrescription('2026-11-17', 3, 10, { min: 267, max: 274 })] }],
+    })
+    const report = autoregulationReport([race('2026-09-19', 1_300), race('2026-11-14', 1_274)], [adopted, current], '2026-11-24')
+    expect(report.fitnessCheck?.proposedGuides).toEqual([{ repClass: 'long', guide: LONG, proposedGuide: { min: 267, max: 274 } }])
+    expect(blockGuideProposals(report, adopted.weeks[0]!.workouts)).toEqual([
+      { repClass: 'long', source: 'fitness_check', guide: LONG, proposedGuide: { min: 267, max: 274 }, dates: ['2026-11-14'], adopted: true },
+    ])
+  })
+})
+
+describe('the proposals a new block records', () => {
+  it('records two agreeing sessions as open until the block prescribes the faster guide', () => {
+    const current: CoachingPlan = plan({ weeks: [{ id: 'w', index: 1, startDate: '2026-11-02', endDate: '2026-11-08', focus: 'f', workouts: [controlledPrescription('2026-11-04'), controlledPrescription('2026-11-06')] }] })
+    const report = autoregulationReport([controlledRun('2026-11-04', even(162)), controlledRun('2026-11-06', even(163))], [current], '2026-11-08')
+    const faster = { min: 268, max: 276 }
+    expect(blockGuideProposals(report, [controlledPrescription('2026-11-10')])).toEqual([
+      { repClass: 'long', source: 'sessions', guide: LONG, proposedGuide: faster, dates: ['2026-11-04', '2026-11-06'], adopted: false },
+    ])
+    expect(blockGuideProposals(report, [controlledPrescription('2026-11-10', 3, 10, faster)])[0]?.adopted).toBe(true)
+  })
+
+  it('records none without a report', () => {
+    expect(blockGuideProposals(undefined, [controlledPrescription('2026-11-10')])).toEqual([])
+  })
+
+  it('refuses a plan focus that leaves an open proposal unnamed, in either language, and never asks for a pace', () => {
+    const current: CoachingPlan = plan({ weeks: [{ id: 'w', index: 1, startDate: '2026-11-02', endDate: '2026-11-08', focus: 'f', workouts: [controlledPrescription('2026-11-04'), controlledPrescription('2026-11-06')] }] })
+    const context = { autoregulation: autoregulationReport([controlledRun('2026-11-04', even(162)), controlledRun('2026-11-06', even(163))], [current], '2026-11-08') } as CoachingContext
+    const draft = (focus: string, guide = LONG) => ({
+      name: 'Controlled threshold',
+      focus,
+      weeks: [{ startDate: '2026-11-09', endDate: '2026-11-15', focus: 'Full week', workouts: [controlledPrescription('2026-11-10', 3, 10, guide)] }],
+    })
+    expect(() => validateProposalsNamed(draft('Hold the full week.'), context)).toThrow(/long repetitions from two agreeing sessions/)
+    expect(() => validateProposalsNamed(draft('Hold the full week; two sessions propose a faster long-repetition guide.'), context)).not.toThrow()
+    expect(() => validateProposalsNamed(draft('Semaine pleine ; une proposition d’allure plus rapide sur les répétitions longues.'), context)).not.toThrow()
+    expect(() => validateProposalsNamed(draft('Hold the full week.', { min: 268, max: 276 }), context)).not.toThrow()
   })
 })

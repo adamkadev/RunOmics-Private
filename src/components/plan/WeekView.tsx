@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { BlockGuideProposal, NumberRange } from '@/domain/coaching/types'
 import type { PlanRun } from './planRun'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { CrossTrainingList } from '@/components/crossTraining/CrossTraining'
@@ -13,7 +14,7 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { cardClass } from '@/components/ui/Card'
 import { CHECKPOINT_HREF } from '@/components/checkpoint/checkpointHref'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { formatClock, formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -35,7 +36,13 @@ import { useSkippedDays } from '@/lib/skippedDays'
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
-function PhaseCard({ name, week, total, race, href, note = null, tally = null }: { name: string; week: number; total: number; race: string | null; href?: string; note?: string | null; tally?: FitTally | null }) {
+function proposalLine(proposal: BlockGuideProposal): string {
+  const p = t.plan.phase
+  const range = (guide: NumberRange) => `${formatClock(guide.min)}–${formatClock(guide.max)}`
+  return p.guideProposal(p.repClass[proposal.repClass], range(proposal.guide), range(proposal.proposedGuide), p.proposalSource[proposal.source])
+}
+
+function PhaseCard({ name, week, total, race, href, note = null, tally = null, proposals = [] }: { name: string; week: number; total: number; race: string | null; href?: string; note?: string | null; tally?: FitTally | null; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
@@ -61,6 +68,9 @@ function PhaseCard({ name, week, total, race, href, note = null, tally = null }:
       </div>
       {tally && <p className="text-xs text-muted-foreground" data-testid="phase-tally">{p.asPlanned(tally.asPlanned, tally.of)}</p>}
       {note && <p className="text-xs text-muted-foreground" data-testid="phase-note">{note}</p>}
+      {proposals.map((proposal) => (
+        <p key={`${proposal.source}:${proposal.repClass}`} className="text-xs text-muted-foreground" data-testid="phase-proposal">{proposalLine(proposal)}</p>
+      ))}
     </section>
   )
 }
@@ -304,6 +314,7 @@ export function WeekView({
           href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined}
           note={blockEnds}
           tally={tally}
+          proposals={phase.span.key === 'general' ? words?.block.guideProposals : undefined}
         />
       )}
 
