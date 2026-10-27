@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { activeDaysInYear, dayLevel } from '@/components/consistency/consistencyRamp'
-import { consistencyView, parseRange, weekSheet, type ConsistencyInput, type ConsistencyRange, type ConsistencyView } from '@/components/consistency/consistencyView'
+import { consistencyView, parseRange, sheetMonths, shiftMonth, weekSheet, type ConsistencyInput, type ConsistencyRange, type ConsistencyView } from '@/components/consistency/consistencyView'
 import { Consistency, dotGeometry } from '@/components/consistency/Consistency'
 import { t } from '@/i18n'
 
@@ -106,6 +106,23 @@ describe('weekSheet', () => {
     expect(sheet.rows[0]!.days[0]).toMatchObject({ day: 28, inMonth: false })
   })
 
+  it('shows another month around the same week, the week picked out only where it falls', () => {
+    const view = consistencyView('6m', INPUT)
+    const september = weekSheet(view, '2026-10-12', TODAY, '2026-09')!
+    expect(september.month).toBe('2026-09')
+    expect(september.week.start).toBe('2026-10-12')
+    expect(september.rows.some((row) => row.selected)).toBe(false)
+    expect(september.rows.at(-1)!.start).toBe('2026-09-28')
+    expect(weekSheet(view, '2026-09-28', TODAY, '2026-10')!.rows[0]!.selected).toBe(true)
+  })
+
+  it('pages from the first week\'s month to this one', () => {
+    expect(sheetMonths(consistencyView('6m', INPUT), TODAY)).toEqual({ first: '2026-07', last: '2026-10' })
+    expect(sheetMonths(consistencyView('6m', { ...INPUT, runs: [] }), TODAY)).toBeNull()
+    expect(shiftMonth('2026-01', -1)).toBe('2025-12')
+    expect(shiftMonth('2026-12', 1)).toBe('2027-01')
+  })
+
   it('reads a week under three as under target', () => {
     expect(weekSheet(consistencyView('6m', INPUT), MONDAYS[3]!, TODAY)!.status).toBe('under')
   })
@@ -163,6 +180,36 @@ describe('Consistency', () => {
     expect(selected).toBeTruthy()
     expect(selected!.getAttribute('aria-label')).toBe('Oct 12 – 18')
     expect(screen.getByTestId('week-selected')).toBeTruthy()
+  })
+
+  it('pages the sheet\'s month with a swipe or its arrows, never past this month or before the first run', async () => {
+    render(<Consistency views={views} today={TODAY} />)
+    await userEvent.click(screen.getAllByTestId('week-column')[12]!)
+    const calendar = screen.getByTestId('week-calendar')
+    const next = screen.getByRole('button', { name: t.consistency.sheet.nextMonth })
+    const prev = screen.getByRole('button', { name: t.consistency.sheet.prevMonth })
+    expect(calendar.dataset.month).toBe('2026-10')
+    expect((next as HTMLButtonElement).disabled).toBe(true)
+
+    fireEvent.touchStart(calendar, { touches: [{ clientX: 100, clientY: 300 }] })
+    fireEvent.touchEnd(calendar, { touches: [], changedTouches: [{ clientX: 220, clientY: 310 }] })
+    expect(calendar.dataset.month).toBe('2026-09')
+    expect(calendar.querySelector('[data-selected]')).toBeNull()
+
+    await userEvent.click(prev)
+    await userEvent.click(prev)
+    expect(calendar.dataset.month).toBe('2026-07')
+    expect((prev as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.touchStart(calendar, { touches: [{ clientX: 100, clientY: 300 }] })
+    fireEvent.touchEnd(calendar, { touches: [], changedTouches: [{ clientX: 220, clientY: 300 }] })
+    expect(calendar.dataset.month).toBe('2026-07')
+
+    await userEvent.click(next)
+    await userEvent.click(next)
+    await userEvent.click(next)
+    expect(calendar.dataset.month).toBe('2026-10')
+    expect(calendar.querySelector('[data-selected]')!.getAttribute('aria-label')).toBe('Oct 12 – 18')
+    expect(screen.getByTestId('week-activities').getAttribute('href')).toBe('/activities?week=2026-10-12')
   })
 
   it('marks other training on its own row and its own days, never as a run toward the target', async () => {

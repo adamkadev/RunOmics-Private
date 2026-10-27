@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Swipe between months. The week sheet opened from Progress → Consistency gets
+  a month header with arrows (« Mois précédent », « Mois suivant ») and pages
+  with a left or right swipe, from the first week shown to this month, the week
+  staying picked out where it falls. Plan's Month and Week swipe the same way,
+  now with a mouse drag too; a swipe that starts on a map or a sideways
+  scroller is left to it, and a vertical scroll or the sheet's drag-down never
+  pages.
 - Easy runs on the watch carry no heart rate. An easy, recovery or long run sent
   to Garmin keeps its pace target and steps but drops the "HR zone 2" step note,
   a heart-rate target riding on a paced step, and any line of its description or
