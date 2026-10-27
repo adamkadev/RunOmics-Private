@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Easy runs on the watch carry no heart rate. An easy, recovery or long run sent
+  to Garmin keeps its pace target and steps but drops the "HR zone 2" step note,
+  a heart-rate target riding on a paced step, and any line of its description or
+  notes naming a heart rate or zone, so there is less to scroll. Quality sessions
+  and the Plan Heart rate tile are unchanged. **Needs** `npm run
+  coach:sync-garmin -- --apply` (and `coach:sync-garmin:lamiaa -- --apply`) to
+  replace the easy runs already on the watch.
 - Plan shows less of the coach's text. The phase card keeps its name, week,
   progress bar and "N of M sessions as planned" without the week's focus under
   them; a session's card drops its "Coach's note" (« Mot du coach ») and the
