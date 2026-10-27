@@ -5,6 +5,7 @@ import {
   computeNextRaceSpotlight, nextRaceAcrossYears,
   computeMonthlyGoals,
   plannedKmByMonth,
+  missingGoalYear,
 } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import type { GoalYear, YearData, UpcomingRace, GoalRacePrediction } from '../GetGoalsData'
@@ -205,6 +206,23 @@ describe('computeNextRaceSpotlight', () => {
       '2024-07-01'
     )
     expect(result?.predictedSeconds).toBe(1210)
+  })
+})
+
+describe('missingGoalYear', () => {
+  it('names the new year from 2 January 2027 when goals.json stops at 2026', () => {
+    expect(missingGoalYear([2025, 2026], '2027-01-02')).toBe(2027)
+  })
+
+  it('names next year from 1 December, not before', () => {
+    expect(missingGoalYear([2026], '2026-11-30')).toBeNull()
+    expect(missingGoalYear([2026], '2026-12-01')).toBe(2027)
+    expect(missingGoalYear([2026, 2027], '2026-12-01')).toBeNull()
+  })
+
+  it('stays quiet for an athlete without goals, this year or last', () => {
+    expect(missingGoalYear([], '2027-01-02')).toBeNull()
+    expect(missingGoalYear([2024], '2027-01-02')).toBeNull()
   })
 })
 

@@ -89,6 +89,16 @@ export interface GoalsPageData {
   history: YearOutcome[]
   /** The next race in any year; each year's own spotlight only sees that year's races. */
   nextRace: NextRaceSpotlight | null
+  missingGoalYear: number | null
+}
+
+/** The year whose goal is still to set: next year from 1 December, else this one; none for an athlete who set none last year. */
+export function missingGoalYear(goalYears: readonly number[], today: string): number | null {
+  const year = Number(today.slice(0, 4))
+  if (goalYears.length === 0 || Math.max(...goalYears) < year - 1) return null
+  if (!goalYears.includes(year)) return year
+  if (today.slice(5) >= '12-01' && !goalYears.includes(year + 1)) return year + 1
+  return null
 }
 
 export function computeProjection(
@@ -382,5 +392,5 @@ export async function getGoalsPageData(today: string = appTodayIso()): Promise<G
 
   const nextRace = nextRaceAcrossYears(upcomingRaceYears, currentYear, predictions, today)
 
-  return { years: allYears, byYear, history, nextRace }
+  return { years: allYears, byYear, history, nextRace, missingGoalYear: missingGoalYear(goalYears.map((g) => g.year), today) }
 }

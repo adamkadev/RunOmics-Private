@@ -1479,6 +1479,7 @@ export const fr = {
     barTitle: 'Objectifs',
     empty: 'Aucun objectif configuré pour le moment.',
     emptyHow: 'Les objectifs se fixent dans goals.json, dans le dépôt de données : ajoute l’année avec son annualDistanceKm et, si tu veux, un temps visé par distance de course.',
+    noGoalYear: (year: number) => `Aucun objectif fixé pour ${year}`,
     back: 'Progression',
     prevYear: 'Année précédente',
     nextYear: 'Année suivante',
@@ -1870,6 +1871,10 @@ export const fr = {
       otherTraining: (time: string) => `${time} d’autres activités`,
       restingHr: (bpm: number, change: string) => `FC repos ${bpm} (${change})`,
       focus: (focus: string) => `Cette semaine : ${focus}`,
+    },
+    goalYear: {
+      title: (year: number) => `Aucun objectif fixé pour ${year}`,
+      body: 'Ajoute l’année à goals.json, dans le dépôt de données, pour garder le point du vendredi sur ton objectif.',
     },
     weeklyGoal: {
       title: 'Point hebdo sur ton objectif',

@@ -579,7 +579,7 @@ be set on each project, or every call is refused.
 | `/api/internal/daily-session` | 06:00 and 07:00 daily | The morning session push; only the call in the 08:xx Paris hour sends, so it arrives between 08:00 and 09:00 summer and winter, once a day |
 | `/api/internal/stale-sync-check` | 06:00 daily | Pushes once when no sync has landed for 72 hours |
 | `/api/internal/weekly-digest` | 06:00 Monday | Last week's km and quality sessions against the plan, other training, resting heart rate and this week's focus |
-| `/api/internal/weekly-reminder` | 15:00 Friday | The annual distance goal: ahead, on track or behind |
+| `/api/internal/weekly-reminder` | 15:00 Friday | The annual distance goal: ahead, on track or behind; once a year, from 1 December, that `goals.json` has no entry for the coming year (or, from 1 January, this one) |
 
 A scheduled push is sent once per day (Firestore remembers the day it went). To run a route
 by hand, `POST` it with the internal secret, or `GET` it the way Vercel Cron does:

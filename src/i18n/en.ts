@@ -1589,6 +1589,7 @@ export const en = {
     barTitle: 'Goals',
     empty: 'No goals configured yet.',
     emptyHow: 'Goals are set in goals.json in the data repository: add the year with its annualDistanceKm and, if you like, a target time per race distance.',
+    noGoalYear: (year: number) => `No goal set for ${year}`,
     back: 'Progress',
     // The ‹ 2026 › stepper's arrows.
     prevYear: 'Previous year',
@@ -2029,6 +2030,10 @@ export const en = {
       otherTraining: (time: string) => `${time} other training`,
       restingHr: (bpm: number, change: string) => `Resting HR ${bpm} (${change})`,
       focus: (focus: string) => `This week: ${focus}`,
+    },
+    goalYear: {
+      title: (year: number) => `No goal set for ${year}`,
+      body: 'Add the year to goals.json in the data repository to keep the Friday goal check-in.',
     },
     weeklyGoal: {
       title: 'Weekly goal check-in',
