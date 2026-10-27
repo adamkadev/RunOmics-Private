@@ -20,4 +20,6 @@ export interface CoachingRepository {
   archivePlan?(plan: CoachingPlan): void
   /** Newest first. */
   getArchivedPlans?(): CoachingPlan[]
+  /** The athlete's standing instructions; optional so in-memory doubles need not implement it. */
+  getGuidance?(): string | null
 }

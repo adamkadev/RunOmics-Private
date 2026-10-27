@@ -81,6 +81,7 @@ export interface CoachingAdvisor {
     context: CoachingContext
     activity: Activity
     prescription: WorkoutPrescription | null
+    guidance?: string
   }): Promise<AdvisorRecommendation>
-  reviewWeek(input: { context: CoachingContext }): Promise<AdvisorRecommendation>
+  reviewWeek(input: { context: CoachingContext; guidance?: string }): Promise<AdvisorRecommendation>
 }

@@ -594,11 +594,13 @@ async function createAdaptationProposal(
     ? [dayAfterActivity, now.toISOString().slice(0, 10)].sort().at(-1)!
     : context.referenceDate
   const matched = activity ? matchPrescription(plan, activity).prescription : null
+  const guidance = services.repository.getGuidance?.() ?? undefined
+  const told = guidance ? { guidance } : {}
   const advice = kind === 'post_activity' && activity
-    ? await services.advisor.evaluateActivity({ context, activity, prescription: matched })
-    : await services.advisor.reviewWeek({ context })
+    ? await services.advisor.evaluateActivity({ context, activity, prescription: matched, ...told })
+    : await services.advisor.reviewWeek({ context, ...told })
   const decision = decisionFromAdvice(advice, plan, sourceOf(services), kind, effectiveDate, createdAt, id(), id)
-  validateAdaptation(plan, applyCoachDecision(plan, decision), context)
+  validateAdaptation(plan, applyCoachDecision(plan, decision), context, told)
   const hash = coachingContextHash(context)
   const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id, sourceOf(services)) : undefined
   return {

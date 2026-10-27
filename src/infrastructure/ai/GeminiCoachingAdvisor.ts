@@ -140,6 +140,11 @@ function quotaHint(models: string[], reasons: string[]): string {
   return ` Only ${models[0]} was tried because GEMINI_COACH_MODEL or GEMINI_MODEL names it: ${allowance}; ${reset}. Unset it to let the whole pool answer, each with its own allowance.`
 }
 
+/** A change to the live plan is held to the guidance too, so it has to be told it. */
+function guidancePrompt(guidance: string | undefined): string {
+  return guidance ? `\nAdditional athlete guidance: ${guidance}` : ''
+}
+
 export class GeminiCoachingAdvisor implements CoachingAdvisor {
   readonly source = 'gemini' as const
   async bootstrap(input: BootstrapRequest): Promise<CoachingPlanDraft> {
@@ -147,20 +152,20 @@ export class GeminiCoachingAdvisor implements CoachingAdvisor {
     return parseBootstrapPlanDraft(raw)
   }
 
-  async evaluateActivity(input: { context: CoachingContext; activity: Activity; prescription: WorkoutPrescription | null }): Promise<AdvisorRecommendation> {
+  async evaluateActivity(input: { context: CoachingContext; activity: Activity; prescription: WorkoutPrescription | null; guidance?: string }): Promise<AdvisorRecommendation> {
     const raw = await request(
       RECOMMENDATION_SCHEMA,
       withCoachingLanguage(`Evaluate the completed run and choose KEEP, ADJUST, or REPLAN. Normal runs should usually be KEEP. Use ADJUST only for small future workout changes and REPLAN only for meaningful events. Never alter completed or past sessions. Reasons and evidence must cite supplied facts. ${ADAPTATION_NAMING_RULE}`),
-      `${contextPrompt(input.context)}\nCompleted activity: ${JSON.stringify(completedActivityPrompt(input.context, input.activity))}\nMatched prescription: ${JSON.stringify(input.prescription)}`,
+      `${contextPrompt(input.context)}\nCompleted activity: ${JSON.stringify(completedActivityPrompt(input.context, input.activity))}\nMatched prescription: ${JSON.stringify(input.prescription)}${guidancePrompt(input.guidance)}`,
     )
     return parseRecommendation(raw, 'post_activity')
   }
 
-  async reviewWeek(input: { context: CoachingContext }): Promise<AdvisorRecommendation> {
+  async reviewWeek(input: { context: CoachingContext; guidance?: string }): Promise<AdvisorRecommendation> {
     const raw = await request(
       RECOMMENDATION_SCHEMA,
       withCoachingLanguage(`Review the rolling running plan. Prefer KEEP when the current future prescription remains appropriate, ADJUST for small workout changes, and REPLAN only for a material change. Never alter completed or past sessions. Keep the output horizon at four weeks. ${ADAPTATION_NAMING_RULE}`),
-      contextPrompt(input.context),
+      `${contextPrompt(input.context)}${guidancePrompt(input.guidance)}`,
     )
     return parseRecommendation(raw, 'weekly_review')
   }
