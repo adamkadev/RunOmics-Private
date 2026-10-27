@@ -92,7 +92,6 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     avoidBusyRoads: true,
     newStreetsFirst: true,
     flatForReps: generator?.plan?.session === 'quality',
-    trailsOk: false,
   }))
   const [drawn, setDrawn] = useState<ScoredRoute | null>(null)
   const [startMode, setStartMode] = useState<RouteStartMode>('pick')

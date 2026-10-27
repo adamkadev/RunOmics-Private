@@ -9,6 +9,7 @@ import {
   routeStart,
   scoreRoutes,
 } from '../routeScore'
+import type { SessionDay } from '../climbBudget'
 import type { RouteCandidate, RoutePreferences } from '../types'
 import { projectX, projectY } from '../grid'
 import { PROJ, areaFile, at, cells, rect, testArea, unit } from './areaFixture'
@@ -17,7 +18,7 @@ const index = buildAreaIndex(testArea())
 /** Row 0 (y 0–150 m) has been run, from x 0 to 1200 m. */
 const visited: ReadonlySet<number> = new Set(cells(0, 7, 0, 0))
 
-const OFF: RoutePreferences = { avoidBusyRoads: false, newStreetsFirst: false, flatForReps: false, trailsOk: false }
+const OFF: RoutePreferences = { avoidBusyRoads: false, newStreetsFirst: false, flatForReps: false }
 
 type Ranges = [number, number, number][]
 
@@ -133,7 +134,6 @@ describe('scoreRoutes', () => {
       avoidBusyRoads: true,
       newStreetsFirst: true,
       flatForReps: false,
-      trailsOk: false,
     })
 
     expect(scored!.score).toBeCloseTo(0.1 + ROUTE_W_NEW_ON * 1 + ROUTE_W_BUSY_ON * 1, 9)
@@ -161,10 +161,10 @@ describe('scoreRoutes', () => {
     const order = (prefs: RoutePreferences) =>
       scoreRoutes(index, visited, [newButBusy, knownAndQuiet], 1200, prefs).map((r) => r.candidate.seed)
 
-    expect(order({ avoidBusyRoads: true, newStreetsFirst: false, flatForReps: false, trailsOk: false })).toEqual([2, 1])
-    expect(order({ avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false, trailsOk: false })).toEqual([1, 2])
-    expect(order({ avoidBusyRoads: false, newStreetsFirst: false, flatForReps: false, trailsOk: false })).toEqual([1, 2])
-    expect(order({ avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false, trailsOk: false })).toEqual([2, 1])
+    expect(order({ avoidBusyRoads: true, newStreetsFirst: false, flatForReps: false })).toEqual([2, 1])
+    expect(order({ avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false })).toEqual([1, 2])
+    expect(order({ avoidBusyRoads: false, newStreetsFirst: false, flatForReps: false })).toEqual([1, 2])
+    expect(order({ avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false })).toEqual([2, 1])
   })
 
   it('with Flat for the reps, puts a flat loop on paths before a hilly one on streets', () => {
@@ -173,36 +173,42 @@ describe('scoreRoutes', () => {
     hillyStreets.ascentM = 12
     flatPaths.ascentM = 2
     const order = (flatForReps: boolean) =>
-      scoreRoutes(index, visited, [hillyStreets, flatPaths], 1200, { avoidBusyRoads: false, newStreetsFirst: false, flatForReps, trailsOk: false }).map((r) => r.candidate.seed)
+      scoreRoutes(index, visited, [hillyStreets, flatPaths], 1200, { avoidBusyRoads: false, newStreetsFirst: false, flatForReps }).map((r) => r.candidate.seed)
 
     expect(order(false)).toEqual([1, 2])
     expect(order(true)).toEqual([2, 1])
   })
 
-  it('puts a known street loop before a new one on muddy forest tracks, unless trails are OK in daylight', () => {
+  it('puts a new loop on muddy forest tracks before a known street one in daylight, on any day, and after it in the dark', () => {
     const muddy = fresh(1, { waytypes: [[0, 2, 5]], surfaces: [[0, 2, 12]] })
     const streets = known(2, { waytypes: [[0, 2, 3]], surfaces: [[0, 2, 3]] })
-    const prefs = { ...OFF, newStreetsFirst: true }
-    const order = (trailsOk: boolean, context = { day: { session: 'easy' as const, beforeQuality: false }, dark: false }) =>
-      scoreRoutes(index, visited, [muddy, streets], 1200, { ...prefs, trailsOk }, context).map((r) => r.candidate.seed)
+    const order = (day: SessionDay, dark = false) =>
+      scoreRoutes(index, visited, [muddy, streets], 1200, { ...OFF, newStreetsFirst: true }, { day, dark }).map((r) => r.candidate.seed)
 
-    expect(order(false)).toEqual([2, 1])
-    expect(order(true)).toEqual([1, 2])
-    expect(order(true, { day: { session: 'easy', beforeQuality: false }, dark: true })).toEqual([2, 1])
-    expect(order(true, { day: { session: 'easy', beforeQuality: true }, dark: false })).toEqual([2, 1])
+    expect(order({ session: 'easy', beforeQuality: false })).toEqual([1, 2])
+    expect(order({ session: 'easy', beforeQuality: true })).toEqual([1, 2])
+    expect(order({ session: 'quality', beforeQuality: false })).toEqual([1, 2])
+    expect(order({ session: 'easy', beforeQuality: false }, true)).toEqual([2, 1])
+  })
+
+  it('ignores a trailsOk field from an older client', () => {
+    const muddy = fresh(1, { waytypes: [[0, 2, 5]], surfaces: [[0, 2, 12]] })
+    const stale = { ...OFF, trailsOk: false } as RoutePreferences
+
+    expect(scoreRoutes(index, visited, [muddy], 1200, stale)[0]!.score).toBe(scoreRoutes(index, visited, [muddy], 1200, OFF)[0]!.score)
   })
 
   it('with Flat for the reps, counts a path as traffic-free only when it is paved', () => {
     const unpaved = known(1, { waytypes: [[0, 2, 4]] })
     const paved = known(2, { waytypes: [[0, 2, 4]], surfaces: [[0, 2, 3]] })
-    const [first, second] = scoreRoutes(index, visited, [unpaved, paved], 1200, { ...OFF, flatForReps: true, trailsOk: true })
+    const [first, second] = scoreRoutes(index, visited, [unpaved, paved], 1200, { ...OFF, flatForReps: true })
 
     expect(first!.candidate.seed).toBe(2)
     expect(second!.score - first!.score).toBeCloseTo(ROUTE_W_TRAFFIC, 9)
   })
 
   it('puts a loop over the day’s climb budget behind one inside it with less new ground', () => {
-    const hilly = fresh(1, { ascentM: 36 })
+    const hilly = fresh(1, { ascentM: 48 })
     const rolling = known(2, { ascentM: 12 })
     const order = (session: 'easy' | 'recovery') =>
       scoreRoutes(index, visited, [hilly, rolling], 1200, { ...OFF, newStreetsFirst: true }, { day: { session, beforeQuality: false }, dark: false }).map(

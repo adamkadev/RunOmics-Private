@@ -12,9 +12,7 @@ export const ROUTE_W_NEW_ON = 0.6
 export const ROUTE_W_NEW_OFF = 0.15
 /** Weight on busy roads with "Avoid busy roads" on; off, they are not scored at all. */
 export const ROUTE_W_BUSY_ON = 0.8
-/** Over 2.5 × wNew: a kilometre of mud or forest path costs more than any new ground it reaches. */
-export const ROUTE_W_TRAIL = 1.5
-/** Added to the trail weight when the run starts or ends in the dark; "Trails OK" never lifts it. */
+/** Trails cost nothing in daylight; when the run starts or ends in the dark, a km of them outweighs any new ground. */
 export const ROUTE_W_TRAIL_DARK = 6
 /** On the share at 7 % or steeper, counted half below 10 %; descents too on a long run. */
 export const ROUTE_W_STEEP = 1
@@ -165,10 +163,10 @@ export function routeScore(
   climbM: number | null = null,
   context: RouteContext = NO_ROUTE_CONTEXT,
 ): number {
-  const budget = climbBudget(context.day, prefs.trailsOk)
+  const budget = climbBudget(context.day)
   const wNew = prefs.newStreetsFirst ? ROUTE_W_NEW_ON : ROUTE_W_NEW_OFF
   const wBusy = prefs.avoidBusyRoads ? ROUTE_W_BUSY_ON : 0
-  const wTrail = (budget.trailsOk ? 0 : ROUTE_W_TRAIL) + (context.dark ? ROUTE_W_TRAIL_DARK : 0)
+  const wTrail = context.dark ? ROUTE_W_TRAIL_DARK : 0
   const off = targetM > 0 ? Math.abs(distanceM - targetM) / targetM : 0
   const perKm = climbPerKm(climbM, distanceM)
   const hilly = Math.min(1, perKm / ROUTE_CLIMB_FULL_M_PER_KM)

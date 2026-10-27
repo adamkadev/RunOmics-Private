@@ -374,9 +374,7 @@ export const fr = {
         avoidBusyRoads: 'Éviter les grands axes',
         newStreetsFirst: 'Rues nouvelles d’abord',
         flatForReps: 'Plat pour les fractions',
-        trailsOk: 'Sentiers OK',
-        trailsLocked: 'Pas le jour d’une séance de qualité ni la veille',
-        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites', flatForReps: 'Plat', trailsOk: 'Sentiers' },
+        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites', flatForReps: 'Plat' },
         climb: {
           sessions: {
             quality: 'Séance de qualité',
