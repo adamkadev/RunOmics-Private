@@ -521,6 +521,24 @@ export const en = {
         idleNights: (nights: number) => `nothing written for ${nights} night${nights === 1 ? '' : 's'}`,
         closed: (model: string, reason: string) => `${model} closed: ${reason}`,
       },
+      garminSeries: {
+        title: 'Garmin data: newest sample per series',
+        allCurrent: 'All current',
+        stopped: (count: number) => `${count} stopped`,
+        never: 'Never received',
+        newest: (date: string) => `Last sample ${date}`,
+        staleSince: (date: string) => `Nothing new since ${date}`,
+        warnings: (count: number, steps: string) => `Last full sync: ${count} Garmin request${count === 1 ? '' : 's'} failed (${steps})`,
+        names: {
+          trainingStatus: 'Training status',
+          loadBalance: 'Load balance',
+          restingHr: 'Resting HR',
+          racePredictions: 'Race predictions',
+          vo2max: 'VO2max',
+          fitnessAge: 'Fitness age',
+          threshold: 'Threshold',
+        },
+      },
     },
     sync: {
       subtitle: 'Pull in today’s runs without waiting for tonight.',
@@ -1418,6 +1436,11 @@ export const en = {
       // One way out to the watch's own app; the brand lives in the URL alone.
       changeInGarmin: (name: string) => `${name} - edit in your watch app`,
       addInGarmin: 'Set the shoe in your watch app',
+      change: (name: string) => `${name} - change shoe`,
+      sheetTitle: 'Shoe for this run',
+      clearPick: 'Use the shoe from Garmin',
+      countsAfterSync: 'The shoe’s mileage counts the change after the next sync.',
+      saved: 'Saved. Mileage updates after the next sync.',
     },
     weather: {
       conditions: {
@@ -1656,6 +1679,13 @@ export const en = {
   },
 
   shoes: {
+    defaultShoe: {
+      label: 'Default shoe',
+      none: 'None',
+      hint: 'Counts every run Garmin gives no shoe, from the pair’s first use. Mileage follows after the next sync.',
+      saved: 'Saved. Mileage updates after the next sync.',
+    },
+    listCheckedAt: (date: string) => `Shoe list last refreshed from Garmin on ${date}`,
     tracked: (km: string) => `${km} km tracked`,
     addLabel: 'Add a pair in your watch app',
     edit: 'Edit shoe',

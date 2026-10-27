@@ -47,6 +47,20 @@ describe('the data contract', () => {
     expect(checkDataDirectory(dir)).toEqual([])
   })
 
+  it('only warns about a shoe pick or a sync report it cannot read, which never break a page', () => {
+    activities(activity())
+    write('shoe_choices.json', { runs: { 1: { gearId: '' } }, settings: [] })
+    write('sync_meta.json', { lastSyncedAt: '2026-10-27T03:00:00Z', warnings: 'none', seriesFreshness: [] })
+
+    expect(errors()).toEqual([])
+    expect(warnings().map((p) => `${p.file} ${p.path}`)).toEqual([
+      'shoe_choices.json $.runs.1.gearId',
+      'shoe_choices.json $.settings',
+      'sync_meta.json $.warnings',
+      'sync_meta.json $.seriesFreshness',
+    ])
+  })
+
   it('accepts an empty workspace - a fresh deployment has no data yet', () => {
     expect(checkDataDirectory(dir)).toEqual([])
   })

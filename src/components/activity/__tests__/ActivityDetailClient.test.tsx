@@ -126,7 +126,7 @@ describe('ActivityDetailClient', () => {
 
   it('reads Effort, conditions, shoe and note as chips in the verdict card', () => {
     const weather = { tempC: 18, apparentTempC: 18, humidityPct: 60, windKph: 2, windDirDeg: 0, precipitationMm: 0, code: 0 }
-    renderDetail({ activity: { ...ACTIVITY, rpe: 1, weather } as ActivityDetailView, shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
+    renderDetail({ activity: { ...ACTIVITY, rpe: 1, weather } as ActivityDetailView, shoe: { gearId: 'v1', name: 'Vomero Plus', dotColor: '#fff' } })
     const chips = within(screen.getByTestId('run-chips'))
     expect(chips.getByTestId('run-effort').textContent).toBe(t.activities.row.rpeValue(1))
     expect(chips.getAllByTestId('run-conditions').map((chip) => chip.textContent)).toEqual(['Clear sky · 18°C', 'wind 2 km/h N'])
@@ -153,7 +153,7 @@ describe('ActivityDetailClient', () => {
   })
 
   it('reads the pair without a link on a run the watch never gave an id', () => {
-    renderDetail({ shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
+    renderDetail({ shoe: { gearId: 'v1', name: 'Vomero Plus', dotColor: '#fff' } })
     const chip = screen.getByTestId('run-shoe')
     expect(chip.textContent).toBe('Vomero Plus')
     expect(chip.getAttribute('href')).toBeNull()

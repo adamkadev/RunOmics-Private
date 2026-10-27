@@ -7,6 +7,9 @@ import { plausibleBestEfforts } from '@/domain/activity/bestEfforts'
 import { withHrTrust } from '@/domain/activity/hrTrust'
 import { getAthleteProfile } from './JsonAthleteRepository'
 import { getHrUnreliableIds } from './JsonActivityNoteRepository'
+import { getShoeChoices } from './JsonShoeChoiceRepository'
+import { getShoeRecords } from './JsonShoeRepository'
+import { withShoeChoices } from '@/domain/shoe/shoeChoice'
 
 let cache: { generation: string; activities: Activity[] } | null = null
 
@@ -53,7 +56,8 @@ export function getAllActivities(dirPath?: string): Activity[] {
   const generation = dataGeneration()
   if (cache?.generation !== generation) {
     const trust = { reliableFrom: getAthleteProfile().hrReliableFrom, unreliableIds: getHrUnreliableIds() }
-    cache = { generation, activities: withHrTrust(readActivities(dataPath('activities')), trust) }
+    const activities = withHrTrust(readActivities(dataPath('activities')), trust)
+    cache = { generation, activities: withShoeChoices(activities, getShoeChoices(), getShoeRecords()) }
   }
   return cache.activities
 }

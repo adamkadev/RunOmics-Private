@@ -63,6 +63,30 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    function isWellFormedShoePick() {
+      return request.resource.data.keys().hasOnly(['gearId'])
+        && request.resource.data.gearId is string
+        && request.resource.data.gearId.matches('^[A-Za-z0-9_-]{1,64}$');
+    }
+
+    // The shoe the owner picked for a run, keyed by activity id. Gear is the owner's alone to change.
+    match /runShoes/{activityId} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedShoePick();
+      allow delete: if isOwner();
+    }
+
+    // One document, `default`: the shoe a run with none from Garmin counts toward.
+    match /shoeSettings/{settingId} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && settingId == 'default' && isWellFormedShoePick();
+      allow delete: if isOwner();
+    }
+
     function isScore(data, field) {
       return !(field in data) || (data[field] is int && data[field] >= 1 && data[field] <= 5);
     }

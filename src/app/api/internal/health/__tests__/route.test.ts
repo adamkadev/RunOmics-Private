@@ -14,7 +14,10 @@ vi.mock('@/application/usecases/LoadData', () => ({
   dataVersion: () => ({ dataCommit: 'abc1234', rejectedData: null }),
 }))
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities }))
-vi.mock('@/application/usecases/GetSyncStatus', () => ({ getLastSyncedAt }))
+const meta = vi.hoisted(() => ({ extra: {} as Record<string, unknown> }))
+vi.mock('@/application/usecases/GetSyncStatus', () => ({
+  getSyncMeta: () => ({ lastSyncedAt: getLastSyncedAt(), warnings: [], warningsAt: null, seriesNewest: {}, shoesCheckedAt: null, ...meta.extra }),
+}))
 vi.mock('@/application/usecases/AiPassStatus', () => ({ lastAiPass }))
 vi.mock('@/infrastructure/firestoreRulesHash', () => ({ liveFirestoreRulesHash }))
 
@@ -43,6 +46,7 @@ describe('GET /api/internal/health', () => {
     loadData.mockResolvedValue(undefined)
     getAllActivities.mockReturnValue([{ date: '2026-10-26T07:30:00Z' }])
     getLastSyncedAt.mockReturnValue('2026-10-27T01:30:00Z')
+    meta.extra = {}
   })
 
   afterEach(() => {
@@ -64,6 +68,21 @@ describe('GET /api/internal/health', () => {
       daysSinceLastActivity: 1,
       dataCommit: 'abc1234',
     })
+  })
+
+  it('names the Garmin series that stopped updating, since when, and the night\'s endpoint warnings', async () => {
+    meta.extra = {
+      warnings: [{ step: 'training status', message: 'HTTP 500' }, { step: 'training status', message: 'HTTP 502' }],
+      warningsAt: '2026-10-27T01:30:00Z',
+      seriesNewest: { trainingStatus: '2026-10-19', restingHr: '2026-10-26', vo2max: null },
+    }
+
+    const { status, body } = await health()
+
+    expect(status).toBe(200)
+    expect(body.connectWarnings).toEqual({ count: 2, steps: ['training status'], at: '2026-10-27T01:30:00Z' })
+    expect(body.staleSeries).toEqual([{ series: 'trainingStatus', since: '2026-10-19' }])
+    expect(body.seriesFreshness).toContainEqual({ series: 'restingHr', newest: '2026-10-26', ageDays: 1, stale: false })
   })
 
   it('stays ok through a training break while the sync keeps landing', async () => {

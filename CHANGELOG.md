@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Shoes without garth and Garmin warnings (G3, G6). The owner picks a run's
+  shoe on its page and sets a default shoe on Shoes, stored in Firestore
+  (`runShoes`, `shoeSettings/default`, owner-only rules) and committed nightly as
+  `shoe_choices.json`, which the app applies when it loads the runs: a pick wins
+  over Garmin's shoe, and the default fills a run Garmin gave none, from the
+  pair's first use. The mileage follows after the next sync; the stored `gearId`
+  is never rewritten. Shoes says when the list was last refreshed from Garmin
+  once that is more than 14 days ago. The ten Connect requests a step reads
+  around now land in `sync_meta.json` (`warnings`, `warningsAt`) and the run's
+  summary, with `seriesFreshness`, the newest sample of each Garmin series.
+  Health reports `connectWarnings`, `seriesFreshness` and `staleSeries`;
+  Settings → Diagnostics lists each series and since when it stopped. The rules
+  must be deployed by hand to both Firebase projects.
+
 - PWA states, accessibility and French (F6, F10, F11, manifest). Settings →
   Notifications says "add to the Home Screen" where Safari offers no push and
   "blocked in Settings" once permission is refused, with the switches disabled,
