@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { listClientErrors, recordClientError } from '@/application/usecases/ClientErrors'
 import { logRejectedRequest } from '@/lib/internalAuth'
 import { requireOwner } from '@/lib/ownerRoute'
-import { createRateLimiter } from '@/lib/rateLimit'
+import { clientIp, createRateLimiter } from '@/lib/rateLimit'
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' }
 /** A page caught in a loop of errors stops here, not in Firestore. */
@@ -10,8 +10,7 @@ const limiter = createRateLimiter({ max: 20, windowMs: 60_000, maxKeys: 1000 })
 const MAX_BODY = 4_000
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-  if (!limiter.take(ip, Date.now()).ok) {
+  if (!limiter.take(clientIp(req), Date.now()).ok) {
     logRejectedRequest(req, 'rate-limited')
     return new NextResponse(null, { status: 429, headers: NO_STORE })
   }
