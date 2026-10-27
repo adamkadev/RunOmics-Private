@@ -37,7 +37,7 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
   const avgPaceSecPerKm = mean(activities.map((a) => a.paceSecPerKm))
   const avgHeartRate = mean(activities.map((a) => a.avgHeartRate))
 
-  // By distance, not session count, as TypeDistribution splits a type mix.
+  // By distance, not session count, so one long run outweighs two short ones.
   const bucketDistance: Record<ShoeTypeBucket, number> = { base: 0, tempo: 0, threshold: 0, intervals: 0 }
   for (const a of activities) bucketDistance[typeBucket(a.type)] += a.distanceKm
   const share = (bucket: ShoeTypeBucket) => (totalKm === 0 ? 0 : Math.round((bucketDistance[bucket] / totalKm) * 100))

@@ -24,7 +24,6 @@ function activity(overrides: Partial<Activity> = {}): Activity {
     avgHeartRate: 140,
     rpe: 3,
     comment: 'Felt good',
-    polyline: 'private-route',
     route: [[48.8, 2.3]],
     elevationGain: 20,
     aerTrainingEffect: 2.5,
@@ -117,7 +116,6 @@ describe('buildTrainingWorkbook', () => {
     expect(columns).toContain('best_effort_5k_seconds')
     expect(columns).toContain('shoe_model')
     expect(columns).not.toContain('route')
-    expect(columns).not.toContain('polyline')
     expect(columns).not.toContain('hrSamples')
   })
 

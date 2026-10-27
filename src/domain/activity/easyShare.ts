@@ -3,9 +3,6 @@ import { runTypeZone } from '@/lib/colors'
 
 /** "Easy" is one thing on every screen: time in heart-rate zones 1-2, weighted by time. */
 
-/** A conservative ceiling on hard volume, not a law, so screens call it a guide, not a target. */
-export const EASY_SHARE_GUIDE = 80
-
 /** An easy/hard split in whole percent that adds up to 100. */
 export interface EasyHardSplit {
   easy: number

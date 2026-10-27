@@ -163,6 +163,11 @@ export function ActivityDetailClient({
     activity.verticalRatioPct != null
   )
 
+  const bestEfforts = activity.bestEfforts && (
+    <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
+  )
+  const recordsFirst = !!qualifiedEfforts?.some((effort) => activity.bestEfforts?.[effort.key] != null)
+
   const tabs = [
     { id: 'overview' as const, label: t.activity.tabs.overview, show: true },
     { id: 'intervals' as const, label: t.activity.tabs.intervals, show: hasSplits },
@@ -303,6 +308,7 @@ export function ActivityDetailClient({
       >
         {tab === 'overview' && (
           <>
+            {recordsFirst && bestEfforts}
             {extras}
             <PaceHrPreview
               paceSamples={activity.paceSamples}
@@ -318,9 +324,7 @@ export function ActivityDetailClient({
               onShowCharts={hasCharts ? () => setTab('charts') : undefined}
             />
             {similarRuns && <SimilarRuns data={similarRuns} />}
-            {activity.bestEfforts && (
-              <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
-            )}
+            {!recordsFirst && bestEfforts}
           </>
         )}
 

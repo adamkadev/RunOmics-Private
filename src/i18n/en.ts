@@ -765,7 +765,6 @@ export const en = {
   analytics: {
     title: 'Analytics',
 
-    aboutChart: 'What this chart measures',
     // Named for what each tab holds, in whole words.
     tabs: {
       fitness: 'Load',
@@ -1315,9 +1314,6 @@ export const en = {
       } as Record<string, string>,
       prBadge: 'PR',
       rankBadge: (rank: number) => `#${rank}`,
-    },
-    achievements: {
-      title: 'Achievements from this run',
     },
     // The home area's quartiers this run reached into first.
     newGround: {
@@ -2270,12 +2266,6 @@ export const en = {
       pace: (range: string) => `${range} /km`,
       recovery: (clock: string) => `${clock} rec`,
       walk: (clock: string) => `${clock} walk`,
-    },
-    raceFooter: {
-      targetTime: (clock: string) => `target ${clock}`,
-      primaryTarget: 'primary',
-      tuneUp: 'tune-up',
-      blockEndsHere: 'block end',
     },
     weekPurpose: {
       prePlan: 'Pre-plan',

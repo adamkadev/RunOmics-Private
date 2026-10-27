@@ -9,14 +9,12 @@ import {
 import { medianStart } from '@/domain/explore/home'
 import { planRoute } from '@/domain/explore/routePlan'
 import { routeStart, scoreRoutes } from '@/domain/explore/routeScore'
-import { decodePolyline } from '@/lib/polyline'
 import type { ExploreAreaFile, ExploreAreaRef } from '@/domain/explore/types'
 import { areaCacheKey, trackCacheKey, type ExploreCache } from './idb'
-import { flattenRoute, isValidTrackBuffers } from './trackBuffers'
+import { isValidTrackBuffers } from './trackBuffers'
 import {
   areaKey,
   type AddedTracks,
-  type ClusterTrackRef,
   type ExploreRequest,
   type ExploreResponse,
   type ExploreResults,
@@ -235,58 +233,6 @@ function addTracks(area: AreaState, msg: RequestOf<'addTracks'>, deps: WorkerDep
   return addActivities(area, tracks, deps)
 }
 
-/**
- * The page's `routeIdx` comes from the data the page was built with, the answer from whichever
- * deployment serves it now, so an index is trusted only where the answer names the same run.
- */
-export function locateClusterTracks(
-  wanted: readonly ClusterTrackRef[],
-  ids: Readonly<Record<string, unknown>>,
-): Map<string, string> {
-  let byId: Map<unknown, string> | null = null
-  const found = new Map<string, string>()
-  for (const ref of wanted) {
-    const at = String(ref.routeIdx)
-    if (ids[at] === ref.id) {
-      found.set(ref.id, at)
-      continue
-    }
-    byId ??= new Map(Object.entries(ids).map(([index, id]) => [id, index]))
-    const moved = byId.get(ref.id)
-    if (moved !== undefined) found.set(ref.id, moved)
-  }
-  return found
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
-
-/** Fetched here so the 2 MB of JSON is parsed off the main thread. */
-async function fetchClusterTracks(
-  area: AreaState,
-  msg: RequestOf<'fetchClusterTracks'>,
-  deps: WorkerDeps,
-): Promise<string[]> {
-  const wanted = msg.index.filter((ref) => !area.activities.has(ref.id))
-  if (wanted.length === 0) return []
-
-  const res = await deps.fetch(`/api/map/routes?cluster=${encodeURIComponent(msg.clusterId)}&enc=p5`)
-  if (!res.ok) throw new Error(`Cluster ${msg.clusterId}: HTTP ${res.status}`)
-  const json: unknown = await res.json()
-  const routes = isRecord(json) ? json.routes : undefined
-  const ids = isRecord(json) ? json.ids : undefined
-  if (!isRecord(routes)) throw new Error(`Cluster ${msg.clusterId}: no routes`)
-  if (!isRecord(ids)) throw new Error(`Cluster ${msg.clusterId}: no route ids`)
-
-  const located = locateClusterTracks(wanted, ids)
-  const tracks = wanted.flatMap((ref): IncomingTrack[] => {
-    const at = located.get(ref.id)
-    if (at === undefined) return []
-    const track = routes[at]
-    return [{ id: ref.id, date: ref.date, coords: flattenRoute(typeof track === 'string' ? decodePolyline(track) : track) }]
-  })
-  return addActivities(area, tracks, deps)
-}
-
 function homeOf(area: AreaState, home: LonLat | null, fromTracks: boolean | undefined, ids: readonly string[] | undefined): LonLat | null {
   if (home) return home
   if (!fromTracks) return null
@@ -338,10 +284,6 @@ function dispatch(
       return serial(state, areaKey(msg.ref), () => loadArea(state, msg.ref, deps))
     case 'addTracks':
       return serial(state, msg.areaKey, async () => added(await addTracks(requireArea(state, msg.areaKey), msg, deps)))
-    case 'fetchClusterTracks':
-      return serial(state, msg.areaKey, async () =>
-        added(await fetchClusterTracks(requireArea(state, msg.areaKey), msg, deps)),
-      )
     case 'coverage':
       return serial(state, msg.areaKey, async () => coverage(requireArea(state, msg.areaKey), msg))
     case 'scoreRoutes':

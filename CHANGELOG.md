@@ -19,6 +19,15 @@ All notable changes to this project are documented in this file.
   session's load rises by about 7–19 % (more at easy effort), so fitness (CTL),
   fatigue (ATL) and the planned-session load estimates step up once on the first
   deploy; form (TSB) and ACWR, being differences and ratios, barely move.
+- Cleanup (C2, C3, C5, C8). A run's Overview shows its records once, in Best
+  efforts, at the top when the run holds a ranked effort. Dead code goes
+  (RaceFooter, ListRow, MetricGrid, ChartCard, activityTypeStyle, the unused
+  exports, Today's unused aggregates, the Explore worker's own track download);
+  `npm run check:cycles` now fails a page that awaits `loadData()` without
+  exporting `revalidate`, and CI's weekly run reports `knip`'s findings. The
+  sync stops writing the always-null `polyline`. `.env.example` lists every
+  variable, the README and docs drop what no longer exists, and a test fails on
+  a backticked identifier or path in them the code no longer has.
 - A durable trace of server jobs (R4). Every scheduled run and every internal
   5xx is kept in a capped Firestore collection, `jobEvents` (route, trigger,
   outcome, status and error class only; the last 200). Settings → Diagnostics

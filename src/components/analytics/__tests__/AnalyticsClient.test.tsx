@@ -260,7 +260,6 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     fireEvent.click(screen.getByRole('button', { name: t.analytics.cards.form.title }))
     expect(screen.getByRole('dialog').textContent).toContain(t.analytics.cards.form.about)
-    expect(document.querySelector('[aria-label="' + t.analytics.aboutChart + '"]')).toBeNull()
   })
 
   it('drops Injury risk and the large Load trend, and the note on the watch status', async () => {

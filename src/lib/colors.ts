@@ -80,13 +80,6 @@ export function sessionZone(session: { type?: string | null }): SessionZone {
   return runTypeZone(session.type)
 }
 
-// Tokens, so each theme takes its own text-grade step.
-export const READINESS_TONE_COLORS = {
-  go:      'var(--tone-go)',
-  caution: 'var(--tone-caution)',
-  hold:    'var(--tone-hold)',
-} as const
-
 
 /**
  * Shoe dots are pair identity, not state, so the ramp is neutral: the muted text scale rather than `paper()`,
@@ -139,20 +132,3 @@ export const BOOT_COLORS = {
   actionBg: '#2dd4a7',
   actionFg: '#07261d',
 } as const
-
-
-export const TEMP_BAND_COLORS = {
-  cold:      c.blue400,
-  cool:      c.emerald400,
-  mild:      c.amber400,
-  warm:      c.orange500,
-  hot:       c.red500,
-} as const
-
-export function tempBandColor(celsius: number): string {
-  if (celsius < 10) return TEMP_BAND_COLORS.cold
-  if (celsius < 18) return TEMP_BAND_COLORS.cool
-  if (celsius < 24) return TEMP_BAND_COLORS.mild
-  if (celsius < 30) return TEMP_BAND_COLORS.warm
-  return TEMP_BAND_COLORS.hot
-}

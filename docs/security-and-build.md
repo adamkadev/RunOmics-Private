@@ -62,6 +62,7 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
 - `pushTokens/{token}`: the document's id is its token, with a `userAgent`, an `updatedAt` and
   optional `categories`, a map of `training`, `shoes` and `records` to booleans. Create, update
   and delete only; nothing on a phone reads the list.
+- `jobEvents`: the server jobs' trace (see [Job trace](#job-trace)). The owner reads it; no client writes it.
 
 **The rules are deployed by hand,** never with the app: after any change, run
 `firebase deploy --only firestore:rules --project <id>` once per Firebase project (each
@@ -127,17 +128,16 @@ exempts every hook written in that file later, which is exactly the code most wo
 linting; the directive expires with the line it is attached to, and ESLint reports it as
 an unused directive once the effect no longer needs it.
 
-- **`react-hooks/set-state-in-effect`** — `ActivityListClient`, `AnalyticsClient` and
-  `FirstLaunchHint` restore state from `localStorage`/`sessionStorage` once after mount. It
-  has to be an effect rather than a state initializer: an initializer would differ from the
-  server-rendered markup and trip a hydration mismatch. `ActivityListClient` additionally
-  guards with a `hasRestored` ref and merges only into still-default values, so a restore
-  can never clobber a user edit.
-- **`react-hooks/exhaustive-deps`** — `AnalyticsClient` (one-time mount effect),
-  `CelebrationOverlay`, `useMapRoutes` and `useShareCardMap` deliberately narrow their
-  dependency arrays. These effects own imperative MapLibre/canvas resources whose teardown
-  and rebuild is expensive; re-running them on every referenced value would recreate the map
-  or the render on each parent render.
+- **`react-hooks/set-state-in-effect`** — `ActivityListClient` restores its search from
+  `sessionStorage` once after mount. It has to be an effect rather than a state initializer:
+  an initializer would differ from the server-rendered markup and trip a hydration mismatch.
+  It merges only into a still-empty field, so a restore can never clobber a user edit.
+- **`react-hooks/exhaustive-deps`** — `useMapRoutes` and `useShareCardMap` deliberately narrow
+  their dependency arrays: these effects own imperative MapLibre/canvas resources whose
+  teardown and rebuild is expensive, so re-running them on every referenced value would
+  recreate the map or the render on each parent render. `useRunPlace` keys its lookup on the
+  run rather than on its first point's array, and `SyncNowCard` resumes a sync's polling once
+  per mount, not once per signed-in identity.
 
 `ThemeToggle`, `AccentPicker` and `ThemeSegmented` needed no suppression at all: their
 "have we hydrated yet?" flag is `useMounted` (`src/lib/useMounted.ts`), a
@@ -272,6 +272,8 @@ Push events display FCM webpush payloads (`{ notification: { title, body } }`) d
 `sw.js`. A non-JSON push falls through to the
 generic notification.
 
-Bump `VERSION` to invalidate every cache on deploy of a breaking change.
+Each deploy registers the worker as `/sw.js?v=<version>-<commit>` (`SERVICE_WORKER_URL`), and
+`sw.js` names its caches after `v`, so every deploy drops the last one's caches: there is no
+version to bump by hand.
 
 Made with love

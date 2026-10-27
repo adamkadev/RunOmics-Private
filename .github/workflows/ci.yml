@@ -171,6 +171,16 @@ jobs:
       - name: Check import cycles
         run: npm run check:cycles
 
+      # A report, not a gate: each finding is a lead to confirm with a whole-repo grep before deleting.
+      - name: Report unused files and exports
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: |
+          npx -y knip@5.88.1 --no-progress > "$RUNNER_TEMP/knip.txt" 2>&1 || status=$?
+          cat "$RUNNER_TEMP/knip.txt"
+          { echo '### Unused code (knip)'; echo '```'; cat "$RUNNER_TEMP/knip.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "${status:-0}"
+
   # Two shards beside verify, each with a worker per core: vitest's default leaves one core idle.
   unit-tests:
     runs-on: ubuntu-latest

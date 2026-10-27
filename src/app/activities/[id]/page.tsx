@@ -11,7 +11,6 @@ import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient
 import { activityDetailView, runName, shareActivity, shownType } from '@/components/activity/activityViews'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
-import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
 import { OfficialResult } from '@/components/activity/OfficialResult'
 import { NewGround } from '@/components/activity/NewGround'
 import { getRunExploreGain } from '@/application/usecases/GetExploreGains'
@@ -122,7 +121,7 @@ export default async function ActivityDetailPage({
         shoe={shoe}
         similarRuns={similarRuns}
         extras={
-          officialResult || activity.bestEfforts || newGround || controlledRun ? (
+          officialResult || newGround || controlledRun ? (
             <>
               {controlledRun && <ControlledThresholdCard view={controlledRun} />}
               {officialResult && (
@@ -132,9 +131,6 @@ export default async function ActivityDetailPage({
                   garminDurationSeconds={activity.durationSeconds}
                   isPersonalBest={holdsOfficialRecord}
                 />
-              )}
-              {activity.bestEfforts && (
-                <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
               )}
               {newGround && <NewGround gain={newGround} />}
             </>

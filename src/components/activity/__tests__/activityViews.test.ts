@@ -17,7 +17,6 @@ const ACTIVITY = {
   hrZones: [],
   avgHeartRate: 140,
   rpe: 3,
-  polyline: 'encoded-route',
   route: [[6.1, 49.6], [6.2, 49.7]],
   elevationGain: 80,
   aerTrainingEffect: 2.8,
@@ -44,7 +43,7 @@ describe('activityDetailView', () => {
   it('leaves out what no client component on the page draws', () => {
     const view = activityDetailView(ACTIVITY)
 
-    for (const key of ['polyline', 'comment', 'description', 'calories', 'gearId', 'vo2maxGarmin', 'avgTemperature', 'week']) {
+    for (const key of ['comment', 'description', 'calories', 'gearId', 'vo2maxGarmin', 'avgTemperature', 'week']) {
       expect(view, key).not.toHaveProperty(key)
     }
   })

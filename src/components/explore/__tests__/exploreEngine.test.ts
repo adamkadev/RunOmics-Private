@@ -26,8 +26,6 @@ function happy(message: ExploreRequest): ExploreResponse {
       return { id: message.id, result: AREA }
     case 'addTracks':
       return { id: message.id, result: { added: message.ids } }
-    case 'fetchClusterTracks':
-      return { id: message.id, result: { added: message.index.map((r) => r.id) } }
     default:
       return { id: message.id, result: null }
   }
@@ -233,37 +231,6 @@ describe('addTracks', () => {
 
     const sent = workers[0]!.sent('addTracks').map((m) => (m.type === 'addTracks' ? m.ids : []))
     expect(sent).toEqual([['a', 'b'], ['c']])
-  })
-})
-
-describe('fetchClusterTracks', () => {
-  const index = [
-    { routeIdx: 0, id: 'a', date: '2026-10-01' },
-    { routeIdx: 3, id: 'b', date: '2026-09-01' },
-  ]
-
-  it('asks the worker for the runs it lacks, and never again', async () => {
-    const { engine, workers } = setup()
-    await engine.addTracks(REF, tracks(['a']))
-
-    await expect(engine.fetchClusterTracks(REF, '2', index)).resolves.toEqual({ added: ['b'] })
-    await expect(engine.fetchClusterTracks(REF, '2', index)).resolves.toEqual({ added: [] })
-
-    const fetches = workers[0]!.sent('fetchClusterTracks')
-    expect(fetches).toHaveLength(1)
-    expect(fetches[0]).toMatchObject({ areaKey: KEY, clusterId: '2', index: [index[1]] })
-  })
-
-  it('settles runs the cluster has no track for, so they are not fetched again', async () => {
-    const { engine, workers } = setup((m) =>
-      m.type === 'fetchClusterTracks' ? { id: m.id, result: { added: [] } } : happy(m),
-    )
-
-    await engine.fetchClusterTracks(REF, '0', index)
-
-    expect(engine.unsent(REF, ['a', 'b'])).toEqual([])
-    await engine.fetchClusterTracks(REF, '0', index)
-    expect(workers[0]!.sent('fetchClusterTracks')).toHaveLength(1)
   })
 })
 

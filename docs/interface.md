@@ -28,16 +28,13 @@ CSS cannot reach — inline SVG attributes that need real strings, MapLibre pain
 share-card canvas.
 
 **What follows the accent picker and what does not.** Form (TSB), weekly volume and the long-run
-bar come from `useAccentUiColor()` — they are the "this is your headline number" marks. Everything
+bar are drawn in `var(--accent)` — they are the "this is your headline number" marks. Everything
 in `CHART_COLORS` is categorical or semantic and stays put. Readiness tone, pace-route, heat-route
 and temperature ramps are all deliberately accent-independent: how often a stretch was run, or how
 hot it was, is a property of the data, not a theme choice, so the map must not repaint when the
-accent changes. Brand tints (season headline, race footer) stay emerald so they remain the brand's
+accent changes. Brand tints (the season headline) stay emerald so they remain the brand's
 voice rather than the athlete's chosen tint.
 
-- `useAccentUiColor()` is for marks that must repaint with accent-coloured chrome around them.
-  `useAccentChartColor()` is its multi-series variant: red-adjacent accents that would collide with
-  Fitness/Fatigue/HR fall back to brand emerald. The picker's own swatch hue is neither.
 - Three HR-zone ramps exist because they answer different questions against different backdrops.
   Z4 orange500 and Z5 red500 collapse into one hue at donut-slice size on the near-black canvas, so
   the dark ramp lifts them apart. The Athlete card's headline zones sit a step more saturated
@@ -270,9 +267,9 @@ behaves as before until a token is added as a secret.
   native scrolling. Past the threshold the sheet finishes sliding off under a real CSS transition
   before `onDismiss` fires, instead of vanishing when the finger lifts.
 - **Service worker** registers in production only — a SW serving cached pages during development would
-  mask live code changes. It also owns the update flow: a waiting version offers a banner, posts
-  `SKIP_WAITING`, and reloads once the new worker takes control; otherwise users keep the old version
-  until they close every tab.
+  mask live code changes. A new worker skips waiting as soon as it installs, so it takes over at
+  once; when it installs under a page an older worker controls, a banner offers to reload that page
+  (posting `SKIP_WAITING` first if the worker is somehow still waiting).
 - **An iPhone PWA keeps its JavaScript until it is relaunched**, even across deploys. Back in the
   foreground after a minute away, `UpdateOnResume` asks `GET /api/version` for the build commit and
   reloads when it changed, unless a text field has focus.
@@ -284,8 +281,6 @@ behaves as before until a token is added as a secret.
   typically nested inside a glass card already.
 - **Toast** renders at the top of the screen, below the notch, so it is never hidden behind the bottom
   tab bar.
-- **`ActivityHeatmap`** cells are keyed on `themeVersion` so `color-mix` values remount and re-resolve on
-  a theme or accent switch.
 
 ## Internationalisation
 
