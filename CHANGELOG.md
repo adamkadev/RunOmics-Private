@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A watchdog outside the deployments (R2). A daily GitHub workflow checks each
+  profile's health and fails, which emails the repository owner, when the last
+  sync is 36 hours old, the data is unloaded, or Firebase Admin or the cron
+  secret is missing. Health now judges staleness by the last sync rather than
+  the last run, so a training break no longer reads as stale, answers 503 when
+  stale, and reports `cron`. A nightly dispatch GitHub refuses sends an operator
+  push.
 - The coach runs through Claude Code by default (N9). `weekly-review` and
   `evaluate` gain the manual path bootstrap had (`--prompt-out` /
   `--from-answer`), sharing the prompts with the Gemini advisor, and every

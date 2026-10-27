@@ -1959,6 +1959,10 @@ export const en = {
       title: (name: string) => `${name} explored`,
       body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
     },
+    syncDispatchRefused: {
+      title: 'Nightly sync did not start',
+      body: (status: number) => `GitHub refused its dispatch (${status}). Check the Sync button token and repository in Vercel.`,
+    },
     tokenExpiring: {
       names: { dataActions: 'the data token (GitHub Actions)', dataVercel: 'the data token (Vercel)', syncVercel: 'the Sync button token (Vercel)' },
       title: (days: number) => (days <= 0 ? 'A GitHub token expires today' : `A GitHub token expires in ${days} day${days === 1 ? '' : 's'}`),
