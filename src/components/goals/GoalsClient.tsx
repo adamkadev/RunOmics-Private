@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import { cardClass } from '@/components/ui/Card'
@@ -15,6 +16,8 @@ export function defaultGoalsYear(years: readonly number[], today: string): numbe
   const current = Number(today.slice(0, 4))
   return years.includes(current) ? current : years[0]
 }
+
+const GOALS_RACES_HREF = '/settings#goals-races'
 
 const STEP_BTN =
   'hit-44 flex size-9 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-35'
@@ -69,6 +72,9 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
         <section className={cardClass({ className: 'flex flex-col gap-1' })} data-testid="goals-missing-year">
           <p className="text-sm font-semibold text-foreground">{t.goals.noGoalYear(data.missingGoalYear)}</p>
           <p className="text-sm text-subtle text-pretty">{t.goals.emptyHow}</p>
+          <Link href={GOALS_RACES_HREF} className="hit-44 self-start text-sm font-medium text-accent-text">
+            {t.goals.emptyAction}
+          </Link>
         </section>
       )}
 
@@ -79,6 +85,9 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
           <section className={cardClass({ className: 'flex flex-col gap-2 py-10 text-center' })} data-testid="goals-empty">
             <p className="text-sm font-semibold text-foreground">{t.goals.empty}</p>
             <p className="text-sm text-subtle text-pretty">{t.goals.emptyHow}</p>
+            <Link href={GOALS_RACES_HREF} className="hit-44 self-center text-sm font-medium text-accent-text" data-testid="goals-empty-action">
+              {t.goals.emptyAction}
+            </Link>
           </section>
         )}
       </div>

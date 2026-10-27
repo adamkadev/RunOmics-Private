@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Races and goals editor (G4). Settings → Races & goals (owner only) adds, edits
+  and removes races (name, date, distance, a goal time or "just finish", priority
+  A/B/C, place) and sets each season's distance and target times, in English and
+  French, with an empty state for an athlete with no race. Entries live in
+  Firestore `raceEntries` and `goalEntries`; the nightly sync mirrors them to
+  `race_entries.json` and `goal_entries.json`, laid over `upcoming_races.json`
+  and `goals.json`, which keep working unchanged. Plan, Today, the race page,
+  Goals and the coach all read the merged list; a Garmin race removed in the app
+  stays hidden, and the coach's dump warns when the app holds edits the last
+  sync has not mirrored. The Goals page's empty state links to the editor.
+  `firestore.rules` changed: deploy it to both Firebase projects.
 - Cleanup batch 2 (C7, C9, C11, E7, E8, R15, R19). One rate limiter and one
   `clientIp()` for the internal, client-error and explore routes. With
   `RUNOMICS_DATA_SOURCE=github` the functions no longer ship `./data`. The
@@ -13,9 +24,10 @@ All notable changes to this project are documented in this file.
   gets an ESLint layer rule (`verdictStatus` moves to the use cases, `aiSpend` to
   `application/ai`, `withTimeout` to `src/lib`), and Today, Athlete, Plan and
   Settings leave the repository allowlist. The nightly sync runs at 04:00 UTC and
-  the health watchdog at 17:47. From 1 December, when `goals.json` has no entry
+  the health watchdog at 17:47. From 1 December, when the goals have no entry
   for the coming year (or, from 1 January, for this one), Goals says "No goal set
-  for 2027" and the Friday cron sends one push for that year.
+  for 2027" with a link to Races & goals, and the Friday cron sends one push for
+  that year.
 
 - Shoes without garth and Garmin warnings (G3, G6). The owner picks a run's
   shoe on its page and sets a default shoe on Shoes, stored in Firestore
@@ -55,6 +67,8 @@ All notable changes to this project are documented in this file.
   note's button rather than around it. The share card is back to its state
   before R8: no "Show full route" switch, the whole route drawn, and no map
   credit on the image.
+- E2E caches WebKit's system packages (`~/.cache/webkit-apt`, apt's archive directory, one entry per
+  Playwright version a week), so a run on a crawling Ubuntu mirror installs them without downloading.
 - E2E's WebKit install no longer fails its retries on a held lock: a try cut short left its `apt-get`
   running under sudo with the dpkg lock, so tries 2 and 3 failed at once. Each retry now ends the
   leftover `apt-get` (a `dpkg` it started finishes), and apt waits up to 2 minutes for a lock.

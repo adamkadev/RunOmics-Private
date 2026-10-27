@@ -24,6 +24,7 @@ import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecyc
 import { sessionForRun } from '@/domain/coaching/sessionForRun'
 import { isoWeekWindows, weekWindowIndex } from '@/domain/coaching/weekWindows'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
+import { raceKey } from '@/domain/goals/entries'
 import { BOOTSTRAP_START_WINDOW_DAYS } from '@/domain/coaching/renewal'
 import { GENERAL_PREPARATION, macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
 import { fatigueBasis, lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
@@ -68,15 +69,10 @@ function provenance(source: Source, trigger: CoachingProvenance['trigger'], crea
 
 const guidanceHash = (guidance: string) => createHash('sha256').update(guidance).digest('hex').slice(0, 24)
 
-function raceIdentity(race: CoachingContext['upcomingRaces'][number]): string {
-  return race.garminEventUuid
-    ?? (race.garminEventId === undefined ? `${race.date}:${race.name}` : String(race.garminEventId))
-}
-
 function eventFromRace(race: CoachingContext['upcomingRaces'][number], role: CoachingEventRole): TargetEvent {
   const distanceMeters = raceDistanceMeters(race.distance)
   return {
-    id: raceIdentity(race),
+    id: raceKey(race),
     name: race.name,
     date: race.date,
     role,
@@ -120,7 +116,7 @@ function selectBootstrapTarget(context: CoachingContext, targetEventId?: string,
   const fullHorizonEnd = new Date(planningStart.getTime() + 27 * DAY_MS).toISOString().slice(0, 10)
   const overridden = targetEventId
     ? races.find((candidate) => {
-        return raceIdentity(candidate) === targetEventId || candidate.name === targetEventId
+        return raceKey(candidate) === targetEventId || candidate.name === targetEventId
       })
     : undefined
   if (targetEventId && !overridden) throw new Error(`Upcoming race not found: ${targetEventId}`)
@@ -154,7 +150,8 @@ function selectGoal(context: CoachingContext, event: TargetEvent | null): Traini
   if (!event) return { kind: 'performance', description: 'Progress running fitness over time, with no target race.' }
   const eventYear = Number(event.date.slice(0, 4))
   const annualTarget = context.goals.find((year) => year.year === eventYear)?.targets.find((candidate) => candidate.distance === event.distanceLabel)
-  const targetSeconds = event.targetSeconds ?? annualTarget?.targetSeconds
+  const justFinish = context.upcomingRaces.some((race) => raceKey(race) === event.id && race.justFinish)
+  const targetSeconds = justFinish ? undefined : event.targetSeconds ?? annualTarget?.targetSeconds
   return targetSeconds
     ? { kind: 'time', targetSeconds, description: `Run ${event.distanceLabel} in the target time.` }
     : { kind: 'finish', description: `Complete ${event.name}.` }

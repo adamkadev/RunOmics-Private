@@ -49,15 +49,17 @@ describe('defaultGoalsYear', () => {
 })
 
 describe('GoalsClient', () => {
-  it('says where a goal is set when there is none', () => {
+  it('says where a goal is set when there is none, and links to the editor', () => {
     render(<GoalsClient data={{ years: [], byYear: {}, history: [], nextRace: null, missingGoalYear: null }} today={TODAY} />)
-    expect(screen.getByTestId('goals-empty').textContent).toBe(`${t.goals.empty}${t.goals.emptyHow}`)
-    expect(t.goals.emptyHow).toContain('goals.json')
+    expect(screen.getByTestId('goals-empty')).toHaveTextContent(t.goals.emptyHow)
+    expect(screen.getByTestId('goals-empty-action')).toHaveAttribute('href', '/settings#goals-races')
   })
 
   it('says the new year has no goal yet above the last year’s page', () => {
     render(<GoalsClient data={{ ...data(), years: [2026, 2025], missingGoalYear: 2027 }} today="2027-01-02" />)
-    expect(screen.getByTestId('goals-missing-year').textContent).toBe(`${t.goals.noGoalYear(2027)}${t.goals.emptyHow}`)
+    const card = screen.getByTestId('goals-missing-year')
+    expect(card).toHaveTextContent(t.goals.noGoalYear(2027))
+    expect(card.querySelector('a')).toHaveAttribute('href', '/settings#goals-races')
     expect(t.goals.noGoalYear(2027)).toBe('No goal set for 2027')
   })
 

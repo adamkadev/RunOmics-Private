@@ -28,7 +28,9 @@ export function raceDistanceMeters(distanceLabel?: string): number | undefined {
   if (!distanceLabel) return undefined
   const normalized = distanceLabel.toLowerCase().replace(/[\s_-]/g, '')
   const key = DISTANCE_KEYS[normalized]
-  return key === undefined ? undefined : Math.round(RACE_DISTANCE_KM[key] * 1_000)
+  if (key !== undefined) return Math.round(RACE_DISTANCE_KM[key] * 1_000)
+  const km = /^(\d+(?:\.\d+)?)km$/.exec(normalized)
+  return km ? Math.round(Number(km[1]) * 1_000) : undefined
 }
 
 export function finishSecondsFromPace(paceSecPerKm: number, distanceMeters: number): number {

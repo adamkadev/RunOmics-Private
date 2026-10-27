@@ -5,6 +5,8 @@ import { getAthleteProfile } from '@/application/usecases/GetAthleteProfile'
 import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
 import { isSitePrivate } from '@/lib/siteAccess'
+import { getGoalsRacesSources } from '@/application/usecases/GetGoalsRacesSources'
+import { appTodayIso } from '@/lib/calendarDate'
 
 export const revalidate = 3600
 
@@ -20,6 +22,7 @@ export default async function SettingsPage() {
 
   return (
     <SettingsClient
+      goalsRaces={{ ...getGoalsRacesSources(), today: appTodayIso() }}
       lastSyncedAt={lastSyncedAt}
       activityCount={activityCount}
       device={deviceName ? { name: deviceName } : undefined}

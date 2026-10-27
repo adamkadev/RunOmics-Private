@@ -289,6 +289,21 @@ describe('coaching workflows', () => {
     })
   })
 
+  it('targets an app race by its entry id, and a just-finish race ignores the season’s time for its distance', async () => {
+    const requests: BootstrapRequest[] = []
+    const proposal = await createBootstrapProposal(targetContext([
+      { entryId: 'app-race-1', date: '2026-09-27', name: 'Wine Route 10K', distance: '10K', targetSeconds: null, justFinish: true, priority: 'A', isPrimaryEvent: true },
+    ]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+      now: () => new Date('2026-09-04T08:00:00Z'),
+    })
+
+    expect(requests[0]).toMatchObject({ primaryTargetEvent: { id: 'app-race-1', role: 'primary' } })
+    expect(proposal.proposedPlan).toMatchObject({ goal: { kind: 'finish' } })
+  })
+
   it('uses Garmin primary-event metadata even when the target is outside the rolling horizon', async () => {
     const requests: BootstrapRequest[] = []
     const proposal = await createBootstrapProposal(targetContext([

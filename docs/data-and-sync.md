@@ -159,8 +159,17 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
 - **Route names and avoid spots** (`route_names.json`, `avoid_spots.json`). Also only in Firestore
   otherwise: one `GET /api/internal/route-data` returns both, sorted by id, and the step writes one
   file each and logs the two counts. Nothing in the app reads them back; they are there to restore.
+- **Races and goals edited in the app** (`race_entries.json`, `goal_entries.json`). Settings →
+  Races & goals writes Firestore `raceEntries` and `goalEntries`; one `GET /api/internal/goals-races`
+  returns both, sorted by id, and the step writes one file each. Unlike the backups above, the app
+  reads them: `getUpcomingRaceYears` lays the race entries over `upcoming_races.json` (a race added
+  in the app, or a Garmin race edited or hidden under its Garmin id), and `getGoalYears` lets a
+  season in `goal_entries.json` replace the same year in `goals.json`. Plan, Today, the race page,
+  Goals and the coach all read through those two, so they agree, and an edit reaches them at the
+  next sync (the Sync button, or the night). The coach's dump warns when Firestore holds edits the
+  mirror lacks.
 - **Restoring from the backups** (`scripts/restore_firestore.mjs`). Puts `activityNotes`, `wellness`,
-  `routeNames`, `avoidSpots`, `runShoes` and `shoeSettings` back from those five files, with the Admin SDK. It is a dry run by
+  `routeNames`, `avoidSpots`, `runShoes`, `shoeSettings`, `raceEntries` and `goalEntries` back from those seven files, with the Admin SDK. It is a dry run by
   default: it reads each collection and reports, per collection, how many documents are missing, how
   many differ from the backup and how many already match. `--apply` writes the missing and differing
   ones (a whole-document `set`). It only upserts: a document that is in Firestore but not in the backup
@@ -328,7 +337,7 @@ estimates by VDOT, Records predicts by Riegel and Goals shows none.
 | Each run's shoe (`gearId`) | The default shoe, or the owner's pick on the run page | Covered (G3) |
 | Shoe list (`shoes.json`) | The stored list, frozen; Shoes says since when | Partial (G3) |
 | Garmin calendar (`planned_workouts/`) | The coach's plan on Plan; the morning push still reads the calendar | Partial (N8) |
-| Upcoming races (`upcoming_races.json`) | The stored list, frozen | Open: a goals and races editor (G4) |
+| Upcoming races (`upcoming_races.json`) | The stored list, edited, hidden and added to in Settings → Races & goals | Covered (G4) |
 | Coach workouts sent to the watch | None | Open: Run/Walk settings on Plan, then intervals.icu (G5) |
 | Training load balance | The last stored day, frozen | No fallback |
 | Garmin Coach plan (`training_plan.json`) | The last stored plan, frozen | No fallback |

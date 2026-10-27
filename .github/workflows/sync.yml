@@ -460,6 +460,23 @@ jobs:
           rm "$RUNNER_TEMP/route_data.json"
           echo "Backed up $(jq '.names | length' data/route_names.json) route name(s) and $(jq '.spots | length' data/avoid_spots.json) avoid spot(s)."
 
+      # Races and goals edited in the app: every page and the coach read this copy, so it is not only a backup.
+      - name: Mirror races and goals
+        if: inputs.dry_run != true
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          set -euo pipefail
+          printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 30 "$APP_URL/api/internal/goals-races" -H @- > "$RUNNER_TEMP/goals_races.json"
+          jq -e '(.races | type == "object") and (.goals | type == "object")' "$RUNNER_TEMP/goals_races.json" > /dev/null
+          jq -S --indent 2 '{races}' "$RUNNER_TEMP/goals_races.json" > data/race_entries.json
+          jq -S --indent 2 '{goals}' "$RUNNER_TEMP/goals_races.json" > data/goal_entries.json
+          rm "$RUNNER_TEMP/goals_races.json"
+          echo "Mirrored $(jq '.races | length' data/race_entries.json) race entr(ies) and $(jq '.goals | length' data/goal_entries.json) goal year(s)."
+
       - name: Commit updated data
         id: commit
         env:
