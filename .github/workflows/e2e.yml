@@ -70,8 +70,11 @@ jobs:
       - name: Install WebKit's system libraries
         timeout-minutes: 10
         run: |
+          # A try cut short leaves its apt-get running under sudo, holding the lock: the next waits for it, not fails.
+          echo 'DPkg::Lock::Timeout "120";' | sudo tee /etc/apt/apt.conf.d/90-lock-timeout > /dev/null
           for try in 1 2 3; do
             timeout -k 10 180 npx playwright install-deps webkit && exit 0
+            sudo pkill -x apt-get || true
             sleep 5
           done
           exit 1
