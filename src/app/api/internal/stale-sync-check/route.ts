@@ -21,5 +21,5 @@ export const { GET, POST } = scheduledRoute('stale-sync-check', async () => {
   // After the push: one that fails throws past this, and the alert stays armed.
   await commit()
 
-  return NextResponse.json({ alert })
+  return NextResponse.json(alert ? { sent: true, alert } : { sent: false, alert })
 })

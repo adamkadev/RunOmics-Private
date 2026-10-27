@@ -241,6 +241,17 @@ them under Settings → Diagnostics (`GET`, owner only). Each nightly sync calls
 `POST /api/internal/client-error-check`, which pushes one digest of the errors since the last one
 announced (Firestore `notifications/lastClientErrors`), never a push per error, since anyone may post one.
 
+## Job trace
+
+Vercel keeps a function's log for about 30 minutes and Vercel Cron never retries, so every
+`scheduledRoute` run and every 5xx from another internal route (the health probe aside) is also kept
+in Firestore `jobEvents`: time, route, trigger (`cron`, `manual` or `sync`), outcome (`sent`,
+`skipped` or `error`), HTTP status and the thrown error's class name. No token, message or body is
+stored. The last 200 are kept. Settings → Diagnostics shows each route's last run
+(`GET /api/job-events`, owner only), and the nightly error digest counts server errors with the phone's.
+`firestore.rules` lets the owner read the collection and no client write it; the server writes with
+the Admin SDK.
+
 ## Service worker
 
 `public/sw.js` provides the offline app shell and push notifications.

@@ -531,7 +531,7 @@ jobs:
             check overreaching-check
             check activity-sync-check
           fi
-          # Errors come from the phones, with or without new data.
+          # Errors come from the phones and the server's jobs, with or without new data.
           check client-error-check
 
           # Each pass regenerates a surface only if its facts moved (a Firestore

@@ -3,6 +3,7 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NotificationsForm } from '@/components/settings/NotificationsForm'
 import { t } from '@/i18n'
+import { rememberRegistration, setRegistrationFailed } from '@/lib/pushPrefs'
 
 const { savePushCategories } = vi.hoisted(() => ({ savePushCategories: vi.fn() }))
 
@@ -72,6 +73,22 @@ describe('NotificationsForm (v4.17; 3.0 1i)', () => {
       expect(checked()).toEqual(['true', 'true', 'true'])
       await act(async () => finishSave())
       expect(checked()).toEqual(['true', 'true', 'true'])
+    })
+
+    it('says the device is not registered when the start-up refresh failed, until a save succeeds', async () => {
+      vi.stubGlobal('Notification', { permission: 'granted' })
+      vi.stubGlobal('PushManager', class {})
+      Object.defineProperty(navigator, 'serviceWorker', { value: {}, configurable: true })
+      localStorage.setItem('notif_training', 'true')
+
+      render(<NotificationsForm />)
+      expect(screen.queryByTestId('push-unregistered')).toBeNull()
+
+      act(() => setRegistrationFailed(true))
+      expect((await screen.findByTestId('push-unregistered')).textContent).toBe(t.settings.notifications.notRegistered)
+
+      act(() => rememberRegistration('token-a', Date.now()))
+      expect(screen.queryByTestId('push-unregistered')).toBeNull()
     })
   })
 })

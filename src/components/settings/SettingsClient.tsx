@@ -20,6 +20,7 @@ import { ThemeSegmented } from './ThemeSegmented'
 import { GlowRow } from './GlowRow'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { RecentErrors } from './RecentErrors'
+import { ScheduledJobs } from './ScheduledJobs'
 import { ConnectedMark, GarminTile } from './GarminMark'
 import { NotificationsForm } from './NotificationsForm'
 import { BuildInfo } from './BuildInfo'
@@ -172,6 +173,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
 
       <Section title={t.settings.sections.diagnostics}>
         <RecentErrors user={user} />
+        <ScheduledJobs user={user} />
       </Section>
 
       <button
