@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { weekDayState, weekTarget, type WeekTargetDay } from '../weekTarget'
+import { weekTarget, type WeekTargetDay } from '../weekTarget'
 
 const TODAY = '2026-09-25'
 
@@ -54,7 +54,9 @@ describe('weekTarget', () => {
   })
 })
 
-describe('weekDayState', () => {
+const stateOf = (d: WeekTargetDay) => weekTarget([d], TODAY, null).days[0]!.state
+
+describe('a day’s state', () => {
   it('reads each day as done, missed, planned or rest', () => {
     expect(weekTarget(WEEK, TODAY, null).days.map((d) => d.state)).toEqual([
       'missed', 'missed', 'missed', 'rest', 'done', 'planned', 'rest',
@@ -62,11 +64,30 @@ describe('weekDayState', () => {
   })
 
   it('leaves a planned session today as planned until the day is over', () => {
-    expect(weekDayState(day(TODAY, { plannedSessions: 1 }), TODAY)).toBe('planned')
+    expect(stateOf(day(TODAY, { plannedSessions: 1 }))).toBe('planned')
+  })
+
+  it('calls a session run the next day done on both days, counted once', () => {
+    const moved = weekTarget([
+      day('2026-09-22', { plannedKm: 9, plannedSessions: 1 }),
+      day('2026-09-23', { ranKm: 9.2, runs: 1 }),
+    ], TODAY, null)
+    expect(moved.days.map(({ state, ranOn, standsFor }) => ({ state, ranOn, standsFor }))).toEqual([
+      { state: 'done', ranOn: '2026-09-23', standsFor: undefined },
+      { state: 'done', ranOn: undefined, standsFor: '2026-09-22' },
+    ])
+    expect(moved).toMatchObject({ plannedDone: 1, unplannedRuns: 0, missedSessions: 0 })
+  })
+
+  it('matches a session across the week’s edge through the days either side', () => {
+    const sunday = [day('2026-09-27', { plannedKm: 13, plannedSessions: 1 })]
+    const nextMonday = day('2026-09-28', { ranKm: 13, runs: 1 })
+    expect(weekTarget(sunday, '2026-09-29', null).days[0]!.state).toBe('missed')
+    expect(weekTarget(sunday, '2026-09-29', null, [nextMonday]).days[0]).toMatchObject({ state: 'done', ranOn: '2026-09-28' })
   })
 
   it('counts an unplanned run as done', () => {
-    expect(weekDayState(day('2026-09-24', { ranKm: 5, runs: 1 }), TODAY)).toBe('done')
+    expect(stateOf(day('2026-09-24', { ranKm: 5, runs: 1 }))).toBe('done')
   })
 })
 

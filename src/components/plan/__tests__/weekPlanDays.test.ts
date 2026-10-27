@@ -6,7 +6,8 @@ const run = (date: string, distanceKm: number) => ({ date, distanceKm })
 const garmin = (date: string, km: number): PlannedWorkout => ({ date, name: 'Run', distanceM: km * 1000 })
 const coach = (date: string, km: number, state: 'prescribed' | 'cancelled' = 'prescribed') => ({
   state,
-  prescription: { date, type: 'easy' as const, blocks: [], totalDistanceMeters: km * 1000 },
+  distanceMeters: km * 1000,
+  prescription: { date, type: 'easy' as const },
 })
 
 describe('weekPlanDays', () => {

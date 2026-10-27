@@ -8,6 +8,7 @@ import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { formatRanKm } from '@/lib/formatters'
 import { useToday } from '@/lib/useToday'
 import { useSkippedDays } from '@/lib/skippedDays'
+import type { SkipReason } from '@/domain/wellness/checkIn'
 import { cardClass } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import { sessionZone, zoneColor } from '@/lib/colors'
@@ -26,15 +27,15 @@ interface Bar {
   label: string | null
 }
 
-export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<string, string>, skipped: ReadonlySet<string> = new Set()): Bar[] {
-  // A missed day marked "Skipped (sick / rest)" in Plan is a rest day here.
+export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<string, string>, skipped: ReadonlyMap<string, SkipReason> = new Map()): Bar[] {
+  // A missed day marked skipped in Plan is a rest day here.
   const strip = weekStripDays(target.days, today, kinds).map((day) => (day.state === 'missed' && skipped.has(day.date) ? { ...day, state: 'rest' as const } : day))
   const peak = Math.max(1, ...target.days.map((day) => Math.max(day.ranKm, day.plannedKm ?? 0)))
   const px = (km: number) => Math.max(MIN_BAR_PX, Math.round((km / peak) * MAX_BAR_PX))
   return target.days.map((source, i) => {
     const day = strip[i]!
     if (day.state === 'rest') return { day, height: 3, label: null }
-    if (day.state === 'done') return { day, height: px(source.ranKm), label: formatWeekKm(source.ranKm) }
+    if (day.state === 'done') return source.runs > 0 ? { day, height: px(source.ranKm), label: formatWeekKm(source.ranKm) } : { day, height: 3, label: null }
     const km = source.plannedKm ?? 0
     // A missed day keeps its km over the amber bar, so it says what was missed.
     return { day, height: px(km), label: km > 0 ? formatWeekKm(km) : null }

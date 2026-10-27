@@ -516,8 +516,8 @@ language; with a single profile it is just a place to keep the secrets.
 
 ### 4. Deploy the Firestore rules
 
-`firestore.rules` is not deployed with the app. After a change to it (the owner-only
-`jobEvents` read is the latest), deploy it by hand to each Firebase
+`firestore.rules` is not deployed with the app. After a change to it (the `skipped` field on
+`wellness` is the latest), deploy it by hand to each Firebase
 project, or the phones' writes are refused:
 
 ```bash

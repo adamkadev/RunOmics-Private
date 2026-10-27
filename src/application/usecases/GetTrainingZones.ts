@@ -73,6 +73,10 @@ function currentGarminThreshold(today: string): number | null {
 }
 
 export async function getTrainingZones(today = appTodayIso()): Promise<TrainingZonesData | null> {
+  return trainingZonesOn(today)
+}
+
+export function trainingZonesOn(today: string): TrainingZonesData | null {
   const thresholdPaceSecPerKm = currentGarminThreshold(today)
   if (thresholdPaceSecPerKm) return { thresholdPaceSecPerKm, zones: zonesAt(thresholdPaceSecPerKm) }
 

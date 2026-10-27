@@ -75,7 +75,7 @@ export function plan(overrides: Partial<CoachingPlan> = {}): CoachingPlan {
         startDate: '2026-09-14',
         endDate: '2026-09-20',
         focus: 'Aerobic support',
-        workouts: [workout({ id: 'workout-easy', date: '2026-09-15', type: 'easy', title: 'Easy run' })],
+        workouts: [workout({ id: 'workout-easy', date: '2026-09-15', type: 'easy', title: 'Easy run', blocks: [{ kind: 'effort', target: { durationSeconds: 2_700, paceSecPerKm: { min: 330, max: 360 } } }] })],
       },
     ],
     provenance: provenance(),
