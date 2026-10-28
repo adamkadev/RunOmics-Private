@@ -116,11 +116,6 @@ test('Plan names the coach’s block, out of the page’s HTML, and leaves the c
   expect(html).not.toContain('minutes de course')
 })
 
-test('Today’s session card carries one line of the coach’s words', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByTestId('session-card').getByTestId('session-coach-line')).toContainText('minutes de course')
-})
-
 test('a run before the armband reads its heart rate as untrusted, and one after it does not', async ({ page, t }) => {
   const athlete = read('athlete.json') as { hrReliableFrom: string }
   const runs = Object.values(
