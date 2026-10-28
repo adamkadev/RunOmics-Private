@@ -28,15 +28,11 @@ on:
         options: [all, adam, lamiaa]
         default: all
       quick:
-        description: "Quick: only the new runs, through the Personal API key (no WARP, no Garmin Connect)"
+        description: "Quick: only the new runs, through the Personal API key (no Garmin Connect)"
         type: boolean
         default: false
       nightly:
         description: "Nightly: a full sync that also warns before a token expires"
-        type: boolean
-        default: false
-      no_warp:
-        description: "Test: reach Garmin Connect without WARP, to see whether it still refuses GitHub's network (use with dry run)"
         type: boolean
         default: false
 
@@ -64,7 +60,7 @@ jobs:
   sync:
     needs: profiles
     runs-on: ubuntu-latest
-    # A hung WARP connect or Garmin call would otherwise hold a runner for the default six hours.
+    # A hung Garmin call would otherwise hold a runner for the default six hours.
     timeout-minutes: 60
     permissions:
       contents: read
@@ -192,92 +188,6 @@ jobs:
       - name: Install Python dependencies
         run: pip install --require-hashes -r scripts/requirements.txt
 
-      - name: Name the ISO week
-        id: week
-        if: steps.config.outputs.quick != 'true'
-        run: echo "iso=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
-
-      # WARP's ~120 MB of .debs come from a mirror that can crawl. Saved once a week, not each night: a save is 117 MB.
-      - name: Restore WARP packages
-        if: steps.config.outputs.quick != 'true' && inputs.no_warp != true
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/warp-apt
-          key: warp-apt-${{ runner.os }}-${{ steps.week.outputs.iso }}
-          restore-keys: warp-apt-${{ runner.os }}-
-
-      # Only Garmin Connect needs WARP: with a Personal API key the runs still sync without it, so a
-      # failed install or connect is a partial night (no gear, calendar or Connect metrics).
-      - name: Install Cloudflare WARP
-        id: warp_install
-        if: steps.config.outputs.quick != 'true' && inputs.no_warp != true
-        timeout-minutes: 10
-        continue-on-error: ${{ steps.config.outputs.personal_api == 'true' }}
-        run: |
-          set -euo pipefail
-          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
-          mkdir -p ~/.cache/warp-apt/partial
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            -o Acquire::Retries=3 -o Dir::Cache::Archives="$HOME/.cache/warp-apt" cloudflare-warp
-          sudo chown -R "$(id -u):$(id -g)" ~/.cache/warp-apt
-          # Recorded, not pinned: the repository keeps only current versions, so
-          # a pin breaks the sync the day Cloudflare publishes the next one. The
-          # log is what makes "which build started failing" answerable later.
-          echo "cloudflare-warp $(dpkg-query -W -f='${Version}' cloudflare-warp)"
-
-      # Connect's private API refuses GitHub's datacenter ranges, so it is only reached through WARP.
-      - name: Connect Cloudflare WARP
-        id: warp
-        if: steps.warp_install.outcome == 'success'
-        timeout-minutes: 5
-        continue-on-error: ${{ steps.config.outputs.personal_api == 'true' }}
-        run: |
-          set -euo pipefail
-
-          registered=false
-          for attempt in 1 2 3; do
-            if warp-cli --accept-tos registration new; then
-              registered=true
-              break
-            fi
-            echo "::warning::WARP registration attempt ${attempt} failed; retrying."
-            sleep $((attempt * 10))
-          done
-          if [ "$registered" != true ]; then
-            echo "::error::WARP registration failed three times."
-            exit 1
-          fi
-
-          warp-cli --accept-tos mode warp
-          warp-cli --accept-tos connect
-
-          # Cloudflare's own endpoint reports warp=on only once traffic really
-          # egresses through the tunnel, which `warp-cli status` alone does not
-          # establish.
-          for _ in $(seq 30); do
-            if warp-cli --accept-tos status | grep -q "Connected" \
-              && curl -fsS --max-time 10 https://www.cloudflare.com/cdn-cgi/trace | grep -q "^warp=on$"; then
-              echo "WARP connected and carrying traffic."
-              exit 0
-            fi
-            sleep 2
-          done
-
-          warp-cli --accept-tos status || true
-          echo "::error::WARP never carried traffic; Garmin would see a datacenter IP."
-          exit 1
-
-      - name: Note WARP skipped for the test
-        if: inputs.no_warp == true
-        run: |
-          echo "::notice::WARP skipped on request. Garmin Connect is reached from GitHub's own network; look below for 403s or Cloudflare challenges on connectapi.garmin.com."
-
-      - name: Note WARP unavailable
-        if: steps.config.outputs.quick != 'true' && inputs.no_warp != true && steps.warp.outcome != 'success'
-        run: echo "::warning::WARP is unavailable, so runs come through the Personal API alone; Garmin Connect (gear, calendar, Connect metrics) will likely fail from GitHub's network and the night counts as partial."
-
       # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
       # Actions substitutes those textually, before bash parses the line.
       - name: Run sync
@@ -285,8 +195,6 @@ jobs:
         env:
           GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
-          GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
-          GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
           SYNC_LIMIT: ${{ inputs.limit }}
           SYNC_DRY_RUN: ${{ inputs.dry_run }}
           SYNC_FORCE: ${{ inputs.force }}
@@ -354,14 +262,12 @@ jobs:
           fi
           jq -r '.seriesFreshness // {} | to_entries | map("\(.key) \(.value // "none")") | "Newest Garmin samples: " + join(", ")' data/sync_meta.json
 
-      # Through WARP, like every Connect call; a failure keeps the stored shoe list and counts the night as partial.
+      # A failure keeps the stored shoe list and counts the night as partial.
       - name: Sync shoes
         id: shoes
-        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && (steps.warp.outcome == 'success' || inputs.no_warp == true) && steps.sync.outputs.connect_expired != 'true'
+        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && steps.sync.outputs.connect_expired != 'true'
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
-          GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
-          GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
         run: |
           if [ -z "$GARMIN_SECRET" ]; then
             echo "No GARMIN_SECRET in this environment: the shoe list stays as stored."
@@ -371,10 +277,6 @@ jobs:
             echo "partial_failure=true" >> "$GITHUB_OUTPUT"
             echo "::warning::The shoe list could not be read from Garmin Connect; the stored one is kept."
           fi
-
-      - name: Disconnect Cloudflare WARP
-        if: always() && steps.warp_install.outcome == 'success'
-        run: warp-cli --accept-tos disconnect || true
 
       # Rebuilds stored runs from the FIT files cached above, asking Garmin for nothing.
       - name: Reprocess cached runs

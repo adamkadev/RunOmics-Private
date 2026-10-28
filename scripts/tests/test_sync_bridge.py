@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from garmin_tokens import di_secret, di_store, garth_secret, jwt
+from garmin_tokens import di_secret, di_store, jwt
 
 from garmin.auth import NOT_A_SECRET, encode_secret
 
@@ -96,18 +96,6 @@ def test_auth_reports_a_garminconnect_token_by_its_expiries_alone():
     ]
     assert store["di_token"] not in result.stdout + result.stderr
     assert store["di_refresh_token"] not in result.stdout + result.stderr
-
-
-def test_auth_still_reports_a_garth_token_until_the_secret_is_rotated():
-    result = _bridge(json.dumps({"op": "auth"}) + "\n", secret=garth_secret())
-
-    assert result.returncode == 0, result.stderr
-    (auth,) = _responses(result)
-    assert auth["kind"] == "garth"
-    assert auth["oauth1"] == {"present": True, "expiresAt": None}
-    assert auth["oauth2"]["expiresAt"] == "2100-01-01T00:00:00+00:00"
-    assert "test-access" not in result.stdout + result.stderr
-    assert "test-oauth1-secret" not in result.stdout + result.stderr
 
 
 @pytest.mark.parametrize("secret", ["not-a-real-token", "{}"])

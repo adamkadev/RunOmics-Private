@@ -129,8 +129,7 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   meditation are skipped, an activity that became a run is dropped, and a session that
   fails is retried the next night while the step reports a partial sync.
 - **Shoes** (`shoes.json`). The nightly workflow runs `scripts/sync_shoes.py` after the sync,
-  through WARP like every Connect call, so a pair added or retired in Garmin Connect shows the
-  next morning. Without `GARMIN_SECRET`, or when Connect fails, the stored list is kept and a
+  so a pair added or retired in Garmin Connect shows the next morning. Without `GARMIN_SECRET`, or when Connect fails, the stored list is kept and a
   failure counts the night as partial. Once Connect's token has expired the step is skipped
   (see [Connect token expiry](#connect-token-expiry)).
 - **Shoe picks** (`shoe_choices.json`). The owner picks a run's shoe on its page (Firestore
@@ -305,18 +304,10 @@ when Garmin issued a new refresh token that nothing stored. It keeps working for
 accepts the stored refresh token, a date nothing can read in advance: `npm run coach:garmin-auth`
 shows the refresh token's own expiry when the token carries one.
 
-**garth tokens until the secrets are rotated.** A `GARMIN_SECRET` minted with garth (base64 of its
-`[oauth1, oauth2]` pair) still loads: `LegacyGarthAuth` exchanges the OAuth1 token for an OAuth2
-token on `connectapi.garmin.com/oauth-service/oauth/exchange/user/2.0`, signed with oauthlib as
-garth signed it, with the consumer pair that garth used (`GARMIN_OAUTH_CONSUMER_KEY` /
-`_SECRET` override it). Each run logs a warning to replace it. Once both Environments hold a
-garminconnect token, the legacy class, the consumer pair and `oauthlib` can go.
-
 **What the sync does the night the token expires.** `GarminClient` raises `GarminTokenExpired` when
-Garmin refuses the refresh with a 400 or 401 (a garth token: the exchange with a 401), or when the
-store has no refresh token left. A 403 (Cloudflare refusing a datacenter IP, as when WARP is
-down), a 429, a 5xx or a network error stays a plain `GarminAuthError`: a partial night, tried
-again tomorrow. On an expired token `sync.py`:
+Garmin refuses the refresh with a 400 or 401, or when the store has no refresh token left. A 403
+(Cloudflare refusing the runner's address), a 429, a 5xx or a network error stays a plain
+`GarminAuthError`: a partial night, tried again tomorrow. On an expired token `sync.py`:
 
 - writes `connect_status.json` as `{"state": "expired", "since": "<the day>"}` and keeps that
   day on later nights;

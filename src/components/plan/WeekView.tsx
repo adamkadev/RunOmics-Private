@@ -26,7 +26,7 @@ import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
-import { blockFitTally, dayFit, type FitTally } from './dayFit'
+import { dayFit } from './dayFit'
 import { sessionLabel } from '@/lib/activityTitle'
 import { BlockFinishedCard, ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 import { blockCovers, blockLifecycle } from './blockLifecycle'
@@ -42,7 +42,7 @@ function proposalLine(proposal: BlockGuideProposal): string {
   return p.guideProposal(p.repClass[proposal.repClass], range(proposal.guide), range(proposal.proposedGuide), p.proposalSource[proposal.source])
 }
 
-function PhaseCard({ name, week, total, race, href, note = null, tally = null, proposals = [] }: { name: string; week: number; total: number; race: string | null; href?: string; note?: string | null; tally?: FitTally | null; proposals?: BlockGuideProposal[] }) {
+function PhaseCard({ name, week, total, race, href, proposals = [] }: { name: string; week: number; total: number; race: string | null; href?: string; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
@@ -66,8 +66,6 @@ function PhaseCard({ name, week, total, race, href, note = null, tally = null, p
           <span key={i} data-done={i < week || undefined} className={cn('h-[5px] flex-1 rounded-full', i < week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
         ))}
       </div>
-      {tally && <p className="text-xs text-muted-foreground" data-testid="phase-tally">{p.asPlanned(tally.asPlanned, tally.of)}</p>}
-      {note && <p className="text-xs text-muted-foreground" data-testid="phase-note">{note}</p>}
       {proposals.map((proposal) => (
         <p key={`${proposal.source}:${proposal.repClass}`} className="text-xs text-muted-foreground" data-testid="phase-proposal">{proposalLine(proposal)}</p>
       ))}
@@ -208,9 +206,6 @@ export function WeekView({
   )
 
   const block = useMemo(() => blockLifecycle(coaching, today), [coaching, today])
-  const blockEnds = block && block.daysLeft >= 0 && block.endDate >= firstDay && block.endDate <= lastDay
-    ? t.plan.phase.blockEnds(formatWeekday(block.endDate))
-    : null
 
   const phase = useMemo(() => phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay), [coaching, planPhaseRanges, firstDay])
   const words = useCoachWords(coaching !== null)
@@ -219,14 +214,6 @@ export function WeekView({
     const next = planRace(coaching, nextRace, today)
     return next ? raceCountdown(next, today) : null
   }, [coaching, nextRace, today])
-
-  const tally = useMemo(() => {
-    if (!block) return null
-    const sessions = (coaching?.workouts ?? [])
-      .filter((view) => view.state !== 'cancelled' && view.prescription.date >= block.startDate && view.prescription.date <= block.endDate)
-      .map((view) => coachWorkoutView(view, trainingZones))
-    return blockFitTally(sessions, byDate, today, hrZoneBoundsBpm)
-  }, [block, coaching, byDate, today, trainingZones, hrZoneBoundsBpm])
 
   const acts = byDate.get(selected) ?? []
   const others = byDateOther?.get(selected) ?? []
@@ -313,8 +300,6 @@ export function WeekView({
           total={phase.total}
           race={race}
           href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined}
-          note={blockEnds}
-          tally={tally}
           proposals={phase.span.key === 'general' ? words?.block.guideProposals : undefined}
         />
       )}

@@ -42,13 +42,12 @@ _LIST_PATH = "/activitylist-service/activities/search/activities"
 _TIMEOUT = httpx.Timeout(120.0, connect=30.0)
 
 # What each refusal of the key most likely means. A 403 is also how Garmin
-# answers an address it blocks, and a valid key shown once is not one to
-# throw away over a dropped tunnel.
+# answers an address it blocks, and a valid key shown once is not one to throw away over it.
 _KEY_REFUSED = {
     400: "the key is malformed - check the secret holds the whole of it",
     401: f"it has expired or was revoked - create a new one at {KEY_PAGE}",
     403: f"either it was revoked (create a new one at {KEY_PAGE}) or Garmin blocks the address the "
-    "request came from (is WARP connected?)",
+    "request came from",
 }
 
 
@@ -79,7 +78,7 @@ class PersonalApiClient:
         if not token:
             raise GarminAuthError(
                 f"Garmin answered the key exchange with no token (HTTP {resp.status_code}): something "
-                "between the sync and Garmin - a proxy, a captive page - answered instead (is WARP connected?)."
+                "between the sync and Garmin - a proxy, a captive page - answered instead."
             )
         return token
 

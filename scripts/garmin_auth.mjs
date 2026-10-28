@@ -29,18 +29,6 @@ if (!answer.ok) {
   process.exit(1)
 }
 
-if (answer.kind === 'garth') {
-  const { oauth2 } = answer
-  console.log('\nGarmin credentials: a garth token (legacy)\n')
-  console.log(`  OAuth1 : present, expiry not recorded by garth or Garmin`)
-  console.log(`  OAuth2 : access token expires ${oauth2.expiresAt ?? 'unknown'}${answer.refreshedNow ? ' (exchanged just now)' : ''}`)
-  console.log(`\n  ${answer.refreshedNow ? 'An OAuth1 exchange succeeded just now, so it works today.' : 'The OAuth2 token was still valid, so no exchange was tried: this proves nothing about the OAuth1 token.'}`)
-  console.log(`  garth tokens cannot be renewed. Mint a garminconnect token with`)
-  console.log(`  python scripts/get_secret.py and replace GARMIN_SECRET with it.`)
-  console.log(README)
-  process.exit(0)
-}
-
 const { access, refresh } = answer
 console.log('\nGarmin credentials: a garminconnect token\n')
 console.log(`  access token  : expires ${access.expiresAt ?? 'unknown'}${answer.refreshedNow ? '  (refreshed just now)' : ''}`)

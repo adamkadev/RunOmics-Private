@@ -129,13 +129,6 @@ tokens carry them, and whether a refresh was needed and worked.
   [Connect token expiry](docs/data-and-sync.md#connect-token-expiry). Mint a new
   secret with `get_secret.py` and replace it in both places.
 
-> **garth tokens.** Secrets minted with garth before this change still work: the
-> sync recognises them and exchanges their OAuth1 token as garth did, with the
-> OAuth1 consumer pair in `scripts/garmin/auth.py` (or `GARMIN_OAUTH_CONSUMER_KEY`
-> / `GARMIN_OAUTH_CONSUMER_SECRET`). garth itself is gone: it is unmaintained and
-> cannot sign in since Garmin's March 2026 change, so a garth token cannot be
-> renewed and every run logs a warning to replace it.
-
 #### Optional: intervals.icu, to put the coach's workouts on the watch
 
 The coach's workouts reach the watch most reliably through [intervals.icu](https://intervals.icu),
@@ -611,7 +604,7 @@ wait. The post-sync checks (records, shoe wear, explored quartiers, overreaching
 phone errors, the AI texts) follow.
 
 The app's Sync button runs the same workflow with `quick`: the new runs come
-through the Personal API key alone, with no WARP and no Connect sign-in, then the
+through the Personal API key alone, with no Connect sign-in, then the
 push and the post-sync checks as usual. Their shoes, the calendar and
 Connect's metrics wait for the nightly sync, which asks Connect for every shoe it
 has not answered yet, however old the run. A profile without a key syncs in full.
