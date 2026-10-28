@@ -108,7 +108,9 @@ export function PlannedWorkoutCard({
         )}
       </div>
       {/* Every session: its title, then how far and how long on the same line. A structured session's paces are in its steps. */}
-      <div className="mt-2.5 flex items-baseline justify-between gap-3">
+      {/* One gap under the title for the profile and the target tiles alike, so the two kinds of card space the same. */}
+      <div className="mt-2.5 flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-3">
         <h2 className="min-w-0 break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground text-pretty">{title}</h2>
         {(km || time) && (
           <span className="shrink-0 whitespace-nowrap text-sm text-[var(--text-2)]" data-testid="plan-amount">
@@ -119,7 +121,7 @@ export function PlannedWorkoutCard({
         )}
       </div>
       {structured && (
-        <div aria-hidden data-testid="intensity-profile" className="mt-2.5 flex h-[44px] items-end gap-[3px]">
+        <div aria-hidden data-testid="intensity-profile" className="flex h-[44px] items-end gap-[3px]">
           {blocks.map((block, i) => (
             <span
               key={i}
@@ -131,11 +133,12 @@ export function PlannedWorkoutCard({
         </div>
       )}
       {!structured && (paceTarget !== null || hrCap !== null) && (
-        <div className="mt-2.5 grid grid-cols-2 gap-2" data-testid="plan-targets">
+        <div className="grid grid-cols-2 gap-2" data-testid="plan-targets">
           {paceTarget !== null && <TargetTile label={s.paceTarget} value={`${paceTarget} ${t.units.perKm}`} />}
           {hrCap !== null && <TargetTile label={hrZone ? s.hrTargetZone(hrZone) : s.hrTarget} value={`${s.hrCap(hrCap)} ${t.units.bpm}`} />}
         </div>
       )}
+      </div>
       {structured && (
       <ol className="mt-3.5 border-t border-border" data-testid="workout-steps">
         {rows.map((row) => (
