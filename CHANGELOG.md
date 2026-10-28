@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Activity
+
+- The grade-adjusted pace is gone from a run's page: no line under the stats, no second line on the pace chart.
+
 ### Plan
 
 - A run/walk session's warm-up and cool-down without a pace read "facile" instead of "marche"; only a step at a

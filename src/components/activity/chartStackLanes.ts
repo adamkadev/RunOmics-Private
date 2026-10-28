@@ -67,8 +67,6 @@ export interface Lane {
   average: number | null
   format: (v: number) => string
   bands: ZoneBand[]
-  /** Pace's grade-adjusted line, on the lane's own scale. */
-  overlay?: { values: (number | null)[]; smoothed: (number | null)[] }
 }
 
 export interface ChartStackInput {
@@ -77,8 +75,6 @@ export interface ChartStackInput {
   avgHr: number | null
   paceSamples: number[] | null
   avgPaceSecPerKm: number | null
-  /** Only for a hilly run: on the flat it would trace the pace line again. */
-  gapSamples?: number[] | null
   cadenceSamples: number[] | null
   avgCadence: number | null
   elevationProfile: number[] | null
@@ -174,8 +170,6 @@ export function buildLanes(input: ChartStackInput): Lane[] {
 
   if (paceSamples) {
     const paceClean = { min: 150, max: 900, settleKm: 0.1, distanceKm, spikeFloor: 90 }
-    const gapValues = input.gapSamples ? cleanStream(input.gapSamples, paceClean) : null
-    const overlay = gapValues ? { values: gapValues, smoothed: smoothStream(gapValues, { despike: true }) } : undefined
     push({
       key: 'pace',
       label: c.pace,
@@ -186,7 +180,7 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       reversed: paceAxis().reversed,
       despike: true,
       format: (v) => formatClock(Math.round(v)),
-      domain: (s) => niceDomain(overlay ? [...s, ...overlay.smoothed] : s, 20, 60),
+      domain: (s) => niceDomain(s, 20, 60),
       // The watch already averages each sample over about 30 s, hence "best 30 s"; an even run's samples can
       // sit above its moving pace, and then the best is left out.
       summarize: ({ average, min }) =>
@@ -196,7 +190,6 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       // The Overview's moving pace, which the samples' plain mean would not match.
       recordedAverage: input.avgPaceSecPerKm,
       bands: paceBands(zones?.pace),
-      overlay,
     })
   }
 

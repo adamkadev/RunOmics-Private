@@ -1364,7 +1364,6 @@ export const en = {
       duration: 'Time',
       pace: 'Avg pace',
       avgHr: 'Avg HR',
-      gap: (pace: string, climb: string) => ['Grade-adjusted ', pace, ` over ${climb} m of climbing`] as [string, string, string],
     },
     verdict: {
       headline: {
@@ -1551,8 +1550,6 @@ export const en = {
       max: 'max',
       bestSmoothed: 'best 30 s',
       pace: 'Pace',
-      gap: 'GAP',
-      gapReading: (pace: string) => `GAP ${pace}`,
       paceUnitHint: '/km, up = faster',
       paceZonesEstimated: 'Pace zones estimated by VDOT: the watch gives no current threshold pace.',
       elevation: 'Elevation',

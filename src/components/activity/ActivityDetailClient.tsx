@@ -248,16 +248,6 @@ export function ActivityDetailClient({
       </header>
 
       <StatStrip stats={stats} />
-      {activity.gapSecPerKm != null && activity.elevationGain != null && (() => {
-        const [lead, pace, rest] = t.activity.stats.gap(`${formatClock(activity.gapSecPerKm)} ${t.units.perKm}`, `${Math.round(activity.elevationGain)}`)
-        return (
-          <p className="-mt-2 text-[13px] text-muted-foreground" data-testid="run-gap">
-            {lead}
-            <b className="font-semibold text-foreground">{pace}</b>
-            {rest}
-          </p>
-        )
-      })()}
 
       <RunVerdict activity={activity} type={type} tone={verdictTone} aiVerdict={aiVerdict}>
         {activity.hrUntrusted ? (
@@ -340,7 +330,6 @@ export function ActivityDetailClient({
             avgHr={activity.avgHeartRate}
             paceSamples={activity.paceSamples}
             avgPaceSecPerKm={activity.paceSecPerKm}
-            gapSamples={activity.gapSamples ?? null}
             cadenceSamples={activity.cadenceSamples}
             avgCadence={activity.cadenceSpm}
             elevationProfile={activity.elevationProfile}
