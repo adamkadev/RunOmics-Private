@@ -18,22 +18,28 @@ for (const theme of ['light', 'dark'] as const) {
     for (let i = 0; i < count; i++) {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
       await tabs.nth(i).click()
+      await expect(tabs.nth(i)).toHaveAttribute('aria-selected', 'true')
+      await expect(page.getByTestId('activity-panel').locator('.animate-pulse')).toHaveCount(0)
       // Instant, as a smooth scroll is measured mid-way; from 200 pt short of the end, so a scroll down shrinks the bar.
       const gap = () =>
         page.evaluate(async () => {
           const frame = () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
-          const end = document.documentElement.scrollHeight - window.innerHeight
-          window.scrollTo({ top: Math.max(0, end - 200), behavior: 'instant' })
-          await frame()
-          window.scrollTo({ top: end, behavior: 'instant' })
-          await frame()
+          let height: number
+          do {
+            height = document.documentElement.scrollHeight
+            const end = height - window.innerHeight
+            window.scrollTo({ top: Math.max(0, end - 200), behavior: 'instant' })
+            await frame()
+            window.scrollTo({ top: end, behavior: 'instant' })
+            await frame()
+          } while (document.documentElement.scrollHeight !== height)
           const pill = document.querySelector('[data-testid="tab-bar-capsule"]')!
           if (!pill.hasAttribute('data-collapsed')) return null
           const card = [...document.querySelectorAll('main nav')].pop()!.getBoundingClientRect()
           return Math.round(pill.getBoundingClientRect().top - card.bottom)
         })
       await expect.poll(gap, { message: `tab ${i}` }).not.toBeNull()
-      expect(await gap(), `tab ${i}`).toBeGreaterThanOrEqual(24)
+      await expect.poll(gap, { message: `tab ${i}` }).toBeGreaterThanOrEqual(24)
     }
   })
 }

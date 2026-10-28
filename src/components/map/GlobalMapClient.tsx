@@ -263,7 +263,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     routeMeta,
     home: districtsHome,
   });
-  const { area: districtsFile, coverage: districtsCoverage, status: districtsStatus } = districts;
+  const { area: districtsFile, coverage: districtsCoverage, status: districtsStatus, retry: retryDistricts } = districts;
 
   // Adjusted while rendering, as React has state follow state.
   if (linkedQuartier !== null && districtsOn && districtsStatus === "ready" && districtsCoverage) {
@@ -359,10 +359,10 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             cardContent.eyebrow,
             { coverage: districtsCoverage, status: tracksFailed && !districtsCoverage ? "error" : districtsStatus },
             onPlanRun,
-            tracksFailed ? retryTracks : undefined,
+            tracksFailed ? retryTracks : retryDistricts,
           )
         : null,
-    [districtsOn, cardContent, districtsCoverage, districtsStatus, onPlanRun, tracksFailed, retryTracks],
+    [districtsOn, cardContent, districtsCoverage, districtsStatus, onPlanRun, tracksFailed, retryTracks, retryDistricts],
   );
   const shownCard = districtsCard ?? cardContent;
 

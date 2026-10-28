@@ -1053,8 +1053,11 @@
 
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
 html {
-  scroll-behavior: smooth;
   /* Blocks iOS Safari's rubber-band bounce, which triggers the toolbar's show/hide animation even while
      useScrollLock pins the body. */
   overscroll-behavior-y: none;

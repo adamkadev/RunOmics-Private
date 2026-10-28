@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AreaCoverage, ExploreAreaFile, ExploreAreaRef } from '@/domain/explore/types'
 import { getExploreEngine, type ExploreEngine } from './exploreEngine'
 import { flattenTracks } from './trackBuffers'
 import { areaKey } from './workerProtocol'
 
 export type DistrictsStatus = 'idle' | 'loading' | 'ready' | 'error'
+
+/** A worker that never answers would leave the card counting forever; an answer that comes later still lands. */
+export const COVERAGE_STALL_MS = 30_000
 
 export interface DistrictsCoverageInput {
   /** Only then does anything run: Heat users never start the worker. */
@@ -27,6 +30,7 @@ export interface DistrictsCoverage {
   area: ExploreAreaFile | null
   coverage: AreaCoverage | null
   status: DistrictsStatus
+  retry: () => void
 }
 
 interface Settled {
@@ -51,11 +55,13 @@ export function useDistrictsCoverage(
     [visibleIndices, routeMeta],
   )
   const homeKey = home ? `${home[0]},${home[1]}` : ''
-  const requestKey = `${currentArea}|${loaded.length}|${activityIds.join(',')}|${homeKey}`
+  const [attempt, setAttempt] = useState(0)
+  const requestKey = `${currentArea}|${loaded.length}|${activityIds.join(',')}|${homeKey}|${attempt}`
 
   const [file, setFile] = useState<{ key: string; area: ExploreAreaFile } | null>(null)
   const [settled, setSettled] = useState<Settled | null>(null)
   const latest = useRef(0)
+  const stalled = useRef(false)
   // Read in the effect, which keys on requestKey: the strings it is built from.
   const inputs = useRef({ area, routes, loaded, activityIds, home, routeMeta })
   useEffect(() => {
@@ -69,6 +75,14 @@ export function useDistrictsCoverage(
     const { area: ref, routes: tracks, loaded: runs, activityIds: ids, home: from, routeMeta: meta } = inputs.current
     if (!ref) return
     const engine = engineFor()
+    const fail = () =>
+      setSettled((prev) => ({ key: requestKey, areaKey: currentArea, coverage: prev?.areaKey === currentArea ? prev.coverage : null, failed: true }))
+    stalled.current = false
+    const stall = setTimeout(() => {
+      if (stale()) return
+      stalled.current = true
+      fail()
+    }, COVERAGE_STALL_MS)
 
     void (async () => {
       try {
@@ -85,19 +99,31 @@ export function useDistrictsCoverage(
 
         const coverage = await engine.coverage(ref, { activityIds: ids, home: from })
         if (stale()) return
+        stalled.current = false
         setSettled({ key: requestKey, areaKey: currentArea, coverage, failed: false })
       } catch (err) {
         if (stale()) return
         console.warn('Districts coverage failed', err)
-        setSettled((prev) => ({ key: requestKey, areaKey: currentArea, coverage: prev?.areaKey === currentArea ? prev.coverage : null, failed: true }))
+        fail()
+      } finally {
+        clearTimeout(stall)
       }
     })()
+    return () => clearTimeout(stall)
   }, [enabled, currentArea, requestKey, engineFor])
+
+  const retry = useCallback(() => {
+    latest.current++
+    // A stalled call holds the worker and its cached area load: only a fresh worker can answer.
+    if (stalled.current) engineFor().dispose()
+    stalled.current = false
+    setAttempt((n) => n + 1)
+  }, [engineFor])
 
   const active = enabled && !!currentArea
   const shownArea = active && file?.key === currentArea ? file.area : null
   const shownCoverage = active && settled?.areaKey === currentArea ? settled.coverage : null
   const status: DistrictsStatus = !active ? 'idle' : settled?.key === requestKey ? (settled.failed ? 'error' : 'ready') : 'loading'
   // One object per answer, so a card built from it changes only when it does.
-  return useMemo(() => ({ area: shownArea, coverage: shownCoverage, status }), [shownArea, shownCoverage, status])
+  return useMemo(() => ({ area: shownArea, coverage: shownCoverage, status, retry }), [shownArea, shownCoverage, status, retry])
 }

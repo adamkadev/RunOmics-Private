@@ -24,12 +24,17 @@ const EXPECTED_CONSOLE_NOISE: RegExp[] = [
   /\/_vercel\/(insights|speed-insights)\/script\.js/,
 ]
 
+// WebKit reports a fetch cut off by navigation as a CORS page error; only one whose request failed is excused.
+const CUT_OFF_FETCH = /^pageerror: (?:Fetch API|XMLHttpRequest) cannot load (\S+) due to access control checks\.$/
+
 export const test = base.extend<AppOptions & { runtimeErrors: string[]; t: Strings }>({
   appLocale: ['en', { option: true }],
   t: async ({ appLocale }, provide) => provide(appLocale === 'fr' ? fr : en),
   runtimeErrors: [
     async ({ page }, use) => {
       const errors: string[] = []
+      const failed = new Set<string>()
+      page.on('requestfailed', (request) => failed.add(request.url()))
       page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
       page.on('console', (message) => {
         if (message.type() !== 'error') return
@@ -39,7 +44,8 @@ export const test = base.extend<AppOptions & { runtimeErrors: string[]; t: Strin
 
       await use(errors)
 
-      expect(errors, 'runtime errors on the page').toEqual([])
+      const cutOff = (error: string) => failed.has(CUT_OFF_FETCH.exec(error)?.[1] ?? '')
+      expect(errors.filter((error) => !cutOff(error)), 'runtime errors on the page').toEqual([])
     },
     { auto: true },
   ],

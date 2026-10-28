@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Explore's Districts card no longer counts forever when the coverage worker stops answering: after 30 s it shows
+  the error with a Retry, which starts a fresh worker; a coverage that failed outright gets the same Retry.
+- Smooth scrolling is off under "Reduce motion".
+
 ## [3.3.0] - 2026-10-28
 
 The audit release: the second athlete's watch and return to running, life after garth, the coach run through
