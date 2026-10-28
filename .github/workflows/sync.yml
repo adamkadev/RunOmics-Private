@@ -316,7 +316,6 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
         run: |
           set -euo pipefail
-          trap 'echo "partial_failure=true" >> "$GITHUB_OUTPUT"' ERR
           printf 'x-internal-secret: %s\n' "$SECRET" \
             | curl -fsS --max-time 30 "$APP_URL/api/internal/activity-notes" -H @- \
             | jq -S --indent 2 '.' > "$RUNNER_TEMP/activity_notes.json"
@@ -334,7 +333,6 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
         run: |
           set -euo pipefail
-          trap 'echo "partial_failure=true" >> "$GITHUB_OUTPUT"' ERR
           printf 'x-internal-secret: %s\n' "$SECRET" \
             | curl -fsS --max-time 30 "$APP_URL/api/internal/wellness" -H @- \
             | jq -S --indent 2 '.' > "$RUNNER_TEMP/wellness.json"
@@ -352,7 +350,6 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
         run: |
           set -euo pipefail
-          trap 'echo "partial_failure=true" >> "$GITHUB_OUTPUT"' ERR
           printf 'x-internal-secret: %s\n' "$SECRET" \
             | curl -fsS --max-time 30 "$APP_URL/api/internal/shoe-choices" -H @- \
             | jq -S --indent 2 '.' > "$RUNNER_TEMP/shoe_choices.json"
@@ -370,7 +367,6 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
         run: |
           set -euo pipefail
-          trap 'echo "partial_failure=true" >> "$GITHUB_OUTPUT"' ERR
           printf 'x-internal-secret: %s\n' "$SECRET" \
             | curl -fsS --max-time 30 "$APP_URL/api/internal/route-data" -H @- > "$RUNNER_TEMP/route_data.json"
           jq -e '(.names | type == "object") and (.spots | type == "object")' "$RUNNER_TEMP/route_data.json" > /dev/null
@@ -389,7 +385,6 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
         run: |
           set -euo pipefail
-          trap 'echo "partial_failure=true" >> "$GITHUB_OUTPUT"' ERR
           printf 'x-internal-secret: %s\n' "$SECRET" \
             | curl -fsS --max-time 30 "$APP_URL/api/internal/goals-races" -H @- > "$RUNNER_TEMP/goals_races.json"
           jq -e '(.races | type == "object") and (.goals | type == "object")' "$RUNNER_TEMP/goals_races.json" > /dev/null
@@ -607,9 +602,9 @@ jobs:
       - name: Report a partial sync
         if: >-
           always() && (steps.sync.outputs.partial_failure == 'true' || steps.shoes.outputs.partial_failure == 'true'
-          || steps.notes.outputs.partial_failure == 'true' || steps.wellness.outputs.partial_failure == 'true'
-          || steps.shoe_choices.outputs.partial_failure == 'true' || steps.route_data.outputs.partial_failure == 'true'
-          || steps.goals_races.outputs.partial_failure == 'true')
+          || steps.notes.outcome == 'failure' || steps.wellness.outcome == 'failure'
+          || steps.shoe_choices.outcome == 'failure' || steps.route_data.outcome == 'failure'
+          || steps.goals_races.outcome == 'failure')
         run: |
           echo "::error::Some activities or steps failed. Whatever synced successfully was committed and deployed; see the 'Run sync', 'Sync shoes', 'Back up' and 'Mirror races and goals' logs for what failed."
           exit 1

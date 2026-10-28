@@ -4,59 +4,36 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-### Sync
-
-- The activity list is retried like every other Garmin read: one 503 or timeout on a page no longer stops the night
-  before anything is committed.
-- A 429 or 5xx carrying `Retry-After` waits what Garmin asked for, up to 5 minutes, instead of a fixed 60 s.
-- Threshold history keeps a day's stored LTHR or threshold pace when only the other one's read failed that night.
-- A sync that times out or is cancelled now sends the failure push, titled "(cancelled or timed out)".
-- A failed backup of notes, check-ins, shoe picks or route data, or a failed mirror of races and goals, now reports
-  the night as partial (red after the commit) instead of staying green.
-- The internal routes' per-address limit counts only refused secrets, so a nightly sync's own authorised calls
-  from one runner are never answered 429.
-- Dependabot looks for the Python manifests in `scripts/`, where they are.
-
-### Coaching
-
-- No stop signals for the second athlete, everywhere: the check-in card's French copy drops its stop rule, symptom wording and referral (the pain item reads « Gêne »), the coach's guard reads the French guidance and catches pain, symptom and referral words, and a French Gemini insight carrying one falls back.
-### Fixed
+### Plan
 
 - Return to running: the card on Plan and the Comeback tab in Records date the return from the first day after the
   break, not its last day.
 - Return to running: before the first run back the card says only that no run came yet, instead of "—", "0 min"
   and an empty bar, and the Comeback tab says so in place of the longest run. This week's minutes stay hidden
   until the week has a run.
-- Profile › Consistency: the French streak reads « 1 semaine d'affilée » in the singular, and a streak of 0 reads
-  "No streak yet" rather than a bare 0.
-- French: the morning check-in names « Humeur », not "Mood". Running jargon (Splits, RPE) stays in English.
 - Plan › Month: every run between the plan's first and last day counts against it, so a session run a day early
   or late, or an extra run, is no longer left out; the "plan covers" caption shows only when the plan starts or
   ends inside the month.
-### Fixed
 
-- A run/walk (run blocks with walk breaks, on a day planned as easy) gets a verdict as a run/walk: blocks completed at
-  a talking pace, never "an interval session" held against the last VO2 max session, even when the watch typed it
-  VO2 max. The coach's session for the run now outranks the watch's plan and its guessed type. Today reads such a
-  day as easy.
-- A run with no RPE is no longer written up as having drifted from its purpose: the verdict judges it on its reps
-  and zones, or, with nothing measured, says no effort was logged and sticks to the facts.
-- The activity card's tone badge and the written verdict now come from the same judgement, so they agree.
-- French copy with a unit after a number ("12 s au kilomètre", "24 °C et") is no longer rejected as a missing
-  elision.
-- Runs older than 90 days get a verdict again: once the recent runs are written, the backfill pool takes the older
-  ones, newest first, within its own daily quota. The pass reports them as `beyondHorizon`.
-- Today's prompt names the last run and today's session in plain words, never Garmin's "VO2Max" or "(Base)".
-### Fixed
+### Activities, runs and analytics
+
+- Splits: a run matched to a planned session whose reps set one pace range is graded against it: the header reads
+  "target 7:50–8:45" (« cible ») and "On target" (« Dans la cible ») counts the reps inside it. Without a plan, with reps set by
+  heart rate only, or for a controlled threshold set (held by heart rate), the reps' median ±10 s band stays as before; Spread still shows their evenness.
+- **A run's heart rate is hidden only when its note marks it unreliable; the wrist-sensor rule is gone.** A run
+  recorded on the wrist sensor, or before `athlete.json`'s `hrReliableFrom`, keeps its heart rate, zones and
+  heart-rate load, in the app and in the sync's session typing; `hrReliableFrom` is ignored where it is left, and the
+  workbook's Athlete sheet drops its `hr_reliable_from` column. The app changes on deploy; the nightly reprocess
+  retypes the cached runs on the next sync. No rules deploy.
+
+### Explore
 
 - Explore's Districts card no longer counts forever when the coverage worker stops answering: after 30 s it shows
   the error with a Retry, which starts a fresh worker; a coverage that failed outright gets the same Retry.
-- Smooth scrolling is off under "Reduce motion".
-- Splits: a run matched to a planned session whose reps set one pace range is graded against it: the header reads
-  "target 7:50–8:45" (« cible ») and "On target" (« Dans la cible ») counts the reps inside it. Without a plan, or
-  with reps set by heart rate only, the reps' median ±10 s band stays as before; Spread still shows their evenness.
+
 ### Coach
 
+- No stop signals for the second athlete, everywhere: the check-in card's French copy drops its stop rule, symptom wording and referral (the pain item reads « Gêne »), the coach's guard reads the French guidance and catches pain, symptom and referral words, and a French Gemini insight carrying one falls back.
 - **Workout descriptions.** The rules and the answer schema say what a description is for: one sentence of about
   90 characters, in the athlete's language, on what is specific to the session this week, never a definition of its
   type nor the title again. The validators refuse a description that repeats its title, and a quality session's
@@ -74,11 +51,41 @@ All notable changes to this project are documented in this file.
 - **Monthly renewal.** `npm run coach -- bootstrap` runs without `--replace` from seven days before the block ends,
   as `docs/profiles.md` describes; earlier it still refuses. A refused answer comes back in the repair prompt with
   the reason, so the correction edits it.
-- **A run's heart rate is hidden only when its note marks it unreliable; the wrist-sensor rule is gone.** A run
-  recorded on the wrist sensor, or before `athlete.json`'s `hrReliableFrom`, keeps its heart rate, zones and
-  heart-rate load, in the app and in the sync's session typing; `hrReliableFrom` is ignored where it is left, and the
-  workbook's Athlete sheet drops its `hr_reliable_from` column. The app changes on deploy; the nightly reprocess
-  retypes the cached runs on the next sync. No rules deploy.
+
+### AI
+
+- A run/walk (run blocks with walk breaks, on a day planned as easy) gets a verdict as a run/walk: blocks completed at
+  a talking pace, never "an interval session" held against the last VO2 max session, even when the watch typed it
+  VO2 max. The coach's session for the run now outranks the watch's plan and its guessed type. Today reads such a
+  day as easy.
+- A run with no RPE is no longer written up as having drifted from its purpose: the verdict judges it on its reps
+  and zones, or, with nothing measured, says no effort was logged and sticks to the facts.
+- The activity card's tone badge and the written verdict now come from the same judgement, so they agree.
+- French copy with a unit after a number ("12 s au kilomètre", "24 °C et") is no longer rejected as a missing
+  elision.
+- Runs older than 90 days get a verdict again: once the recent runs are written, the backfill pool takes the older
+  ones, newest first, within its own daily quota. The pass reports them as `beyondHorizon`.
+- Today's prompt names the last run and today's session in plain words, never Garmin's "VO2Max" or "(Base)".
+
+### Data & sync
+
+- The activity list is retried like every other Garmin read: one 503 or timeout on a page no longer stops the night
+  before anything is committed.
+- A 429 or 5xx carrying `Retry-After` waits what Garmin asked for, up to 5 minutes, instead of a fixed 60 s.
+- Threshold history keeps a day's stored LTHR or threshold pace when only the other one's read failed that night.
+- A sync that times out or is cancelled now sends the failure push, titled "(cancelled or timed out)".
+- A failed backup of notes, check-ins, shoe picks or route data, or a failed mirror of races and goals, now reports
+  the night as partial (red after the commit) instead of staying green.
+- The internal routes' per-address limit counts only refused secrets, so a nightly sync's own authorised calls
+  from one runner are never answered 429.
+- Dependabot looks for the Python manifests in `scripts/`, where they are.
+
+### Look, French and accessibility
+
+- Profile › Consistency: the French streak reads « 1 semaine d'affilée » in the singular, and a streak of 0 reads
+  "No streak yet" rather than a bare 0.
+- French: the morning check-in names « Humeur », not "Mood". Running jargon (Splits, RPE) stays in English.
+- Smooth scrolling is off under "Reduce motion".
 
 ## [3.3.0] - 2026-10-28
 
