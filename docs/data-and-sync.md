@@ -357,7 +357,7 @@ estimates by VDOT, Records predicts by Riegel and Goals shows none.
 | Shoe list (`shoes.json`) | The stored list, frozen; Shoes says since when | Partial (G3) |
 | Garmin calendar (`planned_workouts/`) | The coach's plan on Plan; the morning push still reads the calendar | Partial (N8) |
 | Upcoming races (`upcoming_races.json`) | The stored list, edited, hidden and added to in Settings → Races & goals | Covered (G4) |
-| Coach workouts sent to the watch | None | Open: Run/Walk settings on Plan, then intervals.icu (G5) |
+| Coach workouts sent to the watch | intervals.icu's calendar and its own Garmin upload (`INTERVALS_API_KEY`) | Covered (G5) |
 | Training load balance | The last stored day, frozen | No fallback |
 | Garmin Coach plan (`training_plan.json`) | The last stored plan, frozen | No fallback |
 | Fitness age history | The last stored values, frozen | No fallback |
@@ -435,6 +435,56 @@ environment and is never read, logged, or passed on the command line.
 Isolation guards keep shared code free of one athlete's ids: nothing under `src/` or
 `scripts/` may name a real Garmin workout, schedule entry, or coaching plan, and no
 default may point the mapping file at this repository.
+
+## intervals.icu write path (coach workouts to the watch)
+
+intervals.icu is an official Garmin partner: a planned workout on its calendar goes to Garmin
+Connect, and on to the watch, through the athlete's own intervals.icu Garmin connection. RunOmics
+writes only that calendar, through intervals.icu's API, so the push no longer depends on a Garmin
+Connect sign-in or its private API. Reads are unchanged (the Personal API).
+
+**Route.** `coach:sync-garmin` (and `:lamiaa`) takes intervals.icu when the profile's env file sets
+`INTERVALS_API_KEY`, Garmin Connect otherwise; `--route connect|intervals` overrides it. Each route
+has its own state in the athlete's workspace: `coaching/garmin-sync.json` for Connect,
+`coaching/intervals-sync.json` for intervals.icu. The rules of the Garmin write path hold for both:
+the state alone authorises a mutation, KEEP/UPDATE/CREATE/DELETE come from a content hash, nothing
+is written without `--apply`, and the preview prints the plan and its fingerprint.
+
+**The API.** `HttpIntervalsGateway` calls `https://intervals.icu/api/v1` with HTTP Basic auth, the
+user name `API_KEY` and the key as password, on athlete `INTERVALS_ATHLETE_ID` (default `0`, the
+key's own athlete). A create is `POST /athlete/{id}/events/bulk?upsert=true` with the event's
+`external_id` (`runomics:<prescription id>`), so a create retried after a lost answer updates the
+same event; an update is `PUT /athlete/{id}/events/{eventId}`, a delete
+`DELETE /athlete/{id}/events/{eventId}`, and the read-back `GET /athlete/{id}/events` over the
+pushed dates. Every request has a 15 s timeout and up to three retries on 429, 5xx and network
+errors, honouring `Retry-After`; a 401 or 403 names the two variables to check, never the key.
+
+**Never someone else's event.** An update or delete first reads the event the state names and
+goes ahead only if its `external_id` is RunOmics's own; anything else fails that operation and
+leaves the event alone. The state also records the athlete it was written for, and refuses to run
+against another one. The read-back confirms each event on its date with its external id, marks one
+it cannot find `unverified` (pushed again next run), and reports a second RunOmics copy for the
+athlete to delete by hand rather than deleting it.
+
+**The encoding** is intervals.icu's workout text in `description`, built from the same prescription
+as the Garmin payload, through `withoutEasyHeartRate`: an easy, recovery or long run carries no
+heart rate. A step is `- <length> <target> <intensity>`: the length in minutes (`10m`), seconds
+(`90s`) or kilometres (`1.6km`, since `m` means minutes there); a pace range written fast to slow
+(`7:50-8:45/km Pace`); a heart-rate zone as `Z2 HR`. intervals.icu takes no absolute bpm target, so
+a bpm range rides in the description text instead. Warm-up and cool-down carry
+`intensity=warmup`/`cooldown`, a recovery or walk `intensity=rest` and no target unless prescribed.
+A repeat is a `Nx` line over its steps (strides included), each group separated by a blank line.
+The description and notes come first, as prose; a prose line is cleaned so it cannot read as a
+step (a leading dash) or a repeat (a trailing `4x`). Step notes join that prose, never a step,
+so the second athlete's steps carry none. A step with neither duration nor distance cannot be
+written, and its session is skipped with the reason. Races follow the Connect rules.
+
+**Switching routes never doubles a session.** With RunOmics workouts still on the old route from
+today on, the preview says so and `--apply` refuses. `--retire-connect` (on the intervals route)
+deletes RunOmics's own Connect workouts from today on first, through the Connect gateway and its
+state, then pushes to intervals.icu only if every delete succeeded; `--retire-intervals` (on the
+Connect route) does the reverse. Workouts created by hand or by Garmin are never touched. Past
+entries stay in each state as history.
 
 ## Garmin-sourced series
 

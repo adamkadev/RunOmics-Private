@@ -7,6 +7,18 @@ All notable changes to this project are documented in this file.
 - Sync has a `no_warp` test input: a manual run (with dry run) reaches Garmin Connect
   without Cloudflare WARP, to see whether Connect still refuses GitHub's network
   with the garminconnect token. Nightly runs are unchanged and keep WARP.
+- The coach's workouts can reach the watch through intervals.icu. With
+  `INTERVALS_API_KEY` in a profile's env file, `coach:sync-garmin` puts each session
+  on that athlete's intervals.icu calendar (pace ranges, walk breaks untargeted,
+  strides as a repeat, easy runs without heart rate), and intervals.icu's own Garmin
+  connection uploads it. Same preview, `--apply`, hash and sync-state rules as the
+  Garmin Connect route, in its own `coaching/intervals-sync.json`; an event RunOmics
+  did not create is never touched. `--retire-connect` deletes RunOmics's own Connect
+  workouts first, so no session reaches the watch twice. Without the key nothing
+  changes; `--route connect|intervals` overrides. **Needs** a free intervals.icu
+  account per athlete with Garmin connected and planned-workout upload on, and its API
+  key (`INTERVALS_API_KEY`, optionally `INTERVALS_ATHLETE_ID`) in `.env.adam.local`
+  and `.env.lamiaa.local`; then a dry run, and `--apply --retire-connect` once.
 - Garmin Connect signs in with python-garminconnect instead of garth, which is
   unmaintained and cannot mint a token since Garmin's March 2026 auth change.
   `python scripts/get_secret.py` signs in again (email, password, MFA code) and
