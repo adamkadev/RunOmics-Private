@@ -51,16 +51,11 @@ class TypeContext:
     lthr_bpm: int | None = None
     z4_floor_bpm: int | None = None
     sessions_by_date: Mapping[str, tuple[PlannedSession, ...]] = field(default_factory=dict)
-    hr_reliable_from: str | None = None
     hr_unreliable_ids: frozenset[str] = frozenset()
 
-    def hr_trusted(self, activity_id: str | None, date: str | None, hr_source: str | None) -> bool:
-        """As the app's isHrTrusted: once a reliable sensor is in use, a run on the wrist sensor alone is not trusted."""
-        if activity_id and activity_id in self.hr_unreliable_ids:
-            return False
-        if not self.hr_reliable_from:
-            return True
-        return (date or "")[:10] >= self.hr_reliable_from and hr_source != "wrist"
+    def hr_trusted(self, activity_id: str | None) -> bool:
+        """As the app's hrDistrust: the owner's mark alone distrusts a run, whatever sensor recorded it."""
+        return not (activity_id and activity_id in self.hr_unreliable_ids)
 
 
 @dataclass(frozen=True)
@@ -90,7 +85,7 @@ def infer_type_with_source(
         return TypeInference(_PRIMARY_BENEFIT_TYPES[parsed.primary_benefit], "garmin")
 
     context = context or TypeContext()
-    trusted = context.hr_trusted(activity_id, date, parsed.hr_source if parsed else None)
+    trusted = context.hr_trusted(activity_id)
     inferred = _infer_runomics_type(
         parsed,
         hr_zones=hr_zones if trusted else (),

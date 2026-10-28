@@ -1351,8 +1351,6 @@ export const fr = {
       estimated: 'Estimé',
       hrUntrusted: {
         marked: 'FC non fiable · charge selon l’effort',
-        beforeReliable: 'FC avant le brassard · charge selon l’effort',
-        wrist: 'FC au poignet · charge selon l’effort',
       },
     },
     similarRuns: {
@@ -2406,7 +2404,7 @@ export const fr = {
       daily_plan_completion: 'planned_day_completed signifie seulement qu’au moins une activité a eu lieu un jour planifié ; cela ne prouve pas que la séance prescrite a été suivie.',
       hr_zones: 'Les colonnes de zones cardiaques sont les seuils bas des zones Garmin : une zone va de sa borne basse jusqu’à un battement sous celle de la zone suivante, et la zone 5 jusqu’à max_hr_bpm.',
       sessions: 'Une séance que la montre a enregistrée en plusieurs sorties enchaînées (échauffement, test, retour au calme) est une seule ligne d’Activities : activity_id est sa sortie principale, merged_activity_ids les autres. La ligne se lit comme la sortie principale (la course ou le test lui-même) : sa distance, son temps, son allure, sa fréquence cardiaque, sa dynamique de course, son type, son exécution et sa météo. session_distance_km et session_duration_seconds ajoutent les sorties enregistrées à part, remplies seulement sur les lignes fusionnées ; zones, TRIMP, calories et dénivelé comptent toute la séance. Les sorties synchronisées avant l’enregistrement des heures de départ restent une ligne chacune.',
-      load_source: 'trimp vient de la fréquence cardiaque, ou vaut « estimated from effort » (RPE de séance × minutes, ramené au TRIMP) quand la fréquence cardiaque n’est pas fiable : enregistrée avant hr_reliable_from de l’athlète, au capteur poignet après, ou marquée non fiable dans l’app. Les colonnes de fréquence cardiaque et de zones d’une telle sortie sont vides.',
+      load_source: 'trimp vient de la fréquence cardiaque, ou vaut « estimated from effort » (RPE de séance × minutes, ramené au TRIMP) quand la sortie est marquée « FC non fiable » dans l’app. Les colonnes de fréquence cardiaque et de zones d’une telle sortie sont vides.',
       type: 'type est l’étiquette Garmin issue de l’effet d’entraînement, ou celle de Runomics tirée du nom de la séance quand type_source vaut runomics ; il diffère souvent de l’intention. description et planned_type disent ce que la séance devait être.',
       planned_columns: 'planned_* sont la prescription du coach Runomics pour ce jour quand il y en a une (objectif, repère d’allure, plafond cardiaque), sinon la séance du calendrier Garmin. Elles figurent sur la séance principale du jour ; compare-les aux colonnes execution_*.',
       race_results: 'race_official_* sont les résultats publiés (temps puce, distance certifiée). distance_km et pace_sec_per_km restent la mesure de la montre, qui donne souvent un peu plus au GPS.',

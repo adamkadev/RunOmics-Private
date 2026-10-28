@@ -166,14 +166,14 @@ class TestInferType:
             "2026-10-14": (PlannedSession("VO2Max", (PlannedRep(seconds=240),) * 5),),
         }
 
-    def test_slow_reps_at_threshold_heart_rate_stay_base_when_the_heart_rate_is_untrusted(self):
-        context = TypeContext(threshold_speed_ms=3.83, lthr_bpm=179, z4_floor_bpm=170, hr_reliable_from="2026-10-16")
-        parsed = ParsedFit(splits=_walk_run(240, 2.9, 176, 5), hr_source="external")
+    def test_slow_reps_at_threshold_heart_rate_stay_base_when_the_heart_rate_is_marked_unreliable(self):
+        context = TypeContext(threshold_speed_ms=3.83, lthr_bpm=179, z4_floor_bpm=170, hr_unreliable_ids=frozenset({"7"}))
+        parsed = ParsedFit(splits=_walk_run(240, 2.9, 176, 5), hr_source="wrist")
 
-        before = infer_type_with_source("", parsed, date="2026-10-10", context=context)
-        after = infer_type_with_source("", parsed, date="2026-10-20", context=context)
+        marked = infer_type_with_source("", parsed, activity_id="7", date="2026-10-20", context=context)
+        unmarked = infer_type_with_source("", parsed, activity_id="8", date="2026-10-20", context=context)
 
-        assert (before, after) == (type_inference("Base", "runomics"), type_inference("VO2Max", "runomics"))
+        assert (marked, unmarked) == (type_inference("Base", "runomics"), type_inference("VO2Max", "runomics"))
 
     def test_zones_of_a_run_marked_hr_unreliable_do_not_type_it(self):
         context = TypeContext(lthr_bpm=179, hr_unreliable_ids=frozenset({"7"}))
@@ -184,15 +184,14 @@ class TestInferType:
 
         assert (marked.activity_type, unmarked.activity_type) == ("Base", "VO2Max")
 
-    def test_a_wrist_run_after_the_reliable_date_is_untrusted(self):
-        context = TypeContext(hr_reliable_from="2026-10-16")
+    def test_only_a_marked_run_is_untrusted(self):
+        context = TypeContext(hr_unreliable_ids=frozenset({"1"}))
 
-        assert context.hr_trusted("1", "2026-10-20", "external")
-        assert not context.hr_trusted("1", "2026-10-20", "wrist")
-        assert not context.hr_trusted("1", "2026-10-15", "external")
-        assert TypeContext().hr_trusted("1", "2026-10-15", "wrist")
+        assert not context.hr_trusted("1")
+        assert context.hr_trusted("2")
+        assert context.hr_trusted(None)
 
-    def test_load_type_context_reads_the_reliable_date_and_the_marked_runs(self, tmp_path):
+    def test_load_type_context_reads_the_marked_runs_and_ignores_a_leftover_reliable_date(self, tmp_path):
         (tmp_path / "athlete.json").write_text(json.dumps({"hrReliableFrom": "2026-10-16"}))
         (tmp_path / "activity_notes.json").write_text(json.dumps({"notes": {
             "1": {"note": "", "tags": [], "hrUnreliable": True},
@@ -202,7 +201,8 @@ class TestInferType:
 
         context = load_type_context(tmp_path)
 
-        assert (context.hr_reliable_from, context.hr_unreliable_ids) == ("2026-10-16", frozenset({"1"}))
+        assert context.hr_unreliable_ids == frozenset({"1"})
+        assert context.hr_trusted("2")
 
     def test_race_remains_highest_priority_and_reports_garmin_source(self):
         parsed = ParsedFit(is_race=True, primary_benefit=1, splits=_intervals(30, 45, 8))

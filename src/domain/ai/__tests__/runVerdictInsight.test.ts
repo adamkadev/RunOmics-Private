@@ -642,9 +642,9 @@ describe('a run nobody rated (no RPE, no telling training effect)', () => {
   })
 
   it('leaves zones from an untrusted heart rate out of the judgement', () => {
-    const wrist = run({ id: 'w', hrUntrusted: 'wrist', hrZones: [zone(1, 10), zone(2, 20), zone(3, 25)] as never })
+    const marked = run({ id: 'w', hrUntrusted: 'marked', hrZones: [zone(1, 10), zone(2, 20), zone(3, 25)] as never })
 
-    expect(runVerdictJudgement(context(wrist))).toMatchObject({ rated: false })
+    expect(runVerdictJudgement(context(marked))).toMatchObject({ rated: false })
   })
 
   it('gives the card the tone the prompt was given, whatever the case', () => {

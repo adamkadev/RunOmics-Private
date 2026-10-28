@@ -74,6 +74,11 @@ All notable changes to this project are documented in this file.
 - **Monthly renewal.** `npm run coach -- bootstrap` runs without `--replace` from seven days before the block ends,
   as `docs/profiles.md` describes; earlier it still refuses. A refused answer comes back in the repair prompt with
   the reason, so the correction edits it.
+- **A run's heart rate is hidden only when its note marks it unreliable; the wrist-sensor rule is gone.** A run
+  recorded on the wrist sensor, or before `athlete.json`'s `hrReliableFrom`, keeps its heart rate, zones and
+  heart-rate load, in the app and in the sync's session typing; `hrReliableFrom` is ignored where it is left, and the
+  workbook's Athlete sheet drops its `hr_reliable_from` column. The app changes on deploy; the nightly reprocess
+  retypes the cached runs on the next sync. No rules deploy.
 
 ## [3.3.0] - 2026-10-28
 

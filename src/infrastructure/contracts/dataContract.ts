@@ -254,8 +254,6 @@ function checkAthlete(dir: string, problems: Problem[]) {
       report.error('$.hrZoneBoundsBpm', 'expected five numbers')
     }
     if (athlete.sex !== undefined && athlete.sex !== 'male' && athlete.sex !== 'female') report.warn('$.sex', 'expected "male" or "female"')
-    // A misspelt date would silently trust or distrust every run.
-    if (athlete.hrReliableFrom !== undefined && !isIsoDate(athlete.hrReliableFrom)) report.error('$.hrReliableFrom', 'expected YYYY-MM-DD')
     if (athlete.maxWeeklyKm !== undefined && !(typeof athlete.maxWeeklyKm === 'number' && athlete.maxWeeklyKm > 0)) {
       report.error('$.maxWeeklyKm', 'expected a positive number of kilometres')
     }

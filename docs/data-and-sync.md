@@ -156,6 +156,13 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   logs a count, never an entry. The coach falls back to both when Firestore does not answer.
   Neither step stops the sync: a failed one, like each backup and mirror below, makes the night
   partial once the commit has landed.
+- **Heart-rate trust.** A note's "HR unreliable" mark is the only thing that drops a run's heart
+  rate: `withHrTrust` (`src/domain/activity/hrTrust.ts`) clears it on load, its load is then
+  estimated from effort, and the sync's `TypeContext.hr_trusted` keeps it out of the run's type.
+  Both read the mark from `activity_notes.json`, not Firestore, so it reaches the app's figures
+  after the next sync commits that copy; the typing, loaded before the backup step, follows on the
+  sync after. The run's sensor (`hrSource`, `wrist` or `external`) is stored but trusts or
+  distrusts nothing, and a `hrReliableFrom` left in `athlete.json` is ignored.
 - **Route names and avoid spots** (`route_names.json`, `avoid_spots.json`). Also only in Firestore
   otherwise: one `GET /api/internal/route-data` returns both, sorted by id, and the step writes one
   file each and logs the two counts. Nothing in the app reads them back; they are there to restore.

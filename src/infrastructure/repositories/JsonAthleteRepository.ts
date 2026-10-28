@@ -56,8 +56,6 @@ export interface AthleteProfile {
   trainingBreaks?: TrainingBreak[]
   /** Typed by hand: the weekly kilometres a block's growth stops at. */
   maxWeeklyKm?: number
-  /** YYYY-MM-DD: the first day a reliable heart-rate sensor was worn; earlier runs' heart rate is not trusted. */
-  hrReliableFrom?: string
 }
 
 export function getAthleteProfile(): AthleteProfile {
