@@ -1,73 +1,90 @@
 from types import SimpleNamespace
 
-import garth
 import pytest
-import requests
-from garth.exc import GarthHTTPError
+from garmin_tokens import expired_di_secret
+from garminconnect.client import Client as DiClient
 
-from garmin import client as garmin_client
-from garmin.client import GarminAuthError, GarminClient, GarminTokenExpired
-
-
-def _http_error(status: int) -> requests.HTTPError:
-    response = requests.Response()
-    response.status_code = status
-    return requests.HTTPError(f"{status} Client Error", response=response)
+from garmin.client import GarminAPIError, GarminAuthError, GarminClient, GarminTokenExpired
 
 
-@pytest.fixture
-def refresh(monkeypatch):
-    outcome: dict[str, Exception] = {}
+class _Credential:
+    kind = "test"
 
-    def refresh_oauth2():
-        raise outcome["error"]
+    def __init__(self, refresh_error=None):
+        self.refresh_error = refresh_error
+        self.token = "first"
 
-    monkeypatch.setattr(garth.client, "loads", lambda _secret: None)
-    monkeypatch.setattr(garth.client, "oauth2_token", SimpleNamespace(expired=True), raising=False)
-    monkeypatch.setattr(garth.client, "refresh_oauth2", refresh_oauth2)
-    monkeypatch.setattr(garmin_client, "_seed_oauth_consumer", lambda: None)
-    return outcome
+    def headers(self):
+        return {"Authorization": f"Bearer {self.token}"}
 
+    def refresh(self):
+        if self.refresh_error:
+            raise self.refresh_error
+        self.token = "second"
 
-@pytest.mark.parametrize(
-    "error",
-    [_http_error(401), GarthHTTPError(msg="Error in request", error=_http_error(401))],
-    ids=["requests", "garth"],
-)
-def test_a_refused_token_exchange_is_an_expired_token(refresh, error):
-    refresh["error"] = error
-
-    with pytest.raises(GarminTokenExpired, match="GARMIN_SECRET has most likely expired"):
-        GarminClient("secret")
+    def state(self):
+        return {}
 
 
-@pytest.mark.parametrize(
-    "error",
-    [_http_error(403), _http_error(503), requests.ConnectionError("connection reset"), AssertionError("no OAuth1 token")],
-    ids=["cloudflare-403", "garmin-503", "network", "no-oauth1"],
-)
-def test_any_other_refresh_failure_is_not_taken_for_expiry(refresh, error):
-    refresh["error"] = error
+def _client_over(credential, statuses):
+    client = object.__new__(GarminClient)
+    client._auth = credential
+    sent = []
 
-    with pytest.raises(GarminAuthError) as raised:
-        GarminClient("secret")
+    def request(method, url, headers=None, **_kwargs):
+        sent.append(headers["Authorization"])
+        return SimpleNamespace(status_code=statuses.pop(0))
 
-    assert not isinstance(raised.value, GarminTokenExpired)
+    client._http = SimpleNamespace(request=request)
+    return client, sent
+
+
+def test_a_401_mid_run_refreshes_once_and_retries_with_the_new_token():
+    client, sent = _client_over(_Credential(), [401, 200])
+
+    assert client._get("https://example.test/activity").status_code == 200
+    assert sent == ["Bearer first", "Bearer second"]
+
+
+def test_a_401_mid_run_whose_refresh_is_refused_is_an_expired_token():
+    client, _ = _client_over(_Credential(GarminTokenExpired("refused")), [401])
+
+    with pytest.raises(GarminTokenExpired):
+        client._get("https://example.test/activity")
+
+
+def test_a_401_after_a_good_refresh_is_an_api_error():
+    client, _ = _client_over(_Credential(), [401, 401])
+
+    with pytest.raises(GarminAPIError) as raised:
+        client._get("https://example.test/activity")
+
+    assert raised.value.status_code == 401
+
+
+def test_a_request_header_overrides_the_credential_for_that_request_only():
+    client, _ = _client_over(_Credential(), [200])
+    seen = {}
+
+    def request(_method, _url, headers=None, **_kwargs):
+        seen.update(headers)
+        return SimpleNamespace(status_code=200)
+
+    client._http = SimpleNamespace(request=request)
+
+    client._get("https://example.test/file", headers={"Accept": "*/*"})
+
+    assert seen == {"Authorization": "Bearer first", "Accept": "*/*"}
+
+
+def test_a_refused_refresh_at_sign_in_is_an_expired_token(monkeypatch):
+    monkeypatch.setattr(
+        DiClient, "_http_post", lambda _self, _url, **_kwargs: SimpleNamespace(ok=False, status_code=400, text="")
+    )
+
+    with pytest.raises(GarminTokenExpired, match="GARMIN_SECRET"):
+        GarminClient(expired_di_secret())
 
 
 def test_an_expired_token_is_still_an_auth_error_for_every_older_caller():
     assert issubclass(GarminTokenExpired, GarminAuthError)
-
-
-def test_a_401_mid_run_whose_refresh_is_refused_is_an_expired_token(monkeypatch):
-    client = object.__new__(GarminClient)
-    client._http = SimpleNamespace(request=lambda *_args, **_kwargs: SimpleNamespace(status_code=401))
-    monkeypatch.setattr(garth.client, "oauth2_token", "Bearer x", raising=False)
-
-    def refused():
-        raise _http_error(401)
-
-    monkeypatch.setattr(garth.client, "refresh_oauth2", refused)
-
-    with pytest.raises(GarminTokenExpired):
-        client._get("https://example.test/activity")

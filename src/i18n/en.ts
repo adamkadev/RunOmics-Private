@@ -2144,7 +2144,7 @@ export const en = {
     connectExpired: {
       title: 'Garmin Connect has stopped',
       body: (since: string) =>
-        `garth's token expired on ${since}. Runs still sync through the Personal API; shoes, the calendar, training status and race predictions do not. Runbook: docs/data-and-sync.md, After garth.`,
+        `The Garmin Connect token expired on ${since}. Runs still sync through the Personal API; shoes, the calendar, training status and race predictions do not. Mint a new one with scripts/get_secret.py: docs/data-and-sync.md, Connect token expiry.`,
     },
     garminKeyExpiring: {
       title: (days: number) => (days <= 0 ? 'The Garmin key expires today' : `The Garmin key expires in ${days} day${days === 1 ? '' : 's'}`),
