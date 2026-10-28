@@ -158,7 +158,7 @@ def test_an_opaque_refresh_token_has_no_readable_expiry(diauth):
 
 
 def test_a_refreshed_token_is_written_back_to_the_named_env_file(diauth, tmp_path, monkeypatch):
-    env_file = tmp_path / ".env.adam.local"
+    env_file = tmp_path / ".env.profile.local"
     env_file.write_text("GARMIN_PERSONAL_API_KEY=key\nGARMIN_SECRET=old\nRUNOMICS_DATA_DIR=../data\n")
     monkeypatch.setenv(auth.WRITEBACK_ENV, str(env_file))
 
@@ -181,7 +181,7 @@ def test_without_a_write_back_file_nothing_is_written(diauth, tmp_path, monkeypa
 
 
 def test_a_write_back_that_fails_warns_without_the_token_and_keeps_the_run(diauth, tmp_path, monkeypatch, capsys):
-    monkeypatch.setenv(auth.WRITEBACK_ENV, str(tmp_path / "missing-dir" / ".env.adam.local"))
+    monkeypatch.setenv(auth.WRITEBACK_ENV, str(tmp_path / "missing-dir" / ".env.profile.local"))
 
     credential = open_auth(expired_di_secret())
 
