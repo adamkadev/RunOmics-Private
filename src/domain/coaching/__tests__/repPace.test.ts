@@ -23,8 +23,13 @@ describe('prescribedRepPace', () => {
       .toEqual({ min: 470, max: 525 })
   })
 
-  it('reads the pace guide of a controlled threshold rep that also sets a heart rate', () => {
-    const threshold: { blocks: WorkoutBlock[] } = {
+  it('reads the pace of an easy rep that also sets a heart rate', () => {
+    expect(prescribedRepPace(runWalk({ paceSecPerKm: { min: 470, max: 525 }, hrBpm: { min: 124, max: 144 } }))).toEqual({ min: 470, max: 525 })
+  })
+
+  it('leaves a controlled threshold rep, held by its heart rate, to the reps\' own band', () => {
+    const threshold: { type: 'threshold'; blocks: WorkoutBlock[] } = {
+      type: 'threshold',
       blocks: [
         { kind: 'warmup', target: { durationSeconds: 900 } },
         {
@@ -39,7 +44,7 @@ describe('prescribedRepPace', () => {
       ],
     }
 
-    expect(prescribedRepPace(threshold)).toEqual({ min: 263, max: 268 })
+    expect(prescribedRepPace(threshold)).toBeNull()
   })
 
   it('has none for reps set by heart rate alone', () => {
