@@ -5,7 +5,6 @@ import { sessionZone } from '@/lib/colors'
 import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 import type { SessionCard } from './nextSession'
-import { TodayCoachLine } from './TodayCoachLine'
 
 function IntensityBar({ workout }: { workout: NonNullable<SessionCard['workout']> }) {
   const zone = workout.type ? sessionZone(workout) : null
@@ -45,7 +44,6 @@ export function TodaySessionCard({ card }: { card: SessionCard }) {
         )}
       </span>
       {card.workout && isStructured(card.workout) && <IntensityBar workout={card.workout} />}
-      {card.workout?.state && <TodayCoachLine sessionKey={card.workout.key} title={card.workout.title} />}
       {card.heat && (
         <span className="mt-1 flex items-start gap-1.5 text-footnote text-[var(--text-2)] [text-wrap:pretty]" data-testid="session-heat">
           <Thermometer size={14} strokeWidth={2} aria-hidden className="mt-[2px] shrink-0 text-[var(--warn)]" />

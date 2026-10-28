@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CoachWords } from '@/application/coaching/GetCoachWords'
-import { COACH_WORDS_PATH, forgetCoachWords, readCoachWords, sessionWords } from '../useCoachWords'
+import { COACH_WORDS_PATH, forgetCoachWords, readCoachWords } from '../useCoachWords'
 
 const WORDS: CoachWords = {
   block: { name: 'Reprise en douceur', focus: 'Trois sorties par semaine.' },
@@ -18,12 +18,6 @@ describe('the coach’s words', () => {
   afterEach(() => {
     forgetCoachWords()
     vi.unstubAllGlobals()
-  })
-
-  it('drops a description that only repeats the session’s title', () => {
-    expect(sessionWords(WORDS, 'run-walk', 'Footing · 3 × 3′')).toEqual(WORDS.sessions['run-walk'])
-    expect(sessionWords(WORDS, 'easy-run', 'Easy run.')).toBeNull()
-    expect(sessionWords(WORDS, 'garmin:2026-09-09:Easy', 'Easy')).toBeNull()
   })
 
   it('asks the server once for every reader, and reads a refusal as none', async () => {
