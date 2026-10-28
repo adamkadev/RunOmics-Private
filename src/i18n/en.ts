@@ -2327,7 +2327,6 @@ export const en = {
     nextPeriod: 'Next',
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
-    planned: 'Planned',
     easyEffortLabel: 'Z2 easy',
     openPlanner: 'Open the weekly planner',
     // One reading of a session for Today, Plan and the bar (workoutSummary).
@@ -2451,13 +2450,6 @@ export const en = {
   },
 
   coaching: {
-    states: {
-      prescribed: 'Prescribed',
-      adjusted: 'Adjusted',
-      completed: 'Completed',
-      missed: 'Missed',
-      cancelled: 'Cancelled',
-    },
     outcomes: { KEEP: 'Keep', ADJUST: 'Adjust', REPLAN: 'Replan' },
     planned: 'Planned',
     actual: 'Actual',

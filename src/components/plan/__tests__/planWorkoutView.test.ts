@@ -197,12 +197,6 @@ describe('coach prescriptions normalised into the Plan session view', () => {
     expect(view.scheduledTime).toBe('Evening')
     expect(view.title).toBe('Post-Race Recovery Run')
   })
-
-  it('reports the prescription state, not a generic planned label', () => {
-    expect(coachWorkoutView(viewOf(recovery()), ZONES).statusLabel).toBe(t.coaching.states.prescribed)
-    expect(coachWorkoutView(viewOf(recovery({ status: 'adjusted' })), ZONES).statusLabel)
-      .toBe(t.coaching.states.adjusted)
-  })
 })
 
 describe('structure, only where there is structure to show', () => {
@@ -279,7 +273,6 @@ describe('a Garmin planned workout is untouched by any of this', () => {
     expect(view.duration).toEqual({ seconds: 3_600, estimated: false })
     expect(view.distanceM).toBe(12_000)
     expect(view.scheduledTime).toBe('Morning')
-    expect(view.statusLabel).toBe(t.plan.planned)
     expect(view.description).toBeNull()
     expect(view.notes).toEqual([])
     expect(view.target).toBeNull()

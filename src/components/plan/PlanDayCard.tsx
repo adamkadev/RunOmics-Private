@@ -15,7 +15,6 @@ import { sessionLabel } from '@/lib/activityTitle'
 import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { ButtonLink } from '@/components/ui/Button'
-import type { PrescriptionDisplayState } from '@/application/coaching/GetCoachingView'
 import { exploreRouteHref, planRouteKm } from '@/components/explore/exploreHref'
 import { planPaceSecPerKm } from './planPace'
 import type { PlanWorkoutView } from './planWorkoutView'
@@ -26,14 +25,6 @@ import { paceLabel, workoutSummary } from './workoutSummary'
 const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
 const PROFILE_HEIGHT: Record<StepTone, number> = { ease: 14, recovery: 14, work: 44 }
-
-const STATE_CLASS: Record<PrescriptionDisplayState, string> = {
-  prescribed: 'text-muted-foreground',
-  adjusted: 'text-[var(--tone-caution)]',
-  completed: 'text-[var(--pos)]',
-  missed: 'text-[var(--warn)]',
-  cancelled: 'text-muted-foreground',
-}
 
 function Eyebrow({ date, kind }: { date: string; kind: DayKind | null }) {
   return (
@@ -95,12 +86,7 @@ export function PlannedWorkoutCard({
 
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
-      <div className="flex items-baseline justify-between gap-3">
-        <Eyebrow date={workout.date} kind={kind} />
-        <span className={`shrink-0 text-[11px] font-medium ${workout.state ? STATE_CLASS[workout.state] : 'text-muted-foreground'}`} data-testid="plan-status">
-          {workout.statusLabel}
-        </span>
-      </div>
+      <Eyebrow date={workout.date} kind={kind} />
       {structured ? (
         <>
           <Title>{title}</Title>
