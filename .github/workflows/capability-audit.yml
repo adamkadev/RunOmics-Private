@@ -75,35 +75,14 @@ jobs:
       - name: Install Python dependencies
         run: pip install --require-hashes -r scripts/requirements.txt
 
-      - name: Install Cloudflare WARP
-        run: |
-          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
-          sudo apt-get update
-          sudo apt-get install -y cloudflare-warp
-
-      - name: Connect Cloudflare WARP
-        run: |
-          warp-cli --accept-tos registration new
-          warp-cli --accept-tos mode warp
-          warp-cli --accept-tos connect
-          sleep 3
-          warp-cli --accept-tos status
-
       - name: Run sanitized capability probe
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
-          GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
-          GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
         run: |
           mkdir -p capability-report
           python scripts/diagnostics/probe_garmin_capabilities.py \
             --as-of "${{ needs.profiles.outputs.as_of }}" \
             --output "capability-report/${{ matrix.profile }}.json"
-
-      - name: Disconnect Cloudflare WARP
-        if: always()
-        run: warp-cli --accept-tos disconnect || true
 
       - name: Upload sanitized profile report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

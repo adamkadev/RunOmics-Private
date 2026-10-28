@@ -1,4 +1,4 @@
-"""The credential in GARMIN_SECRET: a garminconnect token store, or a garth token until the secrets are rotated."""
+"""The credential in GARMIN_SECRET: a garminconnect token store."""
 
 from __future__ import annotations
 
@@ -13,20 +13,15 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol
-from urllib.parse import urlencode
 
-import httpx
 from garminconnect.client import Client as _DiClient
 from garminconnect.exceptions import GarminConnectAuthenticationError
-from oauthlib.oauth1 import Client as _OAuth1Signer
 
 from .errors import GarminAuthError, GarminTokenExpired
 
 SECRET_ENV = "GARMIN_SECRET"
 WRITEBACK_ENV = "GARMIN_SECRET_WRITEBACK"
 
-_TIMEOUT = httpx.Timeout(60.0, connect=30.0)
-_LEGACY_USER_AGENT = "Mozilla/5.0 (RunOmics/1.0)"
 # garminconnect raises a bare message on a refused refresh; the status is only in its text.
 _REFRESH_STATUS = re.compile(r"refresh failed: (\d{3})")
 
@@ -35,23 +30,13 @@ _REFRESH_FAILED = (
     "\n"
     "A 400 or 401 means Garmin refused the refresh token in GARMIN_SECRET: it has expired or been revoked. "
     "Mint a new one with python scripts/get_secret.py from a home connection, then replace GARMIN_SECRET in "
-    "this profile's GitHub Environment and its .env.<profile>.local. A 403 is Garmin refusing this network "
-    "(as when WARP is down), and the next run tries again.\n"
+    "this profile's GitHub Environment and its .env.<profile>.local. A 403 is Garmin refusing this network, "
+    "and the next run tries again.\n"
     "\n"
     "See 'Optional: the Garmin Connect token' under Setup in README.md."
 )
 
-_LEGACY_REFRESH_FAILED = (
-    "Token refresh failed: {exc}\n"
-    "\n"
-    "GARMIN_SECRET still holds a garth token, and a 401 means its OAuth1 token has expired: garth tokens "
-    "can no longer be minted or renewed. Mint a garminconnect token with python scripts/get_secret.py from "
-    "a home connection and put it in GARMIN_SECRET.\n"
-    "\n"
-    "See 'Optional: the Garmin Connect token' under Setup in README.md."
-)
-
-NOT_A_SECRET = "GARMIN_SECRET is neither a garminconnect token store nor a garth token"
+NOT_A_SECRET = "GARMIN_SECRET is not a garminconnect token store"
 
 
 class ConnectAuth(Protocol):
@@ -89,8 +74,6 @@ def open_auth(secret: str) -> ConnectAuth:
     payload = _decode(secret)
     if isinstance(payload, dict) and payload.get("di_token"):
         return DiTokenAuth(payload)
-    if isinstance(payload, list) and len(payload) == 2 and all(isinstance(part, dict) for part in payload):
-        return LegacyGarthAuth(payload[0], payload[1])
     raise ValueError(NOT_A_SECRET)
 
 
@@ -202,103 +185,4 @@ class DiTokenAuth:
             "refreshedNow": self.refreshed,
             "refreshTokenRotated": self.rotated,
             "writeBack": bool(os.environ.get(WRITEBACK_ENV, "").strip()),
-        }
-
-
-_CONSUMER_KEY_ENV = "GARMIN_OAUTH_CONSUMER_KEY"
-_CONSUMER_SECRET_ENV = "GARMIN_OAUTH_CONSUMER_SECRET"
-
-# Garmin's own Android client pair, the same for every user and shipped in Garmin's app: not a secret.
-# Only a garth token needs it, and only until GARMIN_SECRET is rotated to a garminconnect token.
-_OAUTH_CONSUMER = {
-    "consumer_key": "fc3e99d2-118c-44b8-8ae3-03370dde24c0",
-    "consumer_secret": "E08WAR897WEy2knn7aFBrvegVAf0AFdWBBF",
-}
-
-
-def oauth_consumer() -> dict[str, str]:
-    """The environment's pair, for the day Garmin rotates it, else the shipped one."""
-    key = os.environ.get(_CONSUMER_KEY_ENV, "").strip()
-    secret = os.environ.get(_CONSUMER_SECRET_ENV, "").strip()
-    if key and secret:
-        return {"consumer_key": key, "consumer_secret": secret}
-    return dict(_OAUTH_CONSUMER)
-
-
-class LegacyGarthAuth:
-    """A garth token: an OAuth1 token exchanged for a fresh OAuth2 token each run, signed as garth signed it."""
-
-    kind = "garth"
-
-    def __init__(self, oauth1: dict[str, Any], oauth2: dict[str, Any]) -> None:
-        if not oauth1.get("oauth_token") or not oauth1.get("oauth_token_secret"):
-            raise ValueError(NOT_A_SECRET)
-        self._oauth1 = oauth1
-        self._oauth2 = oauth2
-        self.refreshed = False
-        if not oauth2.get("access_token") or float(oauth2.get("expires_at") or 0) <= time.time():
-            self.refresh()
-
-    def headers(self) -> dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self._oauth2.get('access_token', '')}",
-            "NK": "NT",
-            "User-Agent": _LEGACY_USER_AGENT,
-        }
-
-    def refresh(self) -> None:
-        domain = self._oauth1.get("domain") or "garmin.com"
-        url = f"https://connectapi.{domain}/oauth-service/oauth/exchange/user/2.0"
-        form = {"mfa_token": self._oauth1["mfa_token"]} if self._oauth1.get("mfa_token") else {}
-        consumer = oauth_consumer()
-        signer = _OAuth1Signer(
-            consumer["consumer_key"],
-            client_secret=consumer["consumer_secret"],
-            resource_owner_key=self._oauth1["oauth_token"],
-            resource_owner_secret=self._oauth1["oauth_token_secret"],
-        )
-        _, headers, body = signer.sign(
-            url,
-            http_method="POST",
-            body=urlencode(form),
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-        headers["User-Agent"] = "com.garmin.android.apps.connectmobile"
-        try:
-            resp = httpx.post(url, headers=headers, content=body or b"", timeout=_TIMEOUT)
-        except httpx.HTTPError as exc:
-            raise GarminAuthError(_LEGACY_REFRESH_FAILED.format(exc=f"{type(exc).__name__}: {exc}")) from exc
-        if resp.status_code >= 400:
-            error = GarminTokenExpired if resp.status_code == 401 else GarminAuthError
-            raise error(_LEGACY_REFRESH_FAILED.format(exc=f"HTTP {resp.status_code} from {url}"))
-        try:
-            token = resp.json()
-            now = time.time()
-            token["expires_at"] = int(now + float(token["expires_in"]))
-            if "refresh_token_expires_in" in token:
-                token["refresh_token_expires_at"] = int(now + float(token["refresh_token_expires_in"]))
-        except (ValueError, KeyError, TypeError) as exc:
-            raise GarminAuthError(_LEGACY_REFRESH_FAILED.format(exc="the token exchange answered no token")) from exc
-        self._oauth2 = token
-        self.refreshed = True
-
-    def notice(self) -> str | None:
-        return (
-            "GARMIN_SECRET still holds a garth token, which cannot be renewed once its OAuth1 token expires. "
-            "Mint a garminconnect token with python scripts/get_secret.py (README.md, 'Optional: the Garmin Connect token')."
-        )
-
-    def state(self) -> dict[str, Any]:
-        expires_at = self._oauth2.get("expires_at")
-        refresh_at = self._oauth2.get("refresh_token_expires_at")
-        return {
-            "kind": self.kind,
-            "oauth1": {"present": True, "expiresAt": None},
-            "oauth2": {
-                "expiresAt": _iso(expires_at),
-                "expired": expires_at is not None and expires_at <= time.time(),
-                "refreshTokenExpiresAt": _iso(refresh_at),
-                "refreshExpired": refresh_at is not None and refresh_at <= time.time(),
-            },
-            "refreshedNow": self.refreshed,
         }

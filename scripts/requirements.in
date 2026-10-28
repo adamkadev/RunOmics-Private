@@ -4,7 +4,5 @@
 # (from scripts/, under the Python the workflows use - 3.12)
 # Exact: client auth reaches into its token client (garmin/auth.py), so an upgrade is a reviewed change.
 garminconnect==0.3.20
-# Signs a garth token's OAuth1 exchange; goes once GARMIN_SECRET holds a garminconnect token everywhere.
-oauthlib>=3.2.2
 httpx>=0.28.1
 garmin-fit-sdk>=21.208.0

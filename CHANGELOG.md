@@ -31,8 +31,9 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   without it there is no cap.
 - **Needs** a new Garmin Connect token per athlete: `python scripts/get_secret.py` (email, password, MFA code)
   locally, then `GARMIN_SECRET` updated in both GitHub Environments (`adam`, `lamiaa`) and in `.env.adam.local` /
-  `.env.lamiaa.local`, with `GARMIN_SECRET_WRITEBACK` set to that file. An old garth token keeps syncing, with a
-  warning, until it is replaced. The sync and the coach bridge need Python 3.12 or newer.
+  `.env.lamiaa.local`, with `GARMIN_SECRET_WRITEBACK` set to that file, before this release deploys: a garth token
+  is no longer read, and without a new one the sync skips Connect. The sync and the coach bridge need Python 3.12
+  or newer.
 - **Needs**, to push the coach's workouts through intervals.icu: a free intervals.icu account per athlete with
   Garmin connected and planned-workout upload on, and its key (`INTERVALS_API_KEY`, optionally
   `INTERVALS_ATHLETE_ID`) in `.env.adam.local` and `.env.lamiaa.local`; then a dry run, and
@@ -265,19 +266,20 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
 
 - **Life after garth (G1).** The sync reads activities through Garmin's Personal API when the profile has a
   `GARMIN_PERSONAL_API_KEY`, and `GARMIN_SECRET` stays optional for what only Connect serves (shoes, calendar,
-  training status, predictions, VO2max and threshold history). A 401 on garth's exchange is
-  `GarminTokenExpired`: the sync carries on with exit 0, writes `connect_status.json`, and the operator gets one
-  push with the runbook. WARP failing no longer stops a sync with a key. VO2max keeps moving from each FIT file
+  training status, predictions, VO2max and threshold history). A refused Connect token is `GarminTokenExpired`:
+  the sync carries on with exit 0, writes `connect_status.json`, and the operator gets one push with the runbook.
+  VO2max keeps moving from each FIT file
   on a night without Connect. `docs/data-and-sync.md` has a sunset matrix.
 - **garminconnect instead of garth.** Garmin Connect signs in with python-garminconnect: garth is unmaintained
   and cannot mint a token since Garmin's March 2026 auth change. `python scripts/get_secret.py` signs in again and
   prints a new `GARMIN_SECRET`, garminconnect's token store, whose refresh token renews the day-long access token.
-  `npm run coach:garmin-auth` reports both tokens' expiries and whether a refresh worked. An old garth token keeps
-  syncing until it is replaced, with a warning in every run's log; when Garmin refuses the new refresh token, the
-  night reports Connect expired as before. Locally, `GARMIN_SECRET_WRITEBACK` keeps the refreshed token in the env
-  file. **Needs** the new token (see Manual steps).
-- Sync has a `no_warp` test input: a manual run (with dry run) reaches Garmin Connect without Cloudflare WARP, to
-  see whether Connect still refuses GitHub's network with the garminconnect token. Nightly runs keep WARP.
+  `npm run coach:garmin-auth` reports both tokens' expiries and whether a refresh worked. When Garmin refuses the
+  refresh token, the night reports Connect expired as before. Locally, `GARMIN_SECRET_WRITEBACK` keeps the
+  refreshed token in the env file. garth tokens are no longer read: their OAuth1 exchange, Garmin's consumer pair
+  (`GARMIN_OAUTH_CONSUMER_KEY` / `_SECRET`) and `oauthlib` are gone. **Needs** the new token (see Manual steps).
+- **No more WARP.** The sync and the capability audit reach Garmin Connect from GitHub's own network: Connect
+  accepts the garminconnect token from there, so Cloudflare WARP, its install, its weekly package cache and the
+  `no_warp` test input are gone, and a sync no longer waits on a tunnel.
 - **Connect warnings (G6).** The Connect requests a step reads land in `sync_meta.json` (`warnings`,
   `warningsAt`) with `seriesFreshness`; Health reports `connectWarnings`, `seriesFreshness` and `staleSeries`,
   and Settings → Diagnostics lists each series and since when it stopped.

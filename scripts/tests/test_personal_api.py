@@ -81,11 +81,9 @@ class TestToken:
     @pytest.mark.parametrize(
         "status,hint",
         [(400, "malformed"), (401, "create a new one at https://connect.garmin.com/app/settings/personalApiToken"),
-         (403, "is WARP connected?")],
+         (403, "Garmin blocks the address")],
     )
     def test_a_refused_key_says_what_it_most_likely_means_and_never_echoes_it(self, status, hint):
-        # A 403 is also how Garmin answers a blocked address: a valid key,
-        # shown once, is not to be thrown away over a dropped tunnel.
         with pytest.raises(GarminAuthError) as raised:
             FakeApi(token=httpx.Response(status)).client()
         assert f"(HTTP {status})" in str(raised.value) and hint in str(raised.value)

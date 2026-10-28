@@ -18,4 +18,4 @@ class GarminAPIError(Exception):
 
 
 class GarminTokenExpired(GarminAuthError):
-    """Garmin refused GARMIN_SECRET's refresh token (or a garth OAuth1 token): Connect is gone until a new one is minted."""
+    """Garmin refused GARMIN_SECRET's refresh token: Connect is gone until a new one is minted."""
