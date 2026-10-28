@@ -1,5 +1,6 @@
 import 'server-only'
 import type { Limits } from '@/domain/ai/prompt'
+import { carriesStopSignal } from '@/domain/coaching/stopSignals'
 import { activeLocale } from '@/i18n'
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
@@ -105,6 +106,7 @@ function parseInsight(raw: unknown, limits: Limits, bulletCount?: number): Insig
     if (combined.length > FRENCH_ACCENT_CHECK_MIN_LENGTH && !FRENCH_ACCENT.test(combined)) {
       return { ok: false, reason: 'french text missing all accents' }
     }
+    if (carriesStopSignal(combined)) return { ok: false, reason: 'french stop signal' }
   }
 
   const insight = { headline: trimmedHeadline, body: trimmedBody }
