@@ -64,8 +64,9 @@ function stepLine(segment: WorkoutSegment): string {
   return `- ${[length(segment), target(segment), INTENSITY[segment.kind]].filter(Boolean).join(' ')}`
 }
 
+/** As on the Connect route, only the heart-rate bounds: the coach's notes stay in the plan. */
 function stepHints(segment: WorkoutSegment): string[] {
-  const hints = [...(segment.notes ?? [])]
+  const hints: string[] = []
   if (segment.target.hrBpm) hints.push(t.coaching.garminStep.hr(segment.target.hrBpm.min, segment.target.hrBpm.max))
   if (segment.target.paceSecPerKm && segment.target.hrZone !== undefined) hints.push(t.coaching.garminStep.hrZone(segment.target.hrZone))
   return hints
@@ -87,17 +88,10 @@ function sections(blocks: readonly WorkoutBlock[]): string[][] {
   return result
 }
 
-/** A prose line starting with a dash would read as a step, and one ending in "4x" as a repeat. */
-function prose(line: string): string {
-  return line.replace(/^\s*[-–•*]+\s*/, '').replace(/(\d+)\s*x\s*$/i, '$1 ×')
-}
-
 export function intervalsWorkoutText(prescription: WorkoutPrescription): string {
   const workout = withoutEasyHeartRate(prescription)
   const segments = workout.blocks.flatMap((block) => (block.kind === 'repeat' ? block.steps : [block]))
-  const lines = [workout.description, ...(workout.notes ?? []), ...segments.flatMap(stepHints)]
-    .map(prose)
-    .filter(Boolean)
+  const lines = segments.flatMap(stepHints)
   const intro = [...new Set(lines)]
   const steps = sections(workout.blocks).map((section) => section.join('\n'))
   if (!steps.length) throw new IntervalsEncodingError('A workout without steps cannot go to intervals.icu')

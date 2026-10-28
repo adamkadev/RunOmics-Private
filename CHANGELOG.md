@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Watch
+
+- The coach's notes no longer go to the watch, on either route: no workout description and no step notes, so a
+  session reads target after target. A threshold rep keeps one line, its heart-rate range. The notes stay in the
+  plan. **Needs** a `coach:sync-garmin --apply` for each athlete to update the workouts already on the watch.
+
 ### Activity
 
 - The grade-adjusted pace is gone from a run's page: no line under the stats, no second line on the pace chart.

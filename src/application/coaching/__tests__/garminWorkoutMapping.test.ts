@@ -198,7 +198,7 @@ describe('easy runs', () => {
     expect(step.description).toBe('')
   })
 
-  it('drop the heart-rate lines from the step notes, the workout notes and the description, and keep the rest', () => {
+  it('send no heart rate and none of the coach’s notes', () => {
     const workout = prescription({
       description: 'Stay in Z2 throughout.',
       notes: ['Keep your HR under 145 bpm.', 'Relaxed shoulders.'],
@@ -217,9 +217,9 @@ describe('easy runs', () => {
     const payload = toGarminWorkoutPayload(workout)
     const [warmup, group] = payload.workoutSegments[0]!.workoutSteps as [GarminExecutableStep, GarminRepeatStep]
 
-    expect(payload.description).toBe('Relaxed shoulders.')
-    expect(warmup.description).toBe('1 minute de marche.')
-    expect(group.workoutSteps.map((step) => step.description)).toEqual(['Course très lente.', ''])
+    expect(payload.description).toBeNull()
+    expect(warmup.description).toBe('')
+    expect(group.workoutSteps.map((step) => step.description)).toEqual(['', ''])
     expect(group.workoutSteps[0]!.targetType.workoutTargetTypeKey).toBe('pace.zone')
     expect(JSON.stringify(payload)).not.toMatch(/heart\.rate|zoneNumber|bpm|FC|Z2/)
   })
@@ -231,7 +231,7 @@ describe('easy runs', () => {
     expect(step.zoneNumber).toBe(2)
   })
 
-  it('leave a quality session’s heart rate and notes as they were', () => {
+  it('keep a quality session’s heart-rate bound, not its notes', () => {
     const workout = prescription({
       type: 'threshold',
       notes: ['Heart rate under the ceiling.'],
@@ -239,7 +239,7 @@ describe('easy runs', () => {
     })
     const payload = toGarminWorkoutPayload(workout)
 
-    expect(payload.description).toContain('Heart rate under the ceiling.')
+    expect(payload.description).toBeNull()
     expect(executable(payload.workoutSegments[0]!.workoutSteps[0]!).description).toBe('HR 150-165 bpm')
   })
 })
@@ -300,7 +300,7 @@ describe('repeats', () => {
     expect(repeat.numberOfIterations).toBe(5)
     expect(repeat.workoutSteps[0]!.endConditionValue).toBe(800)
     expect(repeat.workoutSteps[0]!.targetValueTwo).toBeCloseTo(1_000 / 240, 6)
-    expect(repeat.workoutSteps[0]!.description).toBe('Controlled target 5K effort. Not all-out.')
+    expect(repeat.workoutSteps[0]!.description).toBe('')
     expect(repeat.workoutSteps[1]!.targetType.workoutTargetTypeKey).toBe('no.target')
   })
 
@@ -325,24 +325,18 @@ describe('repeats', () => {
     expect(repeat.workoutSteps[0]!.stepType.stepTypeKey).toBe('interval')
     expect(repeat.workoutSteps[0]!.endConditionValue).toBe(20)
     expect(repeat.workoutSteps[0]!.targetType.workoutTargetTypeKey).toBe('no.target')
-    expect(repeat.workoutSteps[0]!.description).toBe('Smooth acceleration, focus on form.')
+    expect(repeat.workoutSteps[0]!.description).toBe('')
     expect(repeat.workoutSteps[1]!.endConditionValue).toBe(40)
   })
 })
 
 describe('descriptions', () => {
-  it('carries the prescription description and notes onto the workout', () => {
+  it('leaves the coach’s description and notes in the plan, off the watch', () => {
     const workout = prescription({
       description: 'Steady easy aerobic run.',
       notes: ['Maintain steady easy pace.'],
       blocks: [{ kind: 'effort', target: { distanceMeters: 6_000 } }],
     })
-
-    expect(toGarminWorkoutPayload(workout).description).toBe('Steady easy aerobic run.\nMaintain steady easy pace.')
-  })
-
-  it('leaves the description null when the prescription carries none', () => {
-    const workout = prescription({ description: '', notes: [], blocks: [{ kind: 'effort', target: {} }] })
 
     expect(toGarminWorkoutPayload(workout).description).toBeNull()
   })

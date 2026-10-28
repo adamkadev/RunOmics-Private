@@ -415,12 +415,13 @@ workouts with the temporary workspace, so the mapping is first saved under
 inverts: the *faster* bound of a `paceSecPerKm` range (the smaller number of seconds)
 becomes the *higher* speed. Garmin orders the pair low-to-high, so the slower pace lands
 in `targetValueOne` and the faster in `targetValueTwo`. Garmin has no dedicated strides
-step, so strides ride on `interval`, which preserves their repetition count, duration and
-form cues where the plain `other` bucket would lose them. One target per step: a
+step, so strides ride on `interval`, which preserves their repetition count and duration
+where the plain `other` bucket would lose them. One target per step: a
 prescription carrying both pace and heart rate keeps pace as the executed target and
 preserves the HR bound in the step description. An easy, recovery or long run sends neither:
-the pace guides it, so its paced steps drop the heart rate, and any line of its description,
-notes or step notes that names a heart rate or zone stays off the watch. A step whose only
+the pace guides it, so its paced steps drop the heart rate. The coach's description, notes and
+step notes stay in the plan: each is one more screen to scroll between steps on the watch, so
+the workout goes with no description and a step's only text is that HR bound. A step whose only
 target is a heart-rate zone, as a return to running prescribes it, keeps it. A segment with no pace and no HR target
 maps to Garmin's explicit `no.target`, never to an invented range. Garmin's estimates are
 only ever the prescription's own totals — an absent total stays absent and Garmin computes
@@ -484,9 +485,8 @@ heart rate. A step is `- <length> <target> <intensity>`: the length in minutes (
 a bpm range rides in the description text instead. Warm-up and cool-down carry
 `intensity=warmup`/`cooldown`, a recovery or walk `intensity=rest` and no target unless prescribed.
 A repeat is a `Nx` line over its steps (strides included), each group separated by a blank line.
-The description and notes come first, as prose; a prose line is cleaned so it cannot read as a
-step (a leading dash) or a repeat (a trailing `4x`). Step notes join that prose, never a step,
-so the second athlete's steps carry none. A step with neither duration nor distance cannot be
+As on Connect, the coach's description and notes stay in the plan: the only prose is the HR
+bounds, ahead of the steps. A step with neither duration nor distance cannot be
 written, and its session is skipped with the reason. Races follow the Connect rules.
 
 **Switching routes never doubles a session.** With RunOmics workouts still on the old route from

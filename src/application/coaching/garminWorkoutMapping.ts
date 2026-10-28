@@ -167,33 +167,27 @@ function applyEndCondition(step: GarminExecutableStep, target: WorkoutTarget): v
 
 const EASY_TYPES: ReadonlySet<CoachingWorkoutType> = new Set(['easy', 'recovery', 'long_run'])
 
-const HEART_RATE_TEXT = /\b(?:heart[- ]rate|HR|FC|bpm|cardio)\b|fréquence cardiaque|\bz(?:one)?\s*(?:FC\s*)?[1-5]\b/i
-
-const withoutHeartRateText = (lines: readonly string[]) => lines.filter((line) => !HEART_RATE_TEXT.test(line))
-
 /** An HR-only step keeps its zone: it is the step's one target, as a return to running prescribes it. */
 function easySegment(segment: WorkoutSegment): WorkoutSegment {
+  if (!segment.target.paceSecPerKm) return segment
   const target = { ...segment.target }
-  if (target.paceSecPerKm) {
-    delete target.hrBpm
-    delete target.hrZone
-  }
-  return { ...segment, target, ...(segment.notes ? { notes: withoutHeartRateText(segment.notes) } : {}) }
+  delete target.hrBpm
+  delete target.hrZone
+  return { ...segment, target }
 }
 
-/** Each HR line is one more screen to scroll on the watch, for a run the pace already guides. */
+/** An easy run goes by pace alone: its heart rate would be one more line on the watch. */
 export function withoutEasyHeartRate(workout: WorkoutPrescription): WorkoutPrescription {
   if (!EASY_TYPES.has(workout.type)) return workout
   return {
     ...workout,
-    description: withoutHeartRateText([workout.description])[0] ?? '',
-    ...(workout.notes ? { notes: withoutHeartRateText(workout.notes) } : {}),
     blocks: workout.blocks.map((block) => block.kind === 'repeat' ? { ...block, steps: block.steps.map(easySegment) } : easySegment(block)),
   }
 }
 
+/** The coach's notes stay in the plan: on the watch each is one more screen between steps. Only a pace step's heart-rate bound goes, as it is no target there. */
 function stepDescription(segment: WorkoutSegment): string {
-  const notes = [...(segment.notes ?? [])]
+  const notes: string[] = []
   if (segment.target.paceSecPerKm && segment.target.hrBpm) {
     notes.push(t.coaching.garminStep.hr(segment.target.hrBpm.min, segment.target.hrBpm.max))
   }
@@ -242,11 +236,6 @@ function blockSteps(block: WorkoutBlock, nextOrder: number): { steps: GarminWork
   return { steps: [group], nextOrder: order }
 }
 
-function workoutDescription(workout: WorkoutPrescription): string | null {
-  const lines = [workout.description, ...(workout.notes ?? [])].filter(Boolean)
-  return lines.length ? [...new Set(lines)].join('\n') : null
-}
-
 /**
  * Watch fonts carry Latin-1 (×, ·, accents) but not primes, so those go as the apostrophe and quote.
  * A name without primes is unchanged, and so is its content hash: nothing already pushed moves.
@@ -267,7 +256,7 @@ export function toGarminWorkoutPayload(prescription: WorkoutPrescription): Garmi
 
   return {
     workoutName: garminWorkoutName(workout.title),
-    description: workoutDescription(workout),
+    description: null,
     sportType: RUNNING,
     subSportType: null,
     estimatedDurationInSecs: workout.totalDurationSeconds ?? null,

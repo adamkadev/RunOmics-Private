@@ -80,7 +80,6 @@ describe('golden workouts', () => {
     })
 
     expect(intervalsWorkoutText(workout)).toBe([
-      'Controlled threshold.',
       'HR 160-172 bpm',
       '',
       '- 2km 5:30-6:24/km Pace intensity=warmup',
@@ -112,8 +111,6 @@ describe('golden workouts', () => {
     })
 
     expect(intervalsWorkoutText(workout)).toBe([
-      'Relaxed shoulders.',
-      '',
       '- 6km 5:30-6:24/km Pace',
       '',
       '4x',
@@ -141,8 +138,6 @@ describe('golden workouts', () => {
     })
 
     expect(intervalsWorkoutText(workout)).toBe([
-      'Course et marche.',
-      '',
       '- 5m intensity=warmup',
       '',
       '6x',
@@ -165,8 +160,6 @@ describe('golden workouts', () => {
     })
 
     expect(intervalsWorkoutText(workout)).toBe([
-      'Footing continu.',
-      '',
       '- 5m 7:50-8:45/km Pace intensity=warmup',
       '- 20m 7:50-8:45/km Pace',
       '- 5m 7:50-8:45/km Pace intensity=cooldown',
@@ -203,14 +196,14 @@ describe('targets the text syntax cannot carry', () => {
   })
 })
 
-describe('prose', () => {
-  it('cannot be read as a step or a repeat', () => {
+describe('the coach’s words', () => {
+  it('stay in the plan: neither the description nor any note goes to the watch', () => {
     const text = intervalsWorkoutText(prescription({
-      description: '- easy start',
-      notes: ['Finish with strides 4x'],
-      blocks: [{ kind: 'effort', target: { durationSeconds: 600 } }],
+      description: 'Easy start.',
+      notes: ['Finish relaxed.'],
+      blocks: [{ kind: 'effort', target: { durationSeconds: 600 }, notes: ['Tall posture.'] }],
     }))
 
-    expect(text.split('\n\n')[0]).toBe('easy start\nFinish with strides 4 ×')
+    expect(text).toBe('- 10m')
   })
 })
