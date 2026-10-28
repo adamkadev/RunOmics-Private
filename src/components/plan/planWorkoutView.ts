@@ -39,7 +39,6 @@ export interface PlanWorkoutView {
   notes: string[]
   structure: WorkoutStep[] | null
   hr: SessionHrTarget | null
-  statusLabel: string
   /** The coach's state; absent for a session only the watch planned. */
   state?: PrescriptionDisplayState
   activityId: string | null
@@ -82,7 +81,6 @@ export function plannedWorkoutView(
     notes: [],
     structure: plan.steps ?? parseWorkoutStructure(plan.name, plan.durationSecs),
     hr: null,
-    statusLabel: t.plan.planned,
     activityId: null,
   }
 }
@@ -125,7 +123,6 @@ export function coachWorkoutView(
     notes: workout.notes ?? [],
     structure: prescriptionStructure(workout),
     hr: prescriptionHr(workout),
-    statusLabel: t.coaching.states[view.state],
     state: view.state,
     activityId: view.activityId,
   }

@@ -86,6 +86,7 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   (« Mois précédent », « Mois suivant ») and pages with a left or right swipe, from the first week shown to this
   month. Plan's Month and Week swipe the same way, with a mouse drag too; a swipe that starts on a map or a
   sideways scroller is left to it, and a vertical scroll or the sheet's drag-down never pages.
+- A day's session card carries no state label at its top right ("Prescribed", "Adjusted", « Ajustée »…).
 
 ### Today
 

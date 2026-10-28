@@ -2164,7 +2164,6 @@ export const fr = {
     nextPeriod: 'Suivant',
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    planned: 'Prévu',
     easyEffortLabel: 'EF',
     openPlanner: 'Ouvrir le planificateur',
     session: {
@@ -2274,13 +2273,6 @@ export const fr = {
   },
 
   coaching: {
-    states: {
-      prescribed: 'Prescrite',
-      adjusted: 'Ajustée',
-      completed: 'Terminée',
-      missed: 'Manquée',
-      cancelled: 'Annulée',
-    },
     outcomes: { KEEP: 'Maintenir', ADJUST: 'Ajuster', REPLAN: 'Replanifier' },
     planned: 'Prévu',
     actual: 'Réalisé',
