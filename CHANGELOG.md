@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Sync has a `no_warp` test input: a manual run (with dry run) reaches Garmin Connect
+  without Cloudflare WARP, to see whether Connect still refuses GitHub's network
+  with the garminconnect token. Nightly runs are unchanged and keep WARP.
 - The coach's workouts can reach the watch through intervals.icu. With
   `INTERVALS_API_KEY` in a profile's env file, `coach:sync-garmin` puts each session
   on that athlete's intervals.icu calendar (pace ranges, walk breaks untargeted,
