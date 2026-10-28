@@ -21,9 +21,9 @@ A personal running dashboard that pulls your data from Garmin Connect and turns 
 ## Architecture
 
 ```
-Garmin Personal API · Garmin Connect (garth, optional)
+Garmin Personal API · Garmin Connect (garminconnect, optional)
        │
-  scripts/sync.py          ← Python pipeline (Personal API + garth + garmin-fit-sdk)
+  scripts/sync.py          ← Python pipeline (Personal API + Connect + garmin-fit-sdk)
        │
   RunOmics-data            ← private repository holding the real dataset
        │
@@ -76,7 +76,7 @@ create a key. Garmin shows it once; copy it as
 and note its expiry date as `GARMIN_PERSONAL_API_KEY_EXPIRES` (see
 [Configure environment variables](#3-configure-environment-variables)) so the nightly sync warns two weeks
 ahead: an expired key fails the night with a message saying so
-(with `GARMIN_SECRET` also set, garth reads the runs meanwhile and the night is
+(with `GARMIN_SECRET` also set, Garmin Connect reads the runs meanwhile and the night is
 reported as a partial one), and a new key from the same page is all it takes.
 
 The key reads the activity list, each run's detail and FIT file, its time in HR
@@ -84,33 +84,80 @@ zones, the daily resting HR and your zones, LTHR, age, fitness age and weight.
 `scripts/diagnostics/probe_personal_api.py` lists what it reaches for your
 account.
 
-#### Optional: the garth token, for what only Garmin Connect serves
+#### Optional: the Garmin Connect token, for what only Garmin Connect serves
 
 Each run's shoe, the Garmin calendar (planned workouts, races), training status,
 race predictions, VO2max and threshold history, and pushing a coaching plan to
 the watch are only on Garmin Connect's private API, which the sync reaches with
-[garth](https://github.com/matin/garth) and a `GARMIN_SECRET`:
+a `GARMIN_SECRET` minted by [python-garminconnect](https://github.com/cyberjunky/python-garminconnect):
 
 ```bash
+python3 -m venv .venv && . .venv/bin/activate     # Python 3.12 or newer
+pip install --require-hashes -r scripts/requirements.txt
 python scripts/get_secret.py
 ```
 
-It prompts for your Garmin Connect email and password and prints the string.
+It prompts for your Garmin Connect email, password and, if the account has
+two-step verification, the code Garmin sends, then prints `GARMIN_SECRET` - the
+token store garminconnect saves as `garmin_tokens.json`, base64-encoded - as the
+only line on standard output. It works the same from macOS and from WSL. Run it
+from a home connection: Garmin answers a VPN or a datacenter IP with a 429, and
+every retry restarts its wait, so after a 429 leave it an hour before trying once more.
+Put the value in the profile's GitHub Environment and in its `.env.<profile>.local`.
+
 Without it the sync still reads every run through the key, and carries VO2max
 on from each run's FIT reading (within 0.1 of Connect's); the other pages keep
-what they last showed. With it, a failed garth sign-in no longer stops the
+what they last showed. With it, a failed Connect sign-in no longer stops the
 night - the runs sync and the night is reported as a partial one.
 
-> **Note on garth's deprecation**: garth is [no longer maintained](https://github.com/matin/garth/discussions/222)
-> because Garmin keeps breaking its *login* flow, and since March 2026
-> `get_secret.py` can no longer mint a token at all. A token minted before keeps
-> working until its OAuth1 token expires (about a year); nothing can replace it
-> after that, which is why the runs moved to the Personal API key.
->
-> `npm run coach:garmin-auth` reports what is knowable: whether a token exchange
-> succeeds right now, and when the OAuth2 tokens minted from your OAuth1 token
-> expire. It cannot tell you when the OAuth1 token itself dies - Garmin does not
-> return an expiry and garth records none.
+**How long it lasts.** The secret holds an access token and a refresh token from
+`diauth.garmin.com`. The access token lasts about a day; a run that finds it
+expired (or within 15 minutes of it) trades the refresh token for a new pair.
+Garmin publishes no lifetime for the refresh token, and may hand out a new one
+on each refresh. `npm run coach:garmin-auth` prints both expiries when the
+tokens carry them, and whether a refresh was needed and worked.
+
+- **Locally**, set `GARMIN_SECRET_WRITEBACK=.env.<profile>.local` inside that same
+  `.env.<profile>.local`: every refresh rewrites the file's `GARMIN_SECRET` line, so
+  the newest refresh token is the one kept.
+- **In the nightly Action**, a GitHub secret cannot be written from the job, so
+  every night refreshes from the refresh token you stored, and a refreshed token
+  lasts only for that run. The sync log warns when Garmin issued a new refresh
+  token that nothing stored. While Garmin accepts the stored one, nothing is
+  needed; the night it refuses it (a 400 or 401) the sync records Connect as
+  expired, sends one push, and carries on through the Personal API - see
+  [Connect token expiry](docs/data-and-sync.md#connect-token-expiry). Mint a new
+  secret with `get_secret.py` and replace it in both places.
+
+> **garth tokens.** Secrets minted with garth before this change still work: the
+> sync recognises them and exchanges their OAuth1 token as garth did, with the
+> OAuth1 consumer pair in `scripts/garmin/auth.py` (or `GARMIN_OAUTH_CONSUMER_KEY`
+> / `GARMIN_OAUTH_CONSUMER_SECRET`). garth itself is gone: it is unmaintained and
+> cannot sign in since Garmin's March 2026 change, so a garth token cannot be
+> renewed and every run logs a warning to replace it.
+
+#### Optional: intervals.icu, to put the coach's workouts on the watch
+
+The coach's workouts reach the watch most reliably through [intervals.icu](https://intervals.icu),
+a free, official Garmin partner: RunOmics puts each session on its calendar, and intervals.icu's
+own Garmin connection sends it on to Garmin Connect and the watch. Each athlete uses their own
+account. Read intervals.icu's terms yourself before you rely on it.
+
+1. Create a free intervals.icu account.
+2. **Settings → Connections → Garmin**: connect, and enable uploading planned workouts to Garmin.
+3. **Settings → Developer Settings**: generate an API key. Put it in the profile's env file
+   (`.env.adam.local`, `.env.lamiaa.local`) as `INTERVALS_API_KEY`, and the athlete id shown
+   there (`i…`) as `INTERVALS_ATHLETE_ID` (optional; the key's own athlete by default).
+4. Dry run: `npm run coach:sync-garmin` (or `coach:sync-garmin:lamiaa`) previews the plan.
+5. If RunOmics already pushed sessions through Garmin Connect, the preview says how many. Apply
+   with `npm run coach:sync-garmin -- --apply --retire-connect`: it deletes RunOmics's own
+   Connect workouts from today on (only those; it needs `GARMIN_SECRET` once more), then puts
+   the sessions on intervals.icu. Without any, `--apply` alone. Commit
+   `coaching/intervals-sync.json` if the CLI asks you to.
+
+With `INTERVALS_API_KEY` set, `coach:sync-garmin` uses intervals.icu; without it, the Garmin
+Connect route runs as before, and `--route connect|intervals` picks one explicitly. See
+`docs/data-and-sync.md`, *intervals.icu write path*.
 
 ### 3. Configure environment variables
 
@@ -564,7 +611,7 @@ wait. The post-sync checks (records, shoe wear, explored quartiers, overreaching
 phone errors, the AI texts) follow.
 
 The app's Sync button runs the same workflow with `quick`: the new runs come
-through the Personal API key alone, with no WARP and no garth sign-in, then the
+through the Personal API key alone, with no WARP and no Connect sign-in, then the
 push and the post-sync checks as usual. Their shoes, the calendar and
 Connect's metrics wait for the nightly sync, which asks Connect for every shoe it
 has not answered yet, however old the run. A profile without a key syncs in full.
@@ -624,7 +671,7 @@ but still sends once a day.
 | Maps | [MapLibre GL](https://maplibre.org/) + [MapTiler](https://www.maptiler.com/) |
 | Icons | [Lucide](https://lucide.dev/) |
 | Dark mode | [next-themes](https://github.com/pacocoursey/next-themes) |
-| Garmin data | Garmin's Personal API, and [garth](https://github.com/matin/garth) for what only Connect serves |
+| Garmin data | Garmin's Personal API, and [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)'s sign-in for what only Connect serves |
 | FIT parsing | [garmin-fit-sdk](https://pypi.org/project/garmin-fit-sdk/) |
 
 ### Map styles

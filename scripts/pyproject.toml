@@ -24,8 +24,3 @@ ignore = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = [
-    # garth says so on every import. Known: replacing it is its own piece of
-    # work, and the warning would otherwise head every test run.
-    "ignore:Garth is deprecated:DeprecationWarning",
-]

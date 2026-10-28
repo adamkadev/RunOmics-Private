@@ -5,7 +5,7 @@ import { pushPaths } from '@/lib/pushLinks'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-/** Called by the sync the night garth's token is found expired, once. Body: `{ "since": "YYYY-MM-DD" }`. */
+/** Called by the sync the night GARMIN_SECRET is found expired, once. Body: `{ "since": "YYYY-MM-DD" }`. */
 export async function POST(req: NextRequest) {
   return handleInternalRoute('connect-expired', req, async () => {
     const body: unknown = await req.json().catch(() => undefined)

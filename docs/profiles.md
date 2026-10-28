@@ -39,7 +39,7 @@ goes into this repository.
 | Vercel project (per profile) | The app's variables: Firebase client and Admin, `NEXT_PUBLIC_LOCALE`, `NEXT_PUBLIC_TIME_ZONE`, `RUNOMICS_PRIVATE`, `SESSION_SECRET`, `RUNOMICS_VIEWERS`, `CRON_SECRET`, `INTERNAL_NOTIFY_SECRET`, `GITHUB_SYNC_*`, the data repository's read-only token, `RUNOMICS_DATA_SOURCE`, the Gemini, MapTiler and ORS keys, `OPS_PUSH_URL` / `OPS_PUSH_SECRET` | The deployed app and its crons |
 | GitHub Environment (per profile) | `GARMIN_PERSONAL_API_KEY`, optional `GARMIN_SECRET`, `RUNOMICS_DATA_REPO_URL`, a read-write `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL`, `INTERNAL_NOTIFY_SECRET`; variables `PROFILE` (the Environment's own name) and `GARMIN_PERSONAL_API_KEY_EXPIRES` | `sync.yml`, the health watchdog, the capability audit |
 | `.env.local` | A local dev server: the same keys as Vercel, usually against the demo data | `npm run dev`, `prepare:data`, `set-owner-claim` |
-| `.env.adam.local`, `.env.lamiaa.local` | Everything one athlete's coach reads: the data repository and its token, the production Firebase Admin trio (for notes and check-ins), the time zone, `GARMIN_SECRET` for pushing a block to the watch, and `GEMINI_COACH_API_KEY` only for `--advisor gemini` | The coach commands, loaded alone with `dotenv -o` |
+| `.env.adam.local`, `.env.lamiaa.local` | Everything one athlete's coach reads: the data repository and its token, the production Firebase Admin trio (for notes and check-ins), the time zone, `GARMIN_SECRET` (with `GARMIN_SECRET_WRITEBACK`) or `INTERVALS_API_KEY` for pushing a block to the watch, and `GEMINI_COACH_API_KEY` only for `--advisor gemini` | The coach commands, loaded alone with `dotenv -o` |
 | Data repository (per profile) | Everything synced from Garmin (runs, `athlete.json`, the calendar, `sync_meta.json`), the nightly backups of Firestore (notes, check-ins, shoe picks, races and goals), the hand-edited inputs and `coaching/` | The app, the sync and the coach; never a session |
 | Firebase project (per profile) | Sign-in, notes, check-ins, skipped days, push tokens, avoid spots, shoe picks, races and goals, the job trace | The app; the coach reads notes and check-ins |
 
@@ -66,7 +66,7 @@ no 0, no empty card and no English word on her French deployment.
 | Training status, load focus | Garmin's figures | The app's own load, marked "Estimated"; load focus is hidden |
 | Controlled threshold sessions and their rep check | An LTHR | The planner writes none |
 | Time in zones | An LTHR or a Training Effect | Not counted |
-| Threshold pace, race predictions | Garmin Connect (garth) | VDOT estimates from the best recent effort, marked as estimated |
+| Threshold pace, race predictions | Garmin Connect (`GARMIN_SECRET`) | VDOT estimates from the best recent effort, marked as estimated |
 | Races, the race page, race-day form | Races in the editor or from Garmin | Progress shows the current block instead |
 | Goals, the year's distance goal and its push | `goals.json` or the editor | Goals says how to set one; All time opens instead |
 | Records' PBs | `pbs.json` or best efforts | Records shows best efforts alone, or the Comeback tab during a return |
@@ -89,7 +89,8 @@ has run for more than seven. For each athlete (`coach:lamiaa` and `coach:sync-ga
    unless given). Answer it in Claude Code under the `coaching-plan` skill, never through an API.
 5. `npm run coach -- bootstrap --from-answer <reply>`; a refused draft comes back with the reason, answer again.
 6. Review the preview, then `npm run coach -- --apply .coach-previews/<proposal>.json`.
-7. `npm run coach:sync-garmin` previews the watch's calendar; `--apply --expect <fingerprint>` pushes it.
+7. `npm run coach:sync-garmin` previews the watch's calendar; `--apply --expect <fingerprint>` pushes it, through
+   intervals.icu when the env file has `INTERVALS_API_KEY`, else through Garmin Connect.
 8. On the phone, check Plan's phase card names the new block and the first session is on the watch.
 
 ## Adding a profile

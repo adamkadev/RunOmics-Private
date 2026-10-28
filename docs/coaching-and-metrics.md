@@ -263,8 +263,8 @@ anaerobic capacity) whose time implies the highest VDOT, credited at its chip ti
 official result covers it. Threshold pace is Daniels' T, the speed whose oxygen cost is 88% of
 that VDOT. The zones are marked as estimated and name the effort they stand on.
 
-**The Race page does the same when Garmin's predictions are missing or two weeks old** (garth
-reads the series daily, so a fortnight without a day means it has stopped): the prediction is
+**The Race page does the same when Garmin's predictions are missing or two weeks old** (Connect
+is read daily, so a fortnight without a day means it has stopped): the prediction is
 the time at the race distance that implies the same VDOT, and the 12-week trend is that estimate
 as it stood each week, so the line moves only when a better effort was run or one aged out.
 

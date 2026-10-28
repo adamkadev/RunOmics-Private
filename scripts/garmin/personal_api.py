@@ -16,9 +16,9 @@ host and stay on Connect's private API (client.py). Where both serve the same
 data the method names match GarminClient's, so sync.py reads activities from
 either.
 
-Unlike garth's OAuth1 token, which nothing can replace since Garmin changed
-its login in March 2026, the key is official: when it expires - a year at
-most - the athlete creates another in Garmin Connect.
+Unlike Connect's token, which only a scripted sign-in that Garmin keeps
+changing can mint, the key is official: when it expires - a year at most -
+the athlete creates another in Garmin Connect.
 """
 
 from __future__ import annotations

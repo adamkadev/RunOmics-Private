@@ -1,21 +1,16 @@
 from __future__ import annotations
 
-import os
-from datetime import datetime, timezone
 from typing import Any
 
-import garth
 import httpx
 
+from .auth import open_auth
 from .errors import GarminAPIError, GarminAuthError, GarminTokenExpired
 from .shared import collect_activity_rows, fit_from_archive
-
-os.environ.setdefault("GARTH_TELEMETRY_ENABLED", "false")
 
 _CONNECT_API = "https://connectapi.garmin.com"
 _CONNECT_WEB = "https://connect.garmin.com"
 _TIMEOUT = httpx.Timeout(120.0, connect=30.0)
-_USER_AGENT = "Mozilla/5.0 (RunOmics/1.0)"
 
 
 __all__ = ["GarminAPIError", "GarminAuthError", "GarminClient", "GarminTokenExpired"]
@@ -26,136 +21,27 @@ def _json_or_empty(resp: httpx.Response) -> dict[str, Any]:
     return resp.json() if resp.content.strip() else {}
 
 
-_CONSUMER_KEY_ENV = "GARMIN_OAUTH_CONSUMER_KEY"
-_CONSUMER_SECRET_ENV = "GARMIN_OAUTH_CONSUMER_SECRET"
-
-# Garmin's own Android client credentials. Not this athlete's, and not secret:
-# they are the same for every Garmin user, they ship inside Garmin's Android
-# app, and garth's bucket serves them to anyone who asks. Configuration, so
-# they live in the repository where they are visible and need no setup.
-#
-# They are here at all because garth fetches them at runtime from
-# thegarth.s3.amazonaws.com - a bucket belonging to a project its author has
-# abandoned - once per process, which means every nightly run. The day that
-# bucket goes, a sync that would otherwise have worked for another year stops.
-_OAUTH_CONSUMER = {
-    "consumer_key": "fc3e99d2-118c-44b8-8ae3-03370dde24c0",
-    "consumer_secret": "E08WAR897WEy2knn7aFBrvegVAf0AFdWBBF",
-}
-
-
-def _seed_oauth_consumer() -> None:
-    """Fill in the OAuth1 consumer before garth can go looking for it.
-
-    garth fetches only while its module global is still empty, so filling it
-    first settles the question. The environment variables are the escape hatch
-    for the day Garmin rotates the pair and a released constant is stale.
-    """
-    key = os.environ.get(_CONSUMER_KEY_ENV, "").strip()
-    secret = os.environ.get(_CONSUMER_SECRET_ENV, "").strip()
-
-    garth.sso.OAUTH_CONSUMER = (
-        {"consumer_key": key, "consumer_secret": secret}
-        if key and secret
-        else dict(_OAUTH_CONSUMER)
-    )
-
-
-# The day this fires is the day the pipeline stops, and a bare exception would
-# send the reader looking for a network fault. garth's login flow - the only
-# supported way to mint a replacement - was broken by a Garmin auth change in
-# March 2026 and the package is unmaintained, so the recovery is not obvious
-# and the message has to carry it.
-_REFRESH_FAILED = (
-    "Token refresh failed: {exc}\n"
-    "\n"
-    "The OAuth1 token in GARMIN_SECRET has most likely expired. It is the long-"
-    "lived credential every sync depends on, and garth cannot mint a new one: "
-    "Garmin changed the auth flow in March 2026, which is why garth was "
-    "deprecated. scripts/get_secret.py will fail for the same reason.\n"
-    "\n"
-    "Run npm run coach:garmin-auth to confirm, then see 'Optional: the "
-    "garth token' under Setup in README.md and the linked garth discussion "
-    "for the current workaround."
-)
-
-
-def _refused_status(exc: Exception) -> int | None:
-    """The HTTP status of a refused token exchange: garth raises requests' HTTPError, or wraps it in GarthHTTPError."""
-    response = getattr(getattr(exc, "error", exc), "response", None)
-    return getattr(response, "status_code", None)
-
-
-def _refresh_oauth2() -> None:
-    # Only a 401 is the token: a 403 is Cloudflare refusing a datacenter IP, and a timeout is the network.
-    try:
-        garth.client.refresh_oauth2()
-    except Exception as exc:
-        error = GarminTokenExpired if _refused_status(exc) == 401 else GarminAuthError
-        raise error(_REFRESH_FAILED.format(exc=exc)) from exc
-
-
-def _auth_field(token: Any, name: str) -> Any:
-    value = getattr(token, name, None)
-    if value is None:
-        return None
-    # expires_at and friends are epoch seconds; a date is what a human needs.
-    if name.endswith("_at"):
-        return datetime.fromtimestamp(value, tz=timezone.utc).isoformat(timespec="seconds")
-    return value
-
-
 class GarminClient:
     def __init__(self, secret_string: str) -> None:
-        # Before anything can trigger a refresh: every entry point in scripts/
-        # reaches Garmin through this constructor.
-        _seed_oauth_consumer()
-
-        garth.client.loads(secret_string)
-
-        if garth.client.oauth2_token.expired:
-            _refresh_oauth2()
-
+        self._auth = open_auth(secret_string)
         self._base = _CONNECT_API
         self._http = httpx.Client(timeout=_TIMEOUT)
         self._profile_uuid: str | None = None
 
     def auth_state(self) -> dict[str, Any]:
-        """What is knowable about the tokens, for `npm run coach:garmin-auth`.
+        """What the tokens say about themselves, for `npm run coach:garmin-auth`; never the tokens."""
+        return self._auth.state()
 
-        The OAuth1 token carries no expiry - garth does not record one and
-        Garmin does not return one - so its remaining life cannot be reported,
-        only whether it still works. That it does is proved by this call having
-        got far enough to run at all.
-        """
-        oauth2 = garth.client.oauth2_token
-        return {
-            "oauth1": {
-                "present": garth.client.oauth1_token is not None,
-                "expiresAt": None,
-                "note": "no expiry recorded; refreshes working means it is still valid",
-            },
-            "oauth2": {
-                "expiresAt": _auth_field(oauth2, "expires_at"),
-                "expired": bool(getattr(oauth2, "expired", False)),
-                "refreshTokenExpiresAt": _auth_field(oauth2, "refresh_token_expires_at"),
-                "refreshExpired": bool(getattr(oauth2, "refresh_expired", False)),
-            },
-        }
+    def credential_notice(self) -> str | None:
+        """What the operator should do about GARMIN_SECRET, when anything."""
+        return self._auth.notice()
 
-    def _headers(self) -> dict[str, str]:
-        return {
-            "Authorization": str(garth.client.oauth2_token),
-            "NK": "NT",
-            "User-Agent": _USER_AGENT,
-        }
-
-    def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        resp = self._http.request(method, url, headers=self._headers(), **kwargs)
+    def _request(self, method: str, url: str, *, headers: dict[str, str] | None = None, **kwargs: Any) -> httpx.Response:
+        resp = self._http.request(method, url, headers={**self._auth.headers(), **(headers or {})}, **kwargs)
 
         if resp.status_code == 401:
-            _refresh_oauth2()
-            resp = self._http.request(method, url, headers=self._headers(), **kwargs)
+            self._auth.refresh()
+            resp = self._http.request(method, url, headers={**self._auth.headers(), **(headers or {})}, **kwargs)
 
         if resp.status_code >= 400:
             raise GarminAPIError(resp.status_code, url)
@@ -255,6 +141,7 @@ class GarminClient:
         resp = self._get_optional(
             f"{self._base}/download-service/files/activity/{activity_id}",
             strict_errors=strict_errors,
+            headers={"Accept": "*/*"},
         )
         if resp is None or not resp.content:
             return None

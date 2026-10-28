@@ -1984,7 +1984,7 @@ export const fr = {
     connectExpired: {
       title: 'Garmin Connect ne répond plus',
       body: (since: string) =>
-        `Le jeton garth a expiré le ${since}. Les courses arrivent toujours par l’API personnelle ; chaussures, calendrier, statut d’entraînement et prédictions de course, non. Marche à suivre : docs/data-and-sync.md, After garth.`,
+        `Le jeton Garmin Connect a expiré le ${since}. Les courses arrivent toujours par l’API personnelle ; chaussures, calendrier, statut d’entraînement et prédictions de course, non. Nouveau jeton avec scripts/get_secret.py : docs/data-and-sync.md, Connect token expiry.`,
     },
     garminKeyExpiring: {
       title: (days: number) => (days <= 0 ? 'La clé Garmin expire aujourd’hui' : `La clé Garmin expire dans ${days} jour${days === 1 ? '' : 's'}`),

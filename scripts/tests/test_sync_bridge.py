@@ -4,18 +4,22 @@ The `auth` operation answers from the tokens alone and an unexpired token is nev
 the bridge without a request.
 """
 
-import base64
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+from garmin_tokens import di_secret, di_store, garth_secret, jwt
+
+from garmin.auth import NOT_A_SECRET, encode_secret
+
 _BRIDGE = Path(__file__).resolve().parents[1] / "garmin" / "sync_bridge.py"
-_IN_2100 = 4_102_444_800  # epoch seconds, 2100-01-01
 
 _GUARDED = """
 import runpy, socket, sys
+from curl_cffi import requests as curl_requests
 
 def refuse(*_args, **_kwargs):
     raise RuntimeError("the bridge reached for the network")
@@ -23,26 +27,11 @@ def refuse(*_args, **_kwargs):
 socket.socket.connect = refuse
 socket.socket.connect_ex = refuse
 socket.getaddrinfo = refuse
+curl_requests.request = refuse
+curl_requests.Session.request = refuse
 sys.argv = [sys.argv[1]]
 runpy.run_path(sys.argv[0], run_name="__main__")
 """
-
-
-def _made_up_secret() -> str:
-    """GARMIN_SECRET's shape - garth's dump of both tokens - holding nothing real."""
-    oauth1 = {"oauth_token": "test-token", "oauth_token_secret": "test-secret", "domain": "garmin.com"}
-    oauth2 = {
-        "scope": "test",
-        "jti": "test",
-        "token_type": "Bearer",
-        "access_token": "test-access",
-        "refresh_token": "test-refresh",
-        "expires_in": 3600,
-        "expires_at": _IN_2100,
-        "refresh_token_expires_in": 7200,
-        "refresh_token_expires_at": _IN_2100,
-    }
-    return base64.b64encode(json.dumps([oauth1, oauth2]).encode()).decode()
 
 
 def _bridge(stdin: str, *, secret: str | None) -> subprocess.CompletedProcess:
@@ -74,24 +63,59 @@ def test_one_response_per_request_in_order_until_stdin_closes():
         ]
     )
 
-    result = _bridge(requests + "\n", secret=_made_up_secret())
+    result = _bridge(requests + "\n", secret=di_secret())
 
     assert result.returncode == 0, result.stderr
     auth, malformed, unknown, broken = _responses(result)
     assert auth["ok"] is True
-    assert auth["oauth1"]["present"] is True
-    assert auth["oauth2"] == {
-        "expiresAt": "2100-01-01T00:00:00+00:00",
-        "expired": False,
-        "refreshTokenExpiresAt": "2100-01-01T00:00:00+00:00",
-        "refreshExpired": False,
-    }
+    assert auth["kind"] == "garminconnect"
     assert malformed == {"ok": False, "error": "Malformed request"}
     assert unknown == {"ok": False, "error": "Unknown operation: 'nope'"}
     assert broken == {"ok": False, "error": "KeyError: 'workoutId'"}
-    # The auth report describes the tokens; it must never carry them.
+    assert di_store()["di_token"] not in result.stdout + result.stderr
+    assert "refresh-token-one" not in result.stdout + result.stderr
+
+
+def test_auth_reports_a_garminconnect_token_by_its_expiries_alone():
+    store = di_store(refresh=jwt(4_102_444_800, "refresh"))
+    secret = encode_secret(json.dumps(store))
+
+    result = _bridge(json.dumps({"op": "auth"}) + "\n", secret=secret)
+
+    assert result.returncode == 0, result.stderr
+    assert _responses(result) == [
+        {
+            "ok": True,
+            "kind": "garminconnect",
+            "access": {"expiresAt": "2100-01-01T00:00:00+00:00", "expired": False},
+            "refresh": {"present": True, "expiresAt": "2100-01-01T00:00:00+00:00"},
+            "refreshedNow": False,
+            "refreshTokenRotated": False,
+            "writeBack": False,
+        }
+    ]
+    assert store["di_token"] not in result.stdout + result.stderr
+    assert store["di_refresh_token"] not in result.stdout + result.stderr
+
+
+def test_auth_still_reports_a_garth_token_until_the_secret_is_rotated():
+    result = _bridge(json.dumps({"op": "auth"}) + "\n", secret=garth_secret())
+
+    assert result.returncode == 0, result.stderr
+    (auth,) = _responses(result)
+    assert auth["kind"] == "garth"
+    assert auth["oauth1"] == {"present": True, "expiresAt": None}
+    assert auth["oauth2"]["expiresAt"] == "2100-01-01T00:00:00+00:00"
     assert "test-access" not in result.stdout + result.stderr
-    assert "test-secret" not in result.stdout + result.stderr
+    assert "test-oauth1-secret" not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("secret", ["not-a-real-token", "{}"])
+def test_a_secret_that_is_no_credential_says_so_and_exits_3(secret):
+    result = _bridge(json.dumps({"op": "auth"}) + "\n", secret=secret)
+
+    assert result.returncode == 3
+    assert _responses(result) == [{"ok": False, "error": NOT_A_SECRET}]
 
 
 def test_without_a_secret_it_says_so_on_the_protocol_and_exits_2():

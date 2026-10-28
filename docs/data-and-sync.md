@@ -129,10 +129,10 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   meditation are skipped, an activity that became a run is dropped, and a session that
   fails is retried the next night while the step reports a partial sync.
 - **Shoes** (`shoes.json`). The nightly workflow runs `scripts/sync_shoes.py` after the sync,
-  through WARP like every garth call, so a pair added or retired in Garmin Connect shows the
+  through WARP like every Connect call, so a pair added or retired in Garmin Connect shows the
   next morning. Without `GARMIN_SECRET`, or when Connect fails, the stored list is kept and a
-  failure counts the night as partial. Once garth's token has expired the step is skipped
-  (see [After garth](#after-garth)).
+  failure counts the night as partial. Once Connect's token has expired the step is skipped
+  (see [Connect token expiry](#connect-token-expiry)).
 - **Shoe picks** (`shoe_choices.json`). The owner picks a run's shoe on its page (Firestore
   `runShoes/{activityId}`) and a default shoe on Shoes (`shoeSettings/default`), both owner-only
   in `firestore.rules`. `GET /api/internal/shoe-choices` returns `{ runs, settings }` and the
@@ -252,12 +252,12 @@ off. A device registered before categories existed has none stored and keeps get
 | `training` | The morning session or rest day, the Monday digest, the Friday goal check-in, a new run, the AI verdict of a run that just landed, an overreaching alert |
 | `shoes` | Shoe wear |
 | `records` | A new record, a quartier past 90 % |
-| `always` | A failed workflow, a stale sync, a data token or the Garmin key about to expire, garth's token found expired, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
+| `always` | A failed workflow, a stale sync, a data token or the Garmin key about to expire, Connect's token found expired, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
 
 **Operator alerts leave the athlete's deployment.** A second athlete's deployment registers
 her devices, so an `always` push about a dead token or a failed workflow reaches her and not
 the person who can fix it. `sendOpsPush` carries those five - a failed workflow, a data token
-about to expire, garth's token found expired, the digest of phone errors and the coaching-block reminder - and with
+about to expire, Connect's token found expired, the digest of phone errors and the coaching-block reminder - and with
 `OPS_PUSH_URL` and `OPS_PUSH_SECRET` set it POSTs them to the operator's own deployment at
 `/api/internal/ops-push` instead of pushing locally. That route is the one internal route
 guarded by `OPS_PUSH_SECRET` rather than `INTERNAL_NOTIFY_SECRET`, so the second deployment
@@ -286,18 +286,37 @@ link and gets its tag prefixed with the sending profile.
 | An overreaching alert | `/analytics` | `overreaching` |
 | A failed workflow | Its run on GitHub | `workflow-failure:<workflow>` |
 | A token or the Garmin key about to expire, a refused nightly dispatch, a stale sync, the digest of phone errors | `/settings` | `token-expiry`, `garmin-key-expiry`, `sync-dispatch-refused`, `stale-sync`, `client-errors` |
-| garth's token found expired | `/settings` | `connect-expired` |
+| Connect's token found expired | `/settings` | `connect-expired` |
 
-## After garth
+## Connect token expiry
 
-garth's OAuth1 token can no longer be minted (Garmin changed its login in March 2026) and dies
-about a year after it was minted, on a date nothing can read. The Personal API key carries the
-runs on; everything only Connect's private API serves stops.
+`GARMIN_SECRET` holds a [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)
+token store (base64 of `garmin_tokens.json`): a DI OAuth2 access token from `diauth.garmin.com`,
+sent as `Authorization: Bearer` to `connectapi.garmin.com` with garminconnect's Android headers,
+and the refresh token that renews it. `scripts/garmin/auth.py` loads it and keeps RunOmics's own
+httpx requests; garminconnect does only the refresh. The access token lasts about a day, so most
+runs refresh at sign-in; a 401 mid-run refreshes once and retries.
 
-**What the sync does the night the token dies.** `GarminClient` raises `GarminTokenExpired` when
-Garmin answers the token exchange with a 401. A 403 (Cloudflare refusing a datacenter IP, as
-when WARP is down), a 5xx or a network error stays a plain `GarminAuthError`: a partial night,
-tried again tomorrow. On an expired token `sync.py`:
+**How long it stays valid.** Garmin publishes no lifetime for the refresh token, and a refresh may
+return a new one. Locally, `GARMIN_SECRET_WRITEBACK` names the env file whose `GARMIN_SECRET`
+line each refresh rewrites. A GitHub Action cannot write its own secret, so every night refreshes
+from the token stored in the Environment and the refreshed one lasts for that run; the log warns
+when Garmin issued a new refresh token that nothing stored. It keeps working for as long as Garmin
+accepts the stored refresh token, a date nothing can read in advance: `npm run coach:garmin-auth`
+shows the refresh token's own expiry when the token carries one.
+
+**garth tokens until the secrets are rotated.** A `GARMIN_SECRET` minted with garth (base64 of its
+`[oauth1, oauth2]` pair) still loads: `LegacyGarthAuth` exchanges the OAuth1 token for an OAuth2
+token on `connectapi.garmin.com/oauth-service/oauth/exchange/user/2.0`, signed with oauthlib as
+garth signed it, with the consumer pair that garth used (`GARMIN_OAUTH_CONSUMER_KEY` /
+`_SECRET` override it). Each run logs a warning to replace it. Once both Environments hold a
+garminconnect token, the legacy class, the consumer pair and `oauthlib` can go.
+
+**What the sync does the night the token expires.** `GarminClient` raises `GarminTokenExpired` when
+Garmin refuses the refresh with a 400 or 401 (a garth token: the exchange with a 401), or when the
+store has no refresh token left. A 403 (Cloudflare refusing a datacenter IP, as when WARP is
+down), a 429, a 5xx or a network error stays a plain `GarminAuthError`: a partial night, tried
+again tomorrow. On an expired token `sync.py`:
 
 - writes `connect_status.json` as `{"state": "expired", "since": "<the day>"}` and keeps that
   day on later nights;
@@ -312,10 +331,10 @@ Without a Personal API key nothing can read the runs, so the sync still stops wi
 after recording the expiry. A token that works again turns the file to `{"state": "active"}`;
 a deployment that never lost Connect has no file.
 
-**Runbook.** Confirm with `npm run coach:garmin-auth`. If a working way to mint a token exists
-(see *Optional: the garth token* in README.md), put the new token in the profile's
-`GARMIN_SECRET`; the next night records Connect active again. If not, leave `GARMIN_SECRET` as
-it is: each night tries once, costs nothing, and Connect comes back on its own if it can.
+**Runbook.** Confirm with `npm run coach:garmin-auth` (or its per-profile variant). Mint a new
+token with `python scripts/get_secret.py` from a home connection (see *Optional: the Garmin Connect
+token* in README.md), then put it in the profile's GitHub Environment `GARMIN_SECRET` and in its
+`.env.<profile>.local`; the next night records Connect active again.
 
 **Readings mirrored from Connect stop at an age** (`src/domain/sync/garminReadings.ts`), so a
 frozen file never reads as current. Training status counts for 3 days, then Today and the
@@ -338,7 +357,7 @@ estimates by VDOT, Records predicts by Riegel and Goals shows none.
 | Shoe list (`shoes.json`) | The stored list, frozen; Shoes says since when | Partial (G3) |
 | Garmin calendar (`planned_workouts/`) | The coach's plan on Plan; the morning push still reads the calendar | Partial (N8) |
 | Upcoming races (`upcoming_races.json`) | The stored list, edited, hidden and added to in Settings → Races & goals | Covered (G4) |
-| Coach workouts sent to the watch | None | Open: Run/Walk settings on Plan, then intervals.icu (G5) |
+| Coach workouts sent to the watch | intervals.icu's calendar and its own Garmin upload (`INTERVALS_API_KEY`) | Covered (G5) |
 | Training load balance | The last stored day, frozen | No fallback |
 | Garmin Coach plan (`training_plan.json`) | The last stored plan, frozen | No fallback |
 | Fitness age history | The last stored values, frozen | No fallback |
@@ -416,6 +435,56 @@ environment and is never read, logged, or passed on the command line.
 Isolation guards keep shared code free of one athlete's ids: nothing under `src/` or
 `scripts/` may name a real Garmin workout, schedule entry, or coaching plan, and no
 default may point the mapping file at this repository.
+
+## intervals.icu write path (coach workouts to the watch)
+
+intervals.icu is an official Garmin partner: a planned workout on its calendar goes to Garmin
+Connect, and on to the watch, through the athlete's own intervals.icu Garmin connection. RunOmics
+writes only that calendar, through intervals.icu's API, so the push no longer depends on a Garmin
+Connect sign-in or its private API. Reads are unchanged (the Personal API).
+
+**Route.** `coach:sync-garmin` (and `:lamiaa`) takes intervals.icu when the profile's env file sets
+`INTERVALS_API_KEY`, Garmin Connect otherwise; `--route connect|intervals` overrides it. Each route
+has its own state in the athlete's workspace: `coaching/garmin-sync.json` for Connect,
+`coaching/intervals-sync.json` for intervals.icu. The rules of the Garmin write path hold for both:
+the state alone authorises a mutation, KEEP/UPDATE/CREATE/DELETE come from a content hash, nothing
+is written without `--apply`, and the preview prints the plan and its fingerprint.
+
+**The API.** `HttpIntervalsGateway` calls `https://intervals.icu/api/v1` with HTTP Basic auth, the
+user name `API_KEY` and the key as password, on athlete `INTERVALS_ATHLETE_ID` (default `0`, the
+key's own athlete). A create is `POST /athlete/{id}/events/bulk?upsert=true` with the event's
+`external_id` (`runomics:<prescription id>`), so a create retried after a lost answer updates the
+same event; an update is `PUT /athlete/{id}/events/{eventId}`, a delete
+`DELETE /athlete/{id}/events/{eventId}`, and the read-back `GET /athlete/{id}/events` over the
+pushed dates. Every request has a 15 s timeout and up to three retries on 429, 5xx and network
+errors, honouring `Retry-After`; a 401 or 403 names the two variables to check, never the key.
+
+**Never someone else's event.** An update or delete first reads the event the state names and
+goes ahead only if its `external_id` is RunOmics's own; anything else fails that operation and
+leaves the event alone. The state also records the athlete it was written for, and refuses to run
+against another one. The read-back confirms each event on its date with its external id, marks one
+it cannot find `unverified` (pushed again next run), and reports a second RunOmics copy for the
+athlete to delete by hand rather than deleting it.
+
+**The encoding** is intervals.icu's workout text in `description`, built from the same prescription
+as the Garmin payload, through `withoutEasyHeartRate`: an easy, recovery or long run carries no
+heart rate. A step is `- <length> <target> <intensity>`: the length in minutes (`10m`), seconds
+(`90s`) or kilometres (`1.6km`, since `m` means minutes there); a pace range written fast to slow
+(`7:50-8:45/km Pace`); a heart-rate zone as `Z2 HR`. intervals.icu takes no absolute bpm target, so
+a bpm range rides in the description text instead. Warm-up and cool-down carry
+`intensity=warmup`/`cooldown`, a recovery or walk `intensity=rest` and no target unless prescribed.
+A repeat is a `Nx` line over its steps (strides included), each group separated by a blank line.
+The description and notes come first, as prose; a prose line is cleaned so it cannot read as a
+step (a leading dash) or a repeat (a trailing `4x`). Step notes join that prose, never a step,
+so the second athlete's steps carry none. A step with neither duration nor distance cannot be
+written, and its session is skipped with the reason. Races follow the Connect rules.
+
+**Switching routes never doubles a session.** With RunOmics workouts still on the old route from
+today on, the preview says so and `--apply` refuses. `--retire-connect` (on the intervals route)
+deletes RunOmics's own Connect workouts from today on first, through the Connect gateway and its
+state, then pushes to intervals.icu only if every delete succeeded; `--retire-intervals` (on the
+Connect route) does the reverse. Workouts created by hand or by Garmin are never touched. Past
+entries stay in each state as history.
 
 ## Garmin-sourced series
 

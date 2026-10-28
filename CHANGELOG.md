@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-## [3.3.0] - 2026-10-27
+## [3.3.0] - 2026-10-28
 
 The audit release: the second athlete's watch and return to running, life after garth, the coach run through
 Claude Code, Explore, and the owner's editors for races, goals and shoes. Item IDs (F4, G3, R4…) are the audit's.
@@ -29,6 +29,14 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   the easy runs already on the watches with ones carrying no heart rate.
 - **Needs** `"maxWeeklyKm"` (e.g. 70) in the owner's `athlete.json` to cap the coach's block-to-block volume growth;
   without it there is no cap.
+- **Needs** a new Garmin Connect token per athlete: `python scripts/get_secret.py` (email, password, MFA code)
+  locally, then `GARMIN_SECRET` updated in both GitHub Environments (`adam`, `lamiaa`) and in `.env.adam.local` /
+  `.env.lamiaa.local`, with `GARMIN_SECRET_WRITEBACK` set to that file. An old garth token keeps syncing, with a
+  warning, until it is replaced. The sync and the coach bridge need Python 3.12 or newer.
+- **Needs**, to push the coach's workouts through intervals.icu: a free intervals.icu account per athlete with
+  Garmin connected and planned-workout upload on, and its key (`INTERVALS_API_KEY`, optionally
+  `INTERVALS_ATHLETE_ID`) in `.env.adam.local` and `.env.lamiaa.local`; then a dry run, and
+  `--apply --retire-connect` once.
 - A data repository's Vercel build now fails unless the site is private with a 32-character `SESSION_SECRET`.
 - Optional: `GEMINI_BACKFILL_MODEL` replaces the backfill pool (`GEMINI_MODEL` now replaces the main pool only);
   `RUNOMICS_DATA_SOURCE=github` reads the data repository at run time.
@@ -200,6 +208,13 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   (`--prompt-out` / `--from-answer` for `weekly-review` and `evaluate` too); Gemini needs `--advisor gemini`. A
   review gets the weeks left up to the block's end, so a late-block REPLAN no longer throws, and a rejected
   review or evaluation is sent back with the reason. The CLIs date "today" in `NEXT_PUBLIC_TIME_ZONE` (E7).
+- **Workouts through intervals.icu.** With `INTERVALS_API_KEY` in a profile's env file, `coach:sync-garmin` puts
+  each session on that athlete's intervals.icu calendar (pace ranges, walk breaks untargeted, strides as a repeat,
+  easy runs without heart rate), and intervals.icu's own Garmin connection uploads it. Same preview, `--apply`,
+  hash and sync-state rules as the Garmin Connect route, in its own `coaching/intervals-sync.json`; an event
+  RunOmics did not create is never touched. `--retire-connect` deletes RunOmics's own Connect workouts first, so no
+  session reaches the watch twice. Without the key nothing changes; `--route connect|intervals` overrides.
+  **Needs** the intervals.icu setup (see Manual steps).
 - **Return to running.** Rules for a return after injury, illness or pregnancy: sessions by time, walk breaks
   with no pace, effort and the talk test, progress only on comfortable sessions, no quality work. The context
   marks `returnToRunning` from a stop of four weeks or more until a run holds 30 minutes without a walk. Each
@@ -254,6 +269,15 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   `GarminTokenExpired`: the sync carries on with exit 0, writes `connect_status.json`, and the operator gets one
   push with the runbook. WARP failing no longer stops a sync with a key. VO2max keeps moving from each FIT file
   on a night without Connect. `docs/data-and-sync.md` has a sunset matrix.
+- **garminconnect instead of garth.** Garmin Connect signs in with python-garminconnect: garth is unmaintained
+  and cannot mint a token since Garmin's March 2026 auth change. `python scripts/get_secret.py` signs in again and
+  prints a new `GARMIN_SECRET`, garminconnect's token store, whose refresh token renews the day-long access token.
+  `npm run coach:garmin-auth` reports both tokens' expiries and whether a refresh worked. An old garth token keeps
+  syncing until it is replaced, with a warning in every run's log; when Garmin refuses the new refresh token, the
+  night reports Connect expired as before. Locally, `GARMIN_SECRET_WRITEBACK` keeps the refreshed token in the env
+  file. **Needs** the new token (see Manual steps).
+- Sync has a `no_warp` test input: a manual run (with dry run) reaches Garmin Connect without Cloudflare WARP, to
+  see whether Connect still refuses GitHub's network with the garminconnect token. Nightly runs keep WARP.
 - **Connect warnings (G6).** The Connect requests a step reads land in `sync_meta.json` (`warnings`,
   `warningsAt`) with `seriesFreshness`; Health reports `connectWarnings`, `seriesFreshness` and `staleSeries`,
   and Settings → Diagnostics lists each series and since when it stopped.
@@ -295,6 +319,9 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   once per visit, pages skip the Firestore SDK to check the session, the server runs in Paris, and dates and
   numbers format about 40 times faster.
 - A sheet unmounted before its close animation ends leaves no timer behind.
+- A session's colour written as text (Plan's day label, the week strip letters, Month's letters and phase label,
+  the next key session, a run's zone labels) uses a text shade of its zone that reads at 4.5:1 on every ground, in
+  both themes; bars and tiles keep the zone itself. The French plan failed AA on some days.
 
 ### Security and privacy
 
@@ -304,6 +331,8 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
 - Settings fetches height and weight from an owner-only route; signing out of a private site clears the HTTP
   cache. `/api/internal/latest-verdict` and `/firebase-messaging-sw.js` are gone, and so is
   `https://www.gstatic.com` from `script-src`.
+- zod, pulled in by the React hooks lint plugin, is pinned to 4.6.6 or later (GHSA-mrhx-c7xc-m3w5); `npm audit`
+  reports no vulnerabilities. Dev tooling only.
 - `next.config.ts` refuses the emulator and blank-map flags on Vercel. Errors on the phone are reported with
   every coordinate scrubbed. The security doc gains an owner/viewer table and a "Third parties" section.
 

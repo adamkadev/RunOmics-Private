@@ -306,7 +306,7 @@ def fetch_personal_athlete_metrics(client: PersonalApiClient, today: date | None
     are built on, fitness age and age, and the latest weigh-in.
 
     Sex, height, threshold pace, VO2max and the watch come from Connect's user
-    settings and device info (fetch_athlete_metrics). Without garth they keep
+    settings and device info (fetch_athlete_metrics). Without Connect they keep
     the values last stored - but VO2max, which the sync carries on from the
     runs' FIT readings (vo2max_metrics).
     """

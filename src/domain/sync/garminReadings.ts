@@ -1,7 +1,7 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import { STALE_SYNC_HOURS } from './staleness'
 
-/** Past these, a Garmin Connect reading is frozen: garth's token died, or the watch stopped sending it. */
+/** Past these, a Garmin Connect reading is frozen: Connect's token expired, or the watch stopped sending it. */
 export const GARMIN_READING_MAX_AGE_DAYS = {
   trainingStatus: STALE_SYNC_HOURS / 24,
   thresholdPace: 56,

@@ -1,7 +1,7 @@
 """The errors every Garmin client raises, whichever API it reads.
 
-Kept apart from client.py so that a client which does not use garth -
-personal_api.py - does not import it to raise them.
+Kept apart from client.py so that a client which needs no Connect
+credential - personal_api.py - does not import garminconnect to raise them.
 """
 
 from __future__ import annotations
@@ -18,4 +18,4 @@ class GarminAPIError(Exception):
 
 
 class GarminTokenExpired(GarminAuthError):
-    """Garmin refused garth's OAuth1 token: Connect is gone until a new token is minted, which garth no longer can."""
+    """Garmin refused GARMIN_SECRET's refresh token (or a garth OAuth1 token): Connect is gone until a new one is minted."""
