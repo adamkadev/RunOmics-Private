@@ -10,6 +10,8 @@ export type RateLimitDecision = { ok: true } | { ok: false; retryAfterS: number 
 
 export interface RateLimiter {
   take(key: string, now: number): RateLimitDecision
+  /** Whether take would refuse the key now, without counting a request. */
+  exhausted(key: string, now: number): boolean
 }
 
 export interface RateLimitOptions {
@@ -46,6 +48,10 @@ export function createRateLimiter({ max, windowMs, maxKeys }: RateLimitOptions):
       if (windows.size >= maxKeys) prune(now)
       windows.set(key, { count: 1, start: now })
       return { ok: true }
+    },
+    exhausted(key, now) {
+      const window = windows.get(key)
+      return window !== undefined && now - window.start < windowMs && window.count >= max
     },
   }
 }

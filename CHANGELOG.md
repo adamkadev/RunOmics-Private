@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Sync
+
+- The activity list is retried like every other Garmin read: one 503 or timeout on a page no longer stops the night
+  before anything is committed.
+- A 429 or 5xx carrying `Retry-After` waits what Garmin asked for, up to 5 minutes, instead of a fixed 60 s.
+- Threshold history keeps a day's stored LTHR or threshold pace when only the other one's read failed that night.
+- A sync that times out or is cancelled now sends the failure push, titled "(cancelled or timed out)".
+- A failed backup of notes, check-ins, shoe picks or route data, or a failed mirror of races and goals, now reports
+  the night as partial (red after the commit) instead of staying green.
+- The internal routes' per-address limit counts only refused secrets, so a nightly sync's own authorised calls
+  from one runner are never answered 429.
+- Dependabot looks for the Python manifests in `scripts/`, where they are.
+
 ## [3.3.0] - 2026-10-28
 
 The audit release: the second athlete's watch and return to running, life after garth, the coach run through

@@ -33,7 +33,7 @@ def _client_over(credential, statuses):
 
     def request(method, url, headers=None, **_kwargs):
         sent.append(headers["Authorization"])
-        return SimpleNamespace(status_code=statuses.pop(0))
+        return SimpleNamespace(status_code=statuses.pop(0), headers={})
 
     client._http = SimpleNamespace(request=request)
     return client, sent

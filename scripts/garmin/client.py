@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 
 from .auth import open_auth
-from .errors import GarminAPIError, GarminAuthError, GarminTokenExpired
+from .errors import GarminAPIError, GarminAuthError, GarminTokenExpired, retry_after_seconds
 from .shared import collect_activity_rows, fit_from_archive
 
 _CONNECT_API = "https://connectapi.garmin.com"
@@ -44,7 +44,7 @@ class GarminClient:
             resp = self._http.request(method, url, headers={**self._auth.headers(), **(headers or {})}, **kwargs)
 
         if resp.status_code >= 400:
-            raise GarminAPIError(resp.status_code, url)
+            raise GarminAPIError(resp.status_code, url, retry_after=retry_after_seconds(resp.headers))
 
         return resp
 

@@ -8,6 +8,7 @@ import zipfile
 import httpx
 import pytest
 
+from garmin import retry as retry_mod
 from garmin.errors import GarminAPIError, GarminAuthError
 from garmin.personal_api import PersonalApiClient
 from processing.mapper import parse_hr_zones
@@ -105,6 +106,21 @@ class TestToken:
         assert api.client().get_activities() == [ROW]
         sent = [r.headers["Authorization"] for r in api.requests]
         assert sent == [f"ApiKey {_KEY}", "Bearer token-1", f"ApiKey {_KEY}", "Bearer token-2"]
+
+
+class TestActivityList:
+    def test_a_list_page_that_fails_once_is_asked_again(self, monkeypatch):
+        pauses: list[float] = []
+        monkeypatch.setattr(retry_mod.time, "sleep", pauses.append)
+        api = FakeApi(**{LIST: [httpx.Response(503), httpx.Response(200, json=[ROW])]})
+        assert api.client().get_activity_rows() == {"101": ROW}
+        assert pauses == [2.0]
+
+    def test_a_429_carries_the_wait_garmin_asked_for(self):
+        api = FakeApi(**{LIST: httpx.Response(429, headers={"Retry-After": "17"})})
+        with pytest.raises(GarminAPIError) as raised:
+            api.client().get_activities()
+        assert raised.value.retry_after == 17.0
 
 
 class TestDownload:

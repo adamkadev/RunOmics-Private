@@ -28,7 +28,7 @@ from typing import Any
 
 import httpx
 
-from .errors import GarminAPIError, GarminAuthError
+from .errors import GarminAPIError, GarminAuthError, retry_after_seconds
 from .retry import retry_transient
 from .shared import collect_activity_rows, fit_from_archive, zone_floors
 
@@ -73,7 +73,7 @@ class PersonalApiClient:
         if reason:
             raise GarminAuthError(f"Garmin refused GARMIN_PERSONAL_API_KEY (HTTP {resp.status_code}): {reason}.")
         if resp.status_code >= 400:
-            raise GarminAPIError(resp.status_code, TOKEN_PATH)
+            raise GarminAPIError(resp.status_code, TOKEN_PATH, retry_after=retry_after_seconds(resp.headers))
         token = resp.text.strip()
         if not token:
             raise GarminAuthError(
@@ -92,7 +92,7 @@ class PersonalApiClient:
             self._token = self._exchange_key()
             resp = send()
         if resp.status_code >= 400:
-            raise GarminAPIError(resp.status_code, path)
+            raise GarminAPIError(resp.status_code, path, retry_after=retry_after_seconds(resp.headers))
         return resp
 
     def _get_json(self, path: str, **params: Any) -> Any:

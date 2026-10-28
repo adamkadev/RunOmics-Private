@@ -1,7 +1,10 @@
+from datetime import UTC, datetime
+
 import httpx
 import pytest
 
 from garmin.client import GarminAPIError
+from garmin.errors import retry_after_seconds
 from garmin import retry as retry_mod
 from garmin.retry import retry_transient
 
@@ -80,3 +83,42 @@ def test_5xx_is_transient():
 
     assert retry_transient(flaky) == "ok"
     assert calls["n"] == 2
+
+
+@pytest.mark.parametrize(
+    "error,expected",
+    [
+        (GarminAPIError(429, "url", retry_after=17.0), [17.0, 17.0, 17.0]),
+        (GarminAPIError(429, "url", retry_after=7200.0), [300.0, 300.0, 300.0]),
+        (GarminAPIError(503, "url", retry_after=5.0), [5.0, 5.0, 5.0]),
+    ],
+    ids=["429 waits what Garmin asked", "a long Retry-After is capped", "a 503 with Retry-After honours it"],
+)
+def test_a_retry_after_sets_the_pause(pauses, error, expected):
+    def failing():
+        raise error
+
+    with pytest.raises(GarminAPIError):
+        retry_transient(failing)
+    assert pauses == expected
+
+
+@pytest.mark.parametrize(
+    "headers,expected",
+    [
+        ({"retry-after": "120"}, 120.0),
+        ({"retry-after": "Wed, 28 Oct 2026 10:00:30 GMT"}, 30.0),
+        ({"retry-after": "Wed, 28 Oct 2026 09:59:00 GMT"}, 0.0),
+        ({"retry-after": "soon"}, None),
+        ({"retry-after": "-5"}, None),
+        ({}, None),
+    ],
+    ids=["seconds", "http date", "a date in the past", "unreadable", "negative", "absent"],
+)
+def test_retry_after_seconds_reads_both_forms(headers, expected):
+    assert retry_after_seconds(headers, now=datetime(2026, 10, 28, 10, 0, 0, tzinfo=UTC)) == expected
+
+
+def test_a_real_response_header_reaches_the_error():
+    response = httpx.Response(429, headers={"Retry-After": "42"})
+    assert retry_after_seconds(response.headers) == 42.0

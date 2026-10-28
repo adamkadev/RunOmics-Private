@@ -14,6 +14,18 @@ describe('createRateLimiter', () => {
     expect(limiter.take('a', 60_000)).toEqual({ ok: true })
   })
 
+  it('says a key is exhausted without counting a request', () => {
+    const limiter = createRateLimiter({ max: 2, windowMs: 60_000, maxKeys: 10 })
+    expect(limiter.exhausted('a', 0)).toBe(false)
+    limiter.take('a', 0)
+    expect(limiter.exhausted('a', 1_000)).toBe(false)
+    expect(limiter.exhausted('a', 1_000)).toBe(false)
+    limiter.take('a', 1_000)
+    expect(limiter.exhausted('a', 2_000)).toBe(true)
+    expect(limiter.exhausted('b', 2_000)).toBe(false)
+    expect(limiter.exhausted('a', 60_000)).toBe(false)
+  })
+
   it('forgets the oldest keys beyond maxKeys', () => {
     const limiter = createRateLimiter({ max: 1, windowMs: 60_000, maxKeys: 2 })
     limiter.take('a', 0)

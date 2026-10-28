@@ -154,7 +154,8 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   only in Firestore otherwise. The workflow reads them through `GET /api/internal/activity-notes`
   and `GET /api/internal/wellness`, sorted so the commit changes only where an entry did, and
   logs a count, never an entry. The coach falls back to both when Firestore does not answer.
-  Neither step can fail the sync.
+  Neither step stops the sync: a failed one, like each backup and mirror below, makes the night
+  partial once the commit has landed.
 - **Route names and avoid spots** (`route_names.json`, `avoid_spots.json`). Also only in Firestore
   otherwise: one `GET /api/internal/route-data` returns both, sorted by id, and the step writes one
   file each and logs the two counts. Nothing in the app reads them back; they are there to restore.
@@ -217,6 +218,15 @@ freshly synced one (a parity test holds them together). A run without a
 cached FIT keeps what it had, and the log counts them; when it reports any, dispatch once more
 with `force`, which downloads every FIT again.
 
+**Every Garmin read is retried** (`scripts/garmin/retry.py`), the activity list page by page
+included: a network error or a 5xx three more times after 2, 8 and 32 s, a 429 after 60 s each.
+When the answer carries `Retry-After` the wait is what it asks, up to 5 minutes, so three retries
+of one call stay inside the job's 60-minute timeout.
+
+**A run that fails, times out or is cancelled pushes** (`POST /api/internal/workflow-failure`).
+A timeout cancels the job rather than failing it, and the data commit is then skipped; the push
+names the workflow with "(cancelled or timed out)" so the two read apart.
+
 ## Scheduled jobs and pushes
 
 **Vercel Cron runs the schedule** (`vercel.json`), because GitHub's scheduled workflows started
@@ -236,7 +246,9 @@ its own athlete:
 $CRON_SECRET` on a `GET`; the workflow and a person send `x-internal-secret` on a `POST`.
 `scheduledRoute` gives each scheduled route both: `GET` checks `CRON_SECRET`, `POST` checks
 `INTERNAL_NOTIFY_SECRET`. Every other internal route takes the internal secret alone. The
-guard rate-limits before it checks either.
+guard counts only refused secrets against its per-address limit (20 a minute): an address over
+it is refused before any check, while a nightly sync's own authorised calls, more than 20 from one
+runner, never spend it.
 
 **A scheduled push goes out once a day.** `sendOncePer` claims the day's key in Firestore before
 sending and releases it if the send throws, so a retry or the second `daily-session` call cannot
@@ -484,6 +496,7 @@ caveat worth knowing:
 
 - **Athlete history** entries exist only for days a value actually moved — a change log, not
   a daily reading. Same for **threshold history**, where either field can be absent from a day.
+  A night merges each field into the stored day, so a read that failed keeps the other's value.
 - **Training status**: days before the watch had enough history come back as `no_status` with
   no ratio. They are not a reading, and returning one would make the app show a status Garmin
   itself declined to give. A watch that sends no loads or status at all (a Forerunner 55) gets

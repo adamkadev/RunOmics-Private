@@ -11,6 +11,7 @@ import pytest
 
 import sync
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient, GarminTokenExpired
+from garmin.shared import collect_activity_rows
 from repository.json_store import JsonActivityStore
 
 # Every step main() runs besides the activities, under the names it imports them as; here they only record that they ran.
@@ -211,6 +212,27 @@ class TestCleanRun:
         assert _stored_ids(workspace) == {"101", "102"}
         assert steps == list(_STEP_RESULTS)
         assert "lastSyncedAt" in json.loads((workspace / "sync_meta.json").read_text())
+
+    def test_a_list_page_that_fails_once_with_a_503_still_syncs_every_activity_and_exits_0(
+        self, workspace, garmin, steps, monkeypatch
+    ):
+        asked: list[int] = []
+
+        def get_activities(start=0, limit=100, *, running_only=True, since=None):
+            asked.append(start)
+            if len(asked) == 1:
+                raise GarminAPIError(503, "safe-test-endpoint")
+            return garmin.get_activities(start, limit, running_only=running_only, since=since)
+
+        garmin.get_activity_rows = lambda *, running_only=True: collect_activity_rows(
+            get_activities, running_only=running_only
+        )
+
+        assert _run(monkeypatch) == 0
+
+        assert asked == [0, 0]
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert steps == list(_STEP_RESULTS)
 
     def test_a_credential_notice_is_printed_and_costs_the_night_nothing(self, workspace, garmin, steps, monkeypatch, capsys):
         garmin.notice = "GARMIN_SECRET still holds a garth token"
