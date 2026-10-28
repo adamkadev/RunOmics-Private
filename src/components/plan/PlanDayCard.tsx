@@ -121,7 +121,7 @@ export function PlannedWorkoutCard({
         )}
       </div>
       {structured && (
-        <div aria-hidden data-testid="intensity-profile" className="mt-2 flex h-[44px] items-end gap-[3px]">
+        <div aria-hidden data-testid="intensity-profile" className="flex h-[44px] items-end gap-[3px]">
           {blocks.map((block, i) => (
             <span
               key={i}

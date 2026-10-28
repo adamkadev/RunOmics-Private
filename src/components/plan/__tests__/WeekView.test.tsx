@@ -262,10 +262,10 @@ describe('a session still to come', () => {
     expect(tones).toEqual(['ease', 'work', 'recovery', 'work', 'recovery', 'work', 'recovery', 'ease'])
   })
 
-  it('sits the profile 18 pt under the title line, 8 more than the target tiles, and 14 pt over the steps, 44 pt tall', () => {
+  it('sits the profile 10 pt under the title line, by the same gap as the target tiles, and 14 pt over the steps, 44 pt tall', () => {
     renderWeek({ coaching: overview() })
     const profile = screen.getByTestId('intensity-profile')
-    expect(profile.className).toContain('mt-2')
+    expect(profile.className).not.toMatch(/\bmt-/)
     expect(profile.parentElement!.className).toContain('gap-2.5')
     expect(profile.className).toContain('h-[44px]')
     const work = [...profile.children].find((block) => block.getAttribute('data-tone') === 'work') as HTMLElement
