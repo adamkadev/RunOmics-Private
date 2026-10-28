@@ -195,6 +195,11 @@
   --zone-3:                  #6a52d9;
   --zone-4:                  #ae3cc2;
   --zone-5:                  #d63a77;
+  --zone-1-text:             #4c6279;
+  --zone-2-text:             #135bc5;
+  --zone-3-text:             #5f45cb;
+  --zone-4-text:             #9923ad;
+  --zone-5-text:             #b6115d;
   --chart-cadence:           #4f7471;
   --chart-easy:              var(--zone-2);
   --chart-hard:              var(--zone-4);
@@ -322,6 +327,11 @@
   --zone-3:                  #8f7cf0;
   --zone-4:                  #c77ae6;
   --zone-5:                  #f07aa8;
+  --zone-1-text:             #90a1b6;
+  --zone-2-text:             #60a1fa;
+  --zone-3-text:             #9e8cff;
+  --zone-4-text:             #cc7feb;
+  --zone-5-text:             #f07aa8;
   --chart-cadence:           #8fb3b0;
   --chart-easy:              var(--zone-2);
   --chart-hard:              var(--zone-4);

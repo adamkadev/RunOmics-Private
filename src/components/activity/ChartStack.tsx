@@ -71,7 +71,7 @@ const LanePlot = memo(function LanePlot({ lane, series, overlay, distanceKm, col
             {rect.labelled && (
               <span
                 className={`absolute right-1 top-px z-[1] rounded-sm bg-card px-0.5 font-semibold ${AXIS_LABEL}`}
-                style={{ color: `var(--zone-${band.zone})` }}
+                style={{ color: `var(--zone-${band.zone}-text)` }}
               >
                 Z{band.zone}
               </span>

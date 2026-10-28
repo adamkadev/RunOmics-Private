@@ -213,6 +213,34 @@ export function readableOn(hex: string, ground: string, ratio = TEXT_CONTRAST): 
   return text
 }
 
+/** Month's session tile: the zone at this share over the card, its letter on top. */
+export const ZONE_TILE_SHARE = 0.25
+
+/** `color-mix(in srgb, fg share%, transparent)` laid over `bg`. */
+export function tintOver(fg: string, bg: string, share: number): string {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16)
+  return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * share + channel(bg, i) * (1 - share)).toString(16).padStart(2, '0')).join('')}`
+}
+
+export function zoneTextGrounds(mode: 'light' | 'dark', zone: string): string[] {
+  const s = SURFACES[mode]
+  return [s.background, s.card, s.raised, s.seg, tintOver(zone, s.card, ZONE_TILE_SHARE)]
+}
+
+function readableOnAll(hex: string, grounds: readonly string[], lighten: boolean): string {
+  const colour = hexToOklch(hex)
+  const worst = (text: string) => Math.min(...grounds.map((ground) => contrastRatio(text, ground)))
+  let text = hex
+  for (let l = colour.l; worst(text) < TEXT_CONTRAST && l > 0 && l < 1; l += lighten ? 0.005 : -0.005) text = oklchToHex({ ...colour, l })
+  return text
+}
+
+/** A zone written as text: darker in light, lighter in dark, until it reads at 4.5:1 on every ground it sits on. */
+export const ZONE_TEXT_HEX = {
+  light: ZONE_HEX.light.map((zone) => readableOnAll(zone, zoneTextGrounds('light', zone), false)),
+  dark: ZONE_HEX.dark.map((zone) => readableOnAll(zone, zoneTextGrounds('dark', zone), true)),
+} as const
+
 /**
  * The darkest ground a label on light glass sits on: a medium sheet's 55 %
  * glass over the 20 % scrim on the page, under a control's 12 % fill.
@@ -373,6 +401,11 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--zone-3': ZONE_HEX[mode][2],
     '--zone-4': ZONE_HEX[mode][3],
     '--zone-5': ZONE_HEX[mode][4],
+    '--zone-1-text': ZONE_TEXT_HEX[mode][0]!,
+    '--zone-2-text': ZONE_TEXT_HEX[mode][1]!,
+    '--zone-3-text': ZONE_TEXT_HEX[mode][2]!,
+    '--zone-4-text': ZONE_TEXT_HEX[mode][3]!,
+    '--zone-5-text': ZONE_TEXT_HEX[mode][4]!,
     '--chart-cadence': mode === 'dark' ? c.cadenceDark : c.cadenceLight,
     '--chart-easy': 'var(--zone-2)',
     '--chart-hard': 'var(--zone-4)',

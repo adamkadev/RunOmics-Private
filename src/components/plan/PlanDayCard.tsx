@@ -39,7 +39,7 @@ function Eyebrow({ date, kind }: { date: string; kind: DayKind | null }) {
   return (
     <p
       className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em]"
-      style={{ color: kind?.color ?? 'var(--muted-foreground)' }}
+      style={{ color: kind?.text ?? 'var(--muted-foreground)' }}
     >
       <span>{[formatWeekday(date, true), kind ? kindLabel(kind.type, kind.kind) : null].filter(Boolean).join(' · ')}</span>
     </p>
