@@ -2376,7 +2376,6 @@ export const en = {
     phase: {
       weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
       generalShort: 'General prep',
-      blockEnds: (weekday: string) => `Block ends ${weekday}; next block not planned yet`,
       asPlanned: (n: number, of: number) => `${n} of ${of} sessions as planned`,
       raceInWeeks: (race: string, weeks: number) => `${race} in ${weeks} wk`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} today` : days === 1 ? `${race} tomorrow` : `${race} in ${days} days`),

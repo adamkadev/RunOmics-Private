@@ -59,10 +59,9 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   `/api/coaching/words`, behind the private site's sign-in gate, never in a page's HTML. Plan shows no week's
   focus, coach's note or watch line. In the step list, a warm-up, cool-down or break at a walking pace, or with no
   target in an easy session, reads "walk" (« marche ») instead of "1:00 rec".
-- **Where a block stands.** In its last week the phase card adds "Block ends Sunday; next block not planned yet";
-  after the last day a "Block finished" card counts the sessions done out of those prescribed; a day before the
-  block starts reads "Nothing planned". Paging forward follows the last planned date from either the coach's
-  block or the watch's calendar, so a deployment without a coach plan can page ahead.
+- **Where a block stands.** After the last day a "Block finished" card counts the sessions done out of those
+  prescribed; a day before the block starts reads "Nothing planned". Paging forward follows the last planned date
+  from either the coach's block or the watch's calendar, so a deployment without a coach plan can page ahead.
 - **Return-to-running progress (F3).** From the end of the latest break of four weeks or more, Plan shows running
   minutes per week and the longest non-stop run, Records gets a Comeback tab (first 10, 20 and 30 minutes
   non-stop, first 3 and 5 km without walking, first block completed), and each new milestone gets the
