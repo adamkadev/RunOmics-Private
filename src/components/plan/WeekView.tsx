@@ -42,7 +42,7 @@ function proposalLine(proposal: BlockGuideProposal): string {
   return p.guideProposal(p.repClass[proposal.repClass], range(proposal.guide), range(proposal.proposedGuide), p.proposalSource[proposal.source])
 }
 
-function PhaseCard({ name, week, total, race, href, note = null, tally = null, proposals = [] }: { name: string; week: number; total: number; race: string | null; href?: string; note?: string | null; tally?: FitTally | null; proposals?: BlockGuideProposal[] }) {
+function PhaseCard({ name, week, total, race, href, tally = null, proposals = [] }: { name: string; week: number; total: number; race: string | null; href?: string; tally?: FitTally | null; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
@@ -67,7 +67,6 @@ function PhaseCard({ name, week, total, race, href, note = null, tally = null, p
         ))}
       </div>
       {tally && <p className="text-xs text-muted-foreground" data-testid="phase-tally">{p.asPlanned(tally.asPlanned, tally.of)}</p>}
-      {note && <p className="text-xs text-muted-foreground" data-testid="phase-note">{note}</p>}
       {proposals.map((proposal) => (
         <p key={`${proposal.source}:${proposal.repClass}`} className="text-xs text-muted-foreground" data-testid="phase-proposal">{proposalLine(proposal)}</p>
       ))}
@@ -208,9 +207,6 @@ export function WeekView({
   )
 
   const block = useMemo(() => blockLifecycle(coaching, today), [coaching, today])
-  const blockEnds = block && block.daysLeft >= 0 && block.endDate >= firstDay && block.endDate <= lastDay
-    ? t.plan.phase.blockEnds(formatWeekday(block.endDate))
-    : null
 
   const phase = useMemo(() => phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay), [coaching, planPhaseRanges, firstDay])
   const words = useCoachWords(coaching !== null)
@@ -313,7 +309,6 @@ export function WeekView({
           total={phase.total}
           race={race}
           href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined}
-          note={blockEnds}
           tally={tally}
           proposals={phase.span.key === 'general' ? words?.block.guideProposals : undefined}
         />

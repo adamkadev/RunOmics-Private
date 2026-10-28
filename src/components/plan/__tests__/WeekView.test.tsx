@@ -487,18 +487,6 @@ describe('a rest day', () => {
 describe('the end of a block', () => {
   const ending = (endDate: string) => overview({ coachingPlan: plan({ block: { ...plan().block, endDate } }) })
 
-  it('says when the block ends and that nothing follows it yet', () => {
-    renderWeek({ coaching: ending('2026-09-13') })
-
-    expect(screen.getByTestId('phase-note').textContent).toBe(t.plan.phase.blockEnds('Sun'))
-  })
-
-  it('says nothing on a week the block runs straight through', () => {
-    renderWeek({ coaching: ending('2026-10-04') })
-
-    expect(screen.queryByTestId('phase-note')).toBeNull()
-  })
-
   it('counts the sessions done once the block is over, in place of a rest day', async () => {
     const user = userEvent.setup()
     const coaching = ending('2026-09-08')
