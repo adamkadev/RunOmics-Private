@@ -25,7 +25,7 @@ import { sessionForRun } from '@/domain/coaching/sessionForRun'
 import { isoWeekWindows, weekWindowIndex } from '@/domain/coaching/weekWindows'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import { raceKey } from '@/domain/goals/entries'
-import { BOOTSTRAP_START_WINDOW_DAYS } from '@/domain/coaching/renewal'
+import { BOOTSTRAP_START_WINDOW_DAYS, renewalDue } from '@/domain/coaching/renewal'
 import { GENERAL_PREPARATION, macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
 import { blockGuideProposals, fatigueBasis, lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
@@ -485,7 +485,8 @@ async function draftUntilAccepted<Draft, Accepted>(
       return review(draft)
     } catch (error) {
       if (attempt >= REPAIR_ATTEMPTS) throw error
-      complaint = `Your previous answer was rejected: ${error instanceof Error ? error.message : String(error)}\nReturn a corrected ${what} that satisfies this exactly, changing nothing else.`
+      // The answer goes back with the reason, so a correction edits it rather than writing a new one from nothing.
+      complaint = `Your previous answer was rejected: ${error instanceof Error ? error.message : String(error)}\nReturn a corrected ${what} that satisfies this exactly, changing nothing else. Your previous answer was:\n${JSON.stringify(draft)}`
     }
   }
 }
@@ -506,8 +507,8 @@ export async function createBootstrapProposal(
   start?: string,
 ): Promise<CoachingProposal> {
   const existing = services.repository.getCurrentPlan()
-  if (existing && !replace) {
-    throw new Error('A current coaching plan already exists; pass --replace to supersede it')
+  if (existing && !replace && !renewalDue(existing, context.referenceDate)) {
+    throw new Error(`The current coaching plan runs until ${existing.block.endDate}; renew it within ${BOOTSTRAP_START_WINDOW_DAYS} days of its end, or pass --replace to supersede it now`)
   }
 
   if (availableWeekdays.length === 0) throw new Error('At least one available weekday is required')

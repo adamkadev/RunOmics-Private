@@ -86,8 +86,10 @@ has run for more than seven. For each athlete (`coach:lamiaa` and `coach:sync-ga
 2. Read the block that ends: Plan's "Block finished" card, the notes, and the check-ins.
 3. For the second athlete, check `coaching/guidance.md` is current. A new clinician's note goes in first.
 4. `npm run coach -- bootstrap` writes the prompt (days, runs per week and the start come from the current plan
-   unless given). Answer it in Claude Code under the `coaching-plan` skill, never through an API.
-5. `npm run coach -- bootstrap --from-answer <reply>`; a refused draft comes back with the reason, answer again.
+   unless given). It runs without `--replace` from seven days before the block ends; earlier it refuses. Answer
+   it in Claude Code under the `coaching-plan` skill, never through an API.
+5. `npm run coach -- bootstrap --from-answer <reply>`; a refused draft comes back with the reason and the refused
+   answer, so correct it and answer again.
 6. Review the preview, then `npm run coach -- --apply .coach-previews/<proposal>.json`.
 7. `npm run coach:sync-garmin` previews the watch's calendar; `--apply --expect <fingerprint>` pushes it, through
    intervals.icu when the env file has `INTERVALS_API_KEY`, else through Garmin Connect.

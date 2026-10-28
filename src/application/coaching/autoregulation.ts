@@ -443,6 +443,16 @@ export function withGuide(workout: WorkoutPrescription, from: NumberRange, to: N
 }
 
 const km = (metres: number) => `${Number((metres / 1_000).toFixed(1))} km`
+const min = (seconds: number) => `${Math.round(seconds / 60)} min`
+
+/** Whole figures only, so "5 km" leaves "15 km" alone; a French name writes "6,5 km". */
+function replaceFigure(text: string, from: string, to: string): string {
+  for (const [was, now] of [[from, to], [from.replace('.', ','), to.replace('.', ',')]] as const) {
+    const at = text.search(new RegExp(`(?<![\\d.,])${was.replace('.', '\\.')}(?!\\p{L})`, 'u'))
+    if (at !== -1) return text.slice(0, at) + now + text.slice(at + was.length)
+  }
+  return text
+}
 
 export function lighterWorkout(workout: WorkoutPrescription): WorkoutPrescription | null {
   const { thresholdCut, easyCut } = CONTROLLED_THRESHOLD.lighterWeek
@@ -460,20 +470,27 @@ export function lighterWorkout(workout: WorkoutPrescription): WorkoutPrescriptio
   }
   if (!EASY_TYPES.has(workout.type)) return null
   let title = workout.title
+  let shortName = workout.shortName
+  const rename = (from: string, to: string) => {
+    title = replaceFigure(title, from, to)
+    if (shortName !== undefined) shortName = replaceFigure(shortName, from, to)
+  }
   const blocks = workout.blocks.map((block) => {
     if (block.kind !== 'effort') return block
     const { distanceMeters, durationSeconds } = block.target
     if (distanceMeters !== undefined) {
       const shorter = Math.max(1_000, Math.round((distanceMeters * (1 - easyCut)) / 500) * 500)
-      title = title.replace(km(distanceMeters), km(shorter))
+      rename(km(distanceMeters), km(shorter))
       return { ...block, target: { ...block.target, distanceMeters: shorter } }
     }
     if (durationSeconds !== undefined) {
-      return { ...block, target: { ...block.target, durationSeconds: Math.max(600, Math.round((durationSeconds * (1 - easyCut)) / 60) * 60) } }
+      const shorter = Math.max(600, Math.round((durationSeconds * (1 - easyCut)) / 60) * 60)
+      rename(min(durationSeconds), min(shorter))
+      return { ...block, target: { ...block.target, durationSeconds: shorter } }
     }
     return block
   })
-  return { ...workout, title, blocks }
+  return { ...workout, title, ...(shortName !== undefined ? { shortName } : {}), blocks }
 }
 
 export function lighterWeekSessions(plan: CoachingPlan, flaggedDate: string, referenceDate: string): WorkoutPrescription[] {

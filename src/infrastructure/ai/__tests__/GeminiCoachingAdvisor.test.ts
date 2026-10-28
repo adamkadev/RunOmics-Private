@@ -64,7 +64,7 @@ function rawBootstrap(includePlaceholderIds: boolean) {
           type: workoutIndex === 0 ? 'easy' : 'tempo',
           title: workoutIndex === 0 ? 'Easy run' : 'Tempo run',
           shortName: workoutIndex === 0 ? 'Easy run' : 'Tempo run',
-          description: 'A structurally valid session.',
+          description: `A structurally valid session for week ${weekIndex + 1}.`,
           totalDistanceMeters: 999_999,
           blocks: [{ kind: 'effort', target: { distanceMeters: 5_000 } }],
         })),

@@ -38,8 +38,8 @@ it with a single JSON object, save it, and feed it back:
 npm run coach -- bootstrap --days ... --runs-per-week 5 --from-answer answer.json
 ```
 
-A rejected plan rewrites the prompt with the reason attached, ready to answer
-again. Apply the preview it prints with `npm run coach -- --apply <path>`.
+A rejected plan rewrites the prompt with the reason and the rejected answer
+attached, ready to correct. Apply the preview it prints with `npm run coach -- --apply <path>`.
 
 `weekly-review` and `evaluate --activity <id|latest>` work the same way: the prompt
 asks for a KEEP, ADJUST or REPLAN recommendation, gives the weeks left in the block
@@ -83,9 +83,11 @@ An athlete without an LTHR - a Forerunner 55 has no lactate threshold
 detection, and %HRmax zones are no threshold - gets no controlled threshold
 sessions: the context says null and the rules keep threshold work pace-led.
 
-Bootstrap refuses while a plan is active. Add `--replace` to supersede it; the
-outgoing plan is kept under `coaching/superseded/<id>.json`, so rewriting a
-block is reversible.
+Bootstrap refuses while a plan has more than seven days left, which the monthly
+renewal never does: from a week before the block ends it writes the next one
+without a flag. Add `--replace` to supersede a plan earlier; either way the
+outgoing plan is kept under `coaching/superseded/<id>.json` when the new one is
+applied, so rewriting a block is reversible.
 
 ## The checks a plan must pass
 
@@ -97,8 +99,10 @@ advisors only build the prompt and read the answer.
 
 - `validateWorkoutDraft` - how each session is written, in `draftRules.ts`:
   strides as a repeat group with recovery, timed and without an HR target;
-  hill efforts by effort rather than pace; "progressive" only when the
-  targets actually progress.
+  hill efforts by effort rather than pace, a hill session being one whose
+  title, structure or repetitions' notes name a hill (a climb on the route
+  in the description, or « montée en charge », is none); "progressive" only
+  when the targets actually progress.
 - `validateDraftFrequency` - one run per day, and the count matches
   `runsPerWeek` unless the week's focus explains otherwise.
 - `validateDraftVolume` - four rules, in `src/application/coaching/volume.ts`:
@@ -112,8 +116,18 @@ advisors only build the prompt and read the answer.
 - `validateDraftIntensity` - in `intensity.ts`: threshold and interval caps,
   pace held across the block, time at threshold progressing.
 - `validateBootstrapDraftSemantics` - the races: recovery after one, nothing
-  hard just before a tune-up, and no invented finish times.
+  hard just before a tune-up, and no invented finish times. In the plan and
+  week focus a pace is always refused, and a finish time only in a plan with
+  races, in a sentence naming a race or an event, so « Alterner 4:00 de
+  course et 1:00 de marche » is a session, not a goal.
+- While returning, the session checks in `draftRules.ts`: every session easy
+  or recovery, no strides, no long run, nothing faster than the guidance's
+  pace (else the easy zone) and nothing above its heart rate (else zone 2).
+  The intensity caps need a threshold pace a returning athlete may not have.
 - `validateAvailableWeekdays` - every run lands on an available weekday.
+- `validateWorkoutDescriptions` - a description is not the title again, and
+  a quality session's is not copied word for word into another week (outside
+  a return, whose one line its own rules set).
 - `validateDraftNames` - in `workoutNames.ts`, last because a name is the
   cheapest thing to correct: "Threshold · 3 × 8′ @ 4:25", at most 28
   characters, × and ′, no " - ", no total distance or duration, a pace and
@@ -127,8 +141,11 @@ would produce. Every session it adds or rewrites must be written as above
 and land on an available weekday, with one run a day and no week pushed past
 `runsPerWeek`. It may always take load away; whatever it adds must fit the
 volume ceiling, long-session and ramp bounds and the intensity caps and pace
-hold, judged only on the weeks it added to. A title it writes follows the
-naming rules; one the plan already held is kept as it was written. The
+hold, judged only on the weeks it added to. While returning, every session
+it writes is held to the return's session checks. A title it writes follows the
+naming rules; one the plan already held is kept as it was written, but the
+figures in it must still match blocks the change rewrote: a lighter week that
+cuts "Easy · 54 min + 6 strides" to 43 minutes renames it. The
 floor, the reduced-week rules, the "fewer runs" explanation, threshold
 progression and the race rules stay with bootstrap: they refuse exactly the
 easing an adaptation is for.
