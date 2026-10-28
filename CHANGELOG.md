@@ -47,6 +47,11 @@ All notable changes to this project are documented in this file.
 - Runs older than 90 days get a verdict again: once the recent runs are written, the backfill pool takes the older
   ones, newest first, within its own daily quota. The pass reports them as `beyondHorizon`.
 - Today's prompt names the last run and today's session in plain words, never Garmin's "VO2Max" or "(Base)".
+### Fixed
+
+- Explore's Districts card no longer counts forever when the coverage worker stops answering: after 30 s it shows
+  the error with a Retry, which starts a fresh worker; a coverage that failed outright gets the same Retry.
+- Smooth scrolling is off under "Reduce motion".
 
 ## [3.3.0] - 2026-10-28
 
