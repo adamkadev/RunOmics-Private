@@ -86,6 +86,7 @@ All notable changes to this project are documented in this file.
   "No streak yet" rather than a bare 0.
 - French: the morning check-in names « Humeur », not "Mood". Running jargon (Splits, RPE) stays in English.
 - Smooth scrolling is off under "Reduce motion".
+- French: the map page is « Carte » in the sidebar and for screen readers, not "Heatmap".
 
 ## [3.3.0] - 2026-10-28
 

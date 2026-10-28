@@ -62,7 +62,7 @@ export const fr = {
       activities: 'Activités',
       plan: 'Plan',
       analytics: 'Analyses',
-      heatmap: 'Heatmap',
+      heatmap: 'Carte',
       profile: 'Progression',
       settings: 'Réglages',
     },
@@ -272,7 +272,7 @@ export const fr = {
       back: 'Progression',
     },
     map: {
-      title: 'Heatmap',
+      title: 'Carte',
       area: 'Zone',
       areas: 'Zones',
       areasSummary: (areas: number, runs: number) =>
