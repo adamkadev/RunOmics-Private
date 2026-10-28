@@ -180,6 +180,21 @@ describe('generateInsight (French locale)', () => {
       })
     ).toBe('unexpectedly ok')
   })
+
+  it('rejects a stop rule or a symptom warning, which the French athlete never reads', async () => {
+    expect(
+      await reasonForFr({ headline: 'Sortie facile', body: 'Cours en aisance, et arrête-toi si la douleur revient.' })
+    ).toBe('french stop signal')
+    expect(
+      await reasonForFr({ headline: 'Sortie facile', body: 'Cours en aisance et sans pression, la marche fait partie de la séance.' })
+    ).toBe('unexpectedly ok')
+  })
+})
+
+describe('generateInsight (English locale)', () => {
+  it("leaves English copy alone: no stop signals is the French athlete's rule", async () => {
+    expect(await reasonFor({ headline: 'Easy run', body: 'Stop if it hurts.' })).toBe('unexpectedly ok')
+  })
 })
 
 describe('generateStructuredJson transient failures', () => {

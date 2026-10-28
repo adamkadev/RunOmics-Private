@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { en } from '../en'
 import { fr } from '../fr'
+import { carriesStopSignal } from '@/domain/coaching/stopSignals'
 
 type Node = Record<string, unknown>
 
@@ -68,6 +69,10 @@ describe('French copy', () => {
     const copy = strings(fr)
 
     expect(copy.filter((line) => GENDERED.some((pattern) => pattern.test(line)))).toEqual([])
+  })
+
+  it('carries no stop rule, symptom warning or referral, anywhere in the tree', () => {
+    expect(strings(fr).filter(carriesStopSignal)).toEqual([])
   })
 
   it('reads the whole tree, not a corner of it', () => {

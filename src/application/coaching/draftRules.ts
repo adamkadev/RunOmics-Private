@@ -7,6 +7,7 @@ import type {
   WorkoutRepeatBlock,
   WorkoutSegment,
 } from '@/domain/coaching/types'
+import { asksNoStopSignals, carriesStopSignal } from '@/domain/coaching/stopSignals'
 import type { CoachingContext } from './context'
 import { blockGuideProposals } from './autoregulation'
 import { validateBootstrapDraftSemantics, type BootstrapEvents } from './bootstrapValidation'
@@ -107,13 +108,6 @@ export interface BootstrapRules {
   guidance?: string
 }
 
-/** The guidance's own words, so a stop line the planner writes anyway goes back to it rather than to the athlete. */
-export function asksNoStopSignals(guidance: string | undefined): boolean {
-  return guidance !== undefined && /\bno stop signals?\b/i.test(guidance)
-}
-
-const STOP_SIGNAL = /(?<!\p{L})(?:stop signals?|signaux d'arrêt|stop and see|stop the session|arrête(?:r)? la séance|arrête si|fuites?|pesanteur|leak(?:s|ing)?|heaviness|dragging|urgency|incontinence|pelvi(?:c|en|enne)|périnée|perineum|sage-femme|midwife)(?!\p{L})/iu
-
 type LabelledText = [label: string, text: string | undefined]
 
 function workoutTexts(workout: BootstrapWorkoutDraft): string[] {
@@ -122,7 +116,7 @@ function workoutTexts(workout: BootstrapWorkoutDraft): string[] {
 }
 
 function refuseStopSignals(texts: LabelledText[]): void {
-  const found = texts.find(([, text]) => text !== undefined && STOP_SIGNAL.test(text))
+  const found = texts.find(([, text]) => text !== undefined && carriesStopSignal(text))
   if (found) throw new Error(`${found[0]}: the guidance asks for no stop signals; write no stop rule or symptom warning`)
 }
 

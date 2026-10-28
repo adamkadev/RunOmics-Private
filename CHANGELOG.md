@@ -17,6 +17,10 @@ All notable changes to this project are documented in this file.
   from one runner are never answered 429.
 - Dependabot looks for the Python manifests in `scripts/`, where they are.
 
+### Coaching
+
+- No stop signals for the second athlete, everywhere: the check-in card's French copy drops its stop rule, symptom wording and referral (the pain item reads « Gêne »), the coach's guard reads the French guidance and catches pain, symptom and referral words, and a French Gemini insight carrying one falls back.
+
 ## [3.3.0] - 2026-10-28
 
 The audit release: the second athlete's watch and return to running, life after garth, the coach run through
