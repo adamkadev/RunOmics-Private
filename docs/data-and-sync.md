@@ -129,10 +129,10 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   meditation are skipped, an activity that became a run is dropped, and a session that
   fails is retried the next night while the step reports a partial sync.
 - **Shoes** (`shoes.json`). The nightly workflow runs `scripts/sync_shoes.py` after the sync,
-  through WARP like every garth call, so a pair added or retired in Garmin Connect shows the
+  through WARP like every Connect call, so a pair added or retired in Garmin Connect shows the
   next morning. Without `GARMIN_SECRET`, or when Connect fails, the stored list is kept and a
-  failure counts the night as partial. Once garth's token has expired the step is skipped
-  (see [After garth](#after-garth)).
+  failure counts the night as partial. Once Connect's token has expired the step is skipped
+  (see [Connect token expiry](#connect-token-expiry)).
 - **Shoe picks** (`shoe_choices.json`). The owner picks a run's shoe on its page (Firestore
   `runShoes/{activityId}`) and a default shoe on Shoes (`shoeSettings/default`), both owner-only
   in `firestore.rules`. `GET /api/internal/shoe-choices` returns `{ runs, settings }` and the
@@ -252,12 +252,12 @@ off. A device registered before categories existed has none stored and keeps get
 | `training` | The morning session or rest day, the Monday digest, the Friday goal check-in, a new run, the AI verdict of a run that just landed, an overreaching alert |
 | `shoes` | Shoe wear |
 | `records` | A new record, a quartier past 90 % |
-| `always` | A failed workflow, a stale sync, a data token or the Garmin key about to expire, garth's token found expired, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
+| `always` | A failed workflow, a stale sync, a data token or the Garmin key about to expire, Connect's token found expired, the digest of phone errors, the coaching-block reminder: sent whatever the switches say |
 
 **Operator alerts leave the athlete's deployment.** A second athlete's deployment registers
 her devices, so an `always` push about a dead token or a failed workflow reaches her and not
 the person who can fix it. `sendOpsPush` carries those five - a failed workflow, a data token
-about to expire, garth's token found expired, the digest of phone errors and the coaching-block reminder - and with
+about to expire, Connect's token found expired, the digest of phone errors and the coaching-block reminder - and with
 `OPS_PUSH_URL` and `OPS_PUSH_SECRET` set it POSTs them to the operator's own deployment at
 `/api/internal/ops-push` instead of pushing locally. That route is the one internal route
 guarded by `OPS_PUSH_SECRET` rather than `INTERNAL_NOTIFY_SECRET`, so the second deployment
@@ -286,18 +286,37 @@ link and gets its tag prefixed with the sending profile.
 | An overreaching alert | `/analytics` | `overreaching` |
 | A failed workflow | Its run on GitHub | `workflow-failure:<workflow>` |
 | A token or the Garmin key about to expire, a refused nightly dispatch, a stale sync, the digest of phone errors | `/settings` | `token-expiry`, `garmin-key-expiry`, `sync-dispatch-refused`, `stale-sync`, `client-errors` |
-| garth's token found expired | `/settings` | `connect-expired` |
+| Connect's token found expired | `/settings` | `connect-expired` |
 
-## After garth
+## Connect token expiry
 
-garth's OAuth1 token can no longer be minted (Garmin changed its login in March 2026) and dies
-about a year after it was minted, on a date nothing can read. The Personal API key carries the
-runs on; everything only Connect's private API serves stops.
+`GARMIN_SECRET` holds a [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)
+token store (base64 of `garmin_tokens.json`): a DI OAuth2 access token from `diauth.garmin.com`,
+sent as `Authorization: Bearer` to `connectapi.garmin.com` with garminconnect's Android headers,
+and the refresh token that renews it. `scripts/garmin/auth.py` loads it and keeps RunOmics's own
+httpx requests; garminconnect does only the refresh. The access token lasts about a day, so most
+runs refresh at sign-in; a 401 mid-run refreshes once and retries.
 
-**What the sync does the night the token dies.** `GarminClient` raises `GarminTokenExpired` when
-Garmin answers the token exchange with a 401. A 403 (Cloudflare refusing a datacenter IP, as
-when WARP is down), a 5xx or a network error stays a plain `GarminAuthError`: a partial night,
-tried again tomorrow. On an expired token `sync.py`:
+**How long it stays valid.** Garmin publishes no lifetime for the refresh token, and a refresh may
+return a new one. Locally, `GARMIN_SECRET_WRITEBACK` names the env file whose `GARMIN_SECRET`
+line each refresh rewrites. A GitHub Action cannot write its own secret, so every night refreshes
+from the token stored in the Environment and the refreshed one lasts for that run; the log warns
+when Garmin issued a new refresh token that nothing stored. It keeps working for as long as Garmin
+accepts the stored refresh token, a date nothing can read in advance: `npm run coach:garmin-auth`
+shows the refresh token's own expiry when the token carries one.
+
+**garth tokens until the secrets are rotated.** A `GARMIN_SECRET` minted with garth (base64 of its
+`[oauth1, oauth2]` pair) still loads: `LegacyGarthAuth` exchanges the OAuth1 token for an OAuth2
+token on `connectapi.garmin.com/oauth-service/oauth/exchange/user/2.0`, signed with oauthlib as
+garth signed it, with the consumer pair that garth used (`GARMIN_OAUTH_CONSUMER_KEY` /
+`_SECRET` override it). Each run logs a warning to replace it. Once both Environments hold a
+garminconnect token, the legacy class, the consumer pair and `oauthlib` can go.
+
+**What the sync does the night the token expires.** `GarminClient` raises `GarminTokenExpired` when
+Garmin refuses the refresh with a 400 or 401 (a garth token: the exchange with a 401), or when the
+store has no refresh token left. A 403 (Cloudflare refusing a datacenter IP, as when WARP is
+down), a 429, a 5xx or a network error stays a plain `GarminAuthError`: a partial night, tried
+again tomorrow. On an expired token `sync.py`:
 
 - writes `connect_status.json` as `{"state": "expired", "since": "<the day>"}` and keeps that
   day on later nights;
@@ -312,10 +331,10 @@ Without a Personal API key nothing can read the runs, so the sync still stops wi
 after recording the expiry. A token that works again turns the file to `{"state": "active"}`;
 a deployment that never lost Connect has no file.
 
-**Runbook.** Confirm with `npm run coach:garmin-auth`. If a working way to mint a token exists
-(see *Optional: the garth token* in README.md), put the new token in the profile's
-`GARMIN_SECRET`; the next night records Connect active again. If not, leave `GARMIN_SECRET` as
-it is: each night tries once, costs nothing, and Connect comes back on its own if it can.
+**Runbook.** Confirm with `npm run coach:garmin-auth` (or its per-profile variant). Mint a new
+token with `python scripts/get_secret.py` from a home connection (see *Optional: the Garmin Connect
+token* in README.md), then put it in the profile's GitHub Environment `GARMIN_SECRET` and in its
+`.env.<profile>.local`; the next night records Connect active again.
 
 **Readings mirrored from Connect stop at an age** (`src/domain/sync/garminReadings.ts`), so a
 frozen file never reads as current. Training status counts for 3 days, then Today and the

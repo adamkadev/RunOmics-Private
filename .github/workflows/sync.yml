@@ -85,7 +85,7 @@ jobs:
       RUNOMICS_DATA_DIR: data
 
     steps:
-      # Third-party code (garth, pip packages) runs in this job; the sync pushes with the data repository's own token.
+      # Third-party code (garminconnect, pip packages) runs in this job; the sync pushes with the data repository's own token.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -123,7 +123,7 @@ jobs:
             exit 1
           fi
           if [ -z "$GARMIN_PERSONAL_API_KEY" ]; then
-            echo "::warning::Environment '${{ matrix.profile }}' has no GARMIN_PERSONAL_API_KEY: every run is read through garth, whose token cannot be renewed."
+            echo "::warning::Environment '${{ matrix.profile }}' has no GARMIN_PERSONAL_API_KEY: every run is read through Garmin Connect, whose token is re-minted by hand when Garmin refuses it."
             echo "personal_api=false" >> "$GITHUB_OUTPUT"
           else
             echo "personal_api=true" >> "$GITHUB_OUTPUT"
@@ -202,7 +202,7 @@ jobs:
           key: warp-apt-${{ runner.os }}-${{ steps.week.outputs.iso }}
           restore-keys: warp-apt-${{ runner.os }}-
 
-      # Only garth needs WARP: with a Personal API key the runs still sync without it, so a
+      # Only Garmin Connect needs WARP: with a Personal API key the runs still sync without it, so a
       # failed install or connect is a partial night (no gear, calendar or Connect metrics).
       - name: Install Cloudflare WARP
         id: warp_install
@@ -223,7 +223,7 @@ jobs:
           # log is what makes "which build started failing" answerable later.
           echo "cloudflare-warp $(dpkg-query -W -f='${Version}' cloudflare-warp)"
 
-      # Connect's private API refuses GitHub's datacenter ranges, so garth only reaches it through WARP.
+      # Connect's private API refuses GitHub's datacenter ranges, so it is only reached through WARP.
       - name: Connect Cloudflare WARP
         id: warp
         if: steps.warp_install.outcome == 'success'
@@ -267,7 +267,7 @@ jobs:
 
       - name: Note WARP unavailable
         if: steps.config.outputs.quick != 'true' && steps.warp.outcome != 'success'
-        run: echo "::warning::WARP is unavailable, so runs come through the Personal API alone; garth (gear, calendar, Connect metrics) will likely fail from GitHub's network and the night counts as partial."
+        run: echo "::warning::WARP is unavailable, so runs come through the Personal API alone; Garmin Connect (gear, calendar, Connect metrics) will likely fail from GitHub's network and the night counts as partial."
 
       # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
       # Actions substitutes those textually, before bash parses the line.
@@ -315,7 +315,7 @@ jobs:
           STATUS=$?
           set -e
 
-          # sync.py records garth's token death in connect_status.json: the operator is told once, the night it turns.
+          # sync.py records Connect's token expiry in connect_status.json: the operator is told once, the night it turns.
           if [ "$(connect_state)" = "expired" ]; then
             echo "connect_expired=true" >> "$GITHUB_OUTPUT"
             if [ "$CONNECT_BEFORE" != "expired" ]; then
@@ -345,7 +345,7 @@ jobs:
           fi
           jq -r '.seriesFreshness // {} | to_entries | map("\(.key) \(.value // "none")") | "Newest Garmin samples: " + join(", ")' data/sync_meta.json
 
-      # Through WARP, like every garth call; a failure keeps the stored shoe list and counts the night as partial.
+      # Through WARP, like every Connect call; a failure keeps the stored shoe list and counts the night as partial.
       - name: Sync shoes
         id: shoes
         if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && steps.warp.outcome == 'success' && steps.sync.outputs.connect_expired != 'true'
@@ -521,7 +521,7 @@ jobs:
           jq '{since}' data/connect_status.json > "$RUNNER_TEMP/connect-expired.json"
           printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
             | curl -fsS --max-time 30 -X POST "$APP_URL/api/internal/connect-expired" -H @- --data @"$RUNNER_TEMP/connect-expired.json"
-          echo "::warning::garth's token has expired: Garmin Connect is off until a new one is minted. See 'After garth' in docs/data-and-sync.md."
+          echo "::warning::GARMIN_SECRET has expired: Garmin Connect is off until a new token is minted. See 'Connect token expiry' in docs/data-and-sync.md."
 
       # Both deployments read the data repository at run time: no rebuild, only their cached commit expired.
       - name: Expire the app's data cache

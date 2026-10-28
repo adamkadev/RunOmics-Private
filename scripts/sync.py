@@ -67,7 +67,7 @@ def main() -> int:
     step_warnings.reset()
 
     # The Personal API key reads the activities, resting HR and the athlete's
-    # zones. GARMIN_SECRET (garth) adds what only Connect's private API
+    # zones. GARMIN_SECRET (garminconnect) adds what only Connect's private API
     # serves - gear, the calendar, training status, race predictions - and,
     # alone, reads everything as it did before the key existed.
     api_key = os.environ.get("GARMIN_PERSONAL_API_KEY", "").strip()
@@ -259,8 +259,7 @@ def main() -> int:
 
 
 # What a sign-in that failed raises: a refused credential, Garmin or the
-# network down, a secret that does not parse (garth's requests errors are
-# OSErrors). Anything else is a bug, and stops the night like one.
+# network down, a secret that does not parse (a ValueError). Anything else is a bug, and stops the night like one.
 _SIGN_IN_ERRORS = (GarminAuthError, GarminAPIError, httpx.HTTPError, OSError, ValueError)
 _Client = TypeVar("_Client", PersonalApiClient, GarminClient)
 
@@ -285,7 +284,7 @@ def _open_client(
 def _open_connect(
     stack: ExitStack, secret: str, failed_steps: list[str], *, fallback: bool, dry_run: bool
 ) -> tuple[GarminClient | None, bool]:
-    """Connect's client, and whether garth's token has expired: then Connect is absent, not failing, so not partial."""
+    """Connect's client, and whether its token has expired: then Connect is absent, not failing, so not partial."""
     try:
         connect = _open_client(stack, "Garmin Connect", lambda: GarminClient(secret), failed_steps, fallback=fallback)
     except GarminTokenExpired as exc:
@@ -293,8 +292,10 @@ def _open_connect(
             record_connect_status(expired=True)
         if not fallback:
             raise
-        print(f"Garmin Connect is gone: {exc}\nCarrying on without it; see 'After garth' in docs/data-and-sync.md.")
+        print(f"Garmin Connect is gone: {exc}\nCarrying on without it; see 'Connect token expiry' in docs/data-and-sync.md.")
         return None, True
+    if connect and (notice := connect.credential_notice()):
+        print(f"Warning: {notice}")
     if connect and not dry_run:
         record_connect_status(expired=False)
     return connect, False
