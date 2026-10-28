@@ -44,10 +44,10 @@ function isWalk(step: WorkoutStep, runWalk: boolean): boolean {
   return pace ? pace[0] >= WALK_PACE_FLOOR_SEC_PER_KM : runWalk
 }
 
-function easeRow(key: string, title: string, parts: WorkoutStep[], runWalk: boolean): StepRow {
+function easeRow(key: string, title: string, parts: WorkoutStep[]): StepRow {
   const ranges = parts.flatMap((step) => (step.paceSecPerKm ? [rangeText(step.paceSecPerKm)] : []))
   const seconds = parts.reduce((sum, step) => sum + stepSeconds(step), 0)
-  const detail = parts.every((step) => isWalk(step, runWalk))
+  const detail = parts.every((step) => step.paceSecPerKm && isWalk(step, false))
     ? t.plan.steps.walk
     : ranges.length > 0 ? t.plan.row.pace(ranges.join(' → ')) : t.plan.steps.easy
   return { key, tone: 'ease', fill: EASE_FILL, title, detail, duration: stepLength(seconds) }
@@ -111,7 +111,7 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
   const efforts = list.filter((step) => step.kind === 'effort')
   const runWalk = kind === 'easy' && !strides
 
-  if (warmups.length > 0) rows.push(easeRow('warmup', s.warmup, warmups, runWalk))
+  if (warmups.length > 0) rows.push(easeRow('warmup', s.warmup, warmups))
   if (body) {
     rows.push({ key: 'body', tone: 'work', fill: color, title: label, detail: join(zone, paceText(body)), duration: stepLength(stepSeconds(body)) })
   } else if (efforts.length === 1) {
@@ -132,6 +132,6 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
       duration: setSeconds > 0 ? stepLength(setSeconds) : s.repsShort(reps.length, rep),
     })
   }
-  if (cooldowns.length > 0) rows.push(easeRow('cooldown', s.cooldown, cooldowns, runWalk))
+  if (cooldowns.length > 0) rows.push(easeRow('cooldown', s.cooldown, cooldowns))
   return rows
 }

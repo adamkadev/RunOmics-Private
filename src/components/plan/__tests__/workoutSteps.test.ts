@@ -95,8 +95,8 @@ describe('walking in the steps list', () => {
   const details = (steps: WorkoutStep[], kind: 'easy' | 'quality', type: 'Base' | 'Threshold' = 'Base') =>
     stepRows({ steps, type, kind, color: COLOR, totalSeconds: 1_380 }).map((r) => r.detail)
 
-  it('calls a run/walk session’s untargeted warm-up, breaks and cool-down a walk', () => {
-    expect(details(runWalk(), 'easy')).toEqual([t.plan.steps.walk, `Z2 · ${t.plan.row.walk('1:00')}`, t.plan.steps.walk])
+  it('calls a run/walk session’s untargeted breaks a walk but its warm-up and cool-down easy', () => {
+    expect(details(runWalk(), 'easy')).toEqual([t.plan.steps.easy, `Z2 · ${t.plan.row.walk('1:00')}`, t.plan.steps.easy])
   })
 
   it('calls any break at a walking pace a walk, whatever the session', () => {

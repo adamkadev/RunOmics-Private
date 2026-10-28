@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Plan
 
+- A run/walk session's warm-up and cool-down without a pace read "facile" instead of "marche"; only a step at a
+  walking pace, and the breaks between runs, are still called a walk.
 - Return to running: the card on Plan and the Comeback tab in Records date the return from the first day after the
   break, not its last day.
 - Return to running: before the first run back the card says only that no run came yet, instead of "—", "0 min"
