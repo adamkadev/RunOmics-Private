@@ -20,7 +20,7 @@ export interface GarminSyncWindow {
   to?: string
 }
 
-function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string> {
+export function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string> {
   return new Set(
     evaluations
       .filter((evaluation) => evaluation.matchStatus === 'matched' && evaluation.prescriptionId)
@@ -184,7 +184,8 @@ export function buildGarminSyncPlan(
   const range = syncRange(window)
   const workouts = workoutsWithin(plan, evaluations, range)
   const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null, options))
-  const syncedIds = new Set(workouts.map((workout) => workout.id))
+  // A session already run keeps its calendar entry: it is history, not one that left the plan.
+  const syncedIds = new Set([...workouts.map((workout) => workout.id), ...completedPrescriptionIds(evaluations)])
 
   const all = [...operations, ...deletions(current, syncedIds, range)].sort(
     (left, right) =>

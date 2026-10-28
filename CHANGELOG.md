@@ -35,6 +35,8 @@ All notable changes to this project are documented in this file.
 
 ### Coach
 
+- **Watch sync keeps a session already run.** Once a session is matched with its run, the Garmin and intervals.icu
+  syncs no longer delete its calendar entry as "no longer in the active future plan" when it falls on today.
 - No stop signals for the second athlete, everywhere: the check-in card's French copy drops its stop rule, symptom wording and referral (the pain item reads « Gêne »), the coach's guard reads the French guidance and catches pain, symptom and referral words, and a French Gemini insight carrying one falls back.
 - **Workout descriptions.** The rules and the answer schema say what a description is for: one sentence of about
   90 characters, in the athlete's language, on what is specific to the session this week, never a definition of its

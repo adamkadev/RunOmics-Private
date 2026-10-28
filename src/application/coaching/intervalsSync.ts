@@ -5,7 +5,7 @@ import {
   type IntervalsEventRecord,
 } from '@/application/ports/IntervalsCalendarGateway'
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
-import { syncRange, workoutsWithin, type GarminSyncOptions, type GarminSyncWindow, type SyncRange } from './garminSync'
+import { completedPrescriptionIds, syncRange, workoutsWithin, type GarminSyncOptions, type GarminSyncWindow, type SyncRange } from './garminSync'
 import { isCourseAwareRace, raceEventFor, withoutCourseAwarePaceTarget } from './garminWorkoutMapping'
 import { stableHash } from './garminSyncState'
 import {
@@ -125,7 +125,8 @@ export function buildIntervalsSyncPlan(
   const range = syncRange(window)
   const workouts = workoutsWithin(plan, evaluations, range)
   const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null, options))
-  const syncedIds = new Set(workouts.map((workout) => workout.id))
+  // A session already run keeps its calendar event: it is history, not one that left the plan.
+  const syncedIds = new Set([...workouts.map((workout) => workout.id), ...completedPrescriptionIds(evaluations)])
   return finish(plan.id, plan.revision, window.today, [...operations, ...deletions(current, syncedIds, range)])
 }
 

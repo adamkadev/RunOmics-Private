@@ -326,6 +326,18 @@ describe('history', () => {
 
     expect(operations).toHaveLength(0)
   })
+
+  it('leaves the calendar entry of a session already run today', () => {
+    const done = workout({ id: 'done', date: TODAY })
+    const state = syncedState([{ id: 'done', date: TODAY, workout: done }])
+    const evaluations = [
+      { prescriptionId: 'done', matchStatus: 'matched' } as unknown as WorkoutEvaluation,
+    ]
+
+    const operations = build(plan([done]), state, evaluations).operations
+
+    expect(operations).toHaveLength(0)
+  })
 })
 
 describe('course-aware races', () => {
