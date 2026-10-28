@@ -67,6 +67,7 @@ export function spanOfWeek(spans: PhaseSpan[], monday: string): PhaseSpan | null
 
 export interface PhaseWeek {
   span: PhaseSpan
+  /** 0 for a block's lead-in: the part week before its first Monday. */
   week: number
   total: number
 }
@@ -79,10 +80,18 @@ export function phaseWeek(spans: PhaseSpan[], monday: string): PhaseWeek | null 
   return { span, week: Math.min(Math.max(week, 1), total), total }
 }
 
-/** General preparation runs block after block, so its week is counted inside the block the coach named. */
+/**
+ * General preparation runs block after block, so its week is counted inside the block the coach named. A block
+ * started midweek opens with a lead-in at week 1's volume; its weeks count from the first Monday, as its targets do.
+ */
 export function generalBlockWeek(phase: PhaseWeek | null, block: { startDate: string; endDate: string }, monday: string): PhaseWeek | null {
   if (phase?.span.key !== 'general') return phase
-  const span = { ...phase.span, startDate: mondayOf(block.startDate), endDate: block.endDate }
+  const leadInMonday = mondayOf(block.startDate)
+  const firstMonday = leadInMonday === block.startDate ? leadInMonday : isoDate(addDays(new Date(`${leadInMonday}T00:00:00`), 7))
+  if (firstMonday > block.endDate) return phaseWeek([{ ...phase.span, startDate: leadInMonday, endDate: block.endDate }], monday) ?? phase
+  const span = { ...phase.span, startDate: firstMonday, endDate: block.endDate }
+  const total = spanWeeks(span)
+  if (monday === leadInMonday && leadInMonday !== firstMonday) return { span, week: 0, total }
   return phaseWeek([span], monday) ?? phase
 }
 

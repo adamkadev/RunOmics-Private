@@ -2203,6 +2203,7 @@ export const fr = {
     } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Semaine', after: `sur ${total}` }),
+      leadIn: 'Semaine de mise en route',
       generalShort: 'Prépa générale',
       raceInWeeks: (race: string, weeks: number) => `${race} dans ${weeks} sem.`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} aujourd’hui` : days === 1 ? `${race} demain` : `${race} dans ${days} jours`),

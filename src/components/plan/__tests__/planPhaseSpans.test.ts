@@ -48,6 +48,16 @@ describe('the week in its phase', () => {
     expect(week('2026-11-02')).toMatchObject({ week: 4, total: 4 })
   })
 
+  it('counts a midweek block from its first Monday, its part week a lead-in', () => {
+    // Wed Oct 14 to Sun Nov 15: a lead-in, then four weeks.
+    const block = { startDate: '2026-10-14', endDate: '2026-11-15' }
+    const plan: PlanCoachingView = { plan: { block, macrocycleStartDate: '2026-10-14' }, workouts: [] }
+    const week = (monday: string) => generalBlockWeek(phaseWeek(planPhaseSpans(plan, []), monday), block, monday)
+    expect(week('2026-10-12')).toMatchObject({ week: 0, total: 4 })
+    expect(week('2026-10-19')).toMatchObject({ week: 1, total: 4 })
+    expect(week('2026-11-09')).toMatchObject({ week: 4, total: 4 })
+  })
+
   it('leaves a race phase counted as it was', () => {
     const phase = phaseWeek(planPhaseSpans(null, GARMIN), '2026-09-21')
     expect(generalBlockWeek(phase, general().plan.block, '2026-09-21')).toBe(phase)

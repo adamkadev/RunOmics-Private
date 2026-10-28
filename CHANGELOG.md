@@ -11,7 +11,8 @@ All notable changes to this project are documented in this file.
 ### Plan
 
 - A plan with no race counts its week inside the current block, so a new four-week block reads "Week 1 of 4",
-  not a week counted from the season's start. The progress hub's block card counts the same way.
+  not a week counted from the season's start. A block started midweek counts from its first Monday and calls the
+  part week before it a lead-in week. The progress hub's block card counts the same way.
 - A run/walk session's warm-up and cool-down without a pace read "facile" instead of "marche"; only a step at a
   walking pace, and the breaks between runs, are still called a walk.
 - Return to running: the card on Plan and the Comeback tab in Records date the return from the first day after the

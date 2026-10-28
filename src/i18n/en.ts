@@ -2373,6 +2373,8 @@ export const en = {
     } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
+      // The part week before a block's first Monday.
+      leadIn: 'Lead-in week',
       generalShort: 'General prep',
       raceInWeeks: (race: string, weeks: number) => `${race} in ${weeks} wk`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} today` : days === 1 ? `${race} tomorrow` : `${race} in ${days} days`),

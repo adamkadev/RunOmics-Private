@@ -57,7 +57,7 @@ function PhaseCard({ name, week, total, race, href, proposals = [] }: { name: st
           ) : name}
         </h2>
         <p className="text-xs text-muted-foreground">
-          {weekOf.before} {week} {weekOf.after}
+          {week === 0 ? p.leadIn : `${weekOf.before} ${week} ${weekOf.after}`}
           {race && ` · ${race}`}
         </p>
       </div>

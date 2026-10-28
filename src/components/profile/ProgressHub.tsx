@@ -104,7 +104,7 @@ function BlockCard({ block }: { block: NonNullable<ProgressHubView['block']> }) 
           <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="block-name"><CoachBlockName fallback={block.name} general={block.general} /></p>
         </div>
         <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" data-testid="block-week">
-          {h.blockWeek(block.week, block.total)}
+          {block.week === 0 ? t.plan.phase.leadIn : h.blockWeek(block.week, block.total)}
           <ChevronRight size={14} aria-hidden="true" />
         </span>
       </div>
