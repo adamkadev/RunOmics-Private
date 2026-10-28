@@ -119,7 +119,7 @@ const NAMES_A_RACE = /(?<!\p{L})(?:races?|racing|parkrun|marathon|half[- ]marath
 
 /** "Alterner 4:00 de course et 1:00 de marche" is a session's length: a finish time only reads as one beside a race. */
 function raceSentences(prose: string, events: TargetEvent[]): string {
-  // Prose shortens "Wine Route - Luxemburg" to "Wine Route".
+  // Prose shortens "Harbour Run - Lisbon" to "Harbour Run".
   const names = events
     .flatMap((event) => event.name.toLowerCase().split(/\s+[-–—]\s+|[,()|/]/))
     .map((name) => name.trim())
