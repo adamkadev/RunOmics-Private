@@ -55,6 +55,25 @@ All notable changes to this project are documented in this file.
 - Splits: a run matched to a planned session whose reps set one pace range is graded against it: the header reads
   "target 7:50–8:45" (« cible ») and "On target" (« Dans la cible ») counts the reps inside it. Without a plan, or
   with reps set by heart rate only, the reps' median ±10 s band stays as before; Spread still shows their evenness.
+### Coach
+
+- **Workout descriptions.** The rules and the answer schema say what a description is for: one sentence of about
+  90 characters, in the athlete's language, on what is specific to the session this week, never a definition of its
+  type nor the title again. The validators refuse a description that repeats its title, and a quality session's
+  description copied word for word into another week (not during a return).
+- **No quality work while returning.** With `returnToRunning` present, a block or a change to it is refused for any
+  session other than easy or recovery, strides, a long run, or running faster than the guidance's pace (else the
+  easy zone) or above its heart rate (else zone 2). It used to pass "VO₂ intervals · 6 × 2′".
+- **Fewer false refusals.** A finish time in the plan or week focus is refused only in a plan with races, in a
+  sentence naming a race or an event, so « Alterner 4:00 de course et 1:00 de marche » or « tenir 20 minutes »
+  passes. A hill session is one whose title, structure or repetitions name a hill: a climb on the route in the
+  description, « montée en charge » or « à côté » no longer reads as one.
+- **Lighter week names.** A lighter week rewrites a timed easy run's minutes in its name ("Easy · 54 min + 6
+  strides" becomes "Easy · 43 min + 6 strides"), and a change to the live plan checks the figures of any name whose
+  blocks it changed.
+- **Monthly renewal.** `npm run coach -- bootstrap` runs without `--replace` from seven days before the block ends,
+  as `docs/profiles.md` describes; earlier it still refuses. A refused answer comes back in the repair prompt with
+  the reason, so the correction edits it.
 
 ## [3.3.0] - 2026-10-28
 

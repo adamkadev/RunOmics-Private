@@ -103,6 +103,8 @@ const NAME_STRUCTURE_SCHEMA = {
   },
 }
 
+const DESCRIPTION_MEANING = "One sentence of about 90 characters in the athlete's language: what is specific to this session this week. Never a definition of the session type, never the title again."
+
 const BOOTSTRAP_WORKOUT_SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -111,7 +113,7 @@ const BOOTSTRAP_WORKOUT_SCHEMA = {
     title: { type: 'STRING' },
     shortName: { type: 'STRING' },
     structure: NAME_STRUCTURE_SCHEMA,
-    description: { type: 'STRING' },
+    description: { type: 'STRING', description: DESCRIPTION_MEANING },
     blocks: { type: 'ARRAY', items: BOOTSTRAP_BLOCK_SCHEMA },
     notes: { type: 'ARRAY', items: { type: 'STRING' } },
   },

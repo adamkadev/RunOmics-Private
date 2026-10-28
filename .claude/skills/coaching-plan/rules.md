@@ -189,3 +189,15 @@ them (design review, Oct 2026).
 - Give every workout a shortName of at most 18 characters for a tight row, the name itself when it already fits: "Threshold 3×8′", "Easy + strides", "Long run".
 - Give a workout with repetitions or extras a structure that states them as its blocks have them: {"reps": 3, "repMinutes": 8, "targetPace": "4:25"} for "Threshold · 3 × 8′ @ 4:25", {"extras": ["6 strides"]} for "Easy · 54 min + 6 strides".
 - A run inherits the name of the session it was, so keep each name specific enough to tell its session apart in a list of runs.
+
+## Describing the workouts
+
+The description is the one line Plan, Today and the watch show under the name. These bullets
+also go to a change to the live plan. `validateWorkoutDescriptions` in
+`src/application/coaching/draftRules.ts` refuses a description that repeats its title, and a
+quality session's description copied word for word into another week.
+
+- Give every workout a description of one sentence, about 90 characters at most, in the athlete's language, saying what is specific to this session this week: its job in the block, what changed since the last one, or the one cue for running it.
+- Never define the session type in the description and never repeat the title: the name already says what kind of session it is. Write "One more repetition than last week, same guide." or « Une répétition de plus que la semaine dernière, même allure. », never "Long-repetition controlled threshold: repetitions held between your two thresholds." or « Seuil contrôlé : répétitions tenues entre tes deux seuils. ».
+- A quality session's place in the block moves from week to week, so its description does too: never copy one word for word into another week.
+- While returning, the description is the one line the return-to-running rules give instead.

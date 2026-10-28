@@ -115,14 +115,30 @@ function fullDistancePaceRanges(workout: CoachingPlanDraft['weeks'][number]['wor
   )
 }
 
-function validateFocusProse(draft: CoachingPlanDraft): void {
+const NAMES_A_RACE = /(?<!\p{L})(?:races?|racing|parkrun|marathon|half[- ]marathon|semi(?:-marathon)?|time trial|compétitions?|competitions?|chrono|course (?:objectif|cible|visée)|\d{1,2}\s?k)(?!\p{L})/iu
+
+/** "Alterner 4:00 de course et 1:00 de marche" is a session's length: a finish time only reads as one beside a race. */
+function raceSentences(prose: string, events: TargetEvent[]): string {
+  // Prose shortens "Wine Route - Luxemburg" to "Wine Route".
+  const names = events
+    .flatMap((event) => event.name.toLowerCase().split(/\s+[-–—]\s+|[,()|/]/))
+    .map((name) => name.trim())
+    .filter((name) => name.length >= 4)
+  return prose
+    .split(/(?<=[.!?])\s+|\n+/)
+    .filter((sentence) => NAMES_A_RACE.test(sentence) || names.some((name) => sentence.toLowerCase().includes(name)))
+    .join('\n')
+}
+
+function validateFocusProse(draft: CoachingPlanDraft, events: TargetEvent[]): void {
   const focusProse: Array<[string, string]> = [
     ['plan.name', draft.name],
     ['plan.focus', draft.focus],
     ...draft.weeks.map((week, index): [string, string] => [`plan.weeks[${index}].focus`, week.focus]),
   ]
   for (const [label, prose] of focusProse) {
-    if (finishTimeClaims(prose).length > 0 || paceClaims(prose).length > 0) {
+    const finishTimes = events.length > 0 ? finishTimeClaims(raceSentences(prose, events)) : []
+    if (finishTimes.length > 0 || paceClaims(prose).length > 0) {
       throw new Error(`${label} must not narrate numeric race targets; use structured event goal data`)
     }
   }
@@ -184,8 +200,8 @@ export function validateBootstrapDraftSemantics(
   strategy: BootstrapEvents,
   context: CoachingContext,
 ): void {
-  validateFocusProse(draft)
   const events = raceEvents(strategy)
+  validateFocusProse(draft, events)
   const workouts = draft.weeks.flatMap((week) => week.workouts)
   validateRacePreparation(draft, strategy)
   const recovery = bootstrapRecoveryFacts(context, strategy.planningStartDate)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { plan } from './fixtures'
-import { renewalDefaults } from '../renewal'
+import { renewalDefaults, renewalDue } from '../renewal'
 
 const block = (endDate: string) => ({ ...plan().block, endDate })
 
@@ -25,5 +25,13 @@ describe('renewalDefaults', () => {
 
   it('offers nothing without a plan to renew', () => {
     expect(renewalDefaults(null, '2026-11-12')).toEqual({})
+  })
+})
+
+describe('renewalDue', () => {
+  it('is due from seven days before the block ends, and after it', () => {
+    expect(renewalDue({ block: block('2026-11-15') }, '2026-11-07')).toBe(false)
+    expect(renewalDue({ block: block('2026-11-15') }, '2026-11-08')).toBe(true)
+    expect(renewalDue({ block: block('2026-11-15') }, '2026-11-20')).toBe(true)
   })
 })

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { BootstrapWorkoutDraft } from '@/application/ports/CoachingAdvisor'
+import type { BootstrapWorkoutDraft, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachingPlan, WorkoutPrescription } from '@/domain/coaching/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
+import { lighterWorkout } from '../autoregulation'
 import { buildCoachingContext } from '../context'
-import { validateAdaptation, validateWorkoutDraft } from '../draftRules'
+import { validateAdaptation, validateWorkoutDescriptions, validateWorkoutDraft } from '../draftRules'
 
 function session(overrides: Partial<BootstrapWorkoutDraft> = {}): BootstrapWorkoutDraft {
   return {
@@ -190,5 +191,95 @@ describe('a change to the live plan', () => {
     const crowded = changed((workouts) => [...workouts, extra('2026-09-16')])
 
     expect(() => validateAdaptation(crowded, changed(rewrite({ title: 'Easy run, shortened', shortName: 'Easy run' }), crowded), context)).not.toThrow()
+  })
+
+  it('checks the figures of a name it kept when the blocks under it changed', () => {
+    const strides: WorkoutPrescription['blocks'][number] = {
+      kind: 'repeat', repetitions: 6, steps: [{ kind: 'strides', target: { durationSeconds: 20 } }, { kind: 'recovery', target: { durationSeconds: 60 } }],
+    }
+    const easy = (seconds: number, title = 'Easy · 54 min + 6 strides') => workout({
+      id: 'workout-easy', date: '2026-09-15', type: 'easy', title, shortName: 'Easy + strides', structure: { extras: ['6 strides'] },
+      description: 'Strides on the flat stretch after the bridge.',
+      blocks: [{ kind: 'effort', target: { durationSeconds: seconds, paceSecPerKm: { min: 330, max: 360 } } }, strides],
+    })
+    const before = changed(() => [easy(3_240)])
+
+    expect(() => validateAdaptation(before, changed(() => [easy(2_580)], before), context)).toThrow(/"Easy · 54 min \+ 6 strides": 54 min is not the length/)
+    expect(() => validateAdaptation(before, changed(() => [lighterWorkout(easy(3_240))!], before), context)).not.toThrow()
+    expect(() => validateAdaptation(before, changed(() => [{ ...easy(3_240), date: '2026-09-16' }], before), context)).not.toThrow()
+  })
+
+  it('refuses a description the change writes that only repeats the title', () => {
+    expect(() => validateAdaptation(current(), changed(rewrite({ title: 'Easy run', shortName: 'Easy run', description: 'Easy run.' })), context))
+      .toThrow(/description: it repeats the title/)
+  })
+})
+
+describe('a hill session', () => {
+  const pacedRepeats = (overrides: Partial<BootstrapWorkoutDraft> = {}, note?: string) => session({
+    title: 'Easy · 5 × 4′',
+    blocks: [{
+      kind: 'repeat',
+      repetitions: 5,
+      steps: [
+        { kind: 'effort', target: { durationSeconds: 240, paceSecPerKm: { min: 420, max: 480 } }, ...(note ? { notes: [note] } : {}) },
+        { kind: 'recovery', target: { durationSeconds: 60 } },
+      ],
+    }],
+    ...overrides,
+  })
+
+  it.each([
+    ['a climb on the route, in the description', pacedRepeats({ description: 'The uphill finish of your loop is fine walked.' })],
+    ['a French climb on the route', pacedRepeats({ description: 'La côte du parc se fait en marchant.' })],
+    ['« montée en charge » in the description', pacedRepeats({ description: 'Petite montée en charge : une minute de plus que la semaine dernière.' })],
+    ['« montée en charge » on a repetition', pacedRepeats({}, 'Montée en charge douce, même allure.')],
+    ['« à côté » on a repetition', pacedRepeats({}, 'Reste à côté du parc.')],
+  ])('accepts paced repetitions with %s', (_, workout) => {
+    expect(check(workout)).not.toThrow()
+  })
+
+  it.each([
+    ['named in the title', pacedRepeats({ title: 'Hill intervals' })],
+    ['named in French in the title', pacedRepeats({ title: 'Côtes · 5 × 4′' })],
+    ['named on the repetition', pacedRepeats({}, 'Strong uphill RPE; tall form.')],
+    ['named in French on the repetition', pacedRepeats({}, 'Montée raide, effort fort.')],
+    ['named in the structure', pacedRepeats({ structure: { extras: ['5 hill repeats'] } })],
+  ])('refuses paced repetitions %s', (_, workout) => {
+    expect(check(workout)).toThrow(/hill efforts must use effort\/RPE guidance/)
+  })
+})
+
+describe('a workout description', () => {
+  const threshold = (date: string, description: string): BootstrapWorkoutDraft => session({ date, type: 'threshold', title: 'Threshold · 3 × 8′ @ 4:25', description })
+  const easy = (date: string, description: string): BootstrapWorkoutDraft => session({ date, description })
+  const block = (...weeks: BootstrapWorkoutDraft[][]): CoachingPlanDraft => ({
+    name: 'Block',
+    focus: 'General preparation',
+    weeks: weeks.map((workouts, index) => ({ startDate: `2026-09-0${index + 1}`, endDate: `2026-09-0${index + 1}`, focus: 'Week', workouts })),
+  })
+
+  it.each([
+    ['Easy run.', 'Easy run'],
+    ['easy RUN', 'Easy run'],
+    ['Threshold 3 × 8′ @ 4:25', 'Threshold · 3 × 8′ @ 4:25'],
+    ['Footing de récupération', 'Footing de recuperation'],
+  ])('refuses "%s" under the title "%s"', (description, title) => {
+    expect(() => validateWorkoutDescriptions(block([session({ title, description })]), false)).toThrow(/repeats the title/)
+  })
+
+  it('refuses a quality session described word for word as one in another week', () => {
+    const repeated = block([threshold('2026-09-01', 'Long reps: settle under the ceiling.')], [threshold('2026-09-08', 'Long reps: settle under the ceiling.')])
+
+    expect(() => validateWorkoutDescriptions(repeated, false)).toThrow(/weeks\[1\]\.workouts\[0\]\.description: word for word .* plan\.weeks\[0\]/)
+    expect(() => validateWorkoutDescriptions(repeated, true)).not.toThrow()
+  })
+
+  it('accepts a quality session that says what changed, and an easy run with the same cue every week', () => {
+    expect(() => validateWorkoutDescriptions(block(
+      [threshold('2026-09-01', 'First week of three: settle under the ceiling.'), easy('2026-09-02', 'Relaxed, flat route.')],
+      [threshold('2026-09-08', 'Same dose as last week, so let the pace settle.'), easy('2026-09-09', 'Relaxed, flat route.')],
+    ), false)).not.toThrow()
+    expect(() => validateWorkoutDescriptions(block([threshold('2026-09-01', 'Hold the ceiling.'), threshold('2026-09-03', 'Hold the ceiling.')]), false)).not.toThrow()
   })
 })

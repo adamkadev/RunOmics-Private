@@ -259,6 +259,20 @@ describe('the changes it would propose', () => {
     expect(lighter.blocks[0]).toMatchObject({ target: { distanceMeters: 6_500 } })
     expect(lighter.blocks[1]).toEqual(easy.blocks[1])
   })
+
+  it('rewrites the minutes of a timed easy run in its name, as it does kilometres', async () => {
+    const { lighterWorkout } = await import('../autoregulation')
+    const timed = (title: string, seconds: number) => workout({
+      type: 'easy', title, shortName: 'Footing 54 min',
+      blocks: [{ kind: 'effort', target: { durationSeconds: seconds, paceSecPerKm: { min: 330, max: 384 } } }],
+    })
+
+    expect(lighterWorkout(timed('Easy · 54 min + 6 strides', 3_240))).toMatchObject({
+      title: 'Easy · 43 min + 6 strides', shortName: 'Footing 43 min', blocks: [{ target: { durationSeconds: 2_580 } }],
+    })
+    expect(lighterWorkout(timed('Easy · 154 min', 3_240))!.title).toBe('Easy · 154 min')
+    expect(lighterWorkout({ ...timed('Footing · 6,5 km', 0), blocks: [{ kind: 'effort', target: { distanceMeters: 6_500 } }] })!.title).toBe('Footing · 5 km')
+  })
 })
 
 describe('the fitness check', () => {
