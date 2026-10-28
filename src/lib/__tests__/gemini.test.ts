@@ -163,6 +163,22 @@ describe('generateInsight (French locale)', () => {
     ).toBe('french elision missing')
   })
 
+  it.each([
+    '12 s au kilomètre de mieux que la dernière fois.',
+    'Les 150 m à grimper ont pesé sur la fin.',
+    'Tu finis 8 s en moins sur la dernière répétition.',
+    'Il faisait 24 °C et la chaleur a pesé.',
+    'Avec 120 m et du vent, la sortie était exigeante.',
+  ])('accepts a unit after a number: %s', async (body) => {
+    expect(await reasonForFr({ headline: 'Séance solide', body })).toBe('unexpectedly ok')
+  })
+
+  it('still rejects a dropped elision in a sentence that has numbers', async () => {
+    expect(await reasonForFr({ headline: 'Séance solide', body: 'Après 12 km, l effort a bien tenu jusqu’au bout.' })).toBe(
+      'french elision missing'
+    )
+  })
+
   it('rejects French text with every accent stripped', async () => {
     expect(
       await reasonForFr({

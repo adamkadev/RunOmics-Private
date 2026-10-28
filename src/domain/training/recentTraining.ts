@@ -1,10 +1,12 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
+import { intendedType } from '@/lib/activityTitle'
 
 export interface RecentTraining {
   /** Monday to today, the calendar week the dashboard's weekly ring counts, not the last seven days. */
   weekRuns: number
   weekKm: number
+  /** The type its name leads with, where it names one: the watch can type a run/walk VO2 max. */
   lastRun: { type: ActivityType; daysAgo: number; distanceKm: number } | null
 }
 
@@ -28,7 +30,7 @@ export function recentTraining(activities: ActivitySummary[], today: string): Re
     weekRuns: week.length,
     weekKm: Math.round(week.reduce((sum, a) => sum + a.distanceKm, 0)),
     lastRun: last
-      ? { type: last.type, daysAgo: day - dayNumber(last.date), distanceKm: Math.round(last.distanceKm) }
+      ? { type: intendedType(last), daysAgo: day - dayNumber(last.date), distanceKm: Math.round(last.distanceKm) }
       : null,
   }
 }

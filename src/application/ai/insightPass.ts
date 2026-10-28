@@ -35,7 +35,7 @@ export interface InsightPassDeps {
 export interface InsightPassOptions {
   /** Run verdicts to write this pass; 0 reports the backlog without spending anything. */
   limit: number
-  /** Queue every outstanding run, not only the recent ones and the record holders. */
+  /** Rank every outstanding run alike, the older ones no longer behind the recent ones and the record holders. */
   ignoreHorizon: boolean
 }
 
@@ -177,8 +177,10 @@ function trackClosedModels(deps: InsightPassDeps) {
 export interface VerdictQueue {
   fresh: RunVerdictContext[]
   rest: RunVerdictContext[]
+  /** Past the horizon, newest first: the backfill pool takes them once the horizon leaves it room. */
+  older: RunVerdictContext[]
   outstanding: number
-  eligible: number
+  beyondHorizon: number
 }
 
 /** A verdict stored before notes were kept counts as written without one, so only runs that have a note go again. */
@@ -193,15 +195,16 @@ export function verdictQueue(
     if (stored?.hash !== runVerdictInsightHash(context)) return true
     return context.note !== undefined && (stored.noteKey ?? '') !== runVerdictNoteKey(context.note)
   })
-  const eligible = ignoreHorizon
-    ? outstanding
-    : outstanding.filter((context) => deservesVerdict(context.activity, source.recordActivityIds, now))
+  const eligible = (context: RunVerdictContext) => ignoreHorizon || deservesVerdict(context.activity, source.recordActivityIds, now)
+  const inside = outstanding.filter(eligible)
+  const older = outstanding.filter((context) => !eligible(context)).sort((a, b) => b.activity.date.localeCompare(a.activity.date))
 
   return {
-    fresh: eligible.filter((context) => isFreshRun(context.activity, now)),
-    rest: eligible.filter((context) => !isFreshRun(context.activity, now)),
-    outstanding: outstanding.length,
-    eligible: eligible.length,
+    fresh: inside.filter((context) => isFreshRun(context.activity, now)),
+    rest: inside.filter((context) => !isFreshRun(context.activity, now)),
+    older,
+    outstanding: inside.length,
+    beyondHorizon: older.length,
   }
 }
 
@@ -279,9 +282,10 @@ export async function runInsightPass(passDeps: InsightPassDeps, surfaces: Insigh
   const today = await runPlan(deps, await surfaces.today(), tally)
   const pbCelebration = await runPlan(deps, await surfaces.pbCelebration(deps.now()), tally)
   const shoeVerdicts = await runPlans(deps, surfaces.shoeVerdicts(), tally)
+  // The horizon only orders the queue: the backfill pool's quota and the clock decide how far past it a pass reaches.
   const backfill = await writeVerdicts(
     deps,
-    [...queue.fresh.slice(fresh.length), ...queue.rest].slice(0, options.limit),
+    [...queue.fresh.slice(fresh.length), ...queue.rest, ...queue.older].slice(0, options.limit),
     written,
     phrasing,
     BACKFILL_POOL
@@ -298,7 +302,7 @@ export async function runInsightPass(passDeps: InsightPassDeps, surfaces: Insigh
     shoeVerdicts,
     runVerdicts: {
       outstanding: queue.outstanding,
-      eligible: queue.eligible,
+      beyondHorizon: queue.beyondHorizon,
       fresh: queue.fresh.length,
       rest: queue.rest.length,
       ...backfill,

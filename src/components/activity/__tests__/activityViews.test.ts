@@ -68,15 +68,15 @@ describe('shareActivity', () => {
     )
   })
 
-  it('carries the written verdict\'s headline and the Overview card\'s tone', () => {
-    expect(shareActivity(ACTIVITY, null, { headline: ' Usual long-run pace, 7 bpm cheaper. ' }).verdict)
+  it('carries the written verdict\'s headline and the tone the Overview card shows with it', () => {
+    expect(shareActivity(ACTIVITY, null, { headline: ' Usual long-run pace, 7 bpm cheaper. ', tone: 'positive' }).verdict)
       .toEqual({ tone: 'positive', headline: 'Usual long-run pace, 7 bpm cheaper.' })
-    expect(shareActivity({ ...ACTIVITY, rpe: 9 }, null, { headline: 'Too hard' }).verdict?.tone).toBe('caution')
+    expect(shareActivity({ ...ACTIVITY, rpe: 2 }, null, { headline: 'Too hard', tone: 'caution' }).verdict?.tone).toBe('caution')
   })
 
   it('has no verdict without a written one, so the card keeps its zones headline', () => {
     expect(shareActivity(ACTIVITY).verdict).toBeNull()
-    expect(shareActivity(ACTIVITY, null, { headline: '  ' }).verdict).toBeNull()
+    expect(shareActivity(ACTIVITY, null, { headline: '  ', tone: 'positive' }).verdict).toBeNull()
   })
 })
 

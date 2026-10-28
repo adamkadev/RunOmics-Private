@@ -7,7 +7,8 @@ const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 /** 3.8 Flash thinks long even at 'low'; 45 s still leaves a 280 s pass room for a fallback model after a timeout. */
 export const CALL_TIMEOUT_MS = 45_000
 
-const FRENCH_ELISION_MISSING = /\b(?:[LldDsScCnNjJtTmM]|[Qq]ue)\s+(?=[aeiouyàâäéèêëïîôöùûühAEIOUYÀÂÄÉÈÊËÏÎÔÖÙÛÜH])/
+/** A unit after a number ("12 s au", "24 °C et") is no elided word. */
+const FRENCH_ELISION_MISSING = /(?<![\d°]\s?)\b(?:[LldDsScCnNjJtTmM]|[Qq]ue)\s+(?=[aeiouyàâäéèêëïîôöùûühAEIOUYÀÂÄÉÈÊËÏÎÔÖÙÛÜH])/
 const FRENCH_ACCENT = /[àâäéèêëïîôöùûüçÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/
 const FRENCH_ACCENT_CHECK_MIN_LENGTH = 40
 

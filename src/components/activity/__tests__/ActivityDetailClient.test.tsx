@@ -46,6 +46,7 @@ function renderDetail(props: Partial<DetailProps> = {}) {
       name="Threshold run"
       dateLabel="Sun, Oct 18"
       aiVerdict={null}
+      verdictTone="positive"
       dynamicsBaseline={null}
       {...props}
     />,

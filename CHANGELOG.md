@@ -33,6 +33,20 @@ All notable changes to this project are documented in this file.
 - Plan › Month: every run between the plan's first and last day counts against it, so a session run a day early
   or late, or an extra run, is no longer left out; the "plan covers" caption shows only when the plan starts or
   ends inside the month.
+### Fixed
+
+- A run/walk (run blocks with walk breaks, on a day planned as easy) gets a verdict as a run/walk: blocks completed at
+  a talking pace, never "an interval session" held against the last VO2 max session, even when the watch typed it
+  VO2 max. The coach's session for the run now outranks the watch's plan and its guessed type. Today reads such a
+  day as easy.
+- A run with no RPE is no longer written up as having drifted from its purpose: the verdict judges it on its reps
+  and zones, or, with nothing measured, says no effort was logged and sticks to the facts.
+- The activity card's tone badge and the written verdict now come from the same judgement, so they agree.
+- French copy with a unit after a number ("12 s au kilomètre", "24 °C et") is no longer rejected as a missing
+  elision.
+- Runs older than 90 days get a verdict again: once the recent runs are written, the backfill pool takes the older
+  ones, newest first, within its own daily quota. The pass reports them as `beyondHorizon`.
+- Today's prompt names the last run and today's session in plain words, never Garmin's "VO2Max" or "(Base)".
 
 ## [3.3.0] - 2026-10-28
 

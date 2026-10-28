@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
-import type { CoachingPlan } from '@/domain/coaching/types'
+import type { CoachingPlan, WorkoutEvaluation } from '@/domain/coaching/types'
 import { plan, workout as prescription } from '@/domain/coaching/__tests__/fixtures'
-import { runVerdictInsightHash } from '@/domain/ai/runVerdictInsight'
+import { runVerdictInsightHash, runVerdictJudgement } from '@/domain/ai/runVerdictInsight'
 
 const { getAllActivities, getAllPlannedWorkouts, readVerifiedInsight, coaching } = vi.hoisted(() => ({
   getAllActivities: vi.fn(),
   getAllPlannedWorkouts: vi.fn(),
   readVerifiedInsight: vi.fn(),
-  coaching: { getCurrentPlan: vi.fn(), getArchivedPlans: vi.fn() },
+  coaching: { getCurrentPlan: vi.fn(), getArchivedPlans: vi.fn(), getEvaluations: vi.fn() },
 }))
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities }))
@@ -23,7 +23,8 @@ vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', async (impo
   return { ...actual, readVerifiedInsight }
 })
 
-const { getRunVerdictContexts, getRunVerdictInsight } = await import('../GetRunVerdictInsight')
+const { getRunVerdictContexts, getRunVerdict } = await import('../GetRunVerdictInsight')
+const getRunVerdictInsight = async (run: Activity) => (await getRunVerdict(run)).insight
 
 const INSIGHT = { headline: 'Held together to the last rep', body: 'Only two seconds a kilometre of fade.' }
 
@@ -55,11 +56,16 @@ const workout = (date: string, name = 'Threshold 3x8'): PlannedWorkout => ({
   durationSecs: 2700,
 })
 
-function withHistory(activities: Activity[], planned: PlannedWorkout[] = [], plans: { current?: CoachingPlan | null; archived?: CoachingPlan[] } = {}) {
+function withHistory(
+  activities: Activity[],
+  planned: PlannedWorkout[] = [],
+  plans: { current?: CoachingPlan | null; archived?: CoachingPlan[]; evaluations?: WorkoutEvaluation[] } = {}
+) {
   getAllActivities.mockReturnValue(activities)
   getAllPlannedWorkouts.mockReturnValue(planned)
   coaching.getCurrentPlan.mockReturnValue(plans.current ?? null)
   coaching.getArchivedPlans.mockReturnValue(plans.archived ?? [])
+  coaching.getEvaluations.mockReturnValue(plans.evaluations ?? [])
 }
 
 describe('getRunVerdictContexts', () => {
@@ -124,6 +130,15 @@ describe('getRunVerdictContexts', () => {
     expect(coaching.getArchivedPlans).toHaveBeenCalledTimes(1)
   })
 
+  it("attaches the type of the coach's session the run was matched to, which outranks the watch's guess", () => {
+    const matched = { prescriptionId: prescription().id, activityId: 'a', matchStatus: 'matched' } as WorkoutEvaluation
+    withHistory([activity('a', '2026-09-09'), activity('b', '2026-09-10')], [], { current: plan(), evaluations: [matched] })
+
+    const [run, other] = getRunVerdictContexts()
+    expect(run?.sessionType).toBe('Threshold')
+    expect(other?.sessionType).toBeNull()
+  })
+
   it('still builds every context when a plan file cannot be read', () => {
     withHistory([activity('a', '2026-09-09')])
     coaching.getCurrentPlan.mockImplementation(() => {
@@ -143,7 +158,7 @@ describe('getRunVerdictContexts', () => {
   })
 })
 
-describe('getRunVerdictInsight', () => {
+describe('getRunVerdict', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     withHistory([activity('a', '2026-07-20'), activity('b', '2026-07-18')])
@@ -173,6 +188,34 @@ describe('getRunVerdictInsight', () => {
   })
 })
 
+describe('getRunVerdict tone', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    readVerifiedInsight.mockResolvedValue(INSIGHT)
+  })
+
+  it('gives the card the tone the written verdict was judged with', async () => {
+    const run = activity('a', '2026-07-20', { rpe: 4 })
+    withHistory([run])
+    const verdict = await getRunVerdict(run)
+
+    expect(verdict).toEqual({ insight: INSIGHT, tone: runVerdictJudgement(getRunVerdictContexts()[0]!).tone })
+    expect(verdict.tone).toBe('neutral')
+  })
+
+  it('caps the tone when the reps missed the plan, as the prompt does, whatever the RPE says', async () => {
+    const rep = (pace: number) => ({ type: 'interval_active', durationSec: 420, distanceM: (420 / pace) * 1000, avgSpeedMs: 0, avgHr: 175, laps: [] })
+    const run = activity('a', '2026-07-20', { type: 'Threshold', rpe: 7, splits: [rep(250), rep(251), rep(250)] as never })
+    const plan3x7 = {
+      ...workout('2026-07-20'),
+      steps: [1, 2, 3].map((n) => ({ kind: 'effort' as const, minutes: 7, rep: n, paceSecPerKm: [262, 268] as [number, number] })),
+    }
+    withHistory([run], [plan3x7])
+
+    expect((await getRunVerdict(run)).tone).toBe('neutral')
+  })
+})
+
 describe('getRunVerdictInsight read cost', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -195,7 +238,7 @@ describe('getRunVerdictInsight read cost', () => {
     process.env.NEXT_PHASE = 'phase-production-build'
     try {
       const fresh = await import('../GetRunVerdictInsight')
-      await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))
+      await fresh.getRunVerdict(activity('a', '2026-07-20'))
 
       expect(readVerifiedInsight).toHaveBeenCalledWith('runVerdict_a', expect.any(String))
     } finally {

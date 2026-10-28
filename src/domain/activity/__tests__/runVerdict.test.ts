@@ -64,9 +64,12 @@ describe('runVerdictTone', () => {
     expect(runVerdictTone(run({ type: 'Race', distanceKm: 10, rpe: 9, aerTrainingEffect: 4.9 }))).toBe('positive')
   })
 
-  it('falls back to the training effect when no RPE was logged', () => {
+  it('falls back to a training effect that shows the work when no RPE was logged', () => {
     expect(runVerdictTone(run({ aerTrainingEffect: 3.2 }))).toBe('positive')
-    expect(runVerdictTone(run({ aerTrainingEffect: 1.5 }))).toBe('neutral')
-    expect(runVerdictTone(run({}))).toBe('neutral')
+  })
+
+  it('leaves a run unrated, never off target, when neither an RPE nor a telling training effect was logged', () => {
+    expect(runVerdictTone(run({ aerTrainingEffect: 1.5 }))).toBeNull()
+    expect(runVerdictTone(run({}))).toBeNull()
   })
 })

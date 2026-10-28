@@ -30,9 +30,13 @@ function isTypeWord(words: string): boolean {
  * session at too low a heart rate becomes tempo), but the session was what it was named.
  */
 export function intendedType(activity: { type: ActivityType; description?: string | null }): ActivityType {
-  const name = activity.description?.trim() ?? ''
-  const leading = name.split(/\s[-–—·]\s|\d/u)[0] ?? ''
-  return TYPE_WORDS.get(typeKey(leading)) ?? activity.type
+  return namedType(activity.description) ?? activity.type
+}
+
+/** The type a session's name leads with ("Footing 4 × 6′" is easy); null when it names none, or several. */
+export function namedType(name: string | null | undefined): ActivityType | null {
+  const leading = (name?.trim() ?? '').split(/\s[-–—·]\s|\d/u)[0] ?? ''
+  return TYPE_WORDS.get(typeKey(leading)) ?? null
 }
 
 /** A set of reps ("3 × 8", "4x3"), a length in minutes or seconds ("8′", "7'"), a pace ("@ 4:25") or a body and its extras ("54 min + 6 strides"). */
