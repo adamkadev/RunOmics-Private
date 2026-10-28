@@ -36,7 +36,7 @@ describe('trimp of a run whose heart rate is not trusted', () => {
   })
 
   it("takes the middle of the run type's expected RPE without one", () => {
-    const run = { avgHeartRate: null, durationSeconds: 1800, hrUntrusted: 'beforeReliable' as const, rpe: null, type: 'Base' as const, distanceKm: 4 }
+    const run = { avgHeartRate: null, durationSeconds: 1800, hrUntrusted: 'marked' as const, rpe: null, type: 'Base' as const, distanceKm: 4 }
     expect(trimp(run)).toBeCloseTo(2 * 30 * 0.42, 6)
   })
 
@@ -49,7 +49,7 @@ describe('trimp of a run whose heart rate is not trusted', () => {
 
   it('names where the load came from', () => {
     expect(loadSource({ avgHeartRate: 150, durationSeconds: 600 })).toBe('heartRate')
-    expect(loadSource({ avgHeartRate: null, durationSeconds: 600, hrUntrusted: 'wrist' })).toBe('effort')
+    expect(loadSource({ avgHeartRate: null, durationSeconds: 600, hrUntrusted: 'marked' })).toBe('effort')
     expect(loadSource({ avgHeartRate: null, durationSeconds: 600 })).toBeNull()
   })
 })

@@ -9,7 +9,7 @@ import { isKeyPrescription } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
 import { zoneColor } from '@/lib/colors'
 import { ZONE_TILE_SHARE } from '@/lib/themeTokens'
-import { isoDate, startOfWeek } from '@/lib/calendarDate'
+import { DAY_MS, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatDate, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -117,6 +117,32 @@ function nextKeySession(
   return null
 }
 
+// Sessions this close still read as one plan; a longer gap is a plan that stopped.
+const PLAN_GAP_DAYS = 7
+
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS)
+
+/** The stretch of plan around the month's first and last session, reaching past the month's edges. */
+function planExtent(
+  first: string,
+  last: string,
+  byDatePlanned: Map<string, PlannedWorkout>,
+  byDateCoach: ReadonlyMap<string, PlanPrescriptionView[]> | undefined,
+  coaching: PlanCoachingView | null,
+): { from: string; to: string } {
+  const dates = [
+    ...new Set([
+      ...[...byDatePlanned.keys(), ...(byDateCoach?.keys() ?? [])].filter((date) => plannedFor(date, byDatePlanned, byDateCoach) !== null),
+      ...(coaching ? [coaching.plan.block.startDate, coaching.plan.block.endDate] : []),
+    ]),
+  ].sort()
+  let from = first
+  let to = last
+  for (const date of [...dates].reverse()) if (date < from && daysBetween(date, from) <= PLAN_GAP_DAYS) from = date
+  for (const date of dates) if (date > to && daysBetween(to, date) <= PLAN_GAP_DAYS) to = date
+  return { from, to }
+}
+
 const QUALITY_ORDER: ActivityType[] = ['Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
 
 function Swatch({ style }: { style: CSSProperties }) {
@@ -201,20 +227,16 @@ export function MonthView({
         future: monday > today,
       })
     }
-    // A plan that starts partway through the month can't be measured against
-    // the whole month's km.
     const covered = rows.flatMap((row) => row.cells).filter((c) => !c.outside && c.planned !== null)
-    const firstPlanned = covered[0]
-    const lastPlanned = covered[covered.length - 1]
-    const ranInPlanKm = covered.reduce((sum, c) => sum + c.ranKm, 0)
-    const planSpan =
-      firstPlanned && lastPlanned && (firstPlanned.date > monthStart || lastPlanned.date < monthEnd)
-        ? { from: firstPlanned.date, to: lastPlanned.date }
-        : null
+    const extent = covered.length ? planExtent(covered[0]!.date, covered.at(-1)!.date, byDatePlanned, byDateCoach, coaching) : null
+    const from = extent && extent.from > monthStart ? extent.from : monthStart
+    const to = extent && extent.to < monthEnd ? extent.to : monthEnd
+    const ranInPlanKm = rows.flatMap((row) => row.cells).filter((c) => !c.outside && c.date >= from && c.date <= to).reduce((sum, c) => sum + c.ranKm, 0)
+    const planSpan = extent && (from > monthStart || to < monthEnd) ? { from, to } : null
     return { rows, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes: QUALITY_ORDER.filter((type) => quality.has(type)), hasLong }
-  }, [year, month, monthStart, monthEnd, byDate, byDatePlanned, byDateCoach, spans, today, skipped])
+  }, [year, month, monthStart, monthEnd, byDate, byDatePlanned, byDateCoach, coaching, spans, today, skipped])
 
-  /** The km the plan's own days got, so the two sides of "of" are the same days. */
+  /** Every run inside the plan's stretch of the month, so the two sides of "of" cover the same days. */
   const againstPlanKm = planSpan === null ? ranKm : ranInPlanKm
 
   const phaseColor = (span: PhaseSpan | null) => (!span ? 'transparent' : span === currentSpan ? 'var(--accent)' : 'var(--zone-1)')

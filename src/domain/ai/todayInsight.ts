@@ -3,9 +3,11 @@ import type { ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activit
 import type { ReadinessTone } from '@/domain/training/readiness'
 import type { RecentTraining } from '@/domain/training/recentTraining'
 import { MIN_REP_SECONDS } from '@/domain/activity/sessionExecution'
+import { isRunWalkPlan } from '@/domain/activity/runWalk'
 import { t } from '@/i18n'
 import { insightHash } from './insightHash'
 import { avoidClause, CARD_PROMPT_VERSION, promptVersion, systemInstruction } from './prompt'
+import { isCoachTypeWord, SESSION_LABEL } from './sessionLabel'
 
 export const TODAY_SURFACE = 'todayHero'
 // The body: two lines of the hero's 14 px text on a 390 pt phone, about 80 characters.
@@ -27,6 +29,8 @@ export function sessionKind(planned: PlannedWorkout | null): SessionKind {
   if (!planned) return 'rest'
   if (planned.type === 'Race') return 'race'
   if (planned.type && QUALITY_TYPES.has(planned.type)) return 'quality'
+  // A run/walk's run blocks are reps of a minute or more, and its day is still an easy one.
+  if (isRunWalkPlan(planned)) return 'easy'
   // Short reps beside a continuous block are strides; with no such block they are the session.
   const seconds = (step: WorkoutStep) => step.seconds ?? step.minutes * 60
   const efforts = planned.steps?.filter((step) => step.kind === 'effort') ?? []
@@ -37,6 +41,13 @@ export function sessionKind(planned: PlannedWorkout | null): SessionKind {
 
 function ranToday(recent: RecentTraining): boolean {
   return recent.lastRun?.daysAgo === 0
+}
+
+/** "Base" is Garmin's word for an easy session: a name that is only a type word reads as its plain label. */
+function plannedName(planned: PlannedWorkout): string {
+  const name = planned.name?.trim()
+  if (name && !isCoachTypeWord(name)) return name
+  return SESSION_LABEL[planned.type ?? 'Base']
 }
 
 function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
@@ -52,13 +63,13 @@ function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
     form: Math.round(status.tsbNow),
     fitnessTrend: Math.round(status.ctlDelta),
     fatigueTrend: Math.round(status.atlDelta),
-    planned: plannedWorkout ? (plannedWorkout.name ?? plannedWorkout.type) : 'rest',
-    plannedType: plannedWorkout?.type ?? null,
+    planned: plannedWorkout ? plannedName(plannedWorkout) : 'rest',
+    plannedType: plannedWorkout?.type && plannedWorkout.type !== 'Base' ? SESSION_LABEL[plannedWorkout.type] : null,
     plannedMinutes: plannedWorkout?.durationSecs ? Math.round(plannedWorkout.durationSecs / 60) : null,
     completedToday: kind !== 'rest' && ranToday(recent),
     weekRuns: recent.weekRuns,
     weekKm: recent.weekKm,
-    lastRunType: recent.lastRun?.type ?? null,
+    lastRunType: recent.lastRun ? SESSION_LABEL[recent.lastRun.type] : null,
     lastRunDaysAgo: recent.lastRun?.daysAgo ?? null,
     lastRunKm: recent.lastRun?.distanceKm ?? null,
   }
@@ -160,7 +171,7 @@ function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {
       : lastRun.daysAgo === 1
         ? 'yesterday'
         : `${lastRun.daysAgo} days ago`
-  return `- Last run: ${lastRun.distanceKm} km ${lastRun.type}, ${when}`
+  return `- Last run: ${SESSION_LABEL[lastRun.type]} of ${lastRun.distanceKm} km, ${when}`
 }
 
 export function todayInsightPrompt(context: TodayContext, recentHeadlines: string[]): string {

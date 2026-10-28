@@ -13,6 +13,8 @@ T = TypeVar("T")
 # 429 waits out Garmin's rate-limit window; network errors and 5xx back off 2s/8s/32s,
 # because GitHub Actions runners see both regularly.
 _RATE_LIMIT_PAUSE = 60.0
+# Three retries of one call must stay well inside the sync job's 60-minute timeout, whatever Garmin asks for.
+_RETRY_AFTER_CAP = 300.0
 _BACKOFF_BASE = 2.0
 _MAX_ATTEMPTS = 4
 
@@ -31,7 +33,9 @@ def retry_transient(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         except Exception as exc:
             if not _is_transient(exc) or attempt == _MAX_ATTEMPTS:
                 raise
-            if isinstance(exc, GarminAPIError) and exc.status_code == 429:
+            if isinstance(exc, GarminAPIError) and exc.retry_after is not None:
+                pause = min(exc.retry_after, _RETRY_AFTER_CAP)
+            elif isinstance(exc, GarminAPIError) and exc.status_code == 429:
                 pause = _RATE_LIMIT_PAUSE
             else:
                 pause = _BACKOFF_BASE * (4 ** (attempt - 1))

@@ -37,14 +37,15 @@ export function expectedRpe(activity: Pick<Effort, 'type' | 'distanceKm' | 'dura
     : [easiest, hardest]
 }
 
-export function runVerdictTone(activity: Effort): VerdictTone {
+/** Null when nothing rates the effort: a low Training Effect is what an easy run should show, and a Forerunner 55 shows none. */
+export function runVerdictTone(activity: Effort): VerdictTone | null {
   const { type, rpe, aerTrainingEffect } = activity
 
   if (type !== 'Race' && aerTrainingEffect !== null && aerTrainingEffect >= OVERREACHING_TRAINING_EFFECT) {
     return 'caution'
   }
   if (rpe === null) {
-    return aerTrainingEffect !== null && aerTrainingEffect >= 3 ? 'positive' : 'neutral'
+    return aerTrainingEffect !== null && aerTrainingEffect >= 3 ? 'positive' : null
   }
 
   const [easiest, hardest] = expectedRpe(activity)

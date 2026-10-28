@@ -38,12 +38,16 @@ export function logRejectedRequest(req: NextRequest, reason: RejectionReason): v
   console.warn(JSON.stringify({ level: 'warn', event: 'request-rejected', route: req.nextUrl.pathname, reason }))
 }
 
+/** Only refused secrets count: a nightly sync makes more authorised calls from one runner address than the budget. */
 export function guardInternalRequest(req: NextRequest, authorize: InternalAuthorizer = isAuthorizedInternalRequest): NextResponse | null {
-  if (!limiter.take(clientIp(req), Date.now()).ok) {
+  const ip = clientIp(req)
+  const now = Date.now()
+  if (limiter.exhausted(ip, now)) {
     logRejectedRequest(req, 'rate-limited')
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
   if (!authorize(req)) {
+    limiter.take(ip, now)
     logRejectedRequest(req, 'unauthorized')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

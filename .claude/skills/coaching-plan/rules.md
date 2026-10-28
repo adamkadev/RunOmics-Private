@@ -156,7 +156,7 @@ The reasoning behind these rules, and the training science they came from, is in
 - While returning, keep the watch simple: write no notes on any step and no workout notes, and make the workout description one short line in the athlete's language: the stop rule below, or, when the guidance asks for no stop signals, a few plain words about the run. Guide the running by effort - the talk test the guidance gives, or, when it gives none, talking in full sentences - and write that, with any walk-down rule the guidance gives with a heart-rate zone (walk above one heart rate until back under another), in week.focus, which the app shows and the watch does not. When the guidance gives no zone there is no heart-rate target, and no heart-rate figure goes on the watch.
 - While returning, progress one step at a time - longer running intervals first, then shorter walks - and only when the latest notes, RPE and check-ins say the sessions felt comfortable. After a hard session, pain or a symptom, repeat the week rather than progress it, and say why in week.focus.
 - While returning, prescribe no quality work: no tempo, threshold, VO2max, anaerobic, sprint, race-pace or hill session, no strides and no long run. Every session is easy or recovery.
-- While returning, make the stop rule every workout's one-line description, unless the guidance says "no stop signals": then write no stop rule or symptom warning anywhere in the plan. The stop rule: stop, and see the athlete's clinician, on pain at an injured site, or, after pregnancy, on leaking or urgency, heaviness, pressure or dragging in the pelvis, or pelvic or lower-back pain. Defer to the clinician, through the guidance when it carries their instructions, on when running may progress; never diagnose, prescribe treatment or promise a date the athlete will be back by.
+- While returning, make the stop rule every workout's one-line description, unless the guidance says "no stop signals" (in French, « pas de signaux d'arrêt »): then write no stop rule or symptom warning anywhere in the plan. The stop rule: stop, and see the athlete's clinician, on pain at an injured site, or, after pregnancy, on leaking or urgency, heaviness, pressure or dragging in the pelvis, or pelvic or lower-back pain. Defer to the clinician, through the guidance when it carries their instructions, on when running may progress; never diagnose, prescribe treatment or promise a date the athlete will be back by.
 
 ## Encoding the workouts
 
@@ -189,3 +189,15 @@ them (design review, Oct 2026).
 - Give every workout a shortName of at most 18 characters for a tight row, the name itself when it already fits: "Threshold 3×8′", "Easy + strides", "Long run".
 - Give a workout with repetitions or extras a structure that states them as its blocks have them: {"reps": 3, "repMinutes": 8, "targetPace": "4:25"} for "Threshold · 3 × 8′ @ 4:25", {"extras": ["6 strides"]} for "Easy · 54 min + 6 strides".
 - A run inherits the name of the session it was, so keep each name specific enough to tell its session apart in a list of runs.
+
+## Describing the workouts
+
+The description is the one line Plan, Today and the watch show under the name. These bullets
+also go to a change to the live plan. `validateWorkoutDescriptions` in
+`src/application/coaching/draftRules.ts` refuses a description that repeats its title, and a
+quality session's description copied word for word into another week.
+
+- Give every workout a description of one sentence, about 90 characters at most, in the athlete's language, saying what is specific to this session this week: its job in the block, what changed since the last one, or the one cue for running it.
+- Never define the session type in the description and never repeat the title: the name already says what kind of session it is. Write "One more repetition than last week, same guide." or « Une répétition de plus que la semaine dernière, même allure. », never "Long-repetition controlled threshold: repetitions held between your two thresholds." or « Seuil contrôlé : répétitions tenues entre tes deux seuils. ».
+- A quality session's place in the block moves from week to week, so its description does too: never copy one word for word into another week.
+- While returning, the description is the one line the return-to-running rules give instead.

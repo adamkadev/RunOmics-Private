@@ -9,6 +9,8 @@ import zipfile
 from collections.abc import Callable
 from typing import Any
 
+from .retry import retry_transient
+
 
 def collect_activity_rows(
     get_activities: Callable[..., list[dict[str, Any]]], *, running_only: bool = True
@@ -19,7 +21,7 @@ def collect_activity_rows(
     limit = 100
 
     while True:
-        batch = get_activities(start=start, limit=limit, running_only=running_only)
+        batch = retry_transient(get_activities, start=start, limit=limit, running_only=running_only)
         if not batch:
             break
         rows.update((str(a["activityId"]), a) for a in batch)

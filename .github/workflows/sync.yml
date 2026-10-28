@@ -308,6 +308,7 @@ jobs:
 
       # Notes and tags exist only in Firestore otherwise; the coach reads this copy. The log gets a count, never a note.
       - name: Back up run notes
+        id: notes
         if: inputs.dry_run != true
         continue-on-error: true
         env:
@@ -324,6 +325,7 @@ jobs:
 
       # Health data that exists only in Firestore otherwise; the coach falls back to this copy. The log gets a count only.
       - name: Back up wellness check-ins
+        id: wellness
         if: inputs.dry_run != true
         continue-on-error: true
         env:
@@ -340,6 +342,7 @@ jobs:
 
       # The owner's shoe picks exist only in Firestore otherwise; the app reads this copy for the shoes' mileage.
       - name: Back up shoe choices
+        id: shoe_choices
         if: inputs.dry_run != true
         continue-on-error: true
         env:
@@ -356,6 +359,7 @@ jobs:
 
       # Explore's avoid spots say where the athlete runs: the log gets counts only.
       - name: Back up route names and avoid spots
+        id: route_data
         if: inputs.dry_run != true
         continue-on-error: true
         env:
@@ -373,6 +377,7 @@ jobs:
 
       # Races and goals edited in the app: every page and the coach read this copy, so it is not only a backup.
       - name: Mirror races and goals
+        id: goals_races
         if: inputs.dry_run != true
         continue-on-error: true
         env:
@@ -595,19 +600,23 @@ jobs:
 
       # Last, so a partial sync still reaches the data repository first.
       - name: Report a partial sync
-        if: always() && (steps.sync.outputs.partial_failure == 'true' || steps.shoes.outputs.partial_failure == 'true')
+        if: >-
+          always() && (steps.sync.outputs.partial_failure == 'true' || steps.shoes.outputs.partial_failure == 'true'
+          || steps.notes.outcome == 'failure' || steps.wellness.outcome == 'failure'
+          || steps.shoe_choices.outcome == 'failure' || steps.route_data.outcome == 'failure'
+          || steps.goals_races.outcome == 'failure')
         run: |
-          echo "::error::Some activities or steps failed. Whatever synced successfully was committed and deployed; see the 'Run sync' and 'Sync shoes' logs for what failed."
+          echo "::error::Some activities or steps failed. Whatever synced successfully was committed and deployed; see the 'Run sync', 'Sync shoes', 'Back up' and 'Mirror races and goals' logs for what failed."
           exit 1
 
-      # Best effort: if the app itself is what broke, this fails too.
+      # Best effort: if the app itself is what broke, this fails too. A timeout cancels the job rather than failing it.
       - name: Push the failure to the owner's devices
-        if: failure()
+        if: failure() || cancelled()
         continue-on-error: true
         env:
           APP_URL: ${{ secrets.APP_URL }}
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
-          WORKFLOW: ${{ github.workflow }}
+          WORKFLOW: ${{ job.status == 'cancelled' && format('{0} (cancelled or timed out)', github.workflow) || github.workflow }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           jq -n --arg w "$WORKFLOW" --arg u "$RUN_URL" '{workflow: $w, runUrl: $u}' > "$RUNNER_TEMP/workflow-failure.json"

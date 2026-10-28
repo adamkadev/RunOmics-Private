@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -22,13 +21,8 @@ def load_type_context(data_dir: Path) -> TypeContext:
         lthr_bpm=lthr,
         z4_floor_bpm=bounds[3] if lthr and len(bounds) > 3 else None,
         sessions_by_date=_sessions_by_date(_plans(data_dir / "coaching")),
-        hr_reliable_from=_iso_date(athlete.get("hrReliableFrom")),
         hr_unreliable_ids=_hr_unreliable_ids(_read(data_dir / "activity_notes.json") or {}),
     )
-
-
-def _iso_date(value: Any) -> str | None:
-    return value if isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) else None
 
 
 def _hr_unreliable_ids(backup: dict[str, Any]) -> frozenset[str]:

@@ -15,6 +15,7 @@ export default defineConfig<AppOptions>({
   reporter: process.env.CI ? [['html', { open: 'never' }], ['github']] : 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
+    timezoneId: 'UTC',
     trace: 'on-first-retry',
   },
   projects: [
@@ -40,6 +41,7 @@ export default defineConfig<AppOptions>({
     {
       command: 'npm run e2e:build && npm run e2e:start',
       url: `http://localhost:${PORT}`,
+      env: { TZ: 'UTC' },
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },
@@ -52,6 +54,7 @@ export default defineConfig<AppOptions>({
         NEXT_DIST_DIR: '.next-e2e-sparse',
         NEXT_PUBLIC_LOCALE: 'fr',
         PORT: SPARSE_PORT,
+        TZ: 'UTC',
       },
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

@@ -87,6 +87,14 @@ describe('KmSplits', () => {
     expect(screen.queryByRole('tab')).toBeNull()
   })
 
+  it('grades the reps against the planned rep pace it is handed', () => {
+    const reps = [split('interval_active', 240, 516, 140), split('interval_recovery', 60, 120), split('interval_active', 240, 471, 142)]
+    render(<KmSplits activity={activityWith(reps)} plannedRepPace={{ min: 470, max: 525 }} />)
+
+    expect(screen.getByTestId('band-header').textContent).toBe(t.activity.splits.targetLabel('7:50–8:45'))
+    expect(screen.getByText('1/2')).toBeInTheDocument()
+  })
+
   it('totals every split row', () => {
     const { container } = render(
       <KmSplits activity={activityWith([split('lap', 300, 1000, 150), split('lap', 300, 1000, 150)])} />,

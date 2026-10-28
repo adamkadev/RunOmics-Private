@@ -75,7 +75,10 @@ def sync_threshold_history(client: GarminClient, start: date, today: date | None
         _fetch_metric(client, _HR_METRIC, start, today),
         _fetch_metric(client, _SPEED_METRIC, start, today),
     )
-    days = {**_load_stored(), **fetched}
+    days = _load_stored()
+    # Per field: a night whose HR read failed but speed read succeeded must keep the stored LTHR.
+    for day, sample in fetched.items():
+        days[day] = {**days.get(day, {}), **sample}
 
     if not days:
         print("  No threshold samples returned.")

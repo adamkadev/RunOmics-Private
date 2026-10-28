@@ -9,9 +9,12 @@ import { isLongSession } from '@/domain/activity/longRun'
 import { raceExecution } from '@/domain/activity/raceExecution'
 import { MIN_REP_SECONDS, repStats, sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { resolvePerformance, type OfficialRaceResult } from '@/domain/activity/raceResult'
+import { isRunWalk, runWalkBlocks } from '@/domain/activity/runWalk'
+import { namedType } from '@/lib/activityTitle'
 import { formatClock } from '@/lib/formatters'
 import { insightHash } from './insightHash'
 import { avoidClause, promptVersion, systemInstruction } from './prompt'
+import { isCoachTypeWord, SESSION_LABEL } from './sessionLabel'
 
 export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
@@ -64,6 +67,8 @@ export interface RunVerdictContext {
   /** Null when there is none, undefined when the notes could not be read. */
   note?: AthleteNote | null
   intent?: SessionIntent | null
+  /** The coach's session the run was matched to, as the type it was set as. */
+  sessionType?: ActivityType | null
 }
 
 /** Kept out of the facts hash, which the activity page rebuilds on every render and would then need a Firestore read of its own. */
@@ -75,7 +80,7 @@ export function runVerdictNoteKey(note: AthleteNote | null): string {
 const NOTE_PROMPT_CHARS = 300
 
 /** What the run is judged against: the plan's purpose when there is one, Garmin's read of the effort only when there is not. */
-export type RunKind = 'easy' | 'long' | 'strides' | 'tempo' | 'threshold' | 'intervals' | 'race'
+export type RunKind = 'easy' | 'long' | 'strides' | 'runWalk' | 'tempo' | 'threshold' | 'intervals' | 'race'
 
 const KIND_BY_TYPE: Partial<Record<ActivityType, RunKind>> = {
   Race: 'race',
@@ -90,6 +95,7 @@ const KIND_LABEL: Record<RunKind, string> = {
   easy: 'an easy run',
   long: 'a long run',
   strides: 'an easy run with strides',
+  runWalk: 'a run/walk session: run blocks with walk breaks between them',
   tempo: 'a tempo session',
   threshold: 'a threshold session',
   intervals: 'an interval session',
@@ -102,6 +108,7 @@ function judgedType(kind: RunKind, activity: Activity): ActivityType {
     case 'easy':
     case 'long':
     case 'strides':
+    case 'runWalk':
       return 'Base'
     case 'tempo':
       return 'Tempo'
@@ -128,17 +135,28 @@ function plannedReps(planned: PlannedWorkout | null): { quality: WorkoutStep[]; 
   }
 }
 
-export function runVerdictKind({ activity, planned }: Pick<RunVerdictContext, 'activity' | 'planned'>): RunKind {
-  return runKind(activity, planned, sessionExecution(activity))
+type JudgementInput = Pick<RunVerdictContext, 'activity' | 'planned' | 'sessionType'>
+
+export function runVerdictKind({ activity, planned, sessionType = null }: JudgementInput): RunKind {
+  return runKind(activity, planned, sessionExecution(activity), sessionType)
 }
 
-export function runKind(activity: Activity, planned: PlannedWorkout | null, execution: SessionExecution): RunKind {
+/** The coach's session first, then the watch's plan; the run's own type, a guess, only when neither says what the day was for. */
+export function runKind(
+  activity: Activity,
+  planned: PlannedWorkout | null,
+  execution: SessionExecution,
+  sessionType: ActivityType | null = null
+): RunKind {
   if (activity.type === 'Race') return 'race'
   const reps = plannedReps(planned)
-  const named = planned?.type ? KIND_BY_TYPE[planned.type] : undefined
+  const intended = sessionType ?? planned?.type
+  const named = intended ? KIND_BY_TYPE[intended] : undefined
   if (named) return named
-  if (planned && reps.quality.length) return KIND_BY_TYPE[activity.type] ?? 'intervals'
-  if (!planned && KIND_BY_TYPE[activity.type]) return KIND_BY_TYPE[activity.type]!
+  if (isRunWalk(activity, planned, sessionType)) return 'runWalk'
+  const easyByName = sessionType === 'Base' || (planned !== null && namedType(planned.name) === 'Base')
+  if (planned && reps.quality.length && !easyByName) return KIND_BY_TYPE[activity.type] ?? 'intervals'
+  if (!planned && !sessionType && KIND_BY_TYPE[activity.type]) return KIND_BY_TYPE[activity.type]!
   if (reps.strides.length || (!planned && execution?.strides)) return 'strides'
   const description = [planned?.name, activity.description].filter(Boolean).join(' ')
   return isLongSession({ durationSeconds: activity.durationSeconds, description }) ? 'long' : 'easy'
@@ -175,16 +193,38 @@ function repAdherence(execution: SessionExecution, planned: WorkoutStep[]): RepA
   return { planned: planned.length, done: paces.length, paces, band, inside: band ? paces.length - faster - slower : 0, faster, slower }
 }
 
+/** A run/walk block slower than planned is still easy running, so only a quicker one is off target. */
+function repsOnTarget(kind: RunKind, reps: RepAdherence): boolean {
+  const off = kind === 'runWalk' ? reps.faster : reps.faster + reps.slower
+  return reps.done >= reps.planned && off * 2 <= reps.done
+}
+
+/** Without a rating, what the run measurably did: its reps against the plan, and an easy run's time in zones. */
+function measuredTone(kind: RunKind, activity: Activity, reps: RepAdherence | null): VerdictTone | null {
+  const checks = [reps ? repsOnTarget(kind, reps) : null, EASY_KINDS.has(kind) ? easyZonesHeld(activity) : null].filter(
+    (check) => check !== null
+  )
+  if (!checks.length) return null
+  return checks.every(Boolean) ? 'positive' : 'neutral'
+}
+
+/** What the prompt tells the model the run did; "unrated" when nothing logged or measured says, which is no drift. */
+export type ToneRule = VerdictTone | 'unrated'
+
 /**
  * Reps off target, faster included, or fewer than planned cap the tone whatever the RPE says.
  * Reps on target at a lower effort than the band are fitness showing, not a shortfall.
  */
-function verdictTone(activity: Activity, kind: RunKind, reps: RepAdherence | null, repsRun: boolean): VerdictTone {
+function verdictTone(activity: Activity, kind: RunKind, reps: RepAdherence | null, repsRun: boolean): ToneRule {
   const judged = { ...activity, type: judgedType(kind, activity) }
-  const tone = runVerdictTone(judged)
-  const easier = activity.rpe !== null && activity.rpe < expectedRpe(judged)[0]
+  const effort = runVerdictTone(judged)
+  if (activity.rpe === null || effort === null) {
+    return effort === 'caution' ? effort : (measuredTone(kind, activity, reps) ?? effort ?? 'unrated')
+  }
+  const tone = effort
+  const easier = activity.rpe < expectedRpe(judged)[0]
   if (reps) {
-    const onTarget = reps.done >= reps.planned && (reps.faster + reps.slower) * 2 <= reps.done
+    const onTarget = repsOnTarget(kind, reps)
     if (!onTarget) return tone === 'positive' ? 'neutral' : tone
     return tone === 'neutral' && easier ? 'positive' : tone
   }
@@ -210,6 +250,14 @@ function repsLine(reps: RepAdherence): string {
   return `- Reps: ${count} against a ${bandText(reps.band)} target: ${verdict}`
 }
 
+/** The blocks' pace is never the point of a run/walk, so they are counted, not timed. */
+function runBlocksLine(reps: RepAdherence | null, execution: SessionExecution): string | null {
+  if (!reps) return execution?.kind === 'intervals' ? `- Run blocks: ${execution.reps}, with walk breaks between them` : null
+  if (reps.done === 0) return `- Run blocks: none recorded against ${reps.planned} planned - it was run as one continuous effort`
+  const quicker = reps.band && reps.faster ? `; ${reps.faster} quicker than the ${bandText(reps.band)} planned` : ''
+  return `- Run blocks: ${reps.done} of ${reps.planned} planned, with walk breaks between them${quicker}`
+}
+
 const PACE_NOISE_SEC_PER_KM = 3
 const HR_NOISE_BPM = 3
 
@@ -226,6 +274,9 @@ function heartChange(bpm: number | null, when: string): string {
 }
 
 function executionLine(execution: NonNullable<SessionExecution>, kind: RunKind, activity: Activity): string {
+  if (execution.kind === 'intervals' && kind === 'runWalk') {
+    return `- How the run blocks held: the last ${paceChange(execution.fadeSecPerKm, 'the first')}${heartChange(execution.hrDriftBpm, 'by the last block')}`
+  }
   if (execution.kind === 'intervals') {
     return `- How the reps held: ${execution.spreadSecPerKm}s/km between the fastest and slowest, the last rep ${paceChange(execution.fadeSecPerKm, 'the first')}${heartChange(execution.hrDriftBpm, 'by the last rep')}`
   }
@@ -256,7 +307,7 @@ function pacingLine(activity: Activity): string | null {
   return `- Pacing: first full kilometre ${pace(trend.firstFullLapPaceSecPerKm)}, last ${pace(trend.lastFullLapPaceSecPerKm)} (${change})${heartChange(trend.hrDriftBpm, 'by the last kilometre')}`
 }
 
-const EASY_KINDS: ReadonlySet<RunKind> = new Set(['easy', 'long', 'strides'])
+const EASY_KINDS: ReadonlySet<RunKind> = new Set(['easy', 'long', 'strides', 'runWalk'])
 
 function zoneMinutes(activity: Activity, zones: (zone: number) => boolean): number | null {
   if (!activity.hrZones.length) return null
@@ -268,6 +319,18 @@ function zoneMinutes(activity: Activity, zones: (zone: number) => boolean): numb
  * Zones that held are labelled the default, or the model makes them every easy verdict's headline.
  */
 const GREY_SHARE_ALLOWED = 0.1
+const zonesHeldEasy = (grey: number, hard: number, total: number) => grey <= total * GREY_SHARE_ALLOWED && hard <= 1
+
+/** Null without zones to read, or from a heart rate the athlete or the sync marked untrusted. */
+function easyZonesHeld(activity: Activity): boolean | null {
+  if (activity.hrUntrusted) return null
+  const easy = zoneMinutes(activity, (zone) => zone <= 2)
+  const grey = zoneMinutes(activity, (zone) => zone === 3)
+  const hard = zoneMinutes(activity, (zone) => zone >= 4)
+  if (easy === null || grey === null || hard === null || easy + grey + hard === 0) return null
+  return zonesHeldEasy(grey, hard, easy + grey + hard)
+}
+
 function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null, reps: RepAdherence | null): string | null {
   // Reps against their target say how hard a structured session was better than zone time does.
   if (hardMinutes === null || (reps && reps.done > 0)) return null
@@ -280,7 +343,7 @@ function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null
   const total = easy + grey + hardMinutes
   if (total === 0) return null
   const share = Math.round((easy / total) * 100)
-  return grey <= total * GREY_SHARE_ALLOWED && hardMinutes <= 1
+  return zonesHeldEasy(grey, hardMinutes, total)
     ? `- Zones: ${share}% in zones 1-2, as an easy run should be - the default, not news`
     : `- Zones: ${share}% in zones 1-2, ${grey} min in zone 3, ${hardMinutes} min in zones 4-5 - more than an easy day should hold`
 }
@@ -357,9 +420,9 @@ const REP_LENGTH_NOISE_SECONDS = 5
 
 const daysBefore = (days: number) => (days === 0 ? 'earlier the same day' : `${days} day${days === 1 ? '' : 's'} before`)
 
-function previousSessionLine(activity: Activity, last: PreviousSession): string | null {
+function previousSessionLine(activity: Activity, type: ActivityType, last: PreviousSession): string | null {
   const now = repStats(activity)
-  const word = SESSION_WORD[activity.type]
+  const word = SESSION_WORD[type]
   if (!now || !word) return null
   const repDelta = now.reps - last.reps
   const lengthDelta = now.secondsPerRep - last.secondsPerRep
@@ -420,38 +483,55 @@ function placingLine(official: OfficialRaceResult | null | undefined): string | 
   return `- Finished ${official.overallPlace}${field}`
 }
 
-const COACH_TYPE_WORDS = /^(base|endurance|footing|r[ée]cup[ée]ration|recovery|tempo|seuil|threshold|vma|vo2 ?max|ana[ée]robique|anaerobic|sprint|vitesse)$/i
-
-const TYPE_LABEL: Record<ActivityType, string> = {
-  Base: 'an easy run',
-  Tempo: 'a tempo session',
-  Threshold: 'a threshold session',
-  VO2Max: 'an interval session',
-  Anaerobic: 'an interval session',
-  Sprint: 'a sprint session',
-  Race: 'a race',
-}
-
 function cadenceLine(runs: number, previous: PreviousRun): string {
   const when =
     previous.daysAgo === 0 ? 'earlier the same day' : `${previous.daysAgo} day${previous.daysAgo === 1 ? '' : 's'} before`
   // Garmin Coach names a session by its type word alone: "was "Base"" is jargon.
-  const what = previous.description && !COACH_TYPE_WORDS.test(previous.description.trim()) ? `"${previous.description}"` : TYPE_LABEL[previous.type]
+  const what = previous.description && !isCoachTypeWord(previous.description) ? `"${previous.description}"` : SESSION_LABEL[previous.type]
   return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it; the previous one, ${when}, was ${what}`
 }
 
-function facts({ activity, history, planned, official, intent }: RunVerdictContext) {
+interface Judged {
+  execution: SessionExecution
+  kind: RunKind
+  plan: ReturnType<typeof plannedReps>
+  reps: RepAdherence | null
+  rule: ToneRule
+}
+
+function judge({ activity, planned, sessionType = null }: JudgementInput): Judged {
   const execution = sessionExecution(activity)
-  const kind = runKind(activity, planned, execution)
+  const kind = runKind(activity, planned, execution, sessionType)
   const plan = plannedReps(planned)
-  const reps = kind === 'strides' ? null : repAdherence(execution, plan.quality)
+  const reps = kind === 'strides' ? null : repAdherence(execution, kind === 'runWalk' ? runWalkBlocks(planned) : plan.quality)
+  return { execution, kind, plan, reps, rule: verdictTone(activity, kind, reps, execution?.kind === 'intervals') }
+}
+
+export interface RunJudgement {
+  kind: RunKind
+  tone: VerdictTone
+  /** False when no RPE was logged and nothing measured stood in for it. */
+  rated: boolean
+}
+
+/** The one judgement the card's badge and the prompt's tone both read, so the two never disagree. */
+export function runVerdictJudgement(context: JudgementInput): RunJudgement {
+  const { kind, rule } = judge(context)
+  return { kind, tone: rule === 'unrated' ? 'neutral' : rule, rated: rule !== 'unrated' }
+}
+
+function facts(context: RunVerdictContext) {
+  const { activity, history, planned, official, intent } = context
+  const { execution, kind, plan, reps, rule } = judge(context)
+  // The same Garmin type is only like for like when it is what the run was for; a run/walk's pace is half walking.
+  const comparable = kind !== 'runWalk' && judgedType(kind, activity) === activity.type
   const performance = resolvePerformance(activity, official ?? null)
   const certified = performance.source === 'official'
   const recentWeather = activity.date >= WEATHER_FACTS_FROM ? activity.weather : null
 
   return {
     promptVersion: promptVersion(RUN_VERDICT_PROMPT_VERSION),
-    tone: verdictTone(activity, kind, reps, execution?.kind === 'intervals'),
+    tone: rule,
     kind,
     type: activity.type,
     distanceKm: Math.round(performance.distanceKm * 100) / 100,
@@ -474,23 +554,28 @@ function facts({ activity, history, planned, official, intent }: RunVerdictConte
     windKph: recentWeather ? Math.round(recentWeather.windKph) : null,
     humidityPct: recentWeather ? Math.round(recentWeather.humidityPct) : null,
     execution: execution ? executionLine(execution, kind, activity) : null,
-    reps: reps ? repsLine(reps) : execution?.kind === 'intervals' && QUALITY_KINDS.has(kind) ? `- Reps: ${execution.reps}, at ${execution.repPaces.map(pace).join(', ')} /km` : null,
+    reps:
+      kind === 'runWalk'
+        ? runBlocksLine(reps, execution)
+        : reps
+          ? repsLine(reps)
+          : execution?.kind === 'intervals' && QUALITY_KINDS.has(kind)
+            ? `- Reps: ${execution.reps}, at ${execution.repPaces.map(pace).join(', ')} /km`
+            : null,
     strides: kind === 'strides' ? stridesLine(execution, plan.strides) : null,
     pacing: kind === 'race' ? pacingLine(activity) : null,
-    zones: zonesLine(kind, activity, history.hardMinutes, reps),
+    zones: zonesLine(kind, activity, history.hardMinutes, kind === 'runWalk' ? null : reps),
     planned: planned?.name ?? null,
     plannedType: planned?.type ?? null,
     plannedMinutes: planned?.durationSecs ? Math.round(planned.durationSecs / 60) : null,
-    // The same Garmin type is only like for like when it is what the run was for: an easy run Garmin called "Tempo" is no tempo peer.
-    baseline:
-      history.baseline && judgedType(kind, activity) === activity.type ? baselineLine(kind, activity.type, history.baseline, activity) : null,
+    baseline: history.baseline && comparable ? baselineLine(kind, activity.type, history.baseline, activity) : null,
     standing: history.standing?.label ?? null,
     standingDays: history.standing?.daysSinceBetter ?? null,
     runsInPast7Days: history.runsInPast7Days,
     daysSinceLastRun: history.daysSinceLastRun,
     previous: history.previous ? `${history.previous.daysAgo}:${history.previous.description || history.previous.type}` : null,
     previousSession:
-      history.previousSession && judgedType(kind, activity) === activity.type ? previousSessionLine(activity, history.previousSession) : null,
+      history.previousSession && comparable ? previousSessionLine(activity, judgedType(kind, activity), history.previousSession) : null,
     longest: kind === 'long' && history.longest ? longestLine(activity, history.longest) : null,
     intent: intent ? intentLines(intent).join('\n') : null,
   }
@@ -524,12 +609,14 @@ export function repeatsEarlierVerdict(
 }
 
 /** Never "the strongest fact": the model picks the same one, and the same headline, for every good session of a kind. */
-const TONE_RULES: Record<VerdictTone, string> = {
+const TONE_RULES: Record<ToneRule, string> = {
   positive:
     'The run did what this session was for. Say it on what matters most about this run today, never on what is true of every good session of its kind.',
   neutral:
     'The run drifted from what this session is for - off its target, short of the plan, or harder or easier than asked - without doing harm. Say how, plainly, without forced praise.',
   caution: 'The effort overshot what this session is for. Name what it cost.',
+  unrated:
+    'No perceived effort was logged, so nothing says how hard it felt. Judge the run only on the facts below: never call it off target, short of the plan, harder or easier than asked unless one of them shows it.',
 }
 
 export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
@@ -543,6 +630,7 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   "The card already prints the distance, duration, average pace, average heart rate, perceived effort (RPE) and the conditions: never state those numbers. A difference against earlier runs or against the plan's target is fine (\"8s/km quicker\", \"inside the 4:22-4:28 target\"); repeating this run's own printed numbers is not.",
   "What the job is depends on the session. How a session is judged is not the verdict: when its job held, that is expected, and what sets this run apart is the story.",
   "An easy run's job is to stay easy: nearly all of it in zones 1-2. That is the default, not news: when it held, give it a few words at most, never the headline, and never mention an empty zone 4-5. Lead instead with what sets this run apart - its heart rate against earlier easy runs at the same pace, its drift, where it sat in the week (the day after a hard session, a second run that day), or conditions that cost something. Only when zone 3 or above crept in is the zone time the verdict. Pace is never the achievement on an easy day, and quicker is only good news when the heart rate did not rise with it. With strides, the easy running is what you judge; the strides only count as done.",
+  "A run/walk session's job is to complete its run blocks at an easy, talking pace, with the walk breaks between them: the walks are part of the session, never a shortfall or a fade, and it is never an interval session. Judge the blocks completed against those planned and whether the heart rate stayed easy; pace is never the achievement. When they held, look at what sets this one apart, as for an easy run.",
   "A long run's job is time on feet at an easy effort: judge how the second half held, its heart rate drift and fade, and how far it went against the longest run of recent months. Kilometre-to-kilometre pace spread is terrain, not execution.",
   'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked. Reps on target at a lower effort than expected are good news, never a shortfall. When they held, look past them: the change since the last session of its kind, the heart rate at that pace, the rep that was hardest, the place of the session in the plan.',
   'An interval session is judged on the reps completed and held at the target, and the fade from first to last; when they held, the story is elsewhere, as for a threshold session.',

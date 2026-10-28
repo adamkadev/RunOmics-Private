@@ -19,6 +19,7 @@ const SET: RepSet = {
   strides: false,
   repDurationSec: 420,
   band: { min: 255, max: 275 },
+  bandSource: 'reps',
   inBand: 3,
   spreadSecPerKm: 1,
   hrDriftBpm: 4,
@@ -29,10 +30,23 @@ describe('IntervalSet', () => {
     render(<IntervalSet set={SET} />)
 
     expect(screen.getByTestId('band-header').textContent).toBe(t.activity.splits.bandLabel('4:15–4:35'))
+    expect(screen.getByText(t.activity.splits.inBandLabel)).toBeInTheDocument()
     expect(screen.getAllByTestId('rep-row')).toHaveLength(3)
     expect(screen.getAllByTestId('rep-tick')).toHaveLength(3)
     expect(screen.getAllByTestId('rep-band')).toHaveLength(3)
     expect(screen.queryByText(/faster/i)).toBeNull()
+  })
+
+  it('heads the set with the planned rep pace and counts the reps on it', () => {
+    const run = (n: number, paceSecPerKm: number) => ({ number: n, durationSec: 240, distanceM: Math.round(240_000 / paceSecPerKm), paceSecPerKm, avgHr: 140, recovery: null })
+    const reps = [run(1, 465), run(2, 510), run(3, 498), run(4, 480), run(5, 492)]
+    render(<IntervalSet set={{ ...SET, reps, band: { min: 470, max: 525 }, bandSource: 'plan', inBand: 4, spreadSecPerKm: 45 }} />)
+
+    expect(screen.getByTestId('band-header').textContent).toBe(t.activity.splits.targetLabel('7:50–8:45'))
+    expect(screen.getByText(t.activity.splits.onTargetLabel)).toBeInTheDocument()
+    expect(screen.queryByText(t.activity.splits.inBandLabel)).toBeNull()
+    expect(screen.getByText('4/5')).toBeInTheDocument()
+    expect(screen.getAllByTestId('rep-band')).toHaveLength(5)
   })
 
   it('collapses the recoveries into one average row', () => {

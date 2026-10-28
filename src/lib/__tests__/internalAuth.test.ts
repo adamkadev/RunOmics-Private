@@ -67,17 +67,29 @@ describe('internalAuth', () => {
       expect(res?.status).toBe(401)
     })
 
-    it('returns 429 once an IP exceeds the per-minute budget, without affecting other IPs', () => {
-      for (let i = 0; i < 20; i++) {
-        expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.9' }))).toBeNull()
+    it('lets 30 authorised calls from one IP through in a minute', () => {
+      for (let i = 0; i < 30; i++) {
+        expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.7' }))).toBeNull()
       }
-      const limited = guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.9' }))
-      expect(limited?.status).toBe(429)
+    })
 
-      const limitedBadSecret = guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.9.9.9' }))
-      expect(limitedBadSecret?.status).toBe(429)
+    it('returns 429 once an IP has spent its budget on bad secrets, without affecting other IPs', () => {
+      for (let i = 0; i < 20; i++) {
+        expect(guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.9.9.9' }))?.status).toBe(401)
+      }
+      expect(guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.9.9.9' }))?.status).toBe(429)
+      expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.9' }))?.status).toBe(429)
 
       expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.8' }))).toBeNull()
+    })
+
+    it('counts only the bad secrets among authorised calls', () => {
+      for (let i = 0; i < 19; i++) guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.9.9.6' }))
+      for (let i = 0; i < 10; i++) {
+        expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.6' }))).toBeNull()
+      }
+      expect(guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.9.9.6' }))?.status).toBe(401)
+      expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.6' }))?.status).toBe(429)
     })
   })
 
@@ -103,10 +115,12 @@ describe('internalAuth', () => {
     })
 
     it('logs a rate-limited caller under its own reason', () => {
-      for (let i = 0; i < 20; i++) guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.7.7.7' }))
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      for (let i = 0; i < 20; i++) guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.7.7.7' }))
+      vi.restoreAllMocks()
       const logged = warnings()
 
-      guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.7.7.7' }))
+      guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.7.7.7' }))
 
       expect(logged()).toEqual([
         { level: 'warn', event: 'request-rejected', route: '/api/internal/test', reason: 'rate-limited' },

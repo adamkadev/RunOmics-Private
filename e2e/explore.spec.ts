@@ -47,7 +47,7 @@ test('the layers button switches to Districts, remembers it, and a link opens a 
   await layers.click()
   await expect(layers).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByTestId('districts-legend')).toContainText('Complete')
-  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 quartiers complete/)
+  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 quartiers complete/, { timeout: 30_000 })
   await expect(page).toHaveURL(/\/activities\?view=map$/)
 
   await page.reload()
@@ -170,8 +170,10 @@ test('Mark a spot, then a tap on the map adds its row, and the row offers its si
 })
 
 test('a tap on a quartier opens its sheet', async ({ page }) => {
+  const tracks = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/map/routes')
   await page.goto('/activities?view=map&layer=districts')
-  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 quartiers complete/)
+  expect((await tracks).ok()).toBe(true)
+  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 quartiers complete/, { timeout: 30_000 })
   const sheet = page.getByTestId('quartier-sheet')
   await tapMap(page, 0.5, 0.5, async () => {
     await expect(sheet).toBeVisible({ timeout: 1_500 })

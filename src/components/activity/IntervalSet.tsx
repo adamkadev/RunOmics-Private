@@ -83,6 +83,7 @@ export function IntervalSet({ set, bare = false }: Props) {
   const inBandAll = set.band !== null && set.inBand === set.reps.length
   const track = trackDomain(set)
   const band = set.band
+  const planned = set.bandSource === 'plan'
   const recovery = recoveryAverage(set.reps)
   const warmupLabel = s.intervalTypes.interval_warmup ?? ''
   const cooldownLabel = s.intervalTypes.interval_cooldown ?? ''
@@ -104,7 +105,7 @@ export function IntervalSet({ set, bare = false }: Props) {
         <StatGrid columns={3}>
           {band ? (
             <Stat
-              label={s.inBandLabel}
+              label={planned ? s.onTargetLabel : s.inBandLabel}
               value={`${set.inBand}/${set.reps.length}`}
               valueStyle={{ color: inBandAll ? 'var(--pos)' : 'var(--warn)' }}
             />
@@ -126,7 +127,7 @@ export function IntervalSet({ set, bare = false }: Props) {
         <div className={cn(ROW, 'text-caption uppercase tracking-[0.06em] text-muted-foreground')}>
           <span>{s.cols.step}</span>
           <span className="truncate normal-case tracking-normal" data-testid="band-header">
-            {band && !set.strides ? s.bandLabel(`${formatClock(band.min)}–${formatClock(band.max)}`) : ''}
+            {band && !set.strides ? (planned ? s.targetLabel : s.bandLabel)(`${formatClock(band.min)}–${formatClock(band.max)}`) : ''}
           </span>
           <span className="text-right">{s.cols.pace}</span>
           <span className="text-right">{s.cols.hr}</span>

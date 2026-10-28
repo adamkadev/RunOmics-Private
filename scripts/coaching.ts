@@ -45,8 +45,9 @@ function usage(): string {
     '  --from-answer <path> Build the proposal from the reply to that prompt, saved as JSON.',
     '  --advisor gemini   Ask Gemini (GEMINI_COACH_API_KEY) instead of writing the prompt.',
     '  --reference-date <YYYY-MM-DD> Reproduce coaching at a specified date.',
-    '  --replace          Supersede the active plan instead of refusing. The outgoing',
-    '                     plan is kept under coaching/superseded/.',
+    '  --replace          Supersede the active plan more than seven days before it ends,',
+    '                     when bootstrap otherwise refuses. The outgoing plan is kept',
+    '                     under coaching/superseded/ once the new one is applied.',
     '  --out <path>       Directory for preview files (default: .coach-previews).',
   ].join('\n')
 }

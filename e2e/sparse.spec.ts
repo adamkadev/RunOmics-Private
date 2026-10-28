@@ -116,20 +116,21 @@ test('Plan names the coach’s block, out of the page’s HTML, and leaves the c
   expect(html).not.toContain('minutes de course')
 })
 
-test('a run before the armband reads its heart rate as untrusted, and one after it does not', async ({ page, t }) => {
+test('a wrist run before the armband keeps its heart rate, as one after it does', async ({ page, t }) => {
   const athlete = read('athlete.json') as { hrReliableFrom: string }
   const runs = Object.values(
     Object.fromEntries((read('activities/index.json') as { months: string[] }).months.flatMap((month) =>
-      (read(`activities/${month}.json`).activities as { id: string; date: string }[]).map((run) => [run.id, run]))),
+      (read(`activities/${month}.json`).activities as { id: string; date: string; hrSource?: string }[]).map((run) => [run.id, run]))),
   ).sort((a, b) => a.date.localeCompare(b.date))
-  const before = runs.filter((run) => run.date < athlete.hrReliableFrom).at(-1)!
+  const before = runs.filter((run) => run.date < athlete.hrReliableFrom && run.hrSource === 'wrist').at(-1)!
   const after = runs.find((run) => run.date >= athlete.hrReliableFrom)!
 
-  await page.goto(`/activities/${before.id}`)
-  await expect(page.getByTestId('run-hr-untrusted')).toHaveText(t.activity.dataQuality.hrUntrusted.beforeReliable)
-  await page.goto(`/activities/${after.id}`)
-  await expect(page.getByTestId('run-verdict')).toBeVisible()
-  await expect(page.getByTestId('run-hr-untrusted')).toHaveCount(0)
+  for (const run of [before, after]) {
+    await page.goto(`/activities/${run.id}`)
+    await expect(page.getByTestId('run-verdict')).toBeVisible()
+    await expect(page.getByTestId('run-hr-untrusted')).toHaveCount(0)
+    await expect(page.getByTestId('run-stats')).toContainText(t.units.bpm)
+  }
 })
 
 test('Plan shows the return’s running minutes per week and its longest non-stop run', async ({ page }) => {

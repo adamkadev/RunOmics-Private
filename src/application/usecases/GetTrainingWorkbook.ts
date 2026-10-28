@@ -219,7 +219,6 @@ function athleteRows(athlete: AthleteProfile): RowData[] {
     bmi: athlete.bmi ?? null,
     resting_hr_bpm: athlete.restingHrBpm ?? null,
     max_hr_bpm: athlete.maxHrBpm ?? null,
-    hr_reliable_from: athlete.hrReliableFrom ? excelDate(athlete.hrReliableFrom) : null,
     lactate_threshold_hr_bpm: athlete.lthrBpm ?? null,
     threshold_pace_sec_per_km: athlete.thresholdPaceSecPerKm ?? null,
     vma_kmh: athlete.vmaKmh ?? null,
@@ -876,7 +875,7 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
 
   addDataSheet('Athlete', columns(
     'display_name', 'age_years', 'sex', 'height_cm', 'weight_kg', 'bmi', 'resting_hr_bpm', 'max_hr_bpm',
-    { key: 'hr_reliable_from', ...DATE_COLUMN }, 'lactate_threshold_hr_bpm', 'threshold_pace_sec_per_km', 'vma_kmh', 'vo2max_ml_kg_min',
+    'lactate_threshold_hr_bpm', 'threshold_pace_sec_per_km', 'vma_kmh', 'vo2max_ml_kg_min',
     'fitness_age_years', 'achievable_fitness_age_years', 'hr_zone_1_lower_bpm', 'hr_zone_2_lower_bpm',
     'hr_zone_3_lower_bpm', 'hr_zone_4_lower_bpm', 'hr_zone_5_lower_bpm', 'device_name',
     { key: 'device_since', ...DATE_COLUMN }, { key: 'last_profile_update', ...DATE_COLUMN },

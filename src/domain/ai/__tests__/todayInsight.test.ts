@@ -69,6 +69,28 @@ describe('todayInsightPrompt', () => {
   })
 })
 
+describe('the session words the prompt uses', () => {
+  it("names the last run and today's session in plain words, never Garmin's type", () => {
+    const prompt = todayInsightPrompt(
+      context({
+        plannedWorkout: { date: '2026-08-01', name: 'Footing 4×6′', type: 'Base', durationSecs: 1800 },
+        recent: { weekRuns: 2, weekKm: 9, lastRun: { type: 'VO2Max', daysAgo: 1, distanceKm: 4 } },
+      }),
+      []
+    )
+
+    expect(prompt).toContain('- Last run: an interval session of 4 km, yesterday')
+    expect(prompt).toContain('- Planned today, in the session card: Footing 4×6′, ~30 min')
+    expect(prompt).not.toMatch(/VO2Max|\(Base\)/)
+  })
+
+  it('gives a session named only by its type word its plain label', () => {
+    expect(todayInsightPrompt(context(), [])).toContain('- Planned today, in the session card: an easy run, ~30 min')
+    const threshold = todayInsightPrompt(context({ plannedWorkout: { ...workout, name: 'Seuil 3×8′', type: 'Threshold' } }), [])
+    expect(threshold).toContain('- Planned today, in the session card: Seuil 3×8′ (a threshold session), ~30 min')
+  })
+})
+
 describe('the week the prompt reports', () => {
   it('is the week so far from Monday, the one the dashboard ring counts, and no rolling seven days', () => {
     const prompt = todayInsightPrompt(context(), [])
@@ -111,6 +133,20 @@ describe('the kind of day (v4.16.4)', () => {
     ])
     expect(sessionKind(threshold)).toBe('quality')
     expect(sessionKind(strides)).toBe('easy')
+  })
+
+  it('reads a run/walk as the easy day it is, not as reps', () => {
+    const block = (rep: number): PlannedWorkout['steps'] => [
+      { kind: 'effort', minutes: 6, rep },
+      { kind: 'recovery', minutes: 1, rep },
+    ]
+    const runWalk = [1, 2, 3, 4].flatMap((rep) => block(rep)!)
+    const walkPaced = runWalk.map((step) => (step.kind === 'recovery' ? { ...step, paceSecPerKm: [720, 840] as [number, number] } : step))
+
+    expect(sessionKind(garmin('Footing 4×6′', runWalk))).toBe('easy')
+    expect(sessionKind(garmin('Retour 4×6′', walkPaced))).toBe('easy')
+    expect(sessionKind(garmin('Retour 4×6′', runWalk))).toBe('quality')
+    expect(sessionKind({ ...garmin('Footing 4×6′', runWalk), type: 'VO2Max' })).toBe('quality')
   })
 
   it('never advises moderation for a rest day, or easing off a race', () => {

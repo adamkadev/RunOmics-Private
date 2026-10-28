@@ -1167,6 +1167,17 @@ describe('replacing a plan that is already active', () => {
       .rejects.toThrow(/--replace/)
   })
 
+  it('renews without --replace once the block ends within seven days', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const asking = { ...services(repository), advisor: { ...services(repository).advisor, bootstrap: async () => { throw new Error('asked for the next block') } } }
+
+    await expect(createBootstrapProposal(buildCoachingContext(contextInput(null), '2026-09-27'), [2, 3], asking))
+      .rejects.toThrow(/asked for the next block/)
+    await expect(createBootstrapProposal(buildCoachingContext(contextInput(null), '2026-09-26'), [2, 3], asking))
+      .rejects.toThrow(/runs until 2026-10-04.*--replace/)
+  })
+
   it('supersedes the active plan when asked, and writes nothing until applied', async () => {
     const repository = new MemoryRepository()
     repository.plan = plan()
@@ -1240,6 +1251,18 @@ describe('repairing a rejected draft', () => {
     expect(asks).toHaveLength(2)
     expect(asks[1]).toContain('rejected')
     expect(asks[1]).toContain('outside the available weekdays')
+  })
+
+  it('hands the rejected answer back with the complaint, so the correction edits it', async () => {
+    const asks: (string | undefined)[] = []
+    const bootstrap = async (request: BootstrapRequest) => {
+      asks.push(request.guidance)
+      return asks.length === 1 ? onAnUnavailableDay() : fourWeekPlan()
+    }
+
+    await createBootstrapProposal(buildCoachingContext(contextInput(null), '2026-09-07'), [2, 3], services(bootstrap))
+
+    expect(asks[1]).toMatch(/Your previous answer was:\n\{.*"date":"2026-09-21"/)
   })
 
   it('asks again when one session is written wrong, as it does for any other rule', async () => {

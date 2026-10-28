@@ -45,6 +45,29 @@ describe('repSet', () => {
     expect(set?.spreadSecPerKm).toBe(50)
   })
 
+  it('keeps the median band, read as the reps own, when no plan sets a rep pace', () => {
+    const set = repSet([rep(60), rep(60), rep(75)], null)
+
+    expect(set?.band).toEqual({ min: 190, max: 210 })
+    expect(set?.bandSource).toBe('reps')
+  })
+
+  it('grades a run/walk against the planned run pace, not the reps own median', () => {
+    const run = (pace: number) => split('interval_active', 240, 240_000 / pace, 140)
+    const walk = () => split('interval_recovery', 60, 120, 125)
+    const set = repSet(
+      [split('interval_warmup', 300, 500), run(465), walk(), run(510), walk(), run(498), walk(), run(480), walk(), run(492), split('interval_cooldown', 300, 500)],
+      { min: 470, max: 525 },
+    )
+
+    expect(set?.reps.map((r) => r.paceSecPerKm)).toEqual([465, 510, 498, 480, 492])
+    expect(set?.band).toEqual({ min: 470, max: 525 })
+    expect(set?.bandSource).toBe('plan')
+    expect(set?.inBand).toBe(4)
+    expect(set?.spreadSecPerKm).toBe(45)
+    expect(repSet([run(465), run(510), run(498), run(480), run(492)])?.inBand).toBe(2)
+  })
+
   it('averages the recoveries between reps and leaves the cooldown out of it', () => {
     const set = repSet([
       rep(60),

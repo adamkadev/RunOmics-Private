@@ -152,8 +152,17 @@ function titleProblem(workout: Named): string | null {
   if ((name.match(CLOCK) ?? []).length !== paces.length || (name.match(/@/g) ?? []).length !== paces.length) {
     return 'a repetition\'s length in minutes with ′ ("8′"), and a pace only after " @ " ("@ 4:25")'
   }
+  const figures = figuresProblem(workout)
+  if (figures) return figures
+  if (!isRace(workout.type) && statesTotal(name, workout.blocks)) {
+    return 'the total distance and duration are shown beside the name: leave them out of it'
+  }
+  return null
+}
 
-  // The name says what the blocks say, or it is a second plan.
+/** The name says what the blocks say, or it is a second plan. */
+function figuresProblem(workout: Named): string | null {
+  const name = workout.title
   const counts = new Set(repeats(workout.blocks).map((block) => block.repetitions))
   for (const [, reps] of name.matchAll(REPS)) {
     if (!counts.has(Number(reps))) return `"${reps} ×" is not a repetition count the blocks prescribe`
@@ -166,15 +175,10 @@ function titleProblem(workout: Named): string | null {
       return `"${rep}" is not the repetitions the blocks prescribe`
     }
   }
-  for (const [, minutes = '', seconds = ''] of paces) {
+  for (const [, minutes = '', seconds = ''] of name.matchAll(PACE)) {
     if (!prescribesPace(workout.blocks, clockSeconds(minutes, seconds))) return `@ ${minutes}:${seconds} is not a pace the blocks prescribe`
   }
-  const blockLength = blockLengthProblem(name, workout.blocks)
-  if (blockLength) return blockLength
-  if (!isRace(workout.type) && statesTotal(name, workout.blocks)) {
-    return 'the total distance and duration are shown beside the name: leave them out of it'
-  }
-  return null
+  return blockLengthProblem(name, workout.blocks)
 }
 
 function shortNameProblem(shortName: string, type: Named['type']): string | null {
@@ -205,8 +209,16 @@ function structureProblem(structure: WorkoutNameStructure, blocks: WorkoutBlock[
   return null
 }
 
-/** A title the live plan already held (`titleAsWritten`) is left as it was: past plans keep their names. */
-export function validateWorkoutName(workout: Named, label: string, { titleAsWritten = false }: { titleAsWritten?: boolean } = {}): void {
+/** A title the live plan already held (`titleAsWritten`) keeps its shape, but its figures must match blocks a change rewrote. */
+export function validateWorkoutName(
+  workout: Named,
+  label: string,
+  { titleAsWritten = false, blocksChanged = false }: { titleAsWritten?: boolean; blocksChanged?: boolean } = {},
+): void {
+  if (titleAsWritten && blocksChanged) {
+    const problem = figuresProblem(workout)
+    if (problem) throw new Error(`${label}.title "${workout.title}": ${problem}; rewrite the name with the blocks`)
+  }
   if (!titleAsWritten) {
     const problem = titleProblem(workout)
     if (problem) throw new Error(`${label}.title "${workout.title}": ${problem}`)

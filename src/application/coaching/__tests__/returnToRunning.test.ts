@@ -164,6 +164,51 @@ describe('a return to running', () => {
     expect(validate({ trainingBreaks: [injury] }, noted((workout) => ({ ...workout, blocks: [{ kind: 'warmup', target: { durationSeconds: 300 }, notes: ['Brisk walk.'] }, ...workout.blocks.slice(1)] })))).toThrow(/step in a return carries no notes/)
   })
 
+  describe('prescribes no quality while returning', () => {
+    const firstSession = (change: (workout: BootstrapWorkoutDraft) => BootstrapWorkoutDraft, run = PACE): CoachingPlanDraft => {
+      const draft = returnBlock(run)
+      return { ...draft, weeks: draft.weeks.map((week, index) => ({ ...week, workouts: week.workouts.map((workout, at) => (index === 0 && at === 0 ? change(workout) : workout)) })) }
+    }
+    const strides: BootstrapWorkoutDraft['blocks'][number] = {
+      kind: 'repeat', repetitions: 4, steps: [{ kind: 'strides', target: { durationSeconds: 20 } }, { kind: 'recovery', target: { durationSeconds: 60 } }],
+    }
+
+    it.each([
+      ['VO₂ intervals', firstSession((workout) => ({ ...workout, type: 'vo2max', title: 'VO₂ intervals · 6 × 2′' })), /easy or recovery running only, never vo2max/],
+      ['a threshold session', firstSession((workout) => ({ ...workout, type: 'threshold' })), /never threshold/],
+      ['a long run by its type', firstSession((workout) => ({ ...workout, type: 'long_run' })), /never long_run/],
+      ['a long run by its name', firstSession((workout) => ({ ...workout, title: 'Sortie longue' })), /no long run while returning/],
+      ['strides', firstSession((workout) => ({ ...workout, blocks: [...workout.blocks, strides] })), /no strides while returning/],
+      ['a zone above easy', returnBlock({ hrZone: 3 }), /zone 3 is above easy running/],
+    ])('refuses %s', (_, draft, refusal) => {
+      expect(validate({ trainingBreaks: [injury] }, draft)).toThrow(refusal)
+    })
+
+    it('holds the running to the pace the guidance gives, in English or French', () => {
+      expect(validate({ trainingBreaks: [injury] }, returnBlock(), 'Run at 8:00-10:00/km, talking in full sentences.')).not.toThrow()
+      expect(validate({ trainingBreaks: [injury] }, returnBlock(), 'Run at 8:30-10:00/km, talking in full sentences.'))
+        .toThrow(/8:00\/km is faster than the guidance allows \(8:30\/km\)/)
+      expect(validate({ trainingBreaks: [injury] }, returnBlock(), "Allure entre 8'30 et 10'00 au km.")).toThrow(/faster than the guidance/)
+    })
+
+    it('holds the running to the heart rate the guidance gives', () => {
+      expect(validate({ trainingBreaks: [injury] }, returnBlock(ZONE_2), 'Zone 2: 124-144 bpm.')).not.toThrow()
+      expect(validate({ trainingBreaks: [injury] }, returnBlock(ZONE_2), 'Zone 2: 124-140 bpm.')).toThrow(/144 bpm is above the guidance \(140 bpm\)/)
+    })
+
+    it('holds the running to the easy zone when the guidance gives no pace', () => {
+      const returning = context({ trainingBreaks: [injury] })
+      const easyZone = { key: 'easy', label: 'Easy', shortDesc: '', hrZone: 2, paceMinSecPerKm: 500, paceMaxSecPerKm: 620 }
+      const zoned = { ...returning, athlete: { ...returning.athlete, trainingZones: { thresholdPaceSecPerKm: 430, zones: [easyZone] } } }
+      const check = (draft: CoachingPlanDraft) => () => validateBootstrapDraft(draft, {
+        availableWeekdays: [3, 5, 0], runsPerWeek: 3, context: zoned, events: { primary: null, tuneUps: [], planningStartDate: '2026-04-27' },
+      })
+
+      expect(check(returnBlock())).toThrow(/8:00\/km is faster than the easy zone allows \(8:20\/km\)/)
+      expect(check(returnBlock({ paceSecPerKm: { min: 500, max: 620 } }))).not.toThrow()
+    })
+  })
+
   it('accepts the stop rule by default, and refuses one anywhere when the guidance asks for no stop signals', () => {
     const noStopSignals = 'Write no stop signals or symptom warnings in sessions, descriptions or focus.'
     const described = (description: string, focus = 'Four-minute runs.'): CoachingPlanDraft => {

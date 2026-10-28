@@ -254,8 +254,16 @@ describe('ProgressHub (3.0)', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const tile = screen.getByTestId('consistency-tile')
     expect(within(tile).getByTestId('streak-weeks').textContent).toBe(String(INPUT.streakWeeks))
-    expect(tile.textContent).toContain(t.profile.hub.streakOf(3))
+    expect(tile.textContent).toContain(t.profile.hub.streakOf(INPUT.streakWeeks, 3))
     expect(screen.queryByTestId('heatmap')).toBeNull()
+  })
+
+  it('says there is no streak yet rather than leading with 0', () => {
+    render(<ProgressHub view={progressHubView({ ...INPUT, streakWeeks: 0 })} />)
+    const tile = screen.getByTestId('consistency-tile')
+    expect(within(tile).queryByTestId('streak-weeks')).toBeNull()
+    expect(within(tile).getByTestId('streak-none').textContent).toBe(t.profile.hub.noStreak(3))
+    expect(within(tile).getByTestId('streak-strip')).toBeInTheDocument()
   })
 
   it('previews Goals without a second distance chart', () => {

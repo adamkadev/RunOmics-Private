@@ -4,6 +4,8 @@ import { Fragment, useLayoutEffect, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import type { ActivityType } from '@/domain/activity/types'
+import type { VerdictTone } from '@/domain/activity/runVerdict'
+import type { NumberRange } from '@/domain/coaching/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
@@ -48,6 +50,7 @@ interface Props {
   comment?: string
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
+  verdictTone: VerdictTone
   dynamicsBaseline: DynamicsBaseline | null
   shoe?: (ShoeOption & { source?: 'choice' | 'default' }) | null
   /** The active shoes the owner can pick for this run. */
@@ -59,6 +62,7 @@ interface Props {
   back?: ReactNode
   share?: ReactNode
   chartZones?: ChartZones | null
+  plannedRepPace?: NumberRange | null
 }
 
 const TAB_IDS = ['overview', 'intervals', 'charts', 'dynamics'] as const
@@ -141,6 +145,7 @@ export function ActivityDetailClient({
   comment,
   qualifiedEfforts,
   aiVerdict,
+  verdictTone,
   dynamicsBaseline,
   shoe = null,
   shoeOptions = NO_SHOES,
@@ -150,6 +155,7 @@ export function ActivityDetailClient({
   back,
   share,
   chartZones = null,
+  plannedRepPace = null,
 }: Props) {
   const type = shownType ?? activity.type
   // In ?tab=, so going back from Charts or Dynamics lands on it again.
@@ -253,7 +259,7 @@ export function ActivityDetailClient({
         )
       })()}
 
-      <RunVerdict activity={activity} type={type} aiVerdict={aiVerdict}>
+      <RunVerdict activity={activity} type={type} tone={verdictTone} aiVerdict={aiVerdict}>
         {activity.hrUntrusted ? (
           <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')} data-testid="run-hr-untrusted">
             {t.activity.dataQuality.hrUntrusted[activity.hrUntrusted]}
@@ -325,7 +331,7 @@ export function ActivityDetailClient({
           </>
         )}
 
-        {tab === 'intervals' && <KmSplits activity={activity} />}
+        {tab === 'intervals' && <KmSplits activity={activity} plannedRepPace={plannedRepPace} />}
 
         {tab === 'charts' && (
           <ChartStack

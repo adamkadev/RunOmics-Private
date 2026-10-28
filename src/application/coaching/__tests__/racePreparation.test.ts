@@ -73,3 +73,37 @@ describe('French race prose', () => {
     expect(raceWith('Objectif : 4:00 /km.', true, noGoal)).toThrow('clearly described as a recommendation')
   })
 })
+
+describe('numbers in the plan and week focus', () => {
+  const noEvents: BootstrapEvents = { planningStartDate: '2026-09-06', primary: null, tuneUps: [] }
+  const withFocus = (focus: string, events: BootstrapEvents) => {
+    const plan = events.tuneUps.length > 0 ? draft([]) : { ...draft([]), weeks: [{ ...draft([]).weeks[0]!, workouts: [workout('2026-09-29')] }] }
+    plan.weeks[0]!.focus = focus
+    return () => validateBootstrapDraftSemantics(plan, events, context)
+  }
+
+  it.each([
+    'Objectif de la semaine : tenir 20 minutes de course continue.',
+    'Terminer chaque sortie par 5 minutes de marche.',
+    'Alterner 4:00 de course et 1:00 de marche.',
+    'Complete 2 × 30 minutes of controlled threshold this week.',
+  ])('reads "%s" as a session, with or without races in the plan', (focus) => {
+    expect(withFocus(focus, noEvents)).not.toThrow()
+    expect(withFocus(focus, strategy)).not.toThrow()
+  })
+
+  it.each([
+    'Run Broscht in 20:00.',
+    'Wintzenheim 40:00 target.',
+    'Aim for sub-40 at the 10K.',
+    'Objectif 40 minutes sur la course objectif.',
+    'Easy week. The race goal is 40:00.',
+  ])('refuses the finish time in "%s" when the plan has races', (focus) => {
+    expect(withFocus(focus, strategy)).toThrow('must not narrate numeric race targets')
+  })
+
+  it('refuses a pace in the focus whether or not the plan has races', () => {
+    expect(withFocus('Hold 4:30/km on every repetition.', noEvents)).toThrow('must not narrate numeric race targets')
+    expect(withFocus('Hold 4:30/km on every repetition.', strategy)).toThrow('must not narrate numeric race targets')
+  })
+})

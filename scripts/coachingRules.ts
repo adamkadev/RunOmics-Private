@@ -7,8 +7,8 @@ export const GENERATED_PATH = path.join('src', 'infrastructure', 'ai', 'coaching
 /** Its bullets also go out on their own: a change to the live plan names its sessions by the same rules. */
 export const NAMING_SECTION = 'Naming the workouts'
 
-/** A change to the live plan reads the same notes, check-ins and return state a new block does. */
-export const ADAPTATION_SECTIONS = ['What the athlete wrote', 'Returning to running']
+/** A change to the live plan reads the same notes, check-ins and return state a new block does, and describes what it writes alike. */
+export const ADAPTATION_SECTIONS = ['What the athlete wrote', 'Returning to running', 'Describing the workouts']
 
 function sectionLines(markdown: string, heading: string): string[] {
   const lines = markdown.split('\n')

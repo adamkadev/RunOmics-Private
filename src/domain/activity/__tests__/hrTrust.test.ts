@@ -8,7 +8,7 @@ import { efficiencyFactor } from '@/application/usecases/GetAnalyticsData'
 import { dailyTrimpByDate } from '@/application/usecases/GetTrainingLoad'
 import type { Activity } from '../types'
 
-const TRUST: HrTrust = { reliableFrom: '2026-10-16', unreliableIds: new Set(['marked']) }
+const TRUST: HrTrust = { unreliableIds: new Set(['marked', 'old']) }
 
 function run(id: string, date: string, overrides: Partial<Activity> = {}): Activity {
   return {
@@ -55,20 +55,21 @@ const [beforeArmband, marked, onWrist, trusted] = withHrTrust([
   run('wrist', '2026-10-21', { hrSource: 'wrist' }),
   run('armband', '2026-10-22', { hrSource: 'external' }),
 ], TRUST)
-const untrusted = [beforeArmband!, marked!, onWrist!]
+const untrusted = [beforeArmband!, marked!]
 
 describe('hrDistrust', () => {
-  it('names why a run is not trusted', () => {
-    expect(untrusted.map((a) => a.hrUntrusted)).toEqual(['beforeReliable', 'marked', 'wrist'])
-    expect(trusted!.hrUntrusted).toBeUndefined()
+  it('distrusts the runs the owner marked, whatever their sensor', () => {
+    expect(untrusted.map((a) => a.hrUntrusted)).toEqual(['marked', 'marked'])
   })
 
-  it('trusts every run of a profile with no reliable date and no marks', () => {
+  it('trusts an unmarked run on the wrist sensor as on a strap', () => {
+    expect([onWrist!, trusted!].map((a) => [a.hrUntrusted, a.avgHeartRate])).toEqual([[undefined, 172], [undefined, 172]])
     expect(hrDistrust(run('a', '2020-01-01', { hrSource: 'wrist' }), { unreliableIds: new Set() })).toBeNull()
   })
 
-  it('trusts a run without a recorded source after the reliable date, as before a reprocess', () => {
-    expect(hrDistrust(run('a', '2026-10-20'), TRUST)).toBeNull()
+  it('leaves the runs untouched when nothing is marked', () => {
+    const runs = [run('a', '2026-10-20', { hrSource: 'wrist' })]
+    expect(withHrTrust(runs, { unreliableIds: new Set() })).toBe(runs)
   })
 })
 
@@ -86,9 +87,9 @@ describe('an untrusted run', () => {
   })
 
   it('gives no easy or workout heart rate', () => {
-    expect(untrusted.map((a) => a.avgHeartRate)).toEqual([null, null, null])
+    expect(untrusted.map((a) => a.avgHeartRate)).toEqual([null, null])
     expect(untrusted.flatMap((a) => a.splits ?? []).map((split) => [split.avgHr, ...split.laps.map((lap) => lap.avgHr)])).toEqual([
-      [null, null], [null, null], [null, null],
+      [null, null], [null, null],
     ])
   })
 
@@ -98,7 +99,7 @@ describe('an untrusted run', () => {
   })
 
   it('has no aerobic decoupling', () => {
-    expect(untrusted.map((a) => aerobicDecoupling({ ...a, splits: null }))).toEqual([null, null, null])
+    expect(untrusted.map((a) => aerobicDecoupling({ ...a, splits: null }))).toEqual([null, null])
     expect(aerobicDecoupling({ ...trusted!, splits: null })).not.toBeNull()
   })
 })

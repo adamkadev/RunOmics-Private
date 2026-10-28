@@ -61,7 +61,7 @@ for (const key of ['overview', 'intervals', 'charts', 'dynamics'] as const) {
   test(`nothing runs past the screen on a run's ${en.activity.tabs[key]} tab`, async ({ page, t }) => {
     const name = t.activity.tabs[key]
     await page.goto('/activities')
-    await page.getByTestId('thumb-row').first().click()
+    await page.goto((await page.getByTestId('thumb-row').first().getAttribute('href'))!)
     const tabs = page.getByRole('tablist', { name: t.activity.tabs.groupLabel }).getByRole('tab')
     await expect(tabs.first()).toBeVisible()
     test.skip(!(await tabs.allTextContents()).includes(name), `the latest run has no ${name} tab`)
@@ -75,7 +75,9 @@ for (const key of ['fitness', 'performance', 'volume', 'health'] as const) {
     await page.goto('/analytics')
     await page.getByRole('tab', { name: t.analytics.tabs[key] }).click()
     for (const period of ['4w', '12w', '1y']) {
-      await page.getByRole('radio', { name: t.analytics.cards.period.words[period]!, exact: true }).click()
+      const radio = page.getByRole('radio', { name: t.analytics.cards.period.words[period]!, exact: true })
+      await radio.click()
+      await expect(radio).toHaveAttribute('aria-checked', 'true')
       expect(await overflows(page), `${key}, ${period}`).toEqual([])
     }
   })

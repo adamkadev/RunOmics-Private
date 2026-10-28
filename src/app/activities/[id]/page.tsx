@@ -16,11 +16,12 @@ import { NewGround } from '@/components/activity/NewGround'
 import { getRunExploreGain } from '@/application/usecases/GetExploreGains'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
-import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
+import { getRunVerdict } from '@/application/usecases/GetRunVerdictInsight'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getRunSessions } from '@/application/coaching/GetCoachingView'
 import { sessionForRun } from '@/domain/coaching/sessionForRun'
+import { prescribedRepPace } from '@/domain/coaching/repPace'
 import { controlledRunView } from '@/application/coaching/controlledRunView'
 import { ControlledThresholdCard } from '@/components/activity/ControlledThresholdCard'
 import { sessionLabel } from '@/lib/activityTitle'
@@ -86,7 +87,7 @@ export default async function ActivityDetailPage({
   const records = await getRecords()
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
   const similarRuns = getSimilarRuns(id)
-  const aiVerdict = await getRunVerdictInsight(activity)
+  const { insight: aiVerdict, tone: verdictTone } = await getRunVerdict(activity)
   const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const shoeRegistry = getShoeRegistry()
@@ -120,9 +121,11 @@ export default async function ActivityDetailPage({
         comment={activity.comment || undefined}
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
+        verdictTone={verdictTone}
         chartZones={zones}
+        plannedRepPace={prescribedRepPace(session)}
         back={<BackButton label={t.activity.back} fallbackHref="/activities" variant="round" />}
-        share={<ShareButton activity={shareActivity(activity, session, aiVerdict, plannedForDay)} />}
+        share={<ShareButton activity={shareActivity(activity, session, aiVerdict && { headline: aiVerdict.headline, tone: verdictTone }, plannedForDay)} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         shoe={shoe}
         shoeOptions={shoeOptions}

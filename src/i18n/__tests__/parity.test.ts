@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { en } from '../en'
 import { fr } from '../fr'
+import { carriesStopSignal } from '@/domain/coaching/stopSignals'
 
 type Node = Record<string, unknown>
 
@@ -32,6 +33,18 @@ describe('i18n parity', () => {
 describe('French week streaks', () => {
   it('reads one week in the singular', () => {
     expect(fr.profile.milestones.streak(1)).toBe('1 semaine d’affilée')
+  })
+
+  it('reads the hub streak in the singular up to one week, the plural from two', () => {
+    expect(fr.profile.hub.streakOf(1, 3)).toBe("semaine d'affilée · 3 sorties et plus")
+    expect(fr.profile.hub.streakOf(2, 3)).toBe("semaines d'affilée · 3 sorties et plus")
+    expect(fr.profile.hub.streakOf(4, 1)).toBe("semaines d'affilée · 1 sortie et plus")
+  })
+})
+
+describe('French words a French athlete reads', () => {
+  it('names the check-in mood in French', () => {
+    expect(fr.wellness.checkIn.scores.mood.label).toBe('Humeur')
   })
 })
 
@@ -68,6 +81,10 @@ describe('French copy', () => {
     const copy = strings(fr)
 
     expect(copy.filter((line) => GENDERED.some((pattern) => pattern.test(line)))).toEqual([])
+  })
+
+  it('carries no stop rule, symptom warning or referral, anywhere in the tree', () => {
+    expect(strings(fr).filter(carriesStopSignal)).toEqual([])
   })
 
   it('reads the whole tree, not a corner of it', () => {

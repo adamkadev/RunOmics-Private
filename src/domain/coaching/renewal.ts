@@ -19,6 +19,12 @@ function mondayAfter(date: string): string {
   return monday.toISOString().slice(0, 10)
 }
 
+/** The monthly renewal: a block ending inside the start window may be followed without --replace. */
+export function renewalDue(plan: Pick<CoachingPlan, 'block'>, referenceDate: string): boolean {
+  const latest = new Date(Date.parse(`${referenceDate}T00:00:00Z`) + BOOTSTRAP_START_WINDOW_DAYS * DAY_MS).toISOString().slice(0, 10)
+  return plan.block.endDate <= latest
+}
+
 export function renewalDefaults(
   plan: Pick<CoachingPlan, 'block' | 'trainingPreferences'> | null,
   referenceDate: string,

@@ -76,9 +76,11 @@ describe('getAllActivities', () => {
       }
     })
 
-    it('drops the heart rate of runs before hrReliableFrom and of runs the owner marked unreliable', () => {
+    it('drops the heart rate of the runs the owner marked unreliable only, whatever sensor or hrReliableFrom', () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), 'activities-root-'))
-      const run = (id: string, date: string) => ({ id, date, avgHeartRate: 150, hrZones: [{ zone: 2, seconds: 60 }], hrSamples: [150], splits: null })
+      const run = (id: string, date: string) => ({
+        id, date, avgHeartRate: 150, hrZones: [{ zone: 2, seconds: 60 }], hrSamples: [150], splits: null, hrSource: 'wrist',
+      })
       fs.mkdirSync(path.join(root, 'activities'))
       fs.writeFileSync(path.join(root, 'activities', 'index.json'), JSON.stringify({ months: ['2026-10'] }))
       fs.writeFileSync(path.join(root, 'activities', '2026-10.json'), JSON.stringify({
@@ -91,10 +93,11 @@ describe('getAllActivities', () => {
         process.env.RUNOMICS_DATA_DIR = root
         const byId = new Map(getAllActivities().map((a) => [a.id, a]))
 
-        expect(byId.get('old')).toMatchObject({ avgHeartRate: null, hrZones: [], hrSamples: null, hrUntrusted: 'beforeReliable' })
-        expect(byId.get('marked')).toMatchObject({ avgHeartRate: null, hrUntrusted: 'marked' })
-        expect(byId.get('kept')).toMatchObject({ avgHeartRate: 150, hrSamples: [150] })
-        expect(byId.get('kept')).not.toHaveProperty('hrUntrusted')
+        expect(byId.get('marked')).toMatchObject({ avgHeartRate: null, hrZones: [], hrSamples: null, hrUntrusted: 'marked' })
+        for (const id of ['old', 'kept']) {
+          expect(byId.get(id)).toMatchObject({ avgHeartRate: 150, hrSamples: [150] })
+          expect(byId.get(id)).not.toHaveProperty('hrUntrusted')
+        }
       } finally {
         fs.rmSync(root, { recursive: true, force: true })
       }

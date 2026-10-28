@@ -16,7 +16,7 @@ import {
   type ReturnMilestoneKey,
   type ReturnWeek,
 } from '@/domain/training/returnProgress'
-import { DAY_MS, appTodayIso } from '@/lib/calendarDate'
+import { DAY_MS, addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 
 // Past a year a return is history, not progress.
 const RETURN_HORIZON_DAYS = 365
@@ -25,7 +25,10 @@ const CARD_AFTER_RETURN_DAYS = 14
 
 export interface ReturnProgress {
   breakStart: string
+  /** The break's last day, inclusive. */
   breakEnd: string
+  firstDayBack: string
+  runsSince: number
   milestones: ReturnMilestone[]
   /** In the order they are usually reached. */
   pending: ReturnMilestoneKey[]
@@ -78,6 +81,8 @@ export function buildReturnProgress({ breaks, activities, plans, evaluations }: 
   return {
     breakStart: pause.start,
     breakEnd: pause.end,
+    firstDayBack: isoDate(addDays(new Date(`${pause.end}T00:00:00`), 1)),
+    runsSince: since.length,
     milestones,
     pending: RETURN_MILESTONES.filter((key) => !reached.has(key)),
     longestSec: Math.max(0, ...since.map((run) => runningTime(run)?.longestSec ?? 0)),
