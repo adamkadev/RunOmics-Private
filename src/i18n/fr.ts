@@ -1738,7 +1738,8 @@ export const fr = {
   profile: {
     hub: {
       goalsSeason: 'Objectifs & saison',
-      streakOf: (target: number) => `semaines d'affilée · ${target} sorties et plus`,
+      streakOf: (weeks: number, target: number) => `semaine${weeks > 1 ? 's' : ''} d'affilée · ${target} sortie${target > 1 ? 's' : ''} et plus`,
+      noStreak: (target: number) => `Pas encore de série · ${target} sortie${target > 1 ? 's' : ''} et plus`,
       runsThisWeek: (runs: number, target: number) => `${runs} sur ${target} cette semaine`,
       records: 'Records',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Semi' } as Record<string, string>,
@@ -2317,7 +2318,7 @@ export const fr = {
         sleep: { label: 'Sommeil', words: ['Très mauvais', 'Mauvais', 'Moyen', 'Bon', 'Excellent'] },
         soreness: { label: 'Courbatures', words: ['Très fortes', 'Fortes', 'Moyennes', 'Légères', 'Aucune'] },
         stress: { label: 'Stress', words: ['Très élevé', 'Élevé', 'Moyen', 'Faible', 'Aucun'] },
-        mood: { label: 'Mood', words: ['Très mauvais', 'Mauvais', 'Moyen', 'Bon', 'Excellent'] },
+        mood: { label: 'Humeur', words: ['Très mauvais', 'Mauvais', 'Moyen', 'Bon', 'Excellent'] },
       },
       scoreButton: (label: string, value: number, word: string) => `${label} ${value}, ${word}`,
       flags: { niggle: 'Douleur', ill: 'Malade', travel: 'En voyage' },
