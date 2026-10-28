@@ -239,12 +239,16 @@ export function ProgressHub({ view, explored, checkpoint }: { view: ProgressHubV
       <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2" data-testid="progress-columns">
         <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
           <div className="flex items-end justify-between gap-3">
-            <p className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-              <span className="text-2xl font-bold leading-tight tabular-nums text-foreground" data-testid="streak-weeks">
-                {consistency.streakWeeks}
-              </span>
-              <span className="text-[13px] text-muted-foreground text-pretty">{h.streakOf(consistency.thisWeek.target)}</span>
-            </p>
+            {consistency.streakWeeks > 0 ? (
+              <p className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+                <span className="text-2xl font-bold leading-tight tabular-nums text-foreground" data-testid="streak-weeks">
+                  {consistency.streakWeeks}
+                </span>
+                <span className="text-[13px] text-muted-foreground text-pretty">{h.streakOf(consistency.streakWeeks, consistency.thisWeek.target)}</span>
+              </p>
+            ) : (
+              <p className="min-w-0 text-[13px] text-muted-foreground text-pretty" data-testid="streak-none">{h.noStreak(consistency.thisWeek.target)}</p>
+            )}
             <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground" data-testid="consistency-this-week">
               {h.runsThisWeek(consistency.thisWeek.runs, consistency.thisWeek.target)}
             </span>

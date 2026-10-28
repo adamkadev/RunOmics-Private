@@ -12,6 +12,8 @@ const { getNewReturnMilestones } = await import('../GetNewReturnMilestones')
 const progress: ReturnProgress = {
   breakStart: '2026-03-01',
   breakEnd: '2026-10-05',
+  firstDayBack: '2026-10-06',
+  runsSince: 2,
   milestones: [
     { key: 'continuous10', date: '2026-10-12', activityId: 'r1' },
     { key: 'continuous20', date: '2026-10-26', activityId: 'r2' },

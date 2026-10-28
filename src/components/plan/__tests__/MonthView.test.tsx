@@ -25,15 +25,15 @@ const RANGES: PlanPhaseRange[] = [
   { phase: 'build', startDate: '2026-10-12', endDate: '2026-11-22' },
 ]
 
-function renderMonth(onSelectDay = vi.fn()) {
+function renderMonth(onSelectDay = vi.fn(), { runs = RUNS, planned = PLANNED }: { runs?: PlanRun[]; planned?: PlannedWorkout[] } = {}) {
   const byDate = new Map<string, PlanRun[]>()
-  for (const a of RUNS) byDate.set(a.date, [a])
+  for (const a of runs) byDate.set(a.date, [a])
   render(
     <MonthView
       year={2026}
       month={9}
       byDate={byDate}
-      byDatePlanned={new Map(PLANNED.map((p) => [p.date, p]))}
+      byDatePlanned={new Map(planned.map((p) => [p.date, p]))}
       planPhaseRanges={RANGES}
       today={TODAY}
       atPresent
@@ -176,6 +176,27 @@ describe('the legend and the summary', () => {
       t.plan.month.planCovers(formatDate('2026-10-13', { style: 'bare', year: 'never' }), formatDate('2026-10-25', { style: 'bare', year: 'never' })),
     )
     expect(km).toContain(t.plan.month.monthTotal('18'))
+  })
+
+  it('counts a run between the plan’s first and last day though no session was set for it', () => {
+    renderMonth(vi.fn(), { runs: [...RUNS, run('d', '2026-10-15', 5), run('e', '2026-10-05', 7)] })
+
+    const km = screen.getByTestId('month-km').textContent!
+    expect(km).toContain(t.plan.month.kmOf('23', '53'))
+    expect(km).toContain(t.plan.month.monthTotal('30'))
+  })
+
+  it('leaves the caption out when the plan runs through the whole month', () => {
+    const planned: PlannedWorkout[] = ['2026-09-29', '2026-10-02', '2026-10-06', '2026-10-13', '2026-10-20', '2026-10-27', '2026-11-03'].map((date) => ({
+      date,
+      name: 'Easy',
+      type: 'Base',
+      distanceM: 5_000,
+    }))
+    renderMonth(vi.fn(), { planned, runs: [...RUNS, run('d', '2026-10-01', 4)] })
+
+    const km = screen.getByTestId('month-km').textContent!
+    expect(km).toBe(t.plan.month.kmOf('22', '25'))
   })
 
   it('opens the next key session in the Week view', () => {

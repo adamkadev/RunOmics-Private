@@ -20,6 +20,19 @@ All notable changes to this project are documented in this file.
 ### Coaching
 
 - No stop signals for the second athlete, everywhere: the check-in card's French copy drops its stop rule, symptom wording and referral (the pain item reads « Gêne »), the coach's guard reads the French guidance and catches pain, symptom and referral words, and a French Gemini insight carrying one falls back.
+### Fixed
+
+- Return to running: the card on Plan and the Comeback tab in Records date the return from the first day after the
+  break, not its last day.
+- Return to running: before the first run back the card says only that no run came yet, instead of "—", "0 min"
+  and an empty bar, and the Comeback tab says so in place of the longest run. This week's minutes stay hidden
+  until the week has a run.
+- Profile › Consistency: the French streak reads « 1 semaine d'affilée » in the singular, and a streak of 0 reads
+  "No streak yet" rather than a bare 0.
+- French: the morning check-in names « Humeur », not "Mood". Running jargon (Splits, RPE) stays in English.
+- Plan › Month: every run between the plan's first and last day counts against it, so a session run a day early
+  or late, or an extra run, is no longer left out; the "plan covers" caption shows only when the plan starts or
+  ends inside the month.
 
 ## [3.3.0] - 2026-10-28
 

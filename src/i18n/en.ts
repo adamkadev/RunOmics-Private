@@ -1874,7 +1874,9 @@ export const en = {
     hub: {
       // The year card is the way into Goals, not a second copy of its chart.
       goalsSeason: 'Goals & season',
-      streakOf: (target: number) => `week streak · ${target}+ runs`,
+      // English keeps "week streak" for any count; French needs it to pluralise.
+      streakOf: (weeks: number, target: number) => `week streak · ${target}+ runs`,
+      noStreak: (target: number) => `No streak yet · ${target}+ runs`,
       runsThisWeek: (runs: number, target: number) => `${runs} of ${target} this week`,
       records: 'Records',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half' } as Record<string, string>,

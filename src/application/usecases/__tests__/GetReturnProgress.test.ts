@@ -29,6 +29,8 @@ describe('buildReturnProgress', () => {
     const progress = buildReturnProgress(inputs(), '2026-04-27')!
 
     expect(progress.breakEnd).toBe('2026-04-12')
+    expect(progress.firstDayBack).toBe('2026-04-13')
+    expect(progress.runsSince).toBe(runs.length)
     expect(progress.milestones.at(-1)).toEqual({ key: 'blockCompleted', date: runs.map((run) => run.date).sort().at(-1), activityId: null })
     expect(progress.pending).not.toContain('blockCompleted')
     expect(progress.weeks.map((week) => week.weekStart)).toEqual(['2026-04-13', '2026-04-20', '2026-04-27'])
@@ -41,6 +43,13 @@ describe('buildReturnProgress', () => {
     const progress = buildReturnProgress(inputs({ activities: runs.slice(0, -1) }), '2026-04-27')!
 
     expect(progress.pending).toContain('blockCompleted')
+  })
+
+  it('counts no run before the first one back', () => {
+    const progress = buildReturnProgress(inputs(), '2026-04-15')!
+
+    expect(progress.runsSince).toBe(0)
+    expect(progress.longestSec).toBe(0)
   })
 
   it('has nothing to say without a long break, or a year after it', () => {

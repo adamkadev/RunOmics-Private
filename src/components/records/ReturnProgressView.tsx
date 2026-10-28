@@ -13,11 +13,17 @@ export function ReturnProgressView({ progress, today }: { progress: ReturnProgre
   return (
     <div className="space-y-4" data-testid="return-progress">
       <section className={cardClass({ className: 'space-y-1 py-3.5' })}>
-        <p className="text-[13px] text-muted-foreground">{r.since(formatDate(progress.breakEnd, { now }))}</p>
-        <p className="text-sm font-semibold text-foreground">{r.longest}</p>
-        <p className="text-2xl font-bold tabular-nums text-foreground" data-testid="return-longest">
-          {progress.longestSec > 0 ? formatDurationWords(progress.longestSec) : '—'}
-        </p>
+        <p className="text-[13px] text-muted-foreground">{r.since(formatDate(progress.firstDayBack, { now }))}</p>
+        {progress.runsSince === 0 ? (
+          <p className="text-sm text-foreground" data-testid="return-nothing-yet">{r.nothingYet}</p>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-foreground">{r.longest}</p>
+            <p className="text-2xl font-bold tabular-nums text-foreground" data-testid="return-longest">
+              {progress.longestSec > 0 ? formatDurationWords(progress.longestSec) : '—'}
+            </p>
+          </>
+        )}
       </section>
 
       {progress.milestones.length > 0 && (
