@@ -1,4 +1,4 @@
-import type { BlockGuideProposal, CoachingPlan } from '@/domain/coaching/types'
+import type { BlockGuideProposal, CoachingPlan, WorkoutBlock, WorkoutSegmentKind } from '@/domain/coaching/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 
@@ -8,9 +8,18 @@ export interface CoachWeekWords {
   focus: string
 }
 
+export interface CoachStepWords {
+  kind: WorkoutSegmentKind
+  /** Inside a repeat, so its notes hold for every repetition. */
+  repeated: boolean
+  notes: string[]
+}
+
 export interface CoachSessionWords {
   description: string
   notes: string[]
+  /** Only the steps the coach wrote a note for, in session order. */
+  steps: CoachStepWords[]
 }
 
 /** The coach's own text, served by /api/coaching/words behind the site's gate and never in a page's HTML. */
@@ -22,10 +31,20 @@ export interface CoachWords {
   sessions: Record<string, CoachSessionWords>
 }
 
+const trimmed = (notes: readonly string[] | undefined) => (notes ?? []).map((note) => note.trim()).filter(Boolean)
+
+function stepWords(blocks: readonly WorkoutBlock[]): CoachStepWords[] {
+  return blocks
+    .flatMap((block) => block.kind === 'repeat'
+      ? block.steps.map((step) => ({ kind: step.kind, repeated: true, notes: trimmed(step.notes) }))
+      : [{ kind: block.kind, repeated: false, notes: trimmed(block.notes) }])
+    .filter((step) => step.notes.length > 0)
+}
+
 export function coachWords(plan: CoachingPlan): CoachWords {
   const sessions: Record<string, CoachSessionWords> = {}
   for (const workout of plan.weeks.flatMap((week) => week.workouts)) {
-    sessions[workout.id] = { description: workout.description.trim(), notes: (workout.notes ?? []).map((note) => note.trim()).filter(Boolean) }
+    sessions[workout.id] = { description: workout.description.trim(), notes: trimmed(workout.notes), steps: stepWords(workout.blocks) }
   }
   const open = (plan.block.guideProposals ?? []).filter((proposal) => !proposal.adopted)
   return {

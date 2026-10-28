@@ -514,7 +514,13 @@ describe('the coach’s words', () => {
   const WORDS: CoachWords = {
     block: { name: 'Reprise en douceur', focus: 'Cinq semaines pour te réhabituer à courir.' },
     weeks: [{ startDate: '2026-09-07', endDate: '2026-09-13', focus: 'On démarre doucement.' }],
-    sessions: { 'workout-threshold': { description: 'Course très lente, 1 minute de marche.', notes: ['Passe à la marche au moindre doute.'] } },
+    sessions: {
+      'workout-threshold': {
+        description: 'Course très lente, 1 minute de marche.',
+        notes: ['Passe à la marche au moindre doute.'],
+        steps: [{ kind: 'effort', repeated: true, notes: ['Garde une allure de conversation.'] }],
+      },
+    },
   }
   const serve = (words: CoachWords | null) => {
     const fetch = vi.fn(async () => Response.json(words ? { available: true, ...words } : { available: false }))
@@ -575,6 +581,27 @@ describe('the coach’s words', () => {
     const card = screen.getByTestId('plan-workout-workout-threshold')
     expect(card).not.toHaveTextContent('Course très lente, 1 minute de marche.')
     expect(card).not.toHaveTextContent('Passe à la marche au moindre doute.')
+  })
+
+  it('opens the session’s notes, step notes and week focus behind the card’s button', async () => {
+    serve(WORDS)
+    renderWeek({ coaching: overview() })
+
+    const card = screen.getByTestId('plan-workout-workout-threshold')
+    await userEvent.click(await within(card).findByRole('button', { name: t.plan.coachNotes.open }))
+    const sheet = await screen.findByTestId('coach-notes-sheet')
+    expect(sheet).toHaveTextContent('Course très lente, 1 minute de marche.')
+    expect(sheet).toHaveTextContent('Passe à la marche au moindre doute.')
+    expect(within(sheet).getByTestId('coach-notes-step').textContent).toBe(`${t.plan.coachNotes.step.eachRep}Garde une allure de conversation.`)
+    expect(sheet).toHaveTextContent('On démarre doucement.')
+  })
+
+  it('shows no notes button for a session the coach wrote nothing for', async () => {
+    const fetch = serve({ ...WORDS, weeks: [], sessions: {} })
+    renderWeek({ coaching: overview() })
+
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
+    expect(screen.queryByTestId('coach-notes-open')).toBeNull()
   })
 
   it('asks for nothing without a coach plan', async () => {

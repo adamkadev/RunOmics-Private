@@ -2178,6 +2178,21 @@ export const fr = {
       hrCap: (bpm: number) => `≤ ${bpm}`,
       findRoute: 'Trouver un parcours',
     },
+    coachNotes: {
+      open: 'Notes du coach',
+      title: 'Notes du coach',
+      session: 'La séance',
+      steps: 'Étape par étape',
+      week: 'Cette semaine',
+      step: {
+        warmup: 'Échauffement',
+        main: 'Bloc principal',
+        eachRep: 'Chaque bloc',
+        recovery: 'Récupération',
+        strides: 'Accélérations',
+        cooldown: 'Retour au calme',
+      },
+    },
     restCard: {
       eyebrow: 'Repos',
       title: 'Jour de repos',

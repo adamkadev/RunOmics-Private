@@ -22,10 +22,32 @@ describe('coachWords', () => {
       block: { name: 'Reprise en douceur', focus: 'Trois sorties par semaine.' },
       weeks: [{ startDate: '2026-09-07', endDate: '2026-09-13', focus: 'On démarre doucement.' }],
       sessions: {
-        'workout-threshold': { description: 'Controlled threshold repetitions.', notes: ['Au moindre signe inhabituel, passe à la marche.'] },
-        'workout-bare': { description: 'Controlled threshold repetitions.', notes: [] },
+        'workout-threshold': { description: 'Controlled threshold repetitions.', notes: ['Au moindre signe inhabituel, passe à la marche.'], steps: [] },
+        'workout-bare': { description: 'Controlled threshold repetitions.', notes: [], steps: [] },
       },
     })
+  })
+
+  it('carries the notes the coach wrote on a step, and which steps sit in a repeat', () => {
+    const noted = workout({
+      blocks: [
+        { kind: 'warmup', target: { durationSeconds: 600 }, notes: [' About 10 minutes of easy jogging. '] },
+        {
+          kind: 'repeat',
+          repetitions: 3,
+          steps: [
+            { kind: 'effort', target: { durationSeconds: 600 }, notes: ['Run the guide pace first.', ' '] },
+            { kind: 'recovery', target: { durationSeconds: 90 } },
+          ],
+        },
+        { kind: 'cooldown', target: { durationSeconds: 600 } },
+      ],
+    })
+    const words = coachWords({ ...coachingPlan, weeks: [{ ...coachingPlan.weeks[0]!, workouts: [noted] }] })
+    expect(words.sessions[noted.id]!.steps).toEqual([
+      { kind: 'warmup', repeated: false, notes: ['About 10 minutes of easy jogging.'] },
+      { kind: 'effort', repeated: true, notes: ['Run the guide pace first.'] },
+    ])
   })
 
   it('carries nothing of the goal, the race or the provenance', () => {

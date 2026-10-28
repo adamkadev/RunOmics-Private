@@ -9,8 +9,8 @@ const WORDS: CoachWords = {
     { startDate: '2026-09-14', endDate: '2026-09-20', focus: '' },
   ],
   sessions: {
-    'run-walk': { description: 'Course très lente, 1 minute de marche.', notes: ['Passe à la marche au moindre doute.'] },
-    'easy-run': { description: 'Easy run', notes: [] },
+    'run-walk': { description: 'Course très lente, 1 minute de marche.', notes: ['Passe à la marche au moindre doute.'], steps: [] },
+    'easy-run': { description: 'Easy run', notes: [], steps: [] },
   },
 }
 

@@ -2346,6 +2346,22 @@ export const en = {
       // Opens the map's route generator with the session's distance.
       findRoute: 'Find a route',
     },
+    // Behind the session card's button: the coach's words, which stay off the watch.
+    coachNotes: {
+      open: "Coach's notes",
+      title: "Coach's notes",
+      session: 'The session',
+      steps: 'Step by step',
+      week: 'This week',
+      step: {
+        warmup: 'Warm-up',
+        main: 'Main set',
+        eachRep: 'Each rep',
+        recovery: 'Recovery',
+        strides: 'Strides',
+        cooldown: 'Cool-down',
+      },
+    },
     // The rest day on one line, then the week's sessions still to come.
     restCard: {
       eyebrow: 'Rest',

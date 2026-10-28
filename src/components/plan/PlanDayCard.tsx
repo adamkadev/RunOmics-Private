@@ -1,7 +1,8 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { Check, ChevronRight, MapPin } from 'lucide-react'
+import { Check, ChevronRight, Info, MapPin } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { setDaySkipped, useSkippedDays } from '@/lib/skippedDays'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
@@ -15,12 +16,16 @@ import { sessionLabel } from '@/lib/activityTitle'
 import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { ButtonLink } from '@/components/ui/Button'
+import { useCoachWords } from '@/components/coaching/useCoachWords'
+import { coachNotesFor } from './coachNotes'
 import { exploreRouteHref, planRouteKm } from '@/components/explore/exploreHref'
 import { planPaceSecPerKm } from './planPace'
 import type { PlanWorkoutView } from './planWorkoutView'
 import { kindLabel, type DayKind } from './sessionKind'
 import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
 import { paceLabel, workoutSummary } from './workoutSummary'
+
+const CoachNotesSheet = dynamic(() => import('./CoachNotesSheet').then((m) => m.CoachNotesSheet), { ssr: false })
 
 const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
@@ -83,10 +88,26 @@ export function PlannedWorkoutCard({
   const hrCap = sessionHrCapBpm(workout.hr, hrZoneBoundsBpm)
   const hrZone = workout.hr?.zone ?? null
   const routeHref = exploreAvailable && kind.type !== 'Race' ? findRouteHref(workout) : null
+  const notes = coachNotesFor(useCoachWords(workout.state !== undefined), workout.key, workout.date, workout.title)
+  const [notesOpen, setNotesOpen] = useState(false)
 
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
-      <Eyebrow date={workout.date} kind={kind} />
+      <div className="flex items-start justify-between gap-2">
+        <Eyebrow date={workout.date} kind={kind} />
+        {notes && (
+          <button
+            type="button"
+            onClick={() => setNotesOpen(true)}
+            aria-label={t.plan.coachNotes.open}
+            aria-haspopup="dialog"
+            data-testid="coach-notes-open"
+            className="hit-44 -mr-1.5 -mt-1.5 flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[var(--background)] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Info size={16} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+        )}
+      </div>
       {structured ? (
         <>
           <Title>{title}</Title>
@@ -149,6 +170,13 @@ export function PlannedWorkoutCard({
           <MapPin size={18} strokeWidth={2.2} aria-hidden="true" />
           {s.findRoute}
         </ButtonLink>
+      )}
+      {notesOpen && notes && (
+        <CoachNotesSheet
+          notes={notes}
+          subtitle={[formatWeekday(workout.date, true), title].join(' · ')}
+          onClose={() => setNotesOpen(false)}
+        />
       )}
     </section>
   )
