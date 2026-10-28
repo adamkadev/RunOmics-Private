@@ -2207,7 +2207,6 @@ export const fr = {
     phase: {
       weekOf: (total: number) => ({ before: 'Semaine', after: `sur ${total}` }),
       generalShort: 'Prépa générale',
-      asPlanned: (n: number, of: number) => `${n} séance${n > 1 ? 's' : ''} sur ${of} conforme${n > 1 ? 's' : ''} au plan`,
       raceInWeeks: (race: string, weeks: number) => `${race} dans ${weeks} sem.`,
       raceInDays: (race: string, days: number) => (days === 0 ? `${race} aujourd’hui` : days === 1 ? `${race} demain` : `${race} dans ${days} jours`),
       guideProposal: (reps: string, from: string, to: string, source: string) => `Allure guide proposée pour les ${reps} : ${from} → ${to} /km, ${source}`,

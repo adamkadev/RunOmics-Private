@@ -51,9 +51,8 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   easy pace (their pace zone, else the plan's easy range) unless its notes or pace say it is walked, on Plan,
   Today, the month and Analytics, and in the coach's weekly volume rules outside a return: a 25-minute 5′/15′/5′
   session reads about 3 km, not 2. "As planned" needs the distance or duration within 15 %, the same session
-  family and the average heart rate under the cap, else "Shorter / Longer / Harder / Easier than planned"; the
-  phase card counts "N of M sessions as planned". A session run a day early or late is done on Today and Plan's
-  week too. "Skipped" takes a reason (ill, rest, life), stored on Firestore `wellness/{date}` and read by Today,
+  family and the average heart rate under the cap, else "Shorter / Longer / Harder / Easier than planned". A
+  session run a day early or late is done on Today and Plan's week too. "Skipped" takes a reason (ill, rest, life), stored on Firestore `wellness/{date}` and read by Today,
   Plan's week and month and the coach; this browser's old marks move there once. **Needs** the rules deploy.
 - **The coach's own words (F1).** The phase card names the coach's block ("Reprise en douceur") instead of
   « Préparation générale »; Today's session card carries no line of the coach's words. The text comes from

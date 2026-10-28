@@ -111,17 +111,6 @@ const day = (date: string) => screen.getByTestId(`day-${date}`)
 const bar = (date: string) => day(date).querySelector<HTMLElement>('[data-bar-state]')!
 
 describe('the phase card', () => {
-  it('counts the block’s sessions so far run as planned', () => {
-    const threshold = (distanceKm: number) => activity({ id: 'a-threshold', date: TODAY, type: 'Threshold', distanceKm, durationSeconds: distanceKm * 360 })
-    const { unmount } = renderWeek({ coaching: overview({ coachingPlan: blockPlan() }), activities: [threshold(10)] })
-    expect(screen.getByTestId('phase-tally').textContent).toBe(t.plan.phase.asPlanned(1, 1))
-    unmount()
-
-    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }), activities: [threshold(6)] })
-    expect(screen.getByTestId('phase-tally').textContent).toBe(t.plan.phase.asPlanned(0, 1))
-  })
-
-
   it('names the phase, the week in it and the race it builds to', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
