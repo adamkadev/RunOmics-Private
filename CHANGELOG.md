@@ -16,6 +16,21 @@ All notable changes to this project are documented in this file.
   account per athlete with Garmin connected and planned-workout upload on, and its API
   key (`INTERVALS_API_KEY`, optionally `INTERVALS_ATHLETE_ID`) in `.env.adam.local`
   and `.env.lamiaa.local`; then a dry run, and `--apply --retire-connect` once.
+- Garmin Connect signs in with python-garminconnect instead of garth, which is
+  unmaintained and cannot mint a token since Garmin's March 2026 auth change.
+  `python scripts/get_secret.py` signs in again (email, password, MFA code) and
+  prints a new `GARMIN_SECRET`: garminconnect's token store, whose refresh token
+  renews the day-long access token. `npm run coach:garmin-auth` reports both
+  tokens' expiries and whether a refresh worked. An old garth token keeps
+  syncing until it is replaced, with a warning in every run's log; when Garmin
+  refuses the new refresh token, the night reports Connect expired as before.
+  Locally, `GARMIN_SECRET_WRITEBACK` keeps the refreshed token in the env file.
+  The sync and the coach bridge need Python 3.12 or newer. **Needs** a new token
+  minted locally with `python scripts/get_secret.py` for each athlete, then
+  `GARMIN_SECRET` updated in both GitHub Environments (`adam`, `lamiaa`) and in
+  `.env.adam.local` / `.env.lamiaa.local` (with `GARMIN_SECRET_WRITEBACK` set to
+  that file).
+
 - Controlled threshold blocks are 3 + 1 and grow with the athlete's signals. A
   general block's weeks are set in advance: three rising weeks and a lighter fourth
   (about 20% less, threshold time cut by a third, same runs). Green signals (no

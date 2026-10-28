@@ -52,6 +52,10 @@ class FakeGarmin:
         self.unlisted: dict[str, dict] = {}
         self.gear: dict[str, list[dict]] = {}
         self.failures: dict[tuple[str, str], Exception] = {}
+        self.notice: str | None = None
+
+    def credential_notice(self) -> str | None:
+        return self.notice
 
     # sync.main() builds its client as GarminClient(secret) and enters it.
     def __call__(self, _secret: str) -> "FakeGarmin":
@@ -208,6 +212,13 @@ class TestCleanRun:
         assert steps == list(_STEP_RESULTS)
         assert "lastSyncedAt" in json.loads((workspace / "sync_meta.json").read_text())
 
+    def test_a_credential_notice_is_printed_and_costs_the_night_nothing(self, workspace, garmin, steps, monkeypatch, capsys):
+        garmin.notice = "GARMIN_SECRET still holds a garth token"
+
+        assert _run(monkeypatch) == 0
+
+        assert "Warning: GARMIN_SECRET still holds a garth token" in capsys.readouterr().out
+
     def test_a_new_run_keeps_its_start_and_a_stored_one_gets_it_from_the_list(
         self, workspace, garmin, steps, monkeypatch, activity_factory
     ):
@@ -361,6 +372,7 @@ def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
     client = object.__new__(GarminClient)
     client._base = "https://example.test"
     client._http = SimpleNamespace(close=lambda: None)
+    client._auth = SimpleNamespace(notice=lambda: None)
 
     def get(url, **_kwargs):
         raise error

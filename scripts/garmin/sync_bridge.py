@@ -11,6 +11,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from garmin.auth import NOT_A_SECRET
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
 
 _MANAGED_ITEM_TYPE = "workout"
@@ -111,6 +112,9 @@ def main() -> int:
             _serve(client)
     except GarminAuthError:
         _emit({"ok": False, "error": "Garmin authentication failed"})
+        return 3
+    except ValueError:
+        _emit({"ok": False, "error": NOT_A_SECRET})
         return 3
 
     return 0

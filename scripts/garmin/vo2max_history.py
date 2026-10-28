@@ -18,7 +18,7 @@ The monthly series feeds the six-month and one-year views; the daily one, kept
 to a recent window, feeds the four-week view. The daily endpoint is
 undocumented, so a failure there is a warning, not a failed sync.
 
-Without a Connect session - no GARMIN_SECRET, a garth token past saving, or a
+Without a Connect session - no GARMIN_SECRET, an expired Connect token, or a
 quick sync - sync_vo2max_from_runs carries both series on from the runs themselves: each
 FIT file's own VO2max reading (message 140), within 0.1 of Connect's daily
 value (Lamiaa, Oct 2026: 37.1/37.1, 37.1/37.2, 37.4/37.4, 37.3/37.4).
