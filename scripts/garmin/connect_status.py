@@ -1,4 +1,4 @@
-"""Whether garth's token still opens Garmin Connect; the workflow pushes once when it turns expired."""
+"""Whether GARMIN_SECRET still opens Garmin Connect; the workflow pushes once when it turns expired."""
 
 from __future__ import annotations
 

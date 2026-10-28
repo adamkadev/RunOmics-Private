@@ -546,7 +546,7 @@ def main() -> int:
         try:
             lines = compare_report(groups["documented"], secret)
         except Exception as exc:
-            # The class name only: a garth or HTTP error message can carry a
+            # The class name only: an auth or HTTP error message can carry a
             # URL or a token fragment.
             lines = ["", f"Compare: failed ({type(exc).__name__})"]
         for line in lines:

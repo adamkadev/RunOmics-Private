@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from curl_cffi import requests as curl_requests
 
 # Before anything imports a pipeline module, which resolve their data paths at import time: a test must never
 # read or write the developer's real dataset under ./data.
@@ -20,7 +21,7 @@ class NetworkBlocked(RuntimeError):
 
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
-    """httpx, urllib and garth's requests all end in socket.create_connection, which resolves through getaddrinfo.
+    """httpx, urllib and requests end in socket.create_connection; curl_cffi, which garminconnect posts with, bypasses it.
 
     The refusal is also recorded, because much of the pipeline catches broad exceptions on purpose: a test whose code
     swallowed it still fails at teardown.
@@ -34,6 +35,11 @@ def no_network(monkeypatch):
     monkeypatch.setattr(socket.socket, "connect", lambda _self, address: refuse(address))
     monkeypatch.setattr(socket.socket, "connect_ex", lambda _self, address: refuse(address))
     monkeypatch.setattr(socket, "getaddrinfo", lambda host, *_args, **_kwargs: refuse(host))
+    def refuse_curl(*args, **kwargs):
+        refuse(kwargs.get("url", args[-1] if args else None))
+
+    monkeypatch.setattr(curl_requests, "request", refuse_curl)
+    monkeypatch.setattr(curl_requests.Session, "request", lambda _self, *args, **kwargs: refuse_curl(*args, **kwargs))
     yield attempts
     if attempts:
         pytest.fail(f"the test reached for the network: {', '.join(attempts)}")

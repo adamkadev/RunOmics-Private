@@ -26,3 +26,13 @@ def test_a_connection_is_refused_and_recorded(no_network):
     # Cleared only because this test tripped the guard on purpose.
     assert no_network == ["'connectapi.garmin.example'"]
     no_network.clear()
+
+
+def test_a_curl_cffi_request_is_refused_and_recorded(no_network):
+    from curl_cffi import requests as curl_requests
+
+    with pytest.raises(NetworkBlocked):
+        curl_requests.post("https://diauth.garmin.example/token")
+
+    assert no_network == ["'https://diauth.garmin.example/token'"]
+    no_network.clear()

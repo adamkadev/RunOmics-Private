@@ -37,7 +37,7 @@ describe('athlete data stays out of this repository', () => {
     const bridge = read('scripts/garmin/sync_bridge.py')
 
     expect(bridge).toContain('os.environ.get("GARMIN_SECRET"')
-    expect(bridge).not.toMatch(/garth\.login|password|getpass/)
+    expect(bridge).not.toMatch(/garth\.login|\.login\(|password|getpass/)
   })
 
   it('never logs the Garmin token from the gateway', () => {

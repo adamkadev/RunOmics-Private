@@ -1,6 +1,6 @@
 """What both Garmin clients do the same way: page through the activity list,
 pull the .fit out of an activity download, read the HR zone config (the same
-shape from both APIs). No garth here."""
+shape from both APIs). No Connect credential here."""
 
 from __future__ import annotations
 
