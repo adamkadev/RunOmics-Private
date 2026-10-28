@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Security: zod, pulled in by the React hooks lint plugin, is pinned to 4.6.6 or later
+  (GHSA-mrhx-c7xc-m3w5); `npm audit` reports no vulnerabilities. Dev tooling only.
 - Controlled threshold blocks are 3 + 1 and grow with the athlete's signals. A
   general block's weeks are set in advance: three rising weeks and a lighter fourth
   (about 20% less, threshold time cut by a third, same runs). Green signals (no
