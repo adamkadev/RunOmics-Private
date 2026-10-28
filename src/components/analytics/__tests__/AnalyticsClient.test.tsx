@@ -220,7 +220,7 @@ describe('Analytics (v4.5)', () => {
     }
   })
 
-  it('opens the coach read in a bottom sheet with Open plan beside Close', async () => {
+  it('opens the coach read in a bottom sheet, closed from its header, with Open plan below', async () => {
     await renderBoard()
     expect(screen.getByTestId('coach-open-plan').getAttribute('href')).toBe('/plan')
     fireEvent.click(screen.getByTestId('coach-read-why'))
@@ -240,8 +240,8 @@ describe('Analytics (v4.5)', () => {
     const open = within(dialog).getByRole('link', { name: t.analytics.cards.coachRead.openPlanButton })
     expect(open.getAttribute('href')).toBe('/plan')
     expect(open.className).toContain('bg-accent')
-    expect(open.className).toContain('flex-1')
-    const closes = within(dialog).getAllByRole('button', { name: t.analytics.cards.close })
+    expect(open.className).toContain('w-full')
+    const closes = within(dialog).getAllByRole('button', { name: t.common.close })
     expect(closes).toHaveLength(1)
     fireEvent.click(closes[0]!)
     // The sheet slides away before it goes.

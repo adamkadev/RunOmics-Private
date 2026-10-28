@@ -25,7 +25,11 @@ const render = (slot: Slot, close: () => void) => (typeof slot === 'function' ? 
 /** A fill, never glass: glass is never nested in glass. */
 export const SHEET_CONTROL = 'hit-44 flex h-11 shrink-0 items-center justify-center rounded-full bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]'
 
-/** z-[60]: above the fullscreen maps (z-50), whose filters open a sheet. */
+/**
+ * Every modal in the app is this sheet. One way to dismiss: the × at the top left, the scrim, a swipe down or Escape;
+ * a footer holds the sheet's own actions, never a second Close. z-[60]: above the fullscreen maps (z-50), whose filters
+ * open a sheet.
+ */
 export function Sheet({
   onClose,
   title,

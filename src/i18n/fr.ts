@@ -826,7 +826,6 @@ export const fr = {
         words: { '4w': '4 semaines', '12w': '12 semaines', '1y': 'un an' } as Record<string, string>,
         hours: (h: string) => `${h} h`,
       },
-      close: 'Fermer',
       today: 'Auj.',
       thisWeek: 'Cette semaine',
       scrubWeek: (date: string) => `Semaine du ${date}`,

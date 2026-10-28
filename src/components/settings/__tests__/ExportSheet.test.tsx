@@ -25,12 +25,12 @@ describe('Export sheet', () => {
     expect(onWorkbook).not.toHaveBeenCalled()
   })
 
-  it('closes on Cancel without exporting anything', async () => {
+  it('closes from the header without exporting anything', async () => {
     const onWorkbook = vi.fn()
     const onClose = vi.fn()
     render(<ExportSheet options={formats(onWorkbook, vi.fn())} onClose={onClose} />)
 
-    await userEvent.click(screen.getByRole('button', { name: s.actions.confirmCancel }))
+    await userEvent.click(screen.getByRole('button', { name: t.common.close }))
     expect(onWorkbook).not.toHaveBeenCalled()
     await vi.waitFor(() => expect(onClose).toHaveBeenCalled())
   })

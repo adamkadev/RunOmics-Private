@@ -1,17 +1,13 @@
 'use client'
 
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
-import { useFocusTrap } from '@/lib/useFocusTrap'
-import { useScrollLock } from '@/lib/useScrollLock'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { GlassLayers } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
 import { linePath } from '@/lib/linePath'
 import type { DeltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
-import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { Sheet } from '@/components/ui/Sheet'
 import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 
@@ -61,9 +57,9 @@ export function CardHead({ title, caption, about, right }: { title: string; capt
       )}
       {right ?? (caption && <span data-card-caption className="min-w-0 text-left text-[13px] leading-[18px] text-pretty text-muted-foreground">{caption}</span>)}
       {open && about && (
-        <Dialog title={title} onClose={() => setOpen(false)}>
-          <p className="text-sm leading-normal text-[var(--text-2)]">{about}</p>
-        </Dialog>
+        <Sheet title={title} label={title} onClose={() => setOpen(false)}>
+          <p className="pb-2 pt-1 text-sm leading-normal text-[var(--text-2)]">{about}</p>
+        </Sheet>
       )}
     </div>
   )
@@ -168,89 +164,6 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
         </button>
       ))}
     </div>
-  )
-}
-
-const DIALOG_TONE: Record<StatTone, string> = {
-  pos: 'var(--pos)',
-  warn: 'var(--warn)',
-  neg: 'var(--neg)',
-  muted: 'var(--muted-foreground)',
-}
-
-/**
- * The page's one dialog (v4.17): a centred modal, 520 wide at most, radius
- * 18, over a 55% scrim blurred 2 px - no bottom-sheet handle. An eyebrow and
- * a 19 px title with a close button, the body, then its actions on the right
- * (Close alone unless it has its own). Focus stays inside, Escape closes it
- * and the page under it does not scroll.
- */
-export function Dialog({
-  title,
-  eyebrow,
-  eyebrowTone = 'muted',
-  onClose,
-  actions,
-  children,
-}: {
-  title: string
-  eyebrow?: string
-  eyebrowTone?: StatTone
-  onClose: () => void
-  /** The dialog's buttons, the primary one last; none, and it has no footer. */
-  actions?: ReactNode
-  children: ReactNode
-}) {
-  const trapRef = useFocusTrap<HTMLDivElement>()
-  const titleId = useId()
-  useScrollLock()
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  // Under the status bar, as every sheet: the strip dims itself (useScrollLock).
-  return createPortal(
-    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-center justify-center p-4 sm:p-6" style={{ touchAction: 'none' }}>
-      <div className="absolute inset-0 animate-fade-in bg-[var(--scrim-sheet)]" onClick={onClose} aria-hidden />
-      <div
-        ref={trapRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="relative flex max-h-full w-full max-w-[520px] animate-fade-up flex-col gap-3.5 overflow-y-auto overscroll-contain rounded-[28px] bg-[var(--raised)] px-[22px] py-[22px] shadow-[var(--shadow-modal)]"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            {eyebrow && (
-              <span className={EYEBROW_CLASS} style={{ color: DIALOG_TONE[eyebrowTone] }}>
-                {eyebrow}
-              </span>
-            )}
-            <h2 id={titleId} className="text-title-3 text-foreground text-pretty">
-              {title}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t.analytics.cards.close}
-            className="-mr-2 -mt-2 flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--fill-3)] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <X size={20} strokeWidth={2.2} aria-hidden />
-          </button>
-        </div>
-        {children}
-        {/* One way to dismiss (design review, Oct 2026): the × above, the
-            backdrop and Escape. A second "Close" beside it said the same. */}
-        {actions && <div className="flex justify-end gap-2">{actions}</div>}
-      </div>
-    </div>,
-    document.body,
   )
 }
 

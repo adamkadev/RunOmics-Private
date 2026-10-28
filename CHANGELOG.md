@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Interface
+
+- Every sheet closes the same way: the × at the top left, a tap outside, a swipe down or Escape. The coach read on
+  Analytics and the export sheet lose their Close button, a quartier's sheet its × beside the name, and a card's
+  explanation on Analytics opens as a sheet instead of a centred dialog.
+
 ### Watch
 
 - The coach's notes no longer go to the watch, on either route: no workout description and no step notes, so a

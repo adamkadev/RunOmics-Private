@@ -1,13 +1,11 @@
 'use client'
 
 import { useId } from 'react'
-import { X } from 'lucide-react'
 import { t } from '@/i18n'
 import { COMPLETE_PCT, type UnitCoverage } from '@/domain/explore/types'
 import { formatDate, formatDistance, formatNumber, formatPercent } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { SHEET_CONTROL, Sheet } from '@/components/ui/Sheet'
+import { Sheet } from '@/components/ui/Sheet'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { QUARTIER_SHEET_TEST_ID } from './quartierCamera'
 
@@ -48,7 +46,6 @@ export function QuartierSheet({
   return (
     <Sheet
       onClose={onClose}
-      showClose={false}
       titleId={titleId}
       testId={QUARTIER_SHEET_TEST_ID}
       footer={
@@ -59,19 +56,12 @@ export function QuartierSheet({
         ) : undefined
       }
     >
-      {(close) => (
-        // 4 pt down the sheet's scroller: room for the close button's focus ring, which the scroller's top edge cuts.
-        <div className="flex flex-col gap-4 pt-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-col">
-              <h2 id={titleId} className="text-title-1 text-foreground text-pretty [overflow-wrap:anywhere]">
-                {unit.name}
-              </h2>
-              <p className="text-subhead leading-5 text-muted-foreground">{unit.kind === 'commune' ? s.commune : s.quartierOf(unit.commune)}</p>
-            </div>
-            <button type="button" onClick={close} aria-label={t.common.close} className={cn(SHEET_CONTROL, 'w-11 text-foreground')}>
-              <X size={18} strokeWidth={2.2} aria-hidden="true" />
-            </button>
+      <div className="flex flex-col gap-4 pt-1">
+          <div className="flex min-w-0 flex-col">
+            <h2 id={titleId} className="text-title-1 text-foreground text-pretty [overflow-wrap:anywhere]">
+              {unit.name}
+            </h2>
+            <p className="text-subhead leading-5 text-muted-foreground">{unit.kind === 'commune' ? s.commune : s.quartierOf(unit.commune)}</p>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -103,8 +93,7 @@ export function QuartierSheet({
               <Stat key={stat.label} labelPosition="bottom" label={stat.label} value={stat.value} valueStyle={STAT_VALUE_STYLE} />
             ))}
           </StatGrid>
-        </div>
-      )}
+      </div>
     </Sheet>
   )
 }

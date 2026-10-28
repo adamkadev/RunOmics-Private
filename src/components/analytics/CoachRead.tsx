@@ -6,7 +6,7 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-r
 import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
 import { VerdictEyebrow } from '@/components/ui/Verdict'
 import { t } from '@/i18n'
-import { Button, ButtonLink } from '@/components/ui/Button'
+import { ButtonLink } from '@/components/ui/Button'
 import { Sheet } from '@/components/ui/Sheet'
 import type { Direction, TabRead } from './coachReadTabs'
 import type { Trend } from './analyticsView'
@@ -83,19 +83,13 @@ function WhySheet({ read, eyebrow, onClose }: { read: TabRead; eyebrow: string; 
     <Sheet
       onClose={onClose}
       titleId={titleId}
-      showClose={false}
       testId="why-sheet"
       bodyClassName="flex flex-col gap-3.5"
-      footer={(close) => (
-        <div className="flex gap-2.5">
-          <ButtonLink href="/plan" size="lg" className="flex-1" data-testid="coach-open-plan-button">
-            {s.openPlanButton}
-          </ButtonLink>
-          <Button size="lg" variant="secondary" onClick={close}>
-            {t.analytics.cards.close}
-          </Button>
-        </div>
-      )}
+      footer={
+        <ButtonLink href="/plan" size="lg" className="w-full" data-testid="coach-open-plan-button">
+          {s.openPlanButton}
+        </ButtonLink>
+      }
     >
       <VerdictEyebrow tone={read.tone} className="[&>span:first-child]:hidden">{eyebrow}</VerdictEyebrow>
       <h2 id={titleId} className="text-title-3 text-foreground text-pretty">
