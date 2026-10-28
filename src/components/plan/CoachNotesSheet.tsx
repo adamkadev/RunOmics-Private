@@ -18,12 +18,12 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
 export function CoachNotesSheet({ notes, subtitle, onClose }: { notes: CoachNotes; subtitle: string; onClose: () => void }) {
   const c = t.plan.coachNotes
   return (
-    <Sheet onClose={onClose} title={c.title} titleId="coach-notes-title" testId="coach-notes-sheet">
+    <Sheet onClose={onClose} title={c.title} titleId="coach-notes-title" testId="coach-notes-sheet" detent="medium">
       <div className="flex flex-col pb-2 pt-1">
         <p className="pb-2 text-[13px] text-muted-foreground">{subtitle}</p>
         {notes.session.length > 0 && (
           <Section label={c.session}>
-            {notes.session.map((line) => <p key={line} className="text-[15px] text-foreground">{line}</p>)}
+            {notes.session.map((line, i) => <p key={i} className="text-[15px] text-foreground">{line}</p>)}
           </Section>
         )}
         {notes.steps.length > 0 && (
@@ -31,7 +31,7 @@ export function CoachNotesSheet({ notes, subtitle, onClose }: { notes: CoachNote
             {notes.steps.map((step, i) => (
               <div key={i} className="flex flex-col gap-0.5 py-1" data-testid="coach-notes-step">
                 <span className="text-sm font-semibold text-foreground">{step.label}</span>
-                {step.notes.map((note) => <p key={note} className="text-sm text-[var(--text-2)]">{note}</p>)}
+                {step.notes.map((note, j) => <p key={j} className="text-sm text-[var(--text-2)]">{note}</p>)}
               </div>
             ))}
           </Section>

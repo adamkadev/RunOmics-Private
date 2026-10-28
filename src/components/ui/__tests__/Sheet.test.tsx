@@ -16,6 +16,14 @@ describe('a sheet', () => {
     expect([...sheet.querySelectorAll(':scope > i')].map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
   })
 
+  it('stops a fixed medium sheet at the medium height, its body scrolling, and lets a measured one grow', () => {
+    const { unmount } = render(<Sheet onClose={() => {}} title="Notes" testId="sheet" detent="medium">body</Sheet>)
+    expect(screen.getByTestId('sheet').className).toContain('max-h-[75%]')
+    unmount()
+    render(<Sheet onClose={() => {}} title="Notes" testId="sheet">body</Sheet>)
+    expect(screen.getByTestId('sheet').className).not.toContain('max-h-[75%]')
+  })
+
   it('draws its header controls in the light translucent fill, never glass', () => {
     render(<Sheet onClose={() => {}} title="Filter & sort" action={{ label: 'Reset', onClick: () => {} }}>body</Sheet>)
     for (const name of ['Close', 'Reset']) {

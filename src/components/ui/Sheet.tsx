@@ -53,6 +53,7 @@ export function Sheet({
   trailing?: ReactNode
   showClose?: boolean
   footer?: Slot
+  /** Fixed instead of measured. A fixed medium sheet stops at the medium height and its body scrolls. */
   detent?: SheetDetent
   testId?: string
   bodyClassName?: string
@@ -106,7 +107,7 @@ export function Sheet({
           'lg lg-sheet relative flex w-full animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col sm:max-w-sm',
           'transition-[margin,border-radius] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
           medium
-            ? 'm-[var(--sheet-inset)] max-h-[calc(100%_-_16px)] rounded-[var(--radius-sheet)] sm:rounded-[var(--radius-sheet)]'
+            ? cn('m-[var(--sheet-inset)] rounded-[var(--radius-sheet)] sm:rounded-[var(--radius-sheet)]', fixedDetent ? 'max-h-[75%]' : 'max-h-[calc(100%_-_16px)]')
             : 'max-h-full rounded-t-[var(--radius-sheet-large)] rounded-b-none sm:rounded-[var(--radius-sheet-large)]',
         )}
         style={sheetStyle}
