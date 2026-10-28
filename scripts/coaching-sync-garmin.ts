@@ -4,12 +4,13 @@ import path from 'path'
 import { appTodayIso } from '@/lib/calendarDate'
 import { dataWorkspace, pushWorkspace, removeWorkspace, type DataWorkspace } from './coachingWorkspace'
 import { interopImport } from './interopImport'
+import { retireIntervals, syncIntervals } from './coachingSyncIntervals'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 function usage(): string {
   return [
-    'RunOmics coaching sync to Garmin Connect',
+    'RunOmics coaching sync to the watch, through intervals.icu or Garmin Connect',
     '',
     '  npm run coach:sync-garmin                       Preview only (default).',
     '  npm run coach:sync-garmin -- --apply            Apply the previewed mutations.',
@@ -26,13 +27,20 @@ function usage(): string {
     '                       a race is already on the Garmin calendar as an event. A',
     '                       course-aware race still goes out with its race effort',
     '                       unpaced, so PacePro keeps the pacing.',
-    '  --print-payload <YYYY-MM-DD>   Print the Garmin JSON for that date and exit.',
+    '  --print-payload <YYYY-MM-DD>   Print the payload for that date and exit.',
+    '  --route connect|intervals      Override the route. Default: intervals when',
+    '                       INTERVALS_API_KEY is set, Garmin Connect otherwise.',
+    '  --retire-connect     On the intervals route, delete RunOmics\'s own Connect',
+    '                       workouts from today on first, so none reaches the watch twice.',
+    '  --retire-intervals   On the Connect route, delete RunOmics\'s own intervals.icu',
+    '                       events from today on first.',
     '  --data-dir <path>    Read/write an existing workspace without fetching or pushing',
     '                       it (default: RUNOMICS_DATA_DIR). Without one, the private data',
     '                       repository is fetched, and --apply pushes the mapping back.',
     '',
-    'Requires GARMIN_SECRET in the environment for --apply. It is read only by the',
-    'Python bridge and never printed.',
+    'The Connect route requires GARMIN_SECRET for --apply, read only by the Python',
+    'bridge. The intervals.icu route requires INTERVALS_API_KEY (and optionally',
+    'INTERVALS_ATHLETE_ID). Neither is ever printed.',
   ].join('\n')
 }
 
@@ -49,19 +57,21 @@ function isoDate(args: string[], name: string): string | undefined {
 }
 
 /** The mapping alone records what is on Garmin, so one the push could not deliver is saved outside the workspace. */
-async function pushMapping(workspace: DataWorkspace, mappingPath: string): Promise<void> {
+async function pushMapping(workspace: DataWorkspace, mappingPaths: string[]): Promise<void> {
   try {
     await pushWorkspace(workspace)
-    console.log('Garmin mapping pushed to the private data repository.')
+    console.log('Sync state pushed to the private data repository.')
   } catch (error) {
     process.exitCode = 1
-    console.error(`Could not push the Garmin mapping: ${error instanceof Error ? error.message : String(error)}`)
-    if (!fs.existsSync(mappingPath)) return
-    const saved = path.resolve('.coach-previews', `garmin-sync-${new Date().toISOString().replace(/[:.]/g, '-')}.json`)
-    fs.mkdirSync(path.dirname(saved), { recursive: true })
-    fs.copyFileSync(mappingPath, saved)
-    fs.chmodSync(saved, 0o600)
-    console.error(`Saved it to ${saved}: commit it as data/coaching/garmin-sync.json before the next sync.`)
+    console.error(`Could not push the sync state: ${error instanceof Error ? error.message : String(error)}`)
+    for (const mappingPath of mappingPaths.filter((candidate) => fs.existsSync(candidate))) {
+      const name = path.basename(mappingPath, '.json')
+      const saved = path.resolve('.coach-previews', `${name}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`)
+      fs.mkdirSync(path.dirname(saved), { recursive: true })
+      fs.copyFileSync(mappingPath, saved)
+      fs.chmodSync(saved, 0o600)
+      console.error(`Saved it to ${saved}: commit it as data/coaching/${name}.json before the next sync.`)
+    }
   }
 }
 
@@ -99,13 +109,53 @@ async function sync(args: string[], workspace: DataWorkspace): Promise<void> {
   const to = isoDate(args, '--to')
   if (to && from && to < from) throw new Error('--to must not precede --from')
 
+  const { resolveWorkoutSyncRoute } = await interopImport(import('@/application/coaching/syncRoute'))
+  const route = resolveWorkoutSyncRoute(option(args, '--route'), process.env)
+  const applying = args.includes('--apply')
+
   const printPayload = isoDate(args, '--print-payload')
   if (printPayload) {
     const workout = plan.weeks.flatMap((week) => week.workouts).find((candidate) => candidate.date === printPayload)
     if (!workout) throw new Error(`No prescription on ${printPayload}`)
-    console.log(JSON.stringify(toGarminWorkoutPayload(workout), null, 2))
+    if (route === 'intervals') {
+      const { toIntervalsWorkoutEvent } = await interopImport(import('@/application/coaching/intervalsWorkoutEncoding'))
+      const event = toIntervalsWorkoutEvent(workout)
+      console.log(JSON.stringify(event, null, 2))
+      console.log(`\n${event.description}`)
+    } else {
+      console.log(JSON.stringify(toGarminWorkoutPayload(workout), null, 2))
+    }
     return
   }
+
+  if (route === 'intervals') {
+    const changed: string[] = []
+    try {
+      await syncIntervals({
+        root,
+        plan,
+        evaluations: repository.getEvaluations(),
+        window: { today, from, to },
+        apply: applying,
+        expect: option(args, '--expect'),
+        syncRaces: args.includes('--sync-races'),
+        retireConnect: args.includes('--retire-connect'),
+      }, changed)
+    } finally {
+      if (changed.length && workspace.shouldPush) await pushMapping(workspace, changed)
+      else if (changed.length) console.log(`Commit ${changed.join(' and ')} to the data repository: it is the only record of these workouts.`)
+    }
+    return
+  }
+
+  const { JsonIntervalsSyncStore } = await interopImport(import('@/infrastructure/repositories/JsonIntervalsSyncStore'))
+  const { pendingIntervalsEntries } = await interopImport(import('@/application/coaching/intervalsSync'))
+  const intervalsStore = new JsonIntervalsSyncStore(root)
+  const intervalsLeft = pendingIntervalsEntries(intervalsStore.read(), today)
+  const handBack = intervalsLeft.length
+    ? `RunOmics still has ${intervalsLeft.length} intervals.icu workout(s) from ${today} on (${intervalsStore.location}). ` +
+      '--apply needs --retire-intervals to delete them first, or the watch gets those sessions twice.'
+    : null
 
   const store = new JsonGarminSyncStore(root)
   const syncPlan = buildGarminSyncPlan(plan, repository.getEvaluations(), store.read(), { today, from, to }, {
@@ -118,6 +168,7 @@ async function sync(args: string[], workspace: DataWorkspace): Promise<void> {
     console.log('')
     console.log(`Plan ${plan.id} revision ${plan.revision} (${plan.status}); mapping at ${store.location}`)
     console.log(`Fingerprint: ${syncPlan.fingerprint}`)
+    if (handBack) console.log(`\n${handBack}`)
     console.log('')
     console.log(
       mutating
@@ -136,6 +187,20 @@ async function sync(args: string[], workspace: DataWorkspace): Promise<void> {
   }
 
   if (!process.env.GARMIN_SECRET?.trim()) throw new Error('GARMIN_SECRET is not set; nothing was sent to Garmin')
+  if (handBack && !args.includes('--retire-intervals')) throw new Error(`${handBack} Nothing was sent.`)
+  if (handBack) {
+    let retired = false
+    try {
+      retired = await retireIntervals(root, today)
+    } finally {
+      if (!retired) {
+        process.exitCode = 1
+        console.error('Some intervals.icu events could not be deleted; nothing was sent to Garmin Connect. Re-run to finish.')
+        if (workspace.shouldPush) await pushMapping(workspace, [intervalsStore.location])
+      }
+    }
+    if (!retired) return
+  }
 
   const { applyGarminSyncPlan, formatGarminSyncResults, verifyGarminSync } =
     await interopImport(import('@/application/coaching/garminSyncApply'))
@@ -156,12 +221,12 @@ async function sync(args: string[], workspace: DataWorkspace): Promise<void> {
     if (verified.results.some((result) => result.outcome === 'failed')) process.exitCode = 1
   } finally {
     gateway.close()
-    if (workspace.shouldPush) await pushMapping(workspace, store.location)
+    if (workspace.shouldPush) await pushMapping(workspace, handBack ? [store.location, intervalsStore.location] : [store.location])
     else console.log(`Commit ${store.location} to the data repository: it is the only record of these Garmin workouts.`)
   }
 }
 
 main().catch((error) => {
-  console.error(`Garmin sync failed: ${error instanceof Error ? error.message : String(error)}`)
+  console.error(`Workout sync failed: ${error instanceof Error ? error.message : String(error)}`)
   process.exitCode = 1
 })
