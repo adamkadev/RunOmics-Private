@@ -131,15 +131,15 @@ describe('the phase card', () => {
     expect([...segments].filter((s) => s.hasAttribute('data-done'))).toHaveLength(1)
   })
 
-  it('counts general preparation to the end of the block when the plan has no race', () => {
+  it('counts general preparation inside the block when the plan has no race', () => {
     const general: CoachingPlan = { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined }
     renderWeek({ coaching: overview({ coachingPlan: general }) })
 
     const card = screen.getByTestId('phase-line')
     expect(within(card).getByRole('heading').textContent).toBe(t.plan.weekPurpose.generalPreparation)
-    // Aug 31 to the block's end on Oct 4: five weeks, this the second.
-    const weekOf = t.plan.phase.weekOf(5)
-    expect(card.textContent).toBe(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 2 ${weekOf.after}`)
+    // The block's Sep 7 to Oct 4, not the season's Aug 31: four weeks, this the first.
+    const weekOf = t.plan.phase.weekOf(4)
+    expect(card.textContent).toBe(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 1 ${weekOf.after}`)
     expect(within(card).getByRole('link').getAttribute('href')).toBe('/plan/checkpoint')
   })
 

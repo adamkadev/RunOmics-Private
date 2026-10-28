@@ -79,6 +79,13 @@ export function phaseWeek(spans: PhaseSpan[], monday: string): PhaseWeek | null 
   return { span, week: Math.min(Math.max(week, 1), total), total }
 }
 
+/** General preparation runs block after block, so its week is counted inside the block the coach named. */
+export function generalBlockWeek(phase: PhaseWeek | null, block: { startDate: string; endDate: string }, monday: string): PhaseWeek | null {
+  if (phase?.span.key !== 'general') return phase
+  const span = { ...phase.span, startDate: mondayOf(block.startDate), endDate: block.endDate }
+  return phaseWeek([span], monday) ?? phase
+}
+
 export function raceCountdown(race: PlanRace, today: string): string | null {
   const days = daysUntil(race.date, today)
   if (days < 0) return null

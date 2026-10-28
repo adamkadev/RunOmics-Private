@@ -12,7 +12,7 @@ import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
 import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
-import { phaseWeek, planPhaseSpans } from '@/components/plan/planPhaseSpans'
+import { generalBlockWeek, phaseWeek, planPhaseSpans } from '@/components/plan/planPhaseSpans'
 
 export interface ProgressHubView {
   year: number
@@ -188,7 +188,8 @@ export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
 /** Named and counted as Plan's phase card does. */
 export function currentBlock(coaching: CoachingOverview | null | undefined, today: string): ProgressHubView['block'] {
   if (!coaching || today > coaching.plan.block.endDate) return null
-  const phase = phaseWeek(planPhaseSpans(coaching, []), isoDate(startOfWeek(new Date(`${today}T00:00:00`))))
+  const monday = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
+  const phase = generalBlockWeek(phaseWeek(planPhaseSpans(coaching, []), monday), coaching.plan.block, monday)
   if (!phase) return null
   const sessions = coaching.workouts.filter((w) => w.state !== 'cancelled')
   return {

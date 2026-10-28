@@ -22,7 +22,7 @@ import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './pl
 import { sessionTitle } from './sessionTitle'
 import { dayKind, kindLetter } from './sessionKind'
 import { formatWeekKm, planWeekTarget } from './weekPlanDays'
-import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
+import { generalBlockWeek, phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
@@ -207,7 +207,10 @@ export function WeekView({
 
   const block = useMemo(() => blockLifecycle(coaching, today), [coaching, today])
 
-  const phase = useMemo(() => phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay), [coaching, planPhaseRanges, firstDay])
+  const phase = useMemo(() => {
+    const week = phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay)
+    return coaching ? generalBlockWeek(week, coaching.plan.block, firstDay) : week
+  }, [coaching, planPhaseRanges, firstDay])
   const words = useCoachWords(coaching !== null)
   const blockName = phase?.span.key === 'general' ? words?.block.name || null : null
   const race = useMemo(() => {

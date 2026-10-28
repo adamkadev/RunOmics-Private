@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { t } from '@/i18n'
 import type { PlanCoachingView } from '../planCoachingView'
-import { phaseWeek, planPhaseSpans, raceCountdown, spanOfWeek } from '../planPhaseSpans'
+import { generalBlockWeek, phaseWeek, planPhaseSpans, raceCountdown, spanOfWeek } from '../planPhaseSpans'
 
 const GARMIN = [
   { phase: 'base' as const, startDate: '2026-09-08', endDate: '2026-09-28' },
@@ -39,6 +39,18 @@ describe('the week in its phase', () => {
 
   it('reads general preparation from its start to the block end', () => {
     expect(phaseWeek(planPhaseSpans(general(), []), '2026-10-19')).toMatchObject({ week: 3, total: 5 })
+  })
+
+  it('counts general preparation inside the block, not from the season start', () => {
+    const { block } = general().plan
+    const week = (monday: string) => generalBlockWeek(phaseWeek(planPhaseSpans(general(), []), monday), block, monday)
+    expect(week('2026-10-12')).toMatchObject({ week: 1, total: 4 })
+    expect(week('2026-11-02')).toMatchObject({ week: 4, total: 4 })
+  })
+
+  it('leaves a race phase counted as it was', () => {
+    const phase = phaseWeek(planPhaseSpans(null, GARMIN), '2026-09-21')
+    expect(generalBlockWeek(phase, general().plan.block, '2026-09-21')).toBe(phase)
   })
 
   it('has no phase outside the plan', () => {
