@@ -14,6 +14,8 @@ All notable changes to this project are documented in this file.
 - Plan › Month: every run between the plan's first and last day counts against it, so a session run a day early
   or late, or an extra run, is no longer left out; the "plan covers" caption shows only when the plan starts or
   ends inside the month.
+- Plan › Week: in a week of short runs the day bars are scaled to its longest run, which fills the bar, instead of
+  staying a few pixels high; a week with a run of about 14 km or more keeps the shared 5 px per km.
 
 ### Activities, runs and analytics
 
@@ -33,6 +35,8 @@ All notable changes to this project are documented in this file.
 
 ### Coach
 
+- **Watch sync keeps a session already run.** Once a session is matched with its run, the Garmin and intervals.icu
+  syncs no longer delete its calendar entry as "no longer in the active future plan" when it falls on today.
 - No stop signals for the second athlete, everywhere: the check-in card's French copy drops its stop rule, symptom wording and referral (the pain item reads « Gêne »), the coach's guard reads the French guidance and catches pain, symptom and referral words, and a French Gemini insight carrying one falls back.
 - **Workout descriptions.** The rules and the answer schema say what a description is for: one sentence of about
   90 characters, in the athlete's language, on what is specific to the session this week, never a definition of its
@@ -86,6 +90,7 @@ All notable changes to this project are documented in this file.
   "No streak yet" rather than a bare 0.
 - French: the morning check-in names « Humeur », not "Mood". Running jargon (Splits, RPE) stays in English.
 - Smooth scrolling is off under "Reduce motion".
+- French: the map page is « Carte » in the sidebar and for screen readers, not "Heatmap".
 
 ## [3.3.0] - 2026-10-28
 

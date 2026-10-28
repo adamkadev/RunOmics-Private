@@ -5,7 +5,7 @@ import {
   type IntervalsCalendarGateway,
   type IntervalsEventRecord,
 } from '@/application/ports/IntervalsCalendarGateway'
-import type { CoachingPlan, WorkoutPrescription } from '@/domain/coaching/types'
+import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import {
   applyIntervalsSyncPlan,
   buildIntervalsSyncPlan,
@@ -146,6 +146,15 @@ describe('the sync plan', () => {
       ['create', 'plan-1:a'],
       ['delete', 'plan-1:b'],
     ])
+  })
+
+  it('leaves the event of a session already run on the calendar', () => {
+    const today = workout({ id: 'plan-1:today', date: TODAY })
+    const state = stateWith([{ workout: today, eventId: '9' }, { workout: tempo, eventId: '2' }])
+    const run = { prescriptionId: 'plan-1:today', matchStatus: 'matched' } as unknown as WorkoutEvaluation
+    const syncPlan = buildIntervalsSyncPlan(plan([today, tempo]), [run], state, { today: TODAY })
+
+    expect(syncPlan.operations.map((operation) => [operation.action, operation.prescriptionId])).toEqual([['keep', 'plan-1:b']])
   })
 
   it('skips a race unless asked to sync races', () => {

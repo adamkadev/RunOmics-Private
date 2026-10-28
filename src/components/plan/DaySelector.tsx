@@ -30,10 +30,16 @@ const MAX_BAR_PX = 68
 const MIN_BAR_PX = 14
 const STUB_PX = 5
 
-export function barHeight(day: Pick<SelectorDay, 'state' | 'km'>): number {
+/** A week of short runs fills the track with its longest one; a week with a long run keeps the shared scale. */
+export function weekPxPerKm(days: readonly Pick<SelectorDay, 'state' | 'km'>[]): number {
+  const longest = Math.max(0, ...days.map((day) => (day.state !== 'rest' && day.km !== null ? day.km : 0)))
+  return longest > 0 ? Math.max(PX_PER_KM, MAX_BAR_PX / longest) : PX_PER_KM
+}
+
+export function barHeight(day: Pick<SelectorDay, 'state' | 'km'>, pxPerKm = PX_PER_KM): number {
   if (day.state === 'rest') return STUB_PX
   if (day.km === null) return MIN_BAR_PX
-  return Math.min(MAX_BAR_PX, Math.max(MIN_BAR_PX, Math.round(day.km * PX_PER_KM)))
+  return Math.min(MAX_BAR_PX, Math.max(MIN_BAR_PX, Math.round(day.km * pxPerKm)))
 }
 
 function dayName(day: SelectorDay): string {
@@ -54,6 +60,7 @@ export function DaySelector({
 }) {
   // Only a week with other training gives up the room its chips take.
   const withOther = days.some((day) => (day.other?.length ?? 0) > 0)
+  const pxPerKm = weekPxPerKm(days)
 
   return (
     <div role="group" aria-label={t.plan.daySelector} className="grid grid-cols-7 gap-1" data-testid="day-selector">
@@ -88,7 +95,7 @@ export function DaySelector({
                   day.state === 'missed' && 'border-[1.5px] border-dashed border-[var(--warn)]',
                 )}
                 style={{
-                  height: barHeight(day),
+                  height: barHeight(day, pxPerKm),
                   ...(day.state === 'done' || day.state === 'planned' ? { background: day.color ?? 'var(--line-2)' } : {}),
                 }}
               />
