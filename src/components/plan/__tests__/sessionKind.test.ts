@@ -19,8 +19,8 @@ function coach(type: 'long_run' | 'easy'): Map<string, PrescriptionView[]> {
 
 describe('a day’s kind', () => {
   it('draws easy and quality days in their type’s zone', () => {
-    expect(dayKind(DATE, [], garmin({ name: 'Easy', type: 'Base' }))).toEqual({ type: 'Base', kind: 'easy', color: 'var(--zone-2)' })
-    expect(dayKind(DATE, [], garmin({ name: 'Intervals', type: 'Threshold' }))).toEqual({ type: 'Threshold', kind: 'quality', color: 'var(--zone-4)' })
+    expect(dayKind(DATE, [], garmin({ name: 'Easy', type: 'Base' }))).toEqual({ type: 'Base', kind: 'easy', color: 'var(--zone-2)', text: 'var(--zone-2-text)' })
+    expect(dayKind(DATE, [], garmin({ name: 'Intervals', type: 'Threshold' }))).toEqual({ type: 'Threshold', kind: 'quality', color: 'var(--zone-4)', text: 'var(--zone-4-text)' })
   })
 
   it('knows the long run by the coach’s type or the plan’s name', () => {

@@ -8,6 +8,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { isKeyPrescription } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
 import { zoneColor } from '@/lib/colors'
+import { ZONE_TILE_SHARE } from '@/lib/themeTokens'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatDate, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -84,7 +85,7 @@ function tileStyle(cell: Cell): CSSProperties | null {
   const color = cell.kind?.color ?? 'var(--muted-foreground)'
   if (cell.state === 'done' || cell.state === 'extra')
     return {
-      background: `color-mix(in srgb, ${color} 25%, transparent)`,
+      background: `color-mix(in srgb, ${color} ${ZONE_TILE_SHARE * 100}%, transparent)`,
       border: `1px solid color-mix(in srgb, ${color} 50%, transparent)`,
     }
   if (cell.state === 'planned') return { border: `1px dashed ${color}` }
@@ -252,7 +253,7 @@ export function MonthView({
                 <p
                   data-testid="month-phase-label"
                   className="flex items-center gap-1.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.08em]"
-                  style={{ color: row.span === currentSpan ? 'var(--accent-text)' : 'var(--zone-1)' }}
+                  style={{ color: row.span === currentSpan ? 'var(--accent-text)' : 'var(--zone-1-text)' }}
                 >
                   <span aria-hidden className="size-1.5 rounded-full" style={{ background: phaseColor(row.span) }} />
                   {row.label}
@@ -302,7 +303,7 @@ export function MonthView({
                             colour: the letter tells them apart. */}
                         {style && cell.kind?.kind === 'quality' ? (
                           <span className="flex flex-col items-center leading-none">
-                            <span className="text-[11px] font-bold" style={{ color: cell.kind.color }}>
+                            <span className="text-[11px] font-bold" style={{ color: cell.kind.text }}>
                               {kindLetter(cell.kind.type, cell.kind.kind)}
                             </span>
                             {figure && <span className="text-[11px] font-semibold">{figure}</span>}

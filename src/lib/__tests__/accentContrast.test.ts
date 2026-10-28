@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { ACCENT_IDS, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, CURATED_ACCENTS, DEFAULT_ACCENT, type AccentId } from '@/lib/accent'
 import { TOKEN_BLOCKS, accentTokens, readableOn } from '@/lib/themeTokens'
 import { contrastRatio } from '@/lib/oklch'
-import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
+import { STATUS_HEX, SURFACES, ZONE_HEX, ZONE_TEXT_HEX, zoneTextGrounds } from '@/lib/themeTokens'
+import { RUN_TYPE_ZONE } from '@/lib/colors'
+import type { ActivityType } from '@/domain/activity/types'
+import { kindColor, kindTextColor } from '@/components/plan/sessionKind'
 import { white } from '@/lib/palette'
 
 function luminance(hex: string): number {
@@ -173,5 +176,30 @@ describe('light theme text on its surfaces', () => {
     expect(accentTokens(teal, 'light')['--accent']).toBe(teal.light.acc)
     expect(accentTokens(violet, 'light')['--accent-text']).toBe(violet.light.acc)
     expect(readableOn('#1a1c1b', s.seg)).toBe('#1a1c1b')
+  })
+})
+
+describe('a session colour written as text', () => {
+  const types = Object.keys(RUN_TYPE_ZONE) as ActivityType[]
+
+  it.each(
+    (['dark', 'light'] as const).flatMap((mode) =>
+      ZONE_TEXT_HEX[mode].flatMap((text, i) =>
+        zoneTextGrounds(mode, ZONE_HEX[mode][i]!).map((ground, g) => ({ mode, zone: i + 1, ground: ['background', 'card', 'raised', 'seg', 'tile'][g], text, hex: ground })),
+      ),
+    ),
+  )('$mode zone $zone text reads at 4.5:1 or more on the $ground', ({ text, hex }) => {
+    expect(contrast(text, hex)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(types)('%s day text is its zone text token, shipped in both modes', (type) => {
+    const zone = RUN_TYPE_ZONE[type]
+    expect(kindTextColor(type)).toBe(`var(--zone-${zone}-text)`)
+    expect(tokensFor(':root')[`--zone-${zone}-text`]).toBe(ZONE_TEXT_HEX.light[zone - 1])
+    expect(tokensFor('.dark')[`--zone-${zone}-text`]).toBe(ZONE_TEXT_HEX.dark[zone - 1])
+  })
+
+  it.each(types)('%s day keeps its zone fill', (type) => {
+    expect(kindColor(type)).toBe(`var(--zone-${RUN_TYPE_ZONE[type]})`)
   })
 })

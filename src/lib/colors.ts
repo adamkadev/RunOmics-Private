@@ -75,6 +75,10 @@ export function zoneColor(zone: SessionZone): string {
   return `var(--zone-${zone})`
 }
 
+export function zoneTextColor(zone: SessionZone): string {
+  return `var(--zone-${zone}-text)`
+}
+
 /** Every screen that colours a session, planned or run, asks this, so it can't be red on one screen and orange on the next. */
 export function sessionZone(session: { type?: string | null }): SessionZone {
   return runTypeZone(session.type)

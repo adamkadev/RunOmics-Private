@@ -15,6 +15,7 @@ export interface SelectorDay {
   km: number | null
   /** null on a rest day. */
   color: string | null
+  text: string | null
   /** "E", "T", "Tm", "L"; null on a rest day. */
   letter: string | null
   isToday: boolean
@@ -95,7 +96,7 @@ export function DaySelector({
             <span
               aria-hidden
               className="text-xs font-semibold leading-none tracking-[0.04em]"
-              style={{ color: day.letter ? (day.color ?? 'var(--muted-foreground)') : 'var(--muted-foreground)' }}
+              style={{ color: day.letter ? (day.text ?? 'var(--muted-foreground)') : 'var(--muted-foreground)' }}
             >
               {day.letter ?? '–'}
             </span>

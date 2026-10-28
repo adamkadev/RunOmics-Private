@@ -19,6 +19,11 @@ All notable changes to this project are documented in this file.
   account per athlete with Garmin connected and planned-workout upload on, and its API
   key (`INTERVALS_API_KEY`, optionally `INTERVALS_ATHLETE_ID`) in `.env.adam.local`
   and `.env.lamiaa.local`; then a dry run, and `--apply --retire-connect` once.
+
+- A session's colour written as text (Plan's day label, the week strip letters, Month's letters and phase
+  label, the next key session, a run's zone labels) uses a text shade of its zone that reads at 4.5:1 on every
+  ground, in both themes; bars and tiles keep the zone itself. The French plan failed AA on some days.
+
 - Garmin Connect signs in with python-garminconnect instead of garth, which is
   unmaintained and cannot mint a token since Garmin's March 2026 auth change.
   `python scripts/get_secret.py` signs in again (email, password, MFA code) and
