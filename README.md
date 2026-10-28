@@ -136,6 +136,29 @@ tokens carry them, and whether a refresh was needed and worked.
 > cannot sign in since Garmin's March 2026 change, so a garth token cannot be
 > renewed and every run logs a warning to replace it.
 
+#### Optional: intervals.icu, to put the coach's workouts on the watch
+
+The coach's workouts reach the watch most reliably through [intervals.icu](https://intervals.icu),
+a free, official Garmin partner: RunOmics puts each session on its calendar, and intervals.icu's
+own Garmin connection sends it on to Garmin Connect and the watch. Each athlete uses their own
+account. Read intervals.icu's terms yourself before you rely on it.
+
+1. Create a free intervals.icu account.
+2. **Settings → Connections → Garmin**: connect, and enable uploading planned workouts to Garmin.
+3. **Settings → Developer Settings**: generate an API key. Put it in the profile's env file
+   (`.env.adam.local`, `.env.lamiaa.local`) as `INTERVALS_API_KEY`, and the athlete id shown
+   there (`i…`) as `INTERVALS_ATHLETE_ID` (optional; the key's own athlete by default).
+4. Dry run: `npm run coach:sync-garmin` (or `coach:sync-garmin:lamiaa`) previews the plan.
+5. If RunOmics already pushed sessions through Garmin Connect, the preview says how many. Apply
+   with `npm run coach:sync-garmin -- --apply --retire-connect`: it deletes RunOmics's own
+   Connect workouts from today on (only those; it needs `GARMIN_SECRET` once more), then puts
+   the sessions on intervals.icu. Without any, `--apply` alone. Commit
+   `coaching/intervals-sync.json` if the CLI asks you to.
+
+With `INTERVALS_API_KEY` set, `coach:sync-garmin` uses intervals.icu; without it, the Garmin
+Connect route runs as before, and `--route connect|intervals` picks one explicitly. See
+`docs/data-and-sync.md`, *intervals.icu write path*.
+
 ### 3. Configure environment variables
 
 Copy `.env.example` to `.env.local` and fill in what you use. It is the one list of every

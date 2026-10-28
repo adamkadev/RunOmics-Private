@@ -29,16 +29,16 @@ function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string>
 }
 
 /** The only thing consulted for dates; `--from` never reaches back before today, the past is already run. */
-interface SyncRange {
+export interface SyncRange {
   contains(date: string): boolean
 }
 
-function syncRange({ today, from, to }: GarminSyncWindow): SyncRange {
+export function syncRange({ today, from, to }: GarminSyncWindow): SyncRange {
   const start = from && from > today ? from : today
   return { contains: (date) => date >= start && (to === undefined || date <= to) }
 }
 
-function workoutsWithin(
+export function workoutsWithin(
   plan: CoachingPlan,
   evaluations: WorkoutEvaluation[],
   range: SyncRange,

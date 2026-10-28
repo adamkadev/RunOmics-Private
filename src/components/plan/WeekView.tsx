@@ -198,6 +198,7 @@ export function WeekView({
           state: day.state === 'missed' && skipped.has(day.date) ? 'rest' : day.state,
           km: day.state === 'done' ? (day.runs > 0 ? day.ranKm : null) : day.plannedKm,
           color: kind?.color ?? null,
+          text: kind?.text ?? null,
           letter: kind && day.state !== 'rest' ? kindLetter(kind.type, kind.kind) : null,
           isToday: day.date === today,
           other: (byDateOther?.get(day.date) ?? []).map((entry) => entry.kind),
@@ -249,7 +250,7 @@ export function WeekView({
       if (k?.kind !== 'quality') continue
       const workout = selectedWorkouts(date, byDatePlanned, byDateCoach, trainingZones)[0]
       if (!workout) continue
-      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).title, color: k.color }
+      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).title, color: k.text }
     }
     return null
   })()

@@ -35,6 +35,10 @@ on:
         description: "Nightly: a full sync that also warns before a token expires"
         type: boolean
         default: false
+      no_warp:
+        description: "Test: reach Garmin Connect without WARP, to see whether it still refuses GitHub's network (use with dry run)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -195,7 +199,7 @@ jobs:
 
       # WARP's ~120 MB of .debs come from a mirror that can crawl. Saved once a week, not each night: a save is 117 MB.
       - name: Restore WARP packages
-        if: steps.config.outputs.quick != 'true'
+        if: steps.config.outputs.quick != 'true' && inputs.no_warp != true
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/warp-apt
@@ -206,7 +210,7 @@ jobs:
       # failed install or connect is a partial night (no gear, calendar or Connect metrics).
       - name: Install Cloudflare WARP
         id: warp_install
-        if: steps.config.outputs.quick != 'true'
+        if: steps.config.outputs.quick != 'true' && inputs.no_warp != true
         timeout-minutes: 10
         continue-on-error: ${{ steps.config.outputs.personal_api == 'true' }}
         run: |
@@ -265,8 +269,13 @@ jobs:
           echo "::error::WARP never carried traffic; Garmin would see a datacenter IP."
           exit 1
 
+      - name: Note WARP skipped for the test
+        if: inputs.no_warp == true
+        run: |
+          echo "::notice::WARP skipped on request. Garmin Connect is reached from GitHub's own network; look below for 403s or Cloudflare challenges on connectapi.garmin.com."
+
       - name: Note WARP unavailable
-        if: steps.config.outputs.quick != 'true' && steps.warp.outcome != 'success'
+        if: steps.config.outputs.quick != 'true' && inputs.no_warp != true && steps.warp.outcome != 'success'
         run: echo "::warning::WARP is unavailable, so runs come through the Personal API alone; Garmin Connect (gear, calendar, Connect metrics) will likely fail from GitHub's network and the night counts as partial."
 
       # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
@@ -348,7 +357,7 @@ jobs:
       # Through WARP, like every Connect call; a failure keeps the stored shoe list and counts the night as partial.
       - name: Sync shoes
         id: shoes
-        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && steps.warp.outcome == 'success' && steps.sync.outputs.connect_expired != 'true'
+        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && (steps.warp.outcome == 'success' || inputs.no_warp == true) && steps.sync.outputs.connect_expired != 'true'
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
           GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
