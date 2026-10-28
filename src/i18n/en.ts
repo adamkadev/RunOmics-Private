@@ -1601,6 +1601,7 @@ export const en = {
       evenSplit: 'Even split',
       viewLabel: 'Splits by',
       bandLabel: (range: string) => `band ${range}`,
+      targetLabel: (range: string) => `target ${range}`,
       recoveryAvg: 'Recovery avg',
       // The run's own lap, when the watch typed it as a rep: an easy run before its strides.
       bodyLap: 'Run',
@@ -1608,6 +1609,7 @@ export const en = {
       average: 'Average',
       // The set's summary at the top of its card: three numbers, no sentence.
       inBandLabel: 'In band',
+      onTargetLabel: 'On target',
       spread: 'Spread',
       hrDrift: 'HR drift',
       cols: {

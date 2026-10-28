@@ -21,6 +21,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getRunSessions } from '@/application/coaching/GetCoachingView'
 import { sessionForRun } from '@/domain/coaching/sessionForRun'
+import { prescribedRepPace } from '@/domain/coaching/repPace'
 import { controlledRunView } from '@/application/coaching/controlledRunView'
 import { ControlledThresholdCard } from '@/components/activity/ControlledThresholdCard'
 import { sessionLabel } from '@/lib/activityTitle'
@@ -122,6 +123,7 @@ export default async function ActivityDetailPage({
         aiVerdict={aiVerdict}
         verdictTone={verdictTone}
         chartZones={zones}
+        plannedRepPace={prescribedRepPace(session)}
         back={<BackButton label={t.activity.back} fallbackHref="/activities" variant="round" />}
         share={<ShareButton activity={shareActivity(activity, session, aiVerdict && { headline: aiVerdict.headline, tone: verdictTone }, plannedForDay)} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}

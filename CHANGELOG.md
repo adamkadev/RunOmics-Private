@@ -52,6 +52,9 @@ All notable changes to this project are documented in this file.
 - Explore's Districts card no longer counts forever when the coverage worker stops answering: after 30 s it shows
   the error with a Retry, which starts a fresh worker; a coverage that failed outright gets the same Retry.
 - Smooth scrolling is off under "Reduce motion".
+- Splits: a run matched to a planned session whose reps set one pace range is graded against it: the header reads
+  "target 7:50–8:45" (« cible ») and "On target" (« Dans la cible ») counts the reps inside it. Without a plan, or
+  with reps set by heart rate only, the reps' median ±10 s band stays as before; Spread still shows their evenness.
 
 ## [3.3.0] - 2026-10-28
 

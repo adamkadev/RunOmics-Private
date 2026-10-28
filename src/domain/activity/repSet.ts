@@ -31,6 +31,11 @@ export function recoveryAverage(reps: Rep[]): { paceSecPerKm: number | null; avg
   }
 }
 
+export interface PaceBand {
+  min: number
+  max: number
+}
+
 export interface RepSet {
   reps: Rep[]
   /** In order: a warm-up often comes in parts, easy then steady. */
@@ -41,7 +46,9 @@ export interface RepSet {
   /** 30 s reps after a body: accelerations to list, not a set to grade against a band. */
   strides: boolean
   repDurationSec: number
-  band: { min: number; max: number } | null
+  band: PaceBand | null
+  /** The plan's rep pace grades the run; the reps' own median only shows how even they were. */
+  bandSource: 'plan' | 'reps'
   inBand: number
   spreadSecPerKm: number | null
   hrDriftBpm: number | null
@@ -75,7 +82,7 @@ function takeLeadIn(reps: Rep[]): Rep | null {
   return first > median(rest) * LEAD_IN_RATIO ? reps[0]! : null
 }
 
-export function repSet(splits: ActivitySplit[] | null): RepSet | null {
+export function repSet(splits: ActivitySplit[] | null, target: PaceBand | null = null): RepSet | null {
   if (!splits) return null
   const active = splits.filter((s) => s.type === 'interval_active')
   if (active.length < MIN_REPS) return null
@@ -134,8 +141,9 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
   if (reps.length < MIN_REPS) return null
 
   const paces = reps.map((r) => r.paceSecPerKm).filter((p): p is number => p !== null)
-  const band =
-    paces.length > 0
+  const band = target
+    ? { ...target }
+    : paces.length > 0
       ? {
           min: Math.round(median(paces)) - BAND_TOLERANCE_SEC,
           max: Math.round(median(paces)) + BAND_TOLERANCE_SEC,
@@ -152,6 +160,7 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
     strides: body !== null && median(reps.map((r) => r.durationSec)) <= STRIDE_MAX_SEC,
     repDurationSec: Math.round(median(reps.map((r) => r.durationSec))),
     band,
+    bandSource: target ? 'plan' : 'reps',
     inBand: band ? paces.filter((p) => p >= band.min && p <= band.max).length : 0,
     spreadSecPerKm: paces.length >= 2 ? Math.max(...paces) - Math.min(...paces) : null,
     hrDriftBpm: hrs.length >= 2 ? hrs[hrs.length - 1]! - hrs[0]! : null,
