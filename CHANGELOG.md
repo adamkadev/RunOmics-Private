@@ -22,6 +22,8 @@ All notable changes to this project are documented in this file.
 
 ### Plan
 
+- A structured session's card puts its distance and time beside the title, as a single run does, and drops the
+  pace line under it: the steps already give each pace.
 - A coach's session on Plan has a notes button at the top right of its card. It opens a sheet with the session's
   notes, each step's note and the week's focus: what the watch no longer shows, without taking room on the card.
   The sheet stops at three quarters of the screen and its notes scroll.

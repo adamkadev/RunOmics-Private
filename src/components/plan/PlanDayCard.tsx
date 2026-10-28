@@ -23,7 +23,7 @@ import { planPaceSecPerKm } from './planPace'
 import type { PlanWorkoutView } from './planWorkoutView'
 import { kindLabel, type DayKind } from './sessionKind'
 import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
-import { paceLabel, workoutSummary } from './workoutSummary'
+import { workoutSummary } from './workoutSummary'
 
 const CoachNotesSheet = dynamic(() => import('./CoachNotesSheet').then((m) => m.CoachNotesSheet), { ssr: false })
 
@@ -77,7 +77,6 @@ export function PlannedWorkoutCard({
   const structured = (workout.structure?.length ?? 0) > 1
   const km = summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null
   const time = totalSeconds > 0 ? formatDurationWords(totalSeconds) : null
-  const subline = [km, time, ...(structured ? summary.paces.map(paceLabel) : [])].filter(Boolean).join(' · ')
   const blocks = intensityBlocks(workout.structure, totalSeconds, kind.color)
   const rows = stepRows({ steps: workout.structure, type: kind.type, kind: kind.kind, color: kind.color, totalSeconds, pace: effortPace(workout.effort) })
   // A one-step session's steps collapse to none, so its pace comes from the
@@ -108,23 +107,17 @@ export function PlannedWorkoutCard({
           </button>
         )}
       </div>
-      {structured ? (
-        <>
-          <Title>{title}</Title>
-          {subline && <p className="mt-1 text-[13px] text-muted-foreground">{subline}</p>}
-        </>
-      ) : (
-        <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          <h2 className="break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground text-pretty">{title}</h2>
-          {(km || time) && (
-            <span className="text-sm text-[var(--text-2)]" data-testid="plan-amount">
-              {km && <b className="font-semibold text-foreground">{km}</b>}
-              {km && time && ' · '}
-              {time}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Every session: its title, then how far and how long on the same line. A structured session's paces are in its steps. */}
+      <div className="mt-2.5 flex items-baseline justify-between gap-3">
+        <h2 className="min-w-0 break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground text-pretty">{title}</h2>
+        {(km || time) && (
+          <span className="shrink-0 whitespace-nowrap text-sm text-[var(--text-2)]" data-testid="plan-amount">
+            {km && <b className="font-semibold text-foreground">{km}</b>}
+            {km && time && ' · '}
+            {time}
+          </span>
+        )}
+      </div>
       {structured && (
         <div aria-hidden data-testid="intensity-profile" className="mt-2.5 flex h-[44px] items-end gap-[3px]">
           {blocks.map((block, i) => (

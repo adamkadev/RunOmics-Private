@@ -233,14 +233,15 @@ describe('the day selector', () => {
 })
 
 describe('a session still to come', () => {
-  it('heads its card with the day and the session type, then its title and target', () => {
+  it('heads its card with the day and the session type, then its title with its amount beside it, its pace only in the steps', () => {
     renderWeek({ coaching: overview(), trainingZones: ZONES })
 
     const card = screen.getByTestId('plan-workout-workout-threshold')
     expect(card.textContent).toContain(t.activityTypes.Threshold)
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
-    expect(card.textContent).toContain(`1:00 ${t.units.hour}`)
-    expect(card.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
+    expect(within(card).getByTestId('plan-amount').textContent).toContain(`1:00 ${t.units.hour}`)
+    expect(card.textContent).not.toContain(t.plan.session.targetPace('4:25–4:30'))
+    expect(within(card).getByTestId('workout-steps').textContent).toContain('4:25–4:30 /km')
     expect(within(card).queryByTestId('plan-status')).toBeNull()
   })
 
