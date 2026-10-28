@@ -1340,6 +1340,7 @@ export function generateSparseDataset({ now = new Date() } = {}) {
     'athlete.json': {
       ...SPARSE_ATHLETE,
       trainingBreaks: [{ start: isoDate(breakStart), end: isoDate(breakEnd), reason: 'illness', note: 'Arrêt fictif du profil de test.' }],
+      // Her athlete.json still carries it; nothing reads it, and e2e checks a wrist run before it keeps its heart rate.
       hrReliableFrom: isoDate(hrReliableFrom),
       injuryHistory: { reviewedOn: isoDate(breakEnd), injuries: [] },
       lastUpdate: endDate.toISOString(),

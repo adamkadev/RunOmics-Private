@@ -1441,8 +1441,6 @@ export const en = {
       estimated: 'Estimated',
       hrUntrusted: {
         marked: 'HR unreliable · load from effort',
-        beforeReliable: 'HR before the strap · load from effort',
-        wrist: 'Wrist HR · load from effort',
       } satisfies Record<HrDistrust, string>,
     },
     similarRuns: {
@@ -2588,7 +2586,7 @@ export const en = {
       daily_plan_completion: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.',
       hr_zones: 'Athlete HR zone columns are Garmin zone floors: a zone runs from its own lower bound up to one below the next zone\'s, and zone 5 up to max_hr_bpm.',
       sessions: 'A session the watch saved as several back-to-back runs (warm-up, test, cool-down) is one Activities row: activity_id is its main run, merged_activity_ids the others. The row reads as the main run (the race or the test itself): its distance, time, pace, heart rate, running dynamics, type, execution and weather. session_distance_km and session_duration_seconds add the runs saved apart, filled on merged rows only; zones, TRIMP, calories and elevation count the whole session. Runs synced before start times were stored stay one row each.',
-      load_source: 'trimp comes from heart rate, or is "estimated from effort" (session RPE × minutes, scaled to TRIMP) where the heart rate is not trusted: recorded before athlete hr_reliable_from, on the wrist sensor after it, or marked unreliable in the app. Such a run\'s heart-rate and zone columns are blank.',
+      load_source: 'trimp comes from heart rate, or is "estimated from effort" (session RPE × minutes, scaled to TRIMP) where the run is marked HR unreliable in the app. Such a run\'s heart-rate and zone columns are blank.',
       type: 'type is Garmin\'s label from training effect, or Runomics\' from the workout name when type_source is runomics; it often differs from the intent. description and planned_type say what the session was meant to be.',
       planned_columns: 'planned_* are the Runomics coach\'s prescription for that day when there is one (purpose, pace guide, heart-rate cap), else the workout on the Garmin calendar. They sit on the day\'s main session; compare them with the execution_* columns.',
       race_results: 'race_official_* are published results (chip time, certified distance). distance_km and pace_sec_per_km stay what the watch measured, which runs long on GPS.',

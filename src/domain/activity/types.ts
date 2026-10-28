@@ -38,7 +38,7 @@ export interface ActivityWeather {
 
 export type HrSource = 'external' | 'wrist'
 
-export type HrDistrust = 'marked' | 'beforeReliable' | 'wrist'
+export type HrDistrust = 'marked'
 
 export interface HrZone {
   zone: number

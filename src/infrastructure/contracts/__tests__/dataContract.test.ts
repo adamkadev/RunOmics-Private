@@ -133,12 +133,12 @@ describe('the data contract', () => {
     expect(warnings()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.trainingBreaks[0].reason' })])
   })
 
-  it('refuses an hrReliableFrom that is not a date, since it decides which heart rate is trusted', () => {
+  it('accepts an athlete.json that still carries hrReliableFrom, whatever its value', () => {
     write('athlete.json', { hrReliableFrom: '2026-10-16' })
     expect(checkDataDirectory(dir)).toEqual([])
 
     write('athlete.json', { hrReliableFrom: '16/10/2026' })
-    expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.hrReliableFrom' })])
+    expect(checkDataDirectory(dir)).toEqual([])
   })
 
   it('refuses a maxWeeklyKm that is not a positive number, since it caps every block', () => {
