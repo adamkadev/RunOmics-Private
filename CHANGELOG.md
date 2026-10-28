@@ -55,7 +55,7 @@ Claude Code, Explore, and the owner's editors for races, goals and shoes. Item I
   week too. "Skipped" takes a reason (ill, rest, life), stored on Firestore `wellness/{date}` and read by Today,
   Plan's week and month and the coach; this browser's old marks move there once. **Needs** the rules deploy.
 - **The coach's own words (F1).** The phase card names the coach's block ("Reprise en douceur") instead of
-  « Préparation générale »; Today's session card gives the description's first sentence. The text comes from
+  « Préparation générale »; Today's session card carries no line of the coach's words. The text comes from
   `/api/coaching/words`, behind the private site's sign-in gate, never in a page's HTML. Plan shows no week's
   focus, coach's note or watch line. In the step list, a warm-up, cool-down or break at a walking pace, or with no
   target in an easy session, reads "walk" (« marche ») instead of "1:00 rec".

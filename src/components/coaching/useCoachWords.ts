@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { CoachSessionWords, CoachWords } from '@/application/coaching/GetCoachWords'
+import type { CoachWords } from '@/application/coaching/GetCoachWords'
 
 export const COACH_WORDS_PATH = '/api/coaching/words'
 
@@ -51,18 +51,4 @@ export function useCoachWords(enabled = true): CoachWords | null {
     }
   }, [enabled])
   return words
-}
-
-/** What the card shows: a description that only repeats the session's title says nothing. */
-export function sessionWords(words: CoachWords | null, id: string, title: string): CoachSessionWords | null {
-  const session = words?.sessions[id]
-  if (!session) return null
-  const description = sameText(session.description, title) ? '' : session.description
-  return description || session.notes.length > 0 ? { description, notes: session.notes } : null
-}
-
-const normalise = (text: string) => text.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
-
-function sameText(a: string, b: string): boolean {
-  return normalise(a) === normalise(b)
 }
