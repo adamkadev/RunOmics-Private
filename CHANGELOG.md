@@ -14,6 +14,8 @@ All notable changes to this project are documented in this file.
 - Plan › Month: every run between the plan's first and last day counts against it, so a session run a day early
   or late, or an extra run, is no longer left out; the "plan covers" caption shows only when the plan starts or
   ends inside the month.
+- Plan › Week: in a week of short runs the day bars are scaled to its longest run, which fills the bar, instead of
+  staying a few pixels high; a week with a run of about 14 km or more keeps the shared 5 px per km.
 
 ### Activities, runs and analytics
 
