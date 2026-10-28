@@ -357,20 +357,28 @@ describe('verdictQueue', () => {
     expect(verdictQueue({ contexts: [unread], recordActivityIds: noRecords }, written, NOW, false).outstanding).toBe(0)
   })
 
-  it('leaves a run past the horizon out, unless it holds a record or the horizon is lifted', () => {
+  it('sets a run past the horizon apart, unless it holds a record or the horizon is lifted', () => {
     const contexts = [LONG_AGO]
 
-    expect(verdictQueue({ contexts, recordActivityIds: noRecords }, new Map(), NOW, false).eligible).toBe(0)
-    expect(verdictQueue({ contexts, recordActivityIds: new Set(['long-ago']) }, new Map(), NOW, false).eligible).toBe(1)
-    expect(verdictQueue({ contexts, recordActivityIds: noRecords }, new Map(), NOW, true).eligible).toBe(1)
+    expect(verdictQueue({ contexts, recordActivityIds: noRecords }, new Map(), NOW, false)).toMatchObject({ outstanding: 0, beyondHorizon: 1 })
+    expect(verdictQueue({ contexts, recordActivityIds: new Set(['long-ago']) }, new Map(), NOW, false)).toMatchObject({ outstanding: 1, beyondHorizon: 0 })
+    expect(verdictQueue({ contexts, recordActivityIds: noRecords }, new Map(), NOW, true)).toMatchObject({ outstanding: 1, beyondHorizon: 0 })
   })
 
-  it('splits the runs that just landed from the backlog', () => {
+  it('splits the runs that just landed from the backlog, and the backlog from the runs past the horizon', () => {
     const queue = verdictQueue({ contexts: [JUST_RUN, LAST_MONTH, LONG_AGO], recordActivityIds: noRecords }, new Map(), NOW, false)
 
     expect(queue.fresh.map((c) => c.activity.id)).toEqual(['just-run'])
     expect(queue.rest.map((c) => c.activity.id)).toEqual(['last-month'])
-    expect(queue).toMatchObject({ outstanding: 3, eligible: 2 })
+    expect(queue.older.map((c) => c.activity.id)).toEqual(['long-ago'])
+    expect(queue).toMatchObject({ outstanding: 2, beyondHorizon: 1 })
+  })
+
+  it('orders the runs past the horizon newest first', () => {
+    const oldest = run('oldest', '2025-11-02')
+    const queue = verdictQueue({ contexts: [oldest, LONG_AGO], recordActivityIds: noRecords }, new Map(), NOW, false)
+
+    expect(queue.older.map((c) => c.activity.id)).toEqual(['long-ago', 'oldest'])
   })
 })
 
@@ -527,6 +535,37 @@ describe('runInsightPass', () => {
     ])
   })
 
+  it('lets the backfill pool reach past the horizon, newest first, once the runs inside it leave room', async () => {
+    const store = memoryInsights()
+    const generate = writer()
+    const oldest = run('oldest', '2025-11-02')
+
+    const report = await runInsightPass(
+      deps({ insights: store.insights, generate }),
+      surfaces({ runVerdicts: withRuns(oldest, LONG_AGO, LAST_MONTH) }),
+      { limit: 2, ignoreHorizon: false }
+    )
+
+    expect(store.saved.map((doc) => doc.surface)).toEqual([runVerdictSurface('last-month'), runVerdictSurface('long-ago')])
+    expect(generate.mock.calls.every(([request]) => BACKFILL_POOL.includes(request.model))).toBe(true)
+    expect(report.runVerdicts).toMatchObject({ outstanding: 1, beyondHorizon: 2, generated: 2 })
+  })
+
+  it('stops reaching past the horizon when the backfill pool has no budget left', async () => {
+    const store = memoryInsights()
+    const [lite, older] = BACKFILL_POOL as [string, string]
+    const spent = { [spendField(lite)]: dailyBudget(lite) - 1, [spendField(older)]: dailyBudget(older) }
+
+    const report = await runInsightPass(
+      deps({ insights: store.insights, spender: fakeSpender({ spent }).spender }),
+      surfaces({ runVerdicts: withRuns(LONG_AGO, run('oldest', '2025-11-02')) }),
+      OPTIONS
+    )
+
+    expect(store.saved.map((doc) => doc.surface)).toEqual([runVerdictSurface('long-ago')])
+    expect(report.runVerdicts).toMatchObject({ generated: 1, failures: ['oldest: no budget left'] })
+  })
+
   it('pushes a fresh run only for its first verdict, never for one written again', async () => {
     const notify = vi.fn(async () => {})
     const store = memoryInsights({ [runVerdictSurface('just-run')]: { hash: 'written-by-an-older-prompt' } })
@@ -576,7 +615,7 @@ describe('runInsightPass', () => {
 
     expect(generate).not.toHaveBeenCalled()
     expect(store.savedPhrasing).toEqual([])
-    expect(report.runVerdicts).toEqual({ outstanding: 2, eligible: 2, fresh: 1, rest: 1, generated: 0, failures: [] })
+    expect(report.runVerdicts).toEqual({ outstanding: 2, beyondHorizon: 0, fresh: 1, rest: 1, generated: 0, failures: [] })
   })
 
   it('says where the clock ran out, and leaves the rest for the next pass', async () => {
@@ -626,7 +665,7 @@ describe('runInsightPass', () => {
       today: { generated: false, reason: 'no training status' },
       pbCelebration: { generated: false, reason: 'no fresh record' },
       shoeVerdicts: {},
-      runVerdicts: { outstanding: 0, eligible: 0, fresh: 0, rest: 0, generated: 0, failures: [] },
+      runVerdicts: { outstanding: 0, beyondHorizon: 0, fresh: 0, rest: 0, generated: 0, failures: [] },
       missed: 0,
       closedModels: [],
       spend: {},

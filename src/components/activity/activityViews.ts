@@ -1,5 +1,5 @@
 import type { Activity, ActivitySplit, ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
-import { runVerdictTone } from '@/domain/activity/runVerdict'
+import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
 import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
@@ -170,7 +170,7 @@ export function runName(activity: Pick<Activity, 'description' | 'date'>, sessio
 export function shareActivity(
   activity: Activity,
   session: WorkoutPrescription | null = null,
-  aiVerdict: { headline: string } | null = null,
+  aiVerdict: { headline: string; tone: VerdictTone } | null = null,
   planned: PlannedWorkout | null = null,
 ): ShareActivity {
   const type = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
@@ -180,6 +180,6 @@ export function shareActivity(
     type,
     sessionTitle: session ? sessionName(session) : null,
     reps: shareReps({ type, splits: activity.splits }, session, planned),
-    verdict: headline ? { tone: runVerdictTone(activity), headline } : null,
+    verdict: aiVerdict && headline ? { tone: aiVerdict.tone, headline } : null,
   }
 }

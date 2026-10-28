@@ -33,6 +33,11 @@ describe('recentTraining', () => {
     expect(recentTraining(activities, '2026-07-30').lastRun).toEqual({ type: 'Base', daysAgo: 1, distanceKm: 6 })
   })
 
+  it('types the last run by what its name says it was, over the watch\'s guess', () => {
+    const runWalk = { ...run('2026-07-29', 4), type: 'VO2Max', description: 'Footing 4×6′' } as ActivitySummary
+    expect(recentTraining([runWalk], '2026-07-30').lastRun?.type).toBe('Base')
+  })
+
   it('ignores runs that have not happened yet', () => {
     expect(recentTraining(activities, '2026-07-22')).toMatchObject({ weekRuns: 1, weekKm: 9 })
   })

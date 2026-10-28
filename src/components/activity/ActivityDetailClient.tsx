@@ -4,6 +4,7 @@ import { Fragment, useLayoutEffect, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import type { ActivityType } from '@/domain/activity/types'
+import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
@@ -48,6 +49,7 @@ interface Props {
   comment?: string
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
+  verdictTone: VerdictTone
   dynamicsBaseline: DynamicsBaseline | null
   shoe?: (ShoeOption & { source?: 'choice' | 'default' }) | null
   /** The active shoes the owner can pick for this run. */
@@ -141,6 +143,7 @@ export function ActivityDetailClient({
   comment,
   qualifiedEfforts,
   aiVerdict,
+  verdictTone,
   dynamicsBaseline,
   shoe = null,
   shoeOptions = NO_SHOES,
@@ -253,7 +256,7 @@ export function ActivityDetailClient({
         )
       })()}
 
-      <RunVerdict activity={activity} type={type} aiVerdict={aiVerdict}>
+      <RunVerdict activity={activity} type={type} tone={verdictTone} aiVerdict={aiVerdict}>
         {activity.hrUntrusted ? (
           <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')} data-testid="run-hr-untrusted">
             {t.activity.dataQuality.hrUntrusted[activity.hrUntrusted]}

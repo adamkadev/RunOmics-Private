@@ -7,11 +7,13 @@ import {
   RUN_VERDICT_SYSTEM_INSTRUCTION,
   runVerdictInsightHash as hashContext,
   runVerdictInsightPrompt,
+  runVerdictJudgement,
   runVerdictKind,
   verdictLines,
+  type RunVerdictContext,
 } from '../runVerdictInsight'
 import { runHistory } from '@/domain/activity/runHistory'
-import type { Activity, ActivityWeather } from '@/domain/activity/types'
+import type { Activity, ActivityType, ActivityWeather, PlannedWorkout } from '@/domain/activity/types'
 
 const runVerdictInsightHash = (activity: Activity) =>
   hashContext({ activity, history: runHistory(activity, []), planned: null })
@@ -548,5 +550,114 @@ describe('what sets this run apart (v4.16.6)', () => {
     expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('never a label of adjectives and nouns')
     expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('never a list of numbers')
     expect(RUN_VERDICT_SYSTEM_INSTRUCTION).not.toContain('3 reps within 1 s/km of each other')
+  })
+})
+
+describe('a run/walk return, judged as the easy day it is', () => {
+  const split = (type: string, durationSec: number, distanceM: number, avgHr = 140) => ({ type, durationSec, distanceM, avgSpeedMs: distanceM / durationSec, avgHr, laps: [] })
+  const blocks = (recoveryMetres: number) =>
+    [1, 2, 3, 4].flatMap(() => [split('interval_active', 360, 830, 142), split('interval_recovery', 60, recoveryMetres, 120)])
+  const footing: PlannedWorkout = {
+    date: '2026-10-20',
+    name: 'Footing 4×6′',
+    type: 'Base',
+    durationSecs: 1800,
+    steps: [1, 2, 3, 4].flatMap((rep) => [
+      { kind: 'effort' as const, minutes: 6, rep },
+      { kind: 'recovery' as const, minutes: 1, rep },
+    ]),
+  }
+  const runWalk = (overrides: Partial<Activity> = {}) =>
+    run({ id: 'rw', date: '2026-10-20', type: 'VO2Max', distanceKm: 3.6, durationSeconds: 1800, splits: blocks(80) as never, ...overrides })
+  const context = (activity: Activity, planned: PlannedWorkout | null = footing, extra: Partial<RunVerdictContext> = {}): RunVerdictContext => ({
+    activity,
+    history: runHistory(activity, []),
+    planned,
+    ...extra,
+  })
+
+  it('judges a run/walk the watch typed VO2 max as the run/walk it was planned as, never an interval session', () => {
+    const prompt = runVerdictInsightPrompt(context(runWalk()), [])
+
+    expect(prompt).toContain('- Session: a run/walk session: run blocks with walk breaks between them')
+    expect(prompt).toContain('- Run blocks: 4 of 4 planned, with walk breaks between them')
+    expect(prompt).toContain('- How the run blocks held:')
+    expect(prompt).not.toMatch(/interval session|VO2max|- Reps:/)
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain("A run/walk session's job is to complete its run blocks at an easy, talking pace")
+  })
+
+  it('expects the effort of an easy run from a run/walk, not the VO2 max band', () => {
+    expect(runVerdictInsightPrompt(context(runWalk({ rpe: 3 })), [])).toContain('against 1 to 3 expected for this session at this length')
+    expect(runVerdictInsightPrompt(context(runWalk({ rpe: 3 })), [])).toContain('Tone: positive.')
+  })
+
+  it('never holds a run/walk against the last interval session the watch filed it with', () => {
+    const before = runWalk({ id: 'before', date: '2026-10-17' })
+    const today = runWalk()
+    const prompt = runVerdictInsightPrompt({ ...context(today), history: runHistory(today, [today, before]) }, [])
+
+    expect(prompt).not.toContain('Against your last')
+    expect(prompt).not.toContain('Rep pace against')
+  })
+
+  it('recognises one from walked recoveries on a coach session set as easy, with no watch plan', () => {
+    expect(runVerdictKind({ activity: runWalk(), planned: null, sessionType: 'Base' })).toBe('runWalk')
+    expect(runVerdictKind({ activity: runWalk({ splits: blocks(300) as never }), planned: null, sessionType: 'Base' })).toBe('easy')
+  })
+
+  it("takes the coach's session over the watch's plan and the watch's type", () => {
+    expect(runVerdictKind({ activity: runWalk(), planned: footing, sessionType: 'Threshold' })).toBe('threshold')
+    expect(runVerdictKind({ activity: runWalk({ splits: blocks(300) as never }), planned: { ...footing, name: 'Session' }, sessionType: 'Base' })).toBe('easy')
+  })
+
+  it('keeps an interval plan the sync typed Base for want of a name an interval session', () => {
+    const intervals: PlannedWorkout = { ...footing, name: 'Intervals 4 x 6:00' }
+    const jogged = runWalk({ splits: blocks(300) as never })
+
+    expect(runVerdictKind({ activity: jogged, planned: intervals })).toBe('intervals')
+    expect(runVerdictKind({ activity: runWalk({ splits: [] }), planned: intervals })).toBe('intervals')
+    expect(runVerdictKind({ activity: runWalk({ splits: [] }), planned: footing })).toBe('runWalk')
+  })
+})
+
+describe('a run nobody rated (no RPE, no telling training effect)', () => {
+  const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
+  const context = (activity: Activity): RunVerdictContext => ({ activity, history: runHistory(activity, []), planned: null })
+
+  it('never tells the model it drifted when nothing says how it went', () => {
+    const prompt = runVerdictInsightPrompt(context(run({ id: 'u', aerTrainingEffect: 2.1 })), [])
+
+    expect(prompt).toContain('Tone: unrated. No perceived effort was logged')
+    expect(prompt).not.toContain('drifted')
+    expect(runVerdictJudgement(context(run({ id: 'u' })))).toEqual({ kind: 'easy', tone: 'neutral', rated: false })
+  })
+
+  it('reads an easy run by its zones instead, held or crept into zone 3', () => {
+    const held = run({ id: 'h', aerTrainingEffect: 2.4, hrZones: [zone(1, 20), zone(2, 33), zone(3, 1)] as never })
+    const grey = run({ id: 'g', hrZones: [zone(1, 10), zone(2, 20), zone(3, 25)] as never })
+
+    expect(runVerdictInsightPrompt(context(held), [])).toContain('Tone: positive.')
+    expect(runVerdictInsightPrompt(context(grey), [])).toContain('Tone: neutral. The run drifted')
+    expect(runVerdictJudgement(context(held))).toMatchObject({ tone: 'positive', rated: true })
+  })
+
+  it('leaves zones from an untrusted heart rate out of the judgement', () => {
+    const wrist = run({ id: 'w', hrUntrusted: 'wrist', hrZones: [zone(1, 10), zone(2, 20), zone(3, 25)] as never })
+
+    expect(runVerdictJudgement(context(wrist))).toMatchObject({ rated: false })
+  })
+
+  it('gives the card the tone the prompt was given, whatever the case', () => {
+    const cases: RunVerdictContext[] = [
+      context(run({ id: 'a' })),
+      context(run({ id: 'b', rpe: 2 })),
+      context(run({ id: 'c', rpe: 8 })),
+      context(run({ id: 'd', type: 'Threshold' as ActivityType, rpe: 7 })),
+      context(run({ id: 'e', hrZones: [zone(2, 30), zone(3, 20)] as never })),
+    ]
+    for (const c of cases) {
+      const { tone, rated } = runVerdictJudgement(c)
+      expect(runVerdictInsightPrompt(c, [])).toContain(`Tone: ${rated ? tone : 'unrated'}.`)
+    }
   })
 })

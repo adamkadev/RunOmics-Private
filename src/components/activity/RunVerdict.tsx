@@ -1,6 +1,6 @@
 import type { ActivityDetailView } from './activityViews'
 import type { ActivityType } from '@/domain/activity/types'
-import { runVerdictTone, type VerdictTone as RunTone } from '@/domain/activity/runVerdict'
+import type { VerdictTone as RunTone } from '@/domain/activity/runVerdict'
 import { cardClass } from '@/components/ui/Card'
 import { VerdictBlock, type VerdictTone } from '@/components/ui/Verdict'
 import type { ReactNode } from 'react'
@@ -11,6 +11,8 @@ interface Props {
   activity: ActivityDetailView
   /** The session the run was planned as, where RunOmics' own guess at its type gives way to it. */
   type?: ActivityType
+  /** From runVerdictJudgement, as the written verdict was given it. */
+  tone: RunTone
   aiVerdict: Insight | null
   children?: ReactNode
 }
@@ -24,9 +26,8 @@ const STATUS_TONE: Record<RunTone, VerdictTone> = {
   caution: 'warn',
 }
 
-export function RunVerdict({ activity, type = activity.type, aiVerdict, children }: Props) {
+export function RunVerdict({ activity, type = activity.type, tone, aiVerdict, children }: Props) {
   const v = t.activity.verdict
-  const tone = runVerdictTone({ ...activity, type })
   const session = v.headline[tone](t.activityTypes[type])
   const eyebrow = `${v.eyebrow[tone]} · ${session}`
 

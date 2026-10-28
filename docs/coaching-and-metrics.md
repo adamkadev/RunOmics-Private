@@ -454,7 +454,8 @@ models give it 996. What actually caps a pass there is the invocation clock rath
 quota — `reserve()` stops handing out models 48s before the 280s ceiling, and at Lite's 5s
 spacing that is roughly two dozen verdicts, which is what `DEFAULT_RUN_VERDICTS_PER_RUN` (24)
 is set to.
-Five passes clear the 100 with room to spare. The pools share one ledger and one spender, so a
+Five passes clear the 100 with room to spare, and an archive of a few hundred older runs a night or
+two after that. The pools share one ledger and one spender, so a
 verdict backfill can never starve the dashboard even when it is churning through a rebuild.
 
 **A retired model is not silent.** Every pass but a `?limit=0` one keeps its status in Firestore
@@ -471,8 +472,12 @@ the other ten, the one insight the athlete is waiting for is the first thing the
 clock drops. The rest is priority order, tail last, since what one run cuts off the next picks
 up. `?limit=0` reports the backlog without spending; an *absent* `?limit=` must not collapse
 into that, because the sync workflow omits the param and `Number(null)` is 0 — hence the
-explicit null check before any numeric conversion. `?all=1` lifts the recency horizon for a
-manual pass over the archive after a reprocess; the nightly sync never sends it.
+explicit null check before any numeric conversion. The 90-day horizon orders the backlog rather
+than closing it: once the runs inside it (and the record holders) are written, the same pass hands
+the backfill pool the older runs, newest first, as far as its quota and the clock reach. The
+report counts those apart as `beyondHorizon`, so `outstanding` stays the work the horizon covers.
+`?all=1` ranks every run alike, for a manual pass over the archive after a reprocess; the nightly
+sync never sends it.
 
 **Variety is a prompt problem, not a model problem.** A run verdict has several angles open to
 it — how the effort held together, the comparison against past runs of the same type, the
@@ -563,5 +568,16 @@ the route name and returned as a 500 the workflow run can surface, and the guard
 Thinking models put reasoning parts alongside the answer and not always last, so the response
 parser takes the first part that actually carries text.
 
-Run verdicts are gated by `deservesVerdict` — generating one for every run ever synced spends the
-day's quota on pages nobody opens. A run that already has a cached verdict keeps it either way.
+Run verdicts inside `deservesVerdict` (the last 90 days and the record holders) are written first;
+older runs follow from the backfill pool alone, so they never spend the Flash quota a fresh run
+needs. A stored verdict is served only while its hash matches, a stale one for 48h at most: an old
+run whose facts or prompt moved shows no verdict until the backfill writes it again.
+
+**What a run is judged against.** `runVerdictJudgement` decides the session's kind and tone once,
+and both the activity card's badge and the prompt read it, so the two cannot disagree. The coach's
+session matched to the run (`sessionForRun`) decides the kind first, then the watch's plan, and the
+run's own Garmin type only when neither exists. A run/walk (run blocks with walked recoveries, on a
+day set as easy) is judged as one: blocks completed at a talking pace, never as an interval session,
+and never against the last session of the type the watch guessed. With no RPE, the tone comes from
+what was measured (reps against the plan, an easy run's zones); with nothing measured either, the
+prompt says no effort was logged and asks for a verdict on the facts alone, never "drifted".
