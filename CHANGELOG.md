@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Sync has a `no_warp` test input: a manual run (with dry run) reaches Garmin Connect
+  without Cloudflare WARP, to see whether Connect still refuses GitHub's network
+  with the garminconnect token. Nightly runs are unchanged and keep WARP.
 - Garmin Connect signs in with python-garminconnect instead of garth, which is
   unmaintained and cannot mint a token since Garmin's March 2026 auth change.
   `python scripts/get_secret.py` signs in again (email, password, MFA code) and
