@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Splits: a run matched to a planned session whose reps set one pace range is graded against it: the header reads
+  "target 7:50–8:45" (« cible ») and "On target" (« Dans la cible ») counts the reps inside it. Without a plan, or
+  with reps set by heart rate only, the reps' median ±10 s band stays as before; Spread still shows their evenness.
+
 ## [3.3.0] - 2026-10-28
 
 The audit release: the second athlete's watch and return to running, life after garth, the coach run through

@@ -4,6 +4,7 @@ import { Fragment, useLayoutEffect, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import type { ActivityType } from '@/domain/activity/types'
+import type { NumberRange } from '@/domain/coaching/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
@@ -59,6 +60,7 @@ interface Props {
   back?: ReactNode
   share?: ReactNode
   chartZones?: ChartZones | null
+  plannedRepPace?: NumberRange | null
 }
 
 const TAB_IDS = ['overview', 'intervals', 'charts', 'dynamics'] as const
@@ -150,6 +152,7 @@ export function ActivityDetailClient({
   back,
   share,
   chartZones = null,
+  plannedRepPace = null,
 }: Props) {
   const type = shownType ?? activity.type
   // In ?tab=, so going back from Charts or Dynamics lands on it again.
@@ -325,7 +328,7 @@ export function ActivityDetailClient({
           </>
         )}
 
-        {tab === 'intervals' && <KmSplits activity={activity} />}
+        {tab === 'intervals' && <KmSplits activity={activity} plannedRepPace={plannedRepPace} />}
 
         {tab === 'charts' && (
           <ChartStack
