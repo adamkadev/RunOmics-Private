@@ -8,7 +8,7 @@ const DOCS = [
   'README.md',
   ...fs
     .readdirSync(path.join(ROOT, 'docs'))
-    .filter((name) => name.endsWith('.md') && !name.startsWith('audit-'))
+    .filter((name) => name.endsWith('.md'))
     .map((name) => `docs/${name}`),
 ]
 

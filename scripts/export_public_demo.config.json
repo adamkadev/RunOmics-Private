@@ -16,6 +16,8 @@
     {"path": "scripts/export_public_demo.mjs", "reason": "This export, private-only tooling"},
     {"path": "scripts/export_public_demo.config.json", "reason": "Lists every private name, race and place it screens for"},
     {"path": "scripts/__tests__/exportPublicDemo.test.ts", "reason": "Tests this export"},
+    {"path": "scripts/release.mjs", "reason": "Releases this repository's CHANGELOG.md; the public repo keeps its own"},
+    {"path": "scripts/__tests__/release.test.ts", "reason": "Tests the private release script"},
     {"path": "scripts/__tests__/docIdentifiers.test.ts", "reason": "Checks README.md and docs/, which the export leaves out"},
     {"path": "scripts/tests/test_athlete_personal.py", "found": "scan", "reason": "The second athlete's VO2max and VMA"},
     {"path": "scripts/tests/test_json_store.py", "found": "scan", "reason": "The second athlete's HR zone floors and a precise point in Metz"},
@@ -105,7 +107,7 @@
   "packageJson": {
     "fromPublic": ["description", "license", "repository", "bugs", "keywords"],
     "publicScripts": ["screenshots:portfolio"],
-    "dropScripts": ["*:lamiaa", "export:demo"],
+    "dropScripts": ["*:lamiaa", "export:demo", "release"],
     "scriptReplacements": [
       {"from": ".env.adam.local", "to": ".env.local", "reason": "The coach CLI reads one athlete's env file by name"}
     ]

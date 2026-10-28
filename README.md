@@ -582,7 +582,8 @@ must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per
 athlete, each with its own data repository, Firebase project, domain and UI
-language; with a single profile it is just a place to keep the secrets.
+language; with a single profile it is just a place to keep the secrets. [docs/profiles.md](docs/profiles.md) lists
+what each profile holds and how to add one.
 
 ### 4. Deploy the Firestore rules
 
@@ -689,6 +690,16 @@ The script matches layers by pattern, fails if a colour with a hue is left in a 
 writes `{key}` in place of the key; `maptilerStyle()` in `src/lib/maptiler.ts` fills it in at run time
 and names places in the app's language.
 
+### Releases
+
+```bash
+npm run release -- 3.4.0 [--date YYYY-MM-DD]
+```
+
+On a clean tree, it moves `CHANGELOG.md`'s `[Unreleased]` lines under a dated version, sets that version in
+`package.json` and the lockfile, and prints the commit and tag commands. It refuses a version not greater than
+the current one. Tag only once the release commit is on main.
+
 ### Public demo
 
 The public repository is written from this one, never edited apart from its README,
@@ -773,4 +784,5 @@ Read it before changing behaviour in the areas it covers.
 - [Data and sync](docs/data-and-sync.md): Private data and the sync pipeline, Reading the data at run time, What a sync writes, Scheduled jobs and pushes, Garmin write path (coaching sync), Garmin-sourced series, Official race results.
 - [Coaching and metrics](docs/coaching-and-metrics.md): Coaching model, Controlled threshold, The 12-week checkpoint, The Plan's single workout shape, Training metrics, Pace curve and grade-adjusted pace, VDOT fallbacks, Morning check-in, The heat line, AI insight generation.
 - [Interface](docs/interface.md): Charts, Colour system, Maps, Explore, Share card, Platform and browser workarounds, Internationalisation, Date handling.
+- [Profiles](docs/profiles.md): The two profiles, What each place holds, Owner-only and rich-data-only features, Monthly coach renewal, Adding a profile.
 - [Security, build and tests](docs/security-and-build.md): Owner authorization, Firestore rules, Content Security Policy, Build configuration, Test configuration, End-to-end and screenshot runs, Client error reports, Service worker.

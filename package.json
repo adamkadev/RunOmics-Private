@@ -1,6 +1,6 @@
 {
   "name": "runomics",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -20,6 +20,7 @@
     "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
     "verify:private-data": "node scripts/verify_no_private_data.mjs",
     "export:demo": "node scripts/export_public_demo.mjs",
+    "release": "node scripts/release.mjs",
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
     "verify": "npm run verify:private-data && npm run lint && npm run typecheck && npm run check:cycles && npm test",

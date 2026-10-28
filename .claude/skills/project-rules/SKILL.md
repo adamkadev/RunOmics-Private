@@ -32,7 +32,8 @@ write French that needs no agreement.
 
 - The layer rule is in `eslint.config.mjs`: the domain is pure, use cases never import the UI, components never
   reach a repository, pages go through a use case. Move code to the right layer rather than add an exception.
-- `docs/` explains each area: `interface.md`, `data-and-sync.md`, `coaching-and-metrics.md`, `security-and-build.md`.
+- `docs/` explains each area: `interface.md`, `data-and-sync.md`, `coaching-and-metrics.md`, `security-and-build.md`,
+  and `profiles.md` for what differs between the two deployments.
 
 ## Before pushing
 

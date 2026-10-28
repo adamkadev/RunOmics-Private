@@ -4,1030 +4,361 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-- Sync has a `no_warp` test input: a manual run (with dry run) reaches Garmin Connect
-  without Cloudflare WARP, to see whether Connect still refuses GitHub's network
-  with the garminconnect token. Nightly runs are unchanged and keep WARP.
-- The coach's workouts can reach the watch through intervals.icu. With
-  `INTERVALS_API_KEY` in a profile's env file, `coach:sync-garmin` puts each session
-  on that athlete's intervals.icu calendar (pace ranges, walk breaks untargeted,
-  strides as a repeat, easy runs without heart rate), and intervals.icu's own Garmin
-  connection uploads it. Same preview, `--apply`, hash and sync-state rules as the
-  Garmin Connect route, in its own `coaching/intervals-sync.json`; an event RunOmics
-  did not create is never touched. `--retire-connect` deletes RunOmics's own Connect
-  workouts first, so no session reaches the watch twice. Without the key nothing
-  changes; `--route connect|intervals` overrides. **Needs** a free intervals.icu
-  account per athlete with Garmin connected and planned-workout upload on, and its API
-  key (`INTERVALS_API_KEY`, optionally `INTERVALS_ATHLETE_ID`) in `.env.adam.local`
-  and `.env.lamiaa.local`; then a dry run, and `--apply --retire-connect` once.
+## [3.3.0] - 2026-10-28
 
-- A session's colour written as text (Plan's day label, the week strip letters, Month's letters and phase
-  label, the next key session, a run's zone labels) uses a text shade of its zone that reads at 4.5:1 on every
-  ground, in both themes; bars and tiles keep the zone itself. The French plan failed AA on some days.
+The audit release: the second athlete's watch and return to running, life after garth, the coach run through
+Claude Code, Explore, and the owner's editors for races, goals and shoes. Item IDs (F4, G3, R4…) are the audit's.
 
-- Garmin Connect signs in with python-garminconnect instead of garth, which is
-  unmaintained and cannot mint a token since Garmin's March 2026 auth change.
-  `python scripts/get_secret.py` signs in again (email, password, MFA code) and
-  prints a new `GARMIN_SECRET`: garminconnect's token store, whose refresh token
-  renews the day-long access token. `npm run coach:garmin-auth` reports both
-  tokens' expiries and whether a refresh worked. An old garth token keeps
-  syncing until it is replaced, with a warning in every run's log; when Garmin
-  refuses the new refresh token, the night reports Connect expired as before.
-  Locally, `GARMIN_SECRET_WRITEBACK` keeps the refreshed token in the env file.
-  The sync and the coach bridge need Python 3.12 or newer. **Needs** a new token
-  minted locally with `python scripts/get_secret.py` for each athlete, then
-  `GARMIN_SECRET` updated in both GitHub Environments (`adam`, `lamiaa`) and in
-  `.env.adam.local` / `.env.lamiaa.local` (with `GARMIN_SECRET_WRITEBACK` set to
-  that file).
+### Manual steps
 
-- Security: zod, pulled in by the React hooks lint plugin, is pinned to 4.6.6 or later
-  (GHSA-mrhx-c7xc-m3w5); `npm audit` reports no vulnerabilities. Dev tooling only.
+- **Needs** one deploy of `firestore.rules` to **both** Firebase projects
+  (`firebase deploy --only firestore:rules --project <id>`, once per project). It covers every rules change in
+  this release: the job trace (#337), a skipped day's reason on `wellness/{date}` (#340), the HR-unreliable
+  switch on a note (#343), shoe picks and the default shoe (#347), an avoid spot's `expiresOn` (#348), and races
+  and goals (#349). Until then the old rules refuse those writes. Health and the nightly sync warn while the live
+  ruleset differs from the repository's.
+- **Needs** a reprocess of both profiles (*Sync Garmin Activities* with `reprocess`), for each run's `hrSource`,
+  `longestContinuousRunSec`, `longestContinuousRunM` and `runningSec`, its grade-adjusted pace and the routes
+  stored in full.
+- **Needs** `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` and `PRIVACY_SALT` deleted from both GitHub Environments.
+- **Needs**, per profile with a Personal API key, the Environment variable `GARMIN_PERSONAL_API_KEY_EXPIRES`
+  (a bare date), or the run warns.
+- To send operator alerts to the operator: `OPS_PUSH_URL` and `OPS_PUSH_SECRET` on the second deployment, and the
+  same `OPS_PUSH_SECRET` on the owner's. Unset, they go to the deployment's own devices as before.
+- **Needs** `npm run coach:sync-garmin -- --apply` and `npm run coach:sync-garmin:lamiaa -- --apply`, to replace
+  the easy runs already on the watches with ones carrying no heart rate.
+- **Needs** `"maxWeeklyKm"` (e.g. 70) in the owner's `athlete.json` to cap the coach's block-to-block volume growth;
+  without it there is no cap.
+- **Needs** a new Garmin Connect token per athlete: `python scripts/get_secret.py` (email, password, MFA code)
+  locally, then `GARMIN_SECRET` updated in both GitHub Environments (`adam`, `lamiaa`) and in `.env.adam.local` /
+  `.env.lamiaa.local`, with `GARMIN_SECRET_WRITEBACK` set to that file. An old garth token keeps syncing, with a
+  warning, until it is replaced. The sync and the coach bridge need Python 3.12 or newer.
+- **Needs**, to push the coach's workouts through intervals.icu: a free intervals.icu account per athlete with
+  Garmin connected and planned-workout upload on, and its key (`INTERVALS_API_KEY`, optionally
+  `INTERVALS_ATHLETE_ID`) in `.env.adam.local` and `.env.lamiaa.local`; then a dry run, and
+  `--apply --retire-connect` once.
+- A data repository's Vercel build now fails unless the site is private with a 32-character `SESSION_SECRET`.
+- Optional: `GEMINI_BACKFILL_MODEL` replaces the backfill pool (`GEMINI_MODEL` now replaces the main pool only);
+  `RUNOMICS_DATA_SOURCE=github` reads the data repository at run time.
+- **One-time shift:** with `sex: "female"` in `athlete.json`, TRIMP uses Banister's female weighting (F9): every
+  session's load rises by about 7–19 % (more at easy effort), so fitness (CTL), fatigue (ATL) and the planned
+  sessions' load estimates step up once on the first deploy; form (TSB) and ACWR barely move.
 
-- Controlled threshold blocks are 3 + 1 and grow with the athlete's signals. A
-  general block's weeks are set in advance: three rising weeks and a lighter fourth
-  (about 20% less, threshold time cut by a third, same runs). Green signals (no
-  fatigue flag, easy-run heart rate near normal, no run of poor check-ins, no niggle)
-  rise about 5% a week and start the next block 5% higher; yellow about 2%; red holds,
-  or comes down after a break. The plan focus says the colour and why, and the volume
-  check holds each week to its target. Runs per week and the two 30-minute threshold
-  sessions are unchanged. Open pace-guide proposals (two agreeing sessions or a 5K
-  check) are named in the plan focus and shown under Plan's phase card (« Allure guide
-  proposée … »), and a 5K check no longer moves a guide it already set. Athletes
-  without an LTHR are unaffected. **Needs** `"maxWeeklyKm": 70` (or another cap) in
-  the data repo's `athlete.json` to stop growth there; without it there is no cap.
-- Swipe between months. The week sheet opened from Progress → Consistency gets
-  a month header with arrows (« Mois précédent », « Mois suivant ») and pages
-  with a left or right swipe, from the first week shown to this month, the week
-  staying picked out where it falls. Plan's Month and Week swipe the same way,
-  now with a mouse drag too; a swipe that starts on a map or a sideways
-  scroller is left to it, and a vertical scroll or the sheet's drag-down never
-  pages.
-- Explore's route generator always allows trails: the "Trails OK" switch
-  (« Sentiers OK ») is gone from the route options, and in daylight forest
-  paths, dirt and grass cost nothing on any day, a quality day and the day
-  before one included. After dark loops still keep to streets; the climb
-  budgets (flat for the reps, 12 m/km the day before a quality session, 20
-  on an easy run) are unchanged.
-- Easy runs on the watch carry no heart rate. An easy, recovery or long run sent
-  to Garmin keeps its pace target and steps but drops the "HR zone 2" step note,
-  a heart-rate target riding on a paced step, and any line of its description or
-  notes naming a heart rate or zone, so there is less to scroll. Quality sessions
-  and the Plan Heart rate tile are unchanged. **Needs** `npm run
-  coach:sync-garmin -- --apply` (and `coach:sync-garmin:lamiaa -- --apply`) to
+### Plan
+
+- **Plan truth (F4).** A session's distance counts an untargeted warm-up, cool-down or recovery at the athlete's
+  easy pace (their pace zone, else the plan's easy range) unless its notes or pace say it is walked, on Plan,
+  Today, the month and Analytics, and in the coach's weekly volume rules outside a return: a 25-minute 5′/15′/5′
+  session reads about 3 km, not 2. "As planned" needs the distance or duration within 15 %, the same session
+  family and the average heart rate under the cap, else "Shorter / Longer / Harder / Easier than planned"; the
+  phase card counts "N of M sessions as planned". A session run a day early or late is done on Today and Plan's
+  week too. "Skipped" takes a reason (ill, rest, life), stored on Firestore `wellness/{date}` and read by Today,
+  Plan's week and month and the coach; this browser's old marks move there once. **Needs** the rules deploy.
+- **The coach's own words (F1).** The phase card names the coach's block ("Reprise en douceur") instead of
+  « Préparation générale »; Today's session card gives the description's first sentence. The text comes from
+  `/api/coaching/words`, behind the private site's sign-in gate, never in a page's HTML. Plan shows no week's
+  focus, coach's note or watch line. In the step list, a warm-up, cool-down or break at a walking pace, or with no
+  target in an easy session, reads "walk" (« marche ») instead of "1:00 rec".
+- **Where a block stands.** In its last week the phase card adds "Block ends Sunday; next block not planned yet";
+  after the last day a "Block finished" card counts the sessions done out of those prescribed; a day before the
+  block starts reads "Nothing planned". Paging forward follows the last planned date from either the coach's
+  block or the watch's calendar, so a deployment without a coach plan can page ahead.
+- **Return-to-running progress (F3).** From the end of the latest break of four weeks or more, Plan shows running
+  minutes per week and the longest non-stop run, Records gets a Comeback tab (first 10, 20 and 30 minutes
+  non-stop, first 3 and 5 km without walking, first block completed), and each new milestone gets the
+  celebration overlay and a push in the records category. **Needs** the reprocess.
+- **Race-day form (F8).** The race page carries fitness, fatigue and form to race day through the planned
+  sessions' estimated load, the last four weeks solid and the forecast dashed; no number before 42 days of running
+  since the start or a long break, or while the plan stops more than a week before the race.
+- A 12-week checkpoint: the "General preparation" card opens a page setting this cycle against the 12 weeks
+  before it (volume, controlled threshold, heat-adjusted efficiency, easy-run heart rate at a set pace, the 5K
+  check, VO2max, threshold, resting heart rate, fitness), each marked better, worse or level; a Progress tile
+  gives the week and the tally. Without a coach plan it compares the last 12 full weeks with the 12 before.
+- A controlled-threshold run's page shows each rep's heart rate from minute 3 against its target and ceiling;
+  each session on Plan shows its state.
+- A week of timed sessions with no distance (a run/walk return) reads the km run alone, not "7 / 0 km", on Plan
+  and Today.
+- A planned warm-up counts all its parts (1.7 km easy, 1 km steady and 1 km a touch quicker read as its first
+  10 minutes only); it shows the whole time and each part's pace.
+- Strength, cycling, swimming and other sessions sync into their own store, with a strength session's sets, and
+  show on Plan and Consistency and in the coach's context, never in running numbers.
+- Plan loads 18 KB of runs instead of 58 KB.
+- **Swipe between months.** The week sheet opened from Progress → Consistency gets a month header with arrows
+  (« Mois précédent », « Mois suivant ») and pages with a left or right swipe, from the first week shown to this
+  month. Plan's Month and Week swipe the same way, with a mouse drag too; a swipe that starts on a map or a
+  sideways scroller is left to it, and a vertical scroll or the sheet's drag-down never pages.
+
+### Today
+
+- **Building back after a break.** For the first four weeks of running after a break of four weeks or more, the
+  status line reads "Building back - no reading yet" with no form band or load state, the Form tile a dash, the
+  overreaching push never fires from the app's own estimate, and the verdict card is told the athlete is
+  building back. Analytics' local training status leaves those weeks blank. The acute/chronic ratio is worked
+  out from today, not the last run, and a load line the app estimated says "Estimated".
+- **Morning check-in**, for the owner alone: sleep, soreness, stress and mood in one tap each, an optional
+  niggle, and illness or travel. A poor morning turns the readiness card amber or to rest and says why; the
+  Athlete page shows four weeks of mornings and twelve weeks of niggles, and the coach reads them. Once answered
+  it folds below This week and is edited there.
+- **Garmin readings stop at an age (G2).** Training status older than 3 days gives way to the local estimate on
+  Today and in the overreaching push, threshold pace unchanged for 8 weeks to the VDOT estimate, and race
+  predictions older than 14 days are dropped by Records and Goals, as the Race page already did.
+- On a warm day the session says what the forecast at the usual hour will cost, from the athlete's own runs:
+  "29 °C at 19:00 - your runs at this heat cost about +14 s/km: run by heart rate".
+- The header no longer writes the sync's words beside its button; a small toast says what a tap did, including
+  when the next sync can run. The Sync button asks `/api/sync/status`.
+- The readiness card on Today and the all-time card on Profile lay their link over the card, so a screen reader
+  reads the card's own words (F10, in part).
+
+### Activities, runs and analytics
+
+- **Run types on a simple watch.** A run whose watch sends no Training Effect (the Forerunner 55) is no longer
+  filed as VO2 max or threshold for its laps alone: a run that follows its coach session's reps takes the
+  session's type; otherwise quality types need reps near threshold pace or, with an LTHR, zone 4 heart rate. Time
+  in zone counts only with an LTHR or a Training Effect. One rule pairs a run with its coach session everywhere
+  (adherence, evaluation, Plan's done marks, a run's name and share card, Analytics): the session the coach
+  matched, else that day's one session the run is named after, then of its intended type, then of its kind. A
+  walk/run block the watch filed as VO2 max no longer reads 0/5 done, and a run's verdict judges it against the
+  session it was planned as.
+- **A run shows its session's type and set.** Where no session is matched, the type comes from the run's name
+  (`Threshold 2 x 7:00 - …` that Garmin filed as tempo reads `● Threshold`), on its page, its Activities row, the
+  shoe page and Plan. Rows, the page's title and Plan's cards say the set, `3 × 8′ @ 4:25`, the type left to the
+  dot; Plan's "Planned" line gives the amount, `10 km · 58 min`. The run keeps the watch's type for Analytics and
+  the filters.
+- **Heart-rate trust (F2).** The sync reads the FIT's paired sensors into `hrSource` (`external` or `wrist`), and
+  `athlete.json` takes an optional `hrReliableFrom`: a run before it, a wrist run after it, or one the owner marks
+  "HR unreliable" in its note loses its heart rate everywhere (load, zones, easy and workout heart rate,
+  efficiency, drift, the classifier). Its load is session RPE × minutes, scaled to TRIMP and labelled "estimated
+  from effort" (`load_source` in the workbook). **Needs** the reprocess and the rules deploy.
+- **Analytics.** The tab and period live in the URL (F5), so Back returns to the tab left and
+  `/analytics?tab=volume` opens Volume. Volume's "Since January" totals the runs, as Progress does. The Charge tab
+  draws Load and Training status on a watch that sends neither, from the app's own load, marked "Estimated".
+  Performance draws the best pace for every duration from 30 s to 2 h against the window before, with a critical
+  speed set against threshold pace. Running form is back, Intensity shows easy and workout heart rate by week,
+  and the Load tab ends with the watch's load focus. Load and Aerobic efficiency fit what they draw (L4). A
+  chart's readout stays on the card, and 1Y reads by its months.
+- **Progress without a race (F5)** shows the current block in the race card's place; a year card without a goal
+  opens All time; an "Athlete & zones" row opens the athlete page. The Athlete page has a fitness age card.
+- A hilly run shows its grade-adjusted pace (Minetti) under its stats and in the pace lane, and its verdict
+  reads its halves by it; a verdict takes a problem the note reports (terrain, route, safety, pain) at its word.
+- A run's Overview shows its records once, in Best efforts. Its Laps view shows every warm-up lap, and an easy
+  run with strides reads as one, the strides listed with their count, fastest and average.
+- Without a threshold pace from the watch, pace zones are estimated by VDOT from the best recent effort and
+  marked as estimated; the Race page does the same when Garmin's predictions are missing or old.
+- A run's conditions name the sky, the feels-like temperature and the humidity when muggy. Its place name sends
+  the geocoder a point rounded to about a kilometre.
+- Resting HR is read only where the watch was on for more than a run (a night with HRV, a day without a run, or
+  a run day with two run-free days worn within a week); HRV itself is gone from the app and the sync.
+- The heat map and a run's "Same route" chart look as they did before two speed-ups that changed them.
+- Share: a **Rep pace** switch on an interval session's card; Z1 and Z2 are one row, `Z1–Z2 Easy`; the dark Stats
+  card has the app's glow in the run's colour; the card draws the whole route with no map credit.
+- The training export gives a coach a Context sheet (goal, running days, the block and each week's focus,
+  races, injury history, breaks), the coach's prescription beside each session and official race results; its
+  Guide and Context sheets are written in the build's language.
+
+### Explore
+
+- **Quartiers and coverage (X1, X2).** `npm run explore:areas` builds the home city's units into the data repo
+  as `explore/<id>.geojson`, with the 150 m cells holding a runnable way as each unit's denominator. A Web
+  Worker turns each run into cells and counts each unit's share (complete at 90 %, fog under 15 %), km and last
+  run, cached in IndexedDB. Every area run in counts, and the next quartier is the nearest one not yet complete.
+- **Districts on the map (X4, X5).** A layers button switches Heat and Districts (`?layer=districts`); tapping a
+  quartier opens its sheet with its share, km, last run and distance from home (`?quartier=<id>`), and a complete
+  one says since when. Progress's Explored card opens with its numbers worked out on the server.
+- **Loop routes (X3, X6).** "Plan a run" opens the generator: OpenRouteService round trips on foot
+  (`POST /api/explore/route`, `ORS_API_KEY` on the server), scored on distance, new ground and busy roads, saved
+  as GPX 1.1. It starts where the owner taps (or in the quartier), times a loop at the owner's own easy pace,
+  ranks flat loops first on a reps day and keeps within a climb budget per session (flat for the reps, 12 m/km the
+  day before a quality session, 20 on an easy run). Trails are always allowed in daylight, a quality day included,
+  with no "Trails OK" switch; a loop finishing after dusk keeps off mud, dirt, grass, steps and forest paths, and
+  the panel names the sunset. Plan's cards get "Find a route". The app never reads the location,
+  and no routed point is within 600 m of home.
+- **Spots to avoid (F7).** The owner marks a fallen tree or a flooded path, 40, 80 or 150 m wide; mud expires
+  after 3 weeks and a closure after 6, and at 100 spots Mark a spot turns off. The quartier's start and the vias
+  keep off them and a loop that still runs through one is dropped. The dark warning for a later day is timed at
+  the usual start hour that day. A failed track fetch shows Retry and retries when back online. **Needs** the
+  rules deploy for `expiresOn`.
+- The maps keep the page's theme after the app comes back from the background (iOS's snapshot flip).
+
+### Shoes
+
+- **Shoes without garth (G3).** The owner picks a run's shoe on its page and sets a default shoe on Shoes, stored
+  in Firestore (`runShoes`, `shoeSettings/default`, owner-only rules) and committed nightly as
+  `shoe_choices.json`: a pick wins over Garmin's shoe, and the default fills a run Garmin gave none, from the
+  pair's first use. Mileage follows after the next sync; the stored `gearId` is never rewritten. Shoes says when
+  the list was last refreshed from Garmin once that is more than 14 days ago. **Needs** the rules deploy.
+- The Shoes pages read a guessed type as the coach session's, and take Records' glow.
+
+### Races & goals
+
+- **Races and goals editor (G4).** Settings → Races & goals (owner only) adds, edits and removes races (name,
+  date, distance, a goal time or "just finish", priority A/B/C, place) and sets each season's distance and
+  target times, with an empty state for an athlete with no race. Entries live in Firestore `raceEntries` and
+  `goalEntries`; the nightly sync mirrors them to `race_entries.json` and `goal_entries.json`, laid over
+  `upcoming_races.json` and `goals.json`. Plan, Today, the race page, Goals and the coach read the merged list; a
+  Garmin race removed in the app stays hidden, and the coach's dump warns of edits the last sync has not
+  mirrored. `firestore.rules` changed: deploy it to both Firebase projects.
+- From 1 December, when the goals have no entry for the coming year (or, from 1 January, for this one), Goals
+  says "No goal set for 2027" with a link to the editor, and the Friday cron sends one push.
+- A race page: Garmin's prediction beside the target and best, how it moved over 12 weeks, what each week has to
+  give, and the clock at every 5 km. Goals' title keeps one line (L3).
+
+### Coach
+
+- **The coach runs through Claude Code (N9).** Every coach command writes its prompt rather than calling an API
+  (`--prompt-out` / `--from-answer` for `weekly-review` and `evaluate` too); Gemini needs `--advisor gemini`. A
+  review gets the weeks left up to the block's end, so a late-block REPLAN no longer throws, and a rejected
+  review or evaluation is sent back with the reason. The CLIs date "today" in `NEXT_PUBLIC_TIME_ZONE` (E7).
+- **Workouts through intervals.icu.** With `INTERVALS_API_KEY` in a profile's env file, `coach:sync-garmin` puts
+  each session on that athlete's intervals.icu calendar (pace ranges, walk breaks untargeted, strides as a repeat,
+  easy runs without heart rate), and intervals.icu's own Garmin connection uploads it. Same preview, `--apply`,
+  hash and sync-state rules as the Garmin Connect route, in its own `coaching/intervals-sync.json`; an event
+  RunOmics did not create is never touched. `--retire-connect` deletes RunOmics's own Connect workouts first, so no
+  session reaches the watch twice. Without the key nothing changes; `--route connect|intervals` overrides.
+  **Needs** the intervals.icu setup (see Manual steps).
+- **Return to running.** Rules for a return after injury, illness or pregnancy: sessions by time, walk breaks
+  with no pace, effort and the talk test, progress only on comfortable sessions, no quality work. The context
+  marks `returnToRunning` from a stop of four weeks or more until a run holds 30 minutes without a walk. Each
+  running interval takes the guidance's heart-rate zone or pace range, the watch carries only a one-line
+  description, and the talk test goes in the week's focus.
+- **No stop signals.** When the guidance says "no stop signals", the planner writes no stop rule, and a draft, a
+  weekly review's ADJUST or REPLAN, or a run's evaluation carrying a stop rule or a symptom warning is refused.
+- **Easy runs on the watch carry no heart rate.** An easy, recovery or long run sent to Garmin keeps its pace
+  target and steps but drops the "HR zone 2" step note, a heart-rate target riding on a paced step, and any line
+  of its description or notes naming a heart rate or zone. Quality sessions and the Plan Heart rate tile are
+  unchanged. **Needs** `npm run coach:sync-garmin -- --apply` (and `coach:sync-garmin:lamiaa -- --apply`) to
   replace the easy runs already on the watch.
-- Plan shows less of the coach's text. The phase card keeps its name, week,
-  progress bar and "N of M sessions as planned" without the week's focus under
-  them; a session's card drops its "Coach's note" (« Mot du coach ») and the
-  "Watch: … · Pace …/km" line (« Montre : … »). The coach's words and Today are
-  unchanged.
-- Owner e2e, visual checks and project rules (E3, E10, E11). The e2e build signs
-  in a made-up owner through the Firebase Auth emulator and writes to the
-  Firestore emulator, both started by Playwright (Java 21; `e2e/owner.ts`), so
-  the morning check-in, a note with a tag, the HR-unreliable switch, the
-  notification switches and a skipped day (« Sautée », in French) run against
-  the real Firestore rules. Explore's spots to avoid go to that Firestore too,
-  and the in-memory store the e2e build used for them is gone.
-  `next.config.ts` refuses the emulator and blank-map flags on Vercel. A
-  `toHaveScreenshot` suite (`npm run test:visual`, Actions → Visual) checks
-  Today, Analytics' Load and Performance, the Activities and Plan weeks, a
-  run's Charts and Same route, and the share card at 3x, for both athletes in
-  both themes, on a fixed day; `e2e/visual/README.md` says how to update its
-  baselines. A `project-rules` skill gives cloud sessions the repository's
-  standing rules. The demo data no longer archives a six-week plan when
-  generated on a Wednesday, which failed the e2e build that day.
-- Race-day form and watch alerts on Plan (F8, G5 display). The race page carries
-  fitness, fatigue and form to race day through the planned sessions' estimated
-  load, with the last four weeks drawn solid and the forecast dashed; it gives no
-  number before 42 days of running since the start or a long break, or while the
-  plan stops more than a week before the race. Each structured Plan session says
-  on one line what the watch alerts on: the Run/Walk times of a run/walk session
-  and the running pace range.
-- Races and goals editor (G4). Settings → Races & goals (owner only) adds, edits
-  and removes races (name, date, distance, a goal time or "just finish", priority
-  A/B/C, place) and sets each season's distance and target times, in English and
-  French, with an empty state for an athlete with no race. Entries live in
-  Firestore `raceEntries` and `goalEntries`; the nightly sync mirrors them to
-  `race_entries.json` and `goal_entries.json`, laid over `upcoming_races.json`
-  and `goals.json`, which keep working unchanged. Plan, Today, the race page,
-  Goals and the coach all read the merged list; a Garmin race removed in the app
-  stays hidden, and the coach's dump warns when the app holds edits the last
-  sync has not mirrored. The Goals page's empty state links to the editor.
-  `firestore.rules` changed: deploy it to both Firebase projects.
-- Cleanup batch 2 (C7, C9, C11, E7, E8, R15, R19). One rate limiter and one
-  `clientIp()` for the internal, client-error and explore routes. With
-  `RUNOMICS_DATA_SOURCE=github` the functions no longer ship `./data`. The
-  workbook use case returns a plain sheet description that
-  `infrastructure/export/xlsxWorkbook.ts` renders with ExcelJS. The coach CLIs and a
-  post-activity review date "today" in `NEXT_PUBLIC_TIME_ZONE`, not UTC. `src/lib`
-  gets an ESLint layer rule (`verdictStatus` moves to the use cases, `aiSpend` to
-  `application/ai`, `withTimeout` to `src/lib`), and Today, Athlete, Plan and
-  Settings leave the repository allowlist. The nightly sync runs at 04:00 UTC and
-  the health watchdog at 17:47. From 1 December, when the goals have no entry
-  for the coming year (or, from 1 January, for this one), Goals says "No goal set
-  for 2027" with a link to Races & goals, and the Friday cron sends one push for
-  that year.
-
-- Shoes without garth and Garmin warnings (G3, G6). The owner picks a run's
-  shoe on its page and sets a default shoe on Shoes, stored in Firestore
-  (`runShoes`, `shoeSettings/default`, owner-only rules) and committed nightly as
-  `shoe_choices.json`, which the app applies when it loads the runs: a pick wins
-  over Garmin's shoe, and the default fills a run Garmin gave none, from the
-  pair's first use. The mileage follows after the next sync; the stored `gearId`
-  is never rewritten. Shoes says when the list was last refreshed from Garmin
-  once that is more than 14 days ago. The ten Connect requests a step reads
-  around now land in `sync_meta.json` (`warnings`, `warningsAt`) and the run's
-  summary, with `seriesFreshness`, the newest sample of each Garmin series.
-  Health reports `connectWarnings`, `seriesFreshness` and `staleSeries`;
-  Settings → Diagnostics lists each series and since when it stopped. The rules
-  must be deployed by hand to both Firebase projects.
-- Explore fixes and maps in tests (F7, E2). The dark warning for a later
-  day's plan is timed at the athlete's usual start hour that day, not now,
-  and the session and the dark now reach the worker's ranking at all. A
-  failed track fetch shows an error with Retry on the heat map, the
-  Districts card and the generator, and retries when the phone is back
-  online or in the foreground. Spots to avoid keep the quartier's start and
-  the vias off them, and a loop that still runs through one is dropped.
-  "Avoid busy roads" only re-ranks, as the scoring always did, and is no
-  longer sent. Requests are keyed on the spots in reach, and the last four
-  batches are kept. A spot can be 40, 80 or 150 m, a tap on its row flies
-  to it, mud expires after 3 weeks and a closure after 6, and at 100 spots
-  Mark a spot turns off with its own message. The e2e build draws its maps
-  on a blank style (`NEXT_PUBLIC_E2E_MAPS`), so Playwright taps a start, a
-  spot and a quartier; `GlobalMapClient`'s generator wiring moves to
-  `useExploreGenerator`, with hook tests for it and `useRouteGenerator`.
-  **Needs** a deploy of `firestore.rules` to both projects for `expiresOn`.
-- Plan folds the coach's words to their first line: the session's note on its
-  card and the week's or block's focus on the phase card. A tap on the note
-  opens it whole and the next folds it back (a button with `aria-expanded` and a
-  chevron); a note that fits on one line has no toggle. The phase card of
-  general preparation keeps its link to the checkpoint on the card, beside the
-  note's button rather than around it. The share card is back to its state
-  before R8: no "Show full route" switch, the whole route drawn, and no map
-  credit on the image.
-- E2E caches WebKit's system packages (`~/.cache/webkit-apt`, apt's archive directory, one entry per
-  Playwright version a week), so a run on a crawling Ubuntu mirror installs them without downloading.
-- E2E's WebKit install no longer fails its retries on a held lock: a try cut short left its `apt-get`
-  running under sudo with the dpkg lock, so tries 2 and 3 failed at once. Each retry now ends the
-  leftover `apt-get` (a `dpkg` it started finishes), and apt waits up to 2 minutes for a lock.
-- E2E's WebKit install gives each of its three apt tries 3 minutes of its own (the step 10, the job 20):
-  one 3-minute budget for all three let a slow mirror fail the job before any retry, red on main since #343.
-- Plan truth (F4). A session's distance counts an untargeted warm-up, cool-down
-  or recovery at the athlete's easy pace (their pace zone, else the plan's easy
-  range) unless its notes or pace say it is walked, on Plan, Today, the month
-  and Analytics, and in the coach's weekly volume rules outside a return: a
-  25-minute 5′/15′/5′ session reads about 3 km, not 2. "As planned" needs the
-  distance or duration within 15 %, the same session family and the average
-  heart rate under the cap, else "Shorter / Longer / Harder / Easier than
-  planned"; Plan's phase card counts "N of M sessions as planned". A session
-  run a day early or late is done on Today and Plan's week, as it already was
-  on the month and Analytics. "Skipped" takes a reason (ill, rest, life) and is
-  stored on Firestore `wellness/{date}`, read by Today, Plan's week and month
-  and the coach; this browser's old marks move there once. `firestore.rules`
-  changed: deploy it to both Firebase projects.
-- PWA states, accessibility and French (F6, F10, F11, manifest). Settings →
-  Notifications says "add to the Home Screen" where Safari offers no push and
-  "blocked in Settings" once permission is refused, with the switches disabled,
-  instead of the retry toast. The update banner shows only for another build's
-  worker, sits above the tab bar and can be dismissed. Turning notifications on
-  takes the token on the running worker (`serviceWorker.ready`) instead of
-  registering `/sw.js` without `?v=`, which replaced the build's worker and its
-  caches. Today resumed past midnight offers "Page d'hier, actualiser". The
-  celebration dialog is named and closes on Escape. `--axis-text` and the faint
-  greys reach 4.5:1 on the card, ground, raised and inset surfaces in both
-  themes, now tested for every text token. French numbers keep a no-break space
-  inside them ("1 705", "45 %"), dates keep U+0020. The workbook's Guide and
-  Context sheets are written in the build's language, column and item keys
-  unchanged. `/manifest.json` is now a route that adds `lang` and the localized
-  description to `id: "/"` and `scope: "/"`; `generate-brand` writes its base in
-  `src/app/manifest.json/manifest.base.json`.
-
-- Heart-rate trust and return-to-running progress (F2, F3). The sync reads the
-  FIT's paired sensors into each run's `hrSource` (`external` or `wrist`), and
-  `athlete.json` takes an optional `hrReliableFrom`: a run before it, a wrist
-  run after it, or one the owner marks "HR unreliable" in its note (a new switch
-  in the notes sheet, kept with the note and in the nightly backup) loses its
-  heart rate everywhere: load, time in zones, easy and workout heart rate,
-  efficiency, drift and the classifier's zone rule. Its load is session RPE ×
-  minutes, scaled to TRIMP and labelled "estimated from effort" on the run and
-  in the workbook (`load_source`). The sync also stores each run's
-  `longestContinuousRunSec`, `longestContinuousRunM` and `runningSec`, from
-  cadence (or speed, or the splits) with walking left out. From the end of the
-  latest break of four weeks or more, Records gets a Comeback tab (first 10, 20
-  and 30 minutes non-stop, first 3 and 5 km without walking, first block
-  completed), Plan a card with running minutes per week and the longest
-  non-stop run, and each new milestone gets the celebration overlay and a push
-  in the records category. **Needs** a reprocess of both profiles to fill the
-  new fields, and a deploy of `firestore.rules` for the switch.
-
-- Route guards, AI status, rules drift and CI (R11 part, R12, R13, R16). A test
-  walks every API route: each `/api/internal/*` handler must go through
-  `handleInternalRoute` or `scheduledRoute`, every other one through the owner
-  guard or onto an explicit gate-only list, and every `vercel.json` cron must
-  export GET through `scheduledRoute`; client-errors, sync dispatch,
-  data-revalidate, job-events, version and location-override get route tests.
-  Each AI insight pass keeps its status in Firestore `aiStatus/lastPass`
-  (written, missed, models Google closed); health and Settings → Diagnostics
-  show it, and the operator gets one push after three nights that wrote
-  nothing while work was left. `GEMINI_MODEL` now replaces the main pool only;
-  the new `GEMINI_BACKFILL_MODEL` replaces the backfill pool. Health reports
-  the live Firestore ruleset's hash and the nightly sync warns when it is not
-  the repository's `firestore.rules`. CI builds pull requests against the E2E
-  data, the weekly coverage run prepares the data first, and E2E's apt step
-  gives up after 3 minutes, retrying twice.
-- Privacy and backups (R14, R18). Settings fetches height and weight from an
-  owner-only route instead of rendering them into the cached page, and signing
-  out of a private site clears the HTTP cache. The nightly sync also backs up route names and avoid spots
-  (`route_names.json`, `avoid_spots.json`), and `scripts/restore_firestore.mjs`
-  (a dry run unless `--apply`) can put notes, check-ins, route names and avoid
-  spots back. The security doc gains an owner/viewer table and a "Third
-  parties" section.
-- Analytics keeps its tab and period in the URL (F5), defaults left out as
-  Records does, so Back returns to the tab you left and `/analytics?tab=volume`
-  opens Volume. Volume's "Since January" now totals the runs, as Progress does:
-  it read 0 km without a goals, PBs or races file, and every 1 January until
-  `goals.json` had the new year; the goal and projection still come from Goals.
-- Progress without a race (F5) shows the current block in the race card's place
-  (the coach's block name as on Plan, week n of N, sessions done of planned); a
-  year card without a goal opens All time; a new "Athlete & zones" row opens the
-  athlete page; and Goals with nothing configured says how to set a goal in
-  `goals.json`.
-- TRIMP uses Banister's female weighting, 0.86·e^(1.67·HRR), when `athlete.json`
-  has `sex: "female"` (F9). **One-time shift:** for a female athlete every
-  session's load rises by about 7–19 % (more at easy effort), so fitness (CTL),
-  fatigue (ATL) and the planned-session load estimates step up once on the first
-  deploy; form (TSB) and ACWR, being differences and ratios, barely move.
-- Cleanup (C2, C3, C5, C8). A run's Overview shows its records once, in Best
-  efforts, at the top when the run holds a ranked effort. Dead code goes
-  (RaceFooter, ListRow, MetricGrid, ChartCard, activityTypeStyle, the unused
-  exports, Today's unused aggregates, the Explore worker's own track download);
-  `npm run check:cycles` now fails a page that awaits `loadData()` without
-  exporting `revalidate`, and CI's weekly run reports `knip`'s findings. The
-  sync stops writing the always-null `polyline`. `.env.example` lists every
-  variable, the README and docs drop what no longer exists, and a test fails on
-  a backticked identifier or path in them the code no longer has.
-- A durable trace of server jobs (R4). Every scheduled run and every internal
-  5xx is kept in a capped Firestore collection, `jobEvents` (route, trigger,
-  outcome, status and error class only; the last 200). Settings → Diagnostics
-  shows each job's last run and outcome beside the phone errors, the nightly
-  error digest counts server errors too, and the later morning cron sends the
-  daily session when the 08:xx Paris run failed, until 10:00. `firestore.rules`
-  lets the owner read the trace and no client write it.
-- Push tokens stay fresh (R5). On app start, a device with pushes on re-saves
-  its FCM token when it changed or was saved over 30 days ago, keeping its
-  switches; Settings says when the device could not be registered. The server
-  drops tokens not saved in 270 days.
-- Runs deleted, re-typed or renamed in Garmin Connect follow in the app (R17).
-  After a complete listing, a stored run missing from it moves to
-  `removed_activities.json` (at most 5 a night; a list that looks cut short
-  removes nothing and makes the night partial), a run re-typed to walking
-  lands in Other training, and stored names follow Connect's. Sync data guards
-  (R10): a push validates the data contract first, a run that changes month
-  leaves its old month file, one id in two month files stops the sync, best
-  efforts cap GPS jumps as duration bests do, and the mapper and reprocess
-  share `fit_derived_fields()`. The Forerunner 55 profile stops re-asking
-  Garmin for 18 empty training-status windows every night (G9).
-- The coach's own words reach the app (F1). Plan's phase card names the
-  coach's block ("Reprise en douceur") instead of « Préparation générale » and
-  adds the week's focus; a planned session's card carries the coach's note,
-  its description and notes; Today's session card gives the description's
-  first sentence. The text comes from a new route, `/api/coaching/words`,
-  behind the private site's sign-in gate, never in a page's HTML. In the step
-  list, a warm-up, cool-down or break at a walking pace, or with no target in
-  an easy session, reads "walk" (« marche ») instead of "1:00 rec".
-- The sync survives garth's token dying (G1). A 401 on the token exchange is
-  `GarminTokenExpired`: the sync writes `connect_status.json`, carries on
-  through the Personal API with exit 0, stops marking new runs gear-pending
-  and skips the shoe list, and the operator gets one push with the runbook.
-  `docs/data-and-sync.md` gains a sunset matrix of every Connect-only feature.
-- Garmin readings stop at an age (G2). Training status older than 3 days
-  gives way to the local estimate on Today and in the overreaching push,
-  threshold pace unchanged for 8 weeks to the VDOT estimate, and race
-  predictions older than 14 days are dropped by Records and Goals as the Race
-  page already did, through one helper.
-- Every push opens its page (R6). A new run, its verdict or a record opens that
-  run; shoe wear the shoe; a quartier the map; the morning session and the
-  digest the plan; a failed workflow its run on GitHub; token and error alerts
-  Settings. Each push carries a tag, so a repeated warning replaces the last
-  one on the lock screen instead of stacking. The links are absolute HTTPS
-  URLs built from `APP_URL` or Vercel's production domain, as FCM requires.
-- The Garmin key is announced before it expires (G7). The nightly sync posts
-  the Environment variable `GARMIN_PERSONAL_API_KEY_EXPIRES` (a bare date) as
-  `garminKey`, and the operator gets a push from 14 days ahead saying where to
-  make a new key. A profile with a key and no date gets a warning in the run.
-- A watchdog outside the deployments (R2). A daily GitHub workflow checks each
-  profile's health and fails, which emails the repository owner, when the last
-  sync is 36 hours old, the data is unloaded, or Firebase Admin or the cron
-  secret is missing. Health now judges staleness by the last sync rather than
-  the last run, so a training break no longer reads as stale, answers 503 when
-  stale, and reports `cron`. A nightly dispatch GitHub refuses sends an operator
-  push.
-- The coach runs through Claude Code by default (N9). `weekly-review` and
-  `evaluate` gain the manual path bootstrap had (`--prompt-out` /
-  `--from-answer`), sharing the prompts with the Gemini advisor, and every
-  coach command now writes its prompt rather than calling an API; Gemini
-  coaching needs an explicit `--advisor gemini`. The app's AI copy stays on
-  Gemini. A review is no longer told to keep a four-week horizon: it gets the
-  weeks left up to the block's end, so a late-block REPLAN no longer throws,
-  and a rejected review or evaluation is sent back with the reason, as a new
-  block is. Changes to the live plan are also told the notes, check-in and
-  return-to-running rules.
-- A change to the live plan is held to "no stop signals" too. A weekly
-  review's ADJUST or REPLAN and a run's evaluation are now told the athlete's
-  guidance, as a new block is, and one that adds a stop rule or a symptom
-  warning under that guidance is refused. Only what the change wrote is
-  read: a session it reschedules keeps the words it already had.
-- A return block runs to the athlete's own pace, on a simple watch. With no
-  heart-rate zone in the guidance, each running interval takes the pace range
-  the guidance gives, rather than a wide easy range the planner picks, which
-  could sit slower than the athlete runs; the wide range stays for guidance
-  without one. The watch carries no step notes and no workout notes, only a
-  one-line description, the stop rule, and the validator refuses notes on a
-  return block. The talk test, the guidance's own with full sentences by
-  default, and any walk-down rule go in the week's focus, shown in the app.
-- The guidance can turn the stop rule off. A return block writes its stop
-  rule as each session's description by default; when the guidance says "no
-  stop signals", the planner writes none, and a draft carrying a stop rule or
-  a symptom warning in a name, focus, description or note is sent back.
-- The second athlete's deployment has a test of its own (E1). The demo
-  generator takes `--profile sparse`: a made-up runner on a Forerunner 55, with
-  no Training Effect, training status, races, goals or PBs, a long break and a
-  French run/walk return block. A third Playwright project, `sparse-fr`, builds
-  it in French and runs the layout, Today, Plan and Analytics specs on the
-  iPhone, checks that her fixes hold, and runs an axe pass over seven pages;
-  only Plan's day buttons, which speak the whole date, are exempt from its
-  label-in-name rule.
-
-- The readiness card on Today and the all-time card on Profile lay their
-  link over the card instead of around it, so a screen reader reads the
-  card's own words, not only "Open load in Analytics" (F10, in part).
-
-- While building back after a break, Today no longer names a form band:
-  the status line reads "Building back - no reading yet" alone, as intended,
-  and the Form tile shows a dash instead of the break's deep negative number.
-
-- A week of timed sessions with no distance (a run/walk return) no longer
-  reads "7 / 0 km" on Plan and Today; it gives the km run alone.
-
-- A run's verdict names the session it was planned as when RunOmics guessed
-  its type, so a run/walk the old sync filed as VO2 max reads as easy there
-  too, and its effort is judged against an easy run's.
-
-- An operator channel. A second athlete's deployment registers her devices, so
-  until now every operator alert it raised - a failed workflow, a data token
-  about to expire, the nightly digest of phone errors - woke her phone and
-  never the person who could act on it. Those three, and a new weekly
-  coaching-block reminder, now go through `sendOpsPush`: with `OPS_PUSH_URL`
-  and `OPS_PUSH_SECRET` set they are forwarded to the operator's own
-  deployment at `/api/internal/ops-push`, titled with the sending
-  deployment's sync profile and written in English whatever that deployment
-  speaks. That route is guarded by `OPS_PUSH_SECRET` alone, so the second
-  deployment holds a secret that opens nothing else, and a refusal or a
-  timeout throws rather than record an alert nobody read. Unset, the alerts
-  go to the local devices as before. A stale sync stays with the athlete: she
-  can act on it. The weekly reminder fires when a block ends within seven
-  days or no weekly review has run for more than seven.
-
-- After a break of four weeks or more, Today holds its load reading for the
-  first four weeks of running back: the status line reads "Building back - no
-  reading yet" instead of a form band and a load state, the overreaching push
-  never fires from the app's own estimate, and the verdict card is told the
-  athlete is building back rather than overreaching. Analytics' local training
-  status leaves those weeks blank. The acute/chronic ratio is worked out from
-  today, not from the last run, so a week off reads as a week off; and a load
-  line the app estimated itself says "Estimated".
-
-- French no longer agrees anything with the athlete: the form bands read
-  "En fatigue", "Fraîcheur" and "Grande fraîcheur", and three sentences lose
-  "Tu es frais", "bien récupéré" and "le plus rapide". The parity test now
-  walks the whole French tree, calling every function with sample arguments.
-
-- Plan says where a block stands. In its last week the phase card adds "Block
-  ends Sunday; next block not planned yet"; after the last day a "Block
-  finished" card counts the sessions done out of those prescribed, in place of
-  a run of rest days; a day before the block starts reads "Nothing planned".
-  Paging forward now follows the last planned date from either the coach's
-  block or the watch's calendar, so a deployment without a coach plan can page
-  ahead at all. `npm run coach -- bootstrap` takes `--days`, `--runs-per-week`
-  and `--start` from the current plan when they are not given.
-
-- A sheet dismissed and then unmounted before its close animation ends no
-  longer leaves a timer behind that sets state on nothing.
-
-- The morning push reads the coach's plan when Garmin's calendar has nothing
-  for today, and says nothing at all when no session is planned within a week
-  either way, rather than announcing a rest day every morning after a block
-  ends.
-
-- `export:demo --check` passes again, and CI runs it with a new `--strict`
-  flag, which also fails on a stale config entry. The daylight test uses a
-  made-up point, the GPX file name example a made-up quartier, and twelve
-  config entries that matched nothing are gone.
-
-- Today's header no longer writes the sync's words beside its button, where
-  they squeezed the title. A small toast at the top says what a tap did,
-  including when the next sync can run.
-
-- The coach has rules for a return to running after an injury, illness or
-  pregnancy break: sessions by time, walk breaks with no pace, effort and
-  the talk test as the guide, progress only on comfortable sessions, no
-  quality work, and stop rules that defer to the clinician. The coach
-  context marks the return (`returnToRunning`) from a stop of four weeks or
-  more until a run since holds 30 minutes without a walk. While it is
-  marked, the prompt drops the rebuild toward the best four-week average,
-  and the volume floor is off, since walks carry no distance. The
-  controlled threshold rules (speed weeks, fitness checks, lighter weeks)
-  state their condition, so they reach no other block. `trainingBreaks`
-  accepts `pregnancy` as a reason, and `validate:data` warns on a reason
-  the coach does not know. A heart-rate zone in the athlete's guidance becomes
-  the target of the running steps in a return, never beside a pace, which the
-  watch would execute instead; walk breaks carry no target.
-
-- Bootstrap reads `coaching/guidance.md` from the data workspace unless
-  `--guidance-file` is given, and the decision records the guidance's hash.
-
-- `coach:sync-garmin` uses the same data workspace as `coach --apply`: with
-  the private repository configured and no data directory, it fetches the
-  data, and `--apply` pushes the Garmin mapping back. A mapping it cannot
-  push is saved under `.coach-previews/`.
-
-- When Firestore cannot answer, the coach reads the run notes from the
-  nightly `activity_notes.json`, as it already did for check-ins.
-
-- A push that no device accepted now counts as failed, so the scheduled pushes
-  and alerts retry it instead of recording it as sent. Tokens FCM calls invalid
-  are deleted along with unregistered ones, and refusal codes are logged.
-
-- A Vercel build of a data repository fails unless the site is private with a
-  32-character `SESSION_SECRET`.
-
-- The unused `/firebase-messaging-sw.js` route is gone, and so is
-  `https://www.gstatic.com` from the CSP's `script-src`.
-
-- The French check-in's mood words are masculine: "Excellent", "Mauvais".
-
-- One rule now pairs a run with its coach session everywhere: the coach's
-  adherence and run evaluation, Plan's done marks, a run's name and share
-  card, and the guessed types Analytics reads. It takes the session the coach
-  matched, else that day's one session the run is named after, then of its
-  intended type, then of its kind. A walk/run block the watch filed as VO2
-  max no longer reads 0/5 done, and the coach sees each run's intended type
-  beside the watch's.
-
-- A run whose watch sends no Training Effect (the Forerunner 55) is no
-  longer filed as VO2 max or threshold for its laps alone. A run that
-  follows its coach session's reps takes the session's type. Otherwise
-  quality types need reps near threshold pace, or, with an LTHR on file, at
-  zone 4 heart rate. Time in zone counts only with an LTHR or a Training
-  Effect. Analytics' trends, heat cost and the Shoes pages read a guessed
-  type as the coach session's; Garmin's measured types are unchanged.
-
-- `/api/internal/latest-verdict` is gone with the iOS Shortcut that polled
-  it; the Sync button in the app asks `/api/sync/status`.
-
-- Analytics' Charge tab draws its Load and Training status cards on a watch
-  that sends neither, like the Forerunner 55: from the app's own heart-rate
-  load, marked "Estimated". Load focus still needs Garmin's own figures.
-
-- Today's morning check-in folds below This week once answered, and is
-  edited there.
-
-- A run's page keeps its previous/next run card right under the last card,
-  the tab's empty height below it.
-
-- Monday's digest sends the coach's focus whole, on its own line, instead
-  of cutting it at 60 characters.
-
-- Explore's loops keep to runnable ground: steep climbs count on
-  every loop, and each session has a climb budget (flat for reps, 12 m/km
-  the day before them and on a recovery run, 15 on a long run, 20 on an
-  easy one). A loop that would finish after dusk keeps off mud, dirt, grass,
-  steps and forest paths, and the panel names the sunset.
-  The panel shows the budget, each loop's climb against it and its share
-  on trails. The owner can mark spots to avoid (a fallen tree, a flooded
-  path), which ORS is asked to route around (those within reach, and not
-  by the start or a via): while a spot is being marked, the
-  panel steps down to a one-line bar so the map is free to tap. The GPX
-  file name is lowercase.
-
-- A run's verdict reads a hilly run's halves by grade-adjusted pace, and
-  takes a problem the note reports (terrain, route, safety, pain) at its
-  word instead of turning it into a success.
-
-- The heat map looks as it did before: full tracks at the phone's full
-  resolution again, after a speed-up had thinned its glow.
-
-- The "Same route" chart on a run looks as it did before: its pace axis,
-  date labels, dots and tooltip are Recharts' again, after a hand-drawn
-  copy of it had moved them.
-
-- A 12-week checkpoint: Plan's "General preparation" card opens a page
-  that sets this cycle against the 12 weeks before it - km and runs a
-  week, controlled threshold time and pace guides, heat-adjusted
-  efficiency, easy-run heart rate at a set pace, the 5K check, VO2max,
-  threshold pace and heart rate, resting heart rate and fitness - each
-  marked better, worse or level. A Progress tile gives the cycle's week
-  and the tally. Without a coach plan it compares your last 12 full weeks
-  with the 12 before.
-
-- The coach in the app: a controlled-threshold run's page shows each
-  rep's heart rate from minute 3 against its target and ceiling, with the
-  verdict. Each session on Plan shows its state.
-
-- Controlled-threshold heart rates come from each athlete's LTHR, and the
-  planner reads the athlete's own numbers instead of rules written for
-  one runner. Without an LTHR, no controlled threshold session is
-  written. A run from an earlier block keeps its session name.
-
-- Without a threshold pace from the watch, pace zones (Athlete page and a
-  run's pace chart) are estimated by VDOT from your best recent effort,
-  and marked as estimated. The Race page does the same when Garmin's
-  predictions are missing or two weeks old.
-
-- A morning check-in on Today, for you alone: sleep, soreness, stress and
-  mood in one tap each, an optional niggle, and illness or travel. A poor
-  morning turns the readiness card amber or to rest and says why. The
-  Athlete page shows four weeks of mornings and twelve weeks of niggles,
-  and the coach reads them.
-
-- On a warm day, Today's session says what the forecast at your usual
-  hour will cost, from your own runs: "29 °C at 19:00 - your runs at this
-  heat cost about +14 s/km: run by heart rate".
-
-- Strength, cycling, swimming and other sessions are synced into their
-  own store, with a strength session's sets. They show on Plan and
-  Consistency and in the coach's context, never in running numbers.
-
-- Analytics: the Load tab ends with your watch's load focus,
-  Running form is back (cadence, ground contact, vertical oscillation,
-  stride), and Intensity shows easy and workout heart rate by week. The
-  Athlete page has a fitness age card with a year of history.
-
-- Analytics › Performance draws your best pace for every duration from
-  30 s to 2 h, this window against the one before, with a critical speed
-  fitted to your 3-20 min bests and set against your threshold pace. A
-  hilly run shows its grade-adjusted pace (Minetti) under its stats and
-  as a line in the pace lane. Existing runs get both after a reprocess.
-
-- A run's conditions name the sky, the feels-like temperature when it
-  differs and the humidity when the air is muggy.
-
-- The morning session push arrives between 08:00 and 09:00 Paris time,
-  summer and winter, instead of around lunchtime, and the nightly sync
-  starts on time: Vercel Cron runs them, not GitHub's late schedules.
-
-- A Monday push sums up last week: km and quality sessions against the
-  plan, the time of your other training, your resting heart rate and this
-  week's focus.
-
-- Settings' Training, Shoes and "Records and explored areas" switches now
-  decide which pushes each phone gets.
-
-- Each sync copies your run notes and morning check-ins into the data
-  repository and refreshes your shoe list from Garmin.
-
-- Faster on the iPhone: a page shows as it streams instead of after a
-  full download; owner-only parts no longer wait on a Google frame; the
-  Activities list and Plan send less than half the data; the map loads
-  its lines when opened and keeps them until the next sync; scrolling does
-  far less work per frame; dates and numbers format about 40 times
-  faster.
-
-- After a sync, the server renders Today, Activities, Plan, Analytics,
-  Profile and your newest run itself, so the first tap does not wait.
-
-- CI: npm audit fails a change only when it touches the lock file, and
-  Dependabot's security updates replace the weekly autofix; caches are
-  saved from main only and stay under GitHub's 10 GB; tests use every
-  core; ESLint keeps a cache; Node 24 is pinned in `.nvmrc`; the iPhone
-  layout check runs with reduced motion, split per tab.
-
-- `npm run export:demo` writes the public demo repository from any commit
-  and stops on anything personal.
-
-- Explore counts every area you run in, not only the busiest: a
-  Strasbourg run shows the quartiers it pushed forward, a Strasbourg
-  quartier passing 90% sends its push, and Progress's Explored card shows
-  the area you ran in last, with a row that opens each other area's map.
-
-- Progress's Explored card opens with its numbers, worked out on the
-  server, instead of a skeleton while the phone fetched every track.
-
-- A complete quartier's sheet says since when ("Complete since May 12").
-
-- Each nightly sync pushes one digest of the errors your phone reported
-  since the last one.
-
-- A race page: Progress's race card opens the next race, with Garmin's
-  prediction beside your target and best, how the prediction moved over
-  12 weeks, what each week has to give to reach the target, and the clock
-  at every 5 km at an even pace for both times.
-
-- On a reps day, the route generator ranks flat, traffic-free loops first
-  ("Flat for the reps", a toggle beside the other two).
-
-- A run's page shows the quartiers it pushed forward (Sablon 39% → 41%),
-  and a sync sends a push when a quartier passes 90%.
-
-- Back from the background after a deploy, the app reloads itself, so an
-  iPhone no longer runs last week's code until it is relaunched.
-
-- Errors on your phone are reported, every coordinate scrubbed, and
-  listed under Settings → Diagnostics.
-
-- The nightly sync pushes a warning two weeks before a GitHub data token
-  expires.
-
-- The main pages are checked in Safari's engine at the iPhone 16 Pro's
-  size for text that runs past an edge, after each merge to main and on
-  demand for a branch.
-
-- Activities opens on its first months and renders the rest as you
-  scroll; on a bad network a page opens from its cache after 3 s instead
-  of waiting; Plan loads 18 KB of runs instead of 58 KB; and each month
-  file of the data repository is written at about 40% of its size the
-  next time the sync rewrites it (the whole history: 6.9 MB, not 16.9).
-
-- The README keeps setup and an index; the implementation notes moved to
-  four documents under `docs/`.
-
-- The training export tells a coach what the numbers cannot: a Context
-  sheet (goal, running days, the current block and each week's focus,
-  upcoming races, injury history, why training stopped), the coach's
-  prescription beside each session (pace guide and heart-rate cap), and
-  official race results beside what the watch measured. A warm-up, test
-  and cool-down the watch saved apart are one row. The sync now stores each
-  run's start time, which that needs; older runs get theirs on the next sync.
-
-- Scrolling Activities no longer stutters. The compact title bar wrote a
-  style on the whole page as month headers passed under it, and each write
-  restyled every run in the list (60-90 ms on a long archive); it now
-  writes only on the soft edge that reads it, and weeks off screen skip
-  style and layout altogether.
-
-- Filters, search and sort on Activities answer at once: they run on the
-  phone, over the archive the page already holds, instead of asking the
-  server each time (a type chip took about 200 ms).
-
-- Scrolling Activities no longer downloads every run's page as its row
-  passes by (3 MB for the whole list); a run's page loads when you touch
-  its row.
-
-- The map opens lighter: its tracks travel as encoded polylines (the home
-  area is about 160 KB instead of 570 KB), are fetched once per visit
-  rather than each time the Map tab opens, and the heat redraws once
-  instead of four or five times. Its basemap skips an image it never used.
-
-- Home, Records and every run's page no longer load the Firestore SDK just
-  to check who is signed in, and a run's page loads the similar runs chart
-  only when its card opens.
-
-- A chart's readout on Analytics stays on screen over the last weeks: a
-  long one ("Week of Oct 12 · 44.8 / 48 km") ran past the card's edge.
-
-- Picking 1Y on Analytics no longer moves the period control under the
-  title: a year's range now reads by its months ("Oct 2025 – Oct 2026"),
-  short enough to stay beside it.
-
-- The dark Stats share card has the app's glow, in the run's own colour,
-  so it reads as RunOmics rather than a flat black field; a faint grain
-  keeps it from banding once a social app recompresses the image.
-
-- On a laptop, Progress's Consistency card is as tall as Explored beside
-  it, its week bars grown to fill it, instead of stopping short.
-
-- The next quartier is the nearest one not yet complete, so the quartiers
-  around home are finished first and the suggestion moves outward from
-  there; it used to favour the least explored, an untouched quartier
-  across town before a half-done one next door.
-
-- An easy run with strides reads as one on its Laps view: the run's own
-  lap ("Run 8.00 km") instead of an 8 km "warm-up", and the strides listed
-  with their count, fastest and average rather than graded like threshold
-  reps (a band, a spread and a heart-rate drift mean nothing over 20 s).
-
-- A run's Laps view shows every warm-up lap: a warm-up of 1.7 km easy,
-  1 km steady and 1 km a touch quicker showed its first lap only.
-
-- A planned session's warm-up on Plan now counts all its parts: a warm-up
-  of 1.7 km easy, 1 km steady and 1 km a touch quicker read as its first
-  10 minutes only; it now shows the whole time and each part's pace.
-
-- The server runs in Paris instead of Washington, next to the
-  database and the route provider: every request that is not a cached
-  page answers about 150 ms sooner (the sync, the map's tracks, new routes,
-  a page's first render after a sync).
-
-- The route generator times a loop at your own easy pace, the median of
-  your last eight weeks' easy runs, rather than the plan's prescription: a
-  threshold day read "At 5:10", the session's reps and warm-up averaged.
-
-- Explore's route generator starts where you choose: tap the map where you
-  will set off (the default), or start in the quartier as before. The loop
-  starts exactly at the tapped point and goes through unexplored streets of
-  the quartier and back, so there is no getting to a start across town
-  first; when the quartier is out of reach for the distance, the panel says
-  the shortest distance that gets there. The app never reads your location,
-  and the points it routes through are never within 600 m of home.
-
-- A run's place name no longer sends its first point to OpenStreetMap's
-  geocoder: the lookup gets a point rounded to about a kilometre.
-
-- The maps stay dark on the dark page after you leave the app and come back.
-  iOS flips the page to light and back for its app-switcher snapshots; the
-  heatmap and the activity map ignored a flip back that came while the light
-  style's tiles were still loading, which on the way out of the app is most
-  of them, and stayed light. They now act on any theme change once the
-  style itself has loaded, tiles or not.
-
-- The background glow is on every page but the maps: All time, the sign-in
-  and the not-found page now have it too, and a page with no palette of its
-  own takes Today's. An activity and Activities' Map view still have none.
-
-- A deployment can read its data repository at run time
-  (`RUNOMICS_DATA_SOURCE=github`), so a sync shows within seconds of the push
-  instead of after a Vercel rebuild: the sync pings the app instead of firing
-  the deploy hook, and waits seconds for it rather than minutes. Each new
-  commit is checked against the data contract before it goes live; a refused
-  one leaves the previous data up and fails the sync, naming the error. The
-  dashboard and Settings refresh as soon as the run's data is live, before
-  its verdict. The map's routes are revalidated on every request rather than
-  cached for an hour at the edge, since a sync no longer starts a fresh
-  deployment.
-
-- The Sync button starts a quick sync: the new runs come through the
-  Personal API key alone, with no WARP install and no garth sign-in, while
-  the nightly sync keeps doing everything. A run synced this way has no shoe
-  until the next full sync, which now asks Connect for the shoe of every run
-  it has not answered yet, however old, rather than only the last ten days'
-  (a run read on a night Connect was down gets the same); until then its
-  page shows no prompt to add one. A profile without a key syncs in full,
-  and a quick sync whose key is refused fails rather than fall back to
-  garth. Runs for one profile now wait in turn: a newly queued one no longer
-  cancels the one already waiting.
-
-- The sync no longer stops when Cloudflare WARP will not install or
-  connect, as long as the profile has a `GARMIN_PERSONAL_API_KEY`: the runs
-  come through the Personal API, and only garth (gear, the calendar,
-  Connect's metrics) misses the night, which counts as partial. WARP's
-  package, which now pulls about 120 MB of desktop libraries, is cached
-  between runs and gets 10 minutes and retries instead of 5. Without a key,
-  WARP is still required.
-
-- Each sync's summary page on GitHub times it from the tap: when the job
-  started, the data was pushed, the deployment carrying it went live and the
-  first AI pass wrote the run's verdict (the Sync button's "done"), then
-  every step and the Vercel build on their own.
-
-- VO2max keeps moving on a night without Garmin Connect (no `GARMIN_SECRET`,
-  or a garth token past saving): each run's FIT file carries Garmin's own
-  reading, within 0.1 of Connect's daily value. The runs after Connect's
-  last sample carry the VO2max history on, marked as carried, and the
-  athlete's VO2max and VMA follow the newest of them in Connect's whole
-  points; without such a run, Connect's values stay. When Connect answers
-  again, its series replaces every carried sample. With Connect, nothing
-  changes: Lamiaa's data comes through the fallback exactly as Connect
-  wrote it.
-
-- The sync reads activities through Garmin's Personal API when the profile's
-  GitHub Environment has a `GARMIN_PERSONAL_API_KEY`: the activity list, each
-  run's detail and original FIT file, its time in HR zones, the daily resting
-  HR, and the athlete's zones, LTHR, age, fitness age and weight. The key is
-  official and replaceable - create it in Garmin Connect, a year at most -
-  where garth's token, the one credential everything hung on, cannot be
-  minted again since Garmin's March 2026 login change. `GARMIN_SECRET` stays
-  optional for what only Connect's private API serves: each run's shoe, the
-  calendar, training status, race predictions, VO2max and threshold history.
-  When its sign-in fails the runs still sync, and the night is reported as a
-  partial one. Without a key the sync reads everything through garth, as
-  before. Checked against both athletes' accounts: Lamiaa's 37 runs, fetched
-  again through the key alone, match what the garth sync stored, field for
-  field.
-
-- HRV is gone from the app and the sync: neither athlete sleeps with the
-  watch on, so Garmin recorded it a handful of nights a year. The coach
-  read's recovery row and the Form card read resting HR alone, against the
-  same 60-day baseline; a dip is resting HR above it. The unused two-series
-  Recovery card is deleted.
-
-- Routes are stored as recorded, start and finish included: privacy zones are
-  gone. Both deployments are private, so only a signed-in owner or invited
-  viewer ever sees a route, and the zones cost a required secret per athlete,
-  two workflow steps and a crop that hid where every run began. The sync no
-  longer reads `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` or `PRIVACY_SALT`; delete
-  them from the GitHub Environments. *Sync Garmin Activities* with
-  `reprocess` rebuilds the routes already stored, in full, from their cached
-  FIT files.
-
-- Explore, quartier boundaries (X1): `npm run explore:areas` builds the
-  home city's units into the data repo as `explore/<id>.geojson`: the
-  city's quartiers (OpenStreetMap admin_level 10, then the city's open
-  data, then IGN IRIS, then the commune) and every other commune the home
-  area touches, simplified to 5 m, with the 150 m cells that hold a
-  runnable way (OpenStreetMap footways, paths, streets) as each unit's
-  denominator. Metz comes from the Eurométropole's 14 quartiers. The app
-  serves the file at `/api/explore/areas/<id>`, cached by version; nothing
-  real is committed to this repo.
-
-- Explore, coverage (X2): a Web Worker turns each run into 150 m cells
-  (steps filled in every 75 m, a jump over 300 m left open) and counts, per
-  unit, the runnable cells visited, the share (complete at 90 %, fog under
-  15 %), the km run there and the last run. All 317 runs take about 30 ms.
-  The area file and each run's cells are kept in IndexedDB, so a new
-  deployment only works through its new runs. The next quartier to explore
-  is the incomplete one with the lowest coverage plus distance from home
-  (6 km weighs as much as the whole 0–100 % range), within 5 km, quartiers
-  before neighbouring communes. `/api/map/routes` also returns each track's
-  activity id. The demo dataset gets a fictional seven-unit area.
-
-- Explore, loop routes (X3): `POST /api/explore/route` asks
-  OpenRouteService for round trips on foot from a quartier's public centre
-  (home is never sent), five seeds at a time, and re-asks once when a loop
-  misses the distance by more than 15 %. The key (`ORS_API_KEY`) stays on
-  the server; on a private site any signed-in session may call it, on a
-  public one only the owner, 12 batches a minute. Loops are scored on
-  distance, the share of new ground and the share on busy roads, and leave
-  as GPX 1.1 files that Garmin Connect, Coros and Suunto import.
-
-- Explore, Districts on the map (X4): a round glass layers button above
-  the ⓘ switches the Activities map between Heat and Districts and
-  remembers the choice; it turns accent while Districts is on and only
-  shows where the area has quartiers. Districts draws each unit over the
-  heat: accent outline and a light fill when complete, a neutral outline
-  when partly run, a veil with a dashed edge under 15 %. Name and share are
-  map labels (the base map's own name for a quartier gives way to them),
-  the legend reads Fog / Partly / Complete and is solid, not glass, and the
-  insight card counts quartiers: "1 of 21 quartiers complete. Bellecroix is
-  next, 3.0 km from home." Heat is unchanged; `?layer=districts` opens the
-  map on Districts.
-
-- Explore, expand and a quartier's sheet (X5): on Districts, Expand fits
-  the map to every quartier, with the legend at the bottom left, layers and
-  ⓘ at the right, and a glass card naming the next quartier at the foot.
-  Tapping a quartier (after 300 ms, so a double tap still zooms) opens its
-  sheet: the share explored on a bar with the 90 % mark, the km run there,
-  the last run and the distance from home. The camera keeps the quartier in
-  the free part of the map, above the sheet on a phone, beside it where the
-  sheet is a centred card, and the controls under a sheet are taken away
-  rather than blurred. `?quartier=<id>` opens a quartier's sheet.
-
-- Explore, plan a run (X6): "Plan a run" (insight card, expanded map,
-  quartier sheet) opens the route generator on that quartier: the loop in
-  accent for new ground and the foreground colour for streets already run,
-  a dashed line back home, and a panel with the planned session, a 0.5 km
-  distance stepper, Avoid busy roads and New streets first, the distance,
-  time at the plan's pace, climb and share of new ground. Regenerate shows
-  the next best loop; Download GPX saves (or, in the iPhone app, shares)
-  `RunOmics-<Quartier>-<km>km.gpx`, then reads Saved with a Share button.
-  Plan's session cards get "Find a route", which opens it with that
-  session's whole distance and pace, and Progress gets an Explored card:
-  the share explored, quartiers complete, one segment per quartier and the
-  next one to run.
-
-- French fits a 393 pt phone, round 3, from a probe of every route for text
-  cut, off screen or out of its card:
-  - Athlete & zones: the time column holds « 4 h 48 · 32 % », which ran
-    past the card at 4.5rem (5.5rem, tighter gaps).
-  - Today's Condition and Fatigue tiles: « ↘ 21 en 7 j », where « 21 cette
-    semaine » ran out of the tile.
-  - Milestones' streak: « En cours · chaque semaine depuis », no longer cut
-    beside its date.
-  - A run's PR badge on its row reads « RP Distance » for the longest run,
-    which left a name like « Race Day » as « Race … »; Records keeps « Plus
-    longue sortie ».
-
-- Cards are never blurred (D1): over the light glow each card had its own
-  24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
-  Activities. They are now 88 % white with no blur, so the glow still tints
-  the first card a little through them; dark is unchanged.
-
-- One rule for a card's caption (L5): at the right of its title only while
-  it fits there on one line, otherwise under the title from the left, 13 pt
-  muted - never a right-aligned caption wrapped under the title, as
-  Temperature cost's was. Its caption reads "Pace at 149 bpm vs your best
-  band".
-
-- No empty bands in Analytics' Load and Aerobic efficiency cards (L4): the
-  Load sparkline was drawn from zero, so its line and band sat in the top
-  half, and the efficiency chart padded a flat 0.05 m a beat either side of
-  a range near 0.04, leaving it in the middle third. Both charts are 72 pt
-  and fit what they draw (at least 0.04 m a beat for efficiency, so a level
-  month is not stretched into noise); gaps in the Load card are 12 pt.
-
-- Goals & season's title on one line (L3): the ‹ 2026 › stepper shared the
-  large title's row and broke it onto two, pushing the first card 50 pt
-  down. The stepper is in the button row, opposite the back button, in the
-  same 44 pt glass, and the title has the full width. The rule for large
-  titles: a control may sit beside one only while the title stays on one
-  line; if it would wrap, the control moves to the button row. Goals is the
-  one page that wrapped.
-
-- An activity's four numbers share one baseline (L2): "Time", with no
-  unit, sat about 7 pt higher than Distance, Avg pace and Avg HR. Every
-  value now sits in one fixed 44 pt row, every label in the row under it,
-  at 15 pt. The value is 28 pt where its column allows and the size that
-  fits "1:10:31" on a phone, the same across the row.
-
-- The page ends clear of the tab bar's pill (L1): the bottom padding is the
-  bar's float, its 62 pt and 24 pt of air over the home indicator's inset,
-  read from the bar's own tokens, on every page, so at scroll end the last
-  card - an activity's Previous run - sits whole above the pill.
-
-- A stuck tab strip is glass over the rows (F20): Activity detail's
-  Overview / Splits / Charts / Dynamics strip, Analytics' and Records' turn
-  to glass as they stick, now fading in over 120 ms, but the soft scroll
-  edge grew by the strip's height (F4) and painted the page's ground behind
-  the glass, so on Activity detail it read as a flat grey track. The edge
-  is now the bar's own under a glass strip, and the rows pass visibly under
-  it; dark takes light's edge while one is stuck, solid above the strip.
-  Activities' month headings still grow it. In-card switches stay flat.
-
-- Activities' search, chips and filter button are glass in dark too (F19):
-  in the header zone, they were flat grey in dark beside the glass List |
-  Map. Over the glow they take the regular glass's tint, sheen, rim and
-  drop in both themes, the selected chip still solid. The search field and
-  the chip row each sit on one shared blur, not one per chip, which also
-  takes three blurs off the light list.
-
-- The glow on the Shoes pages (F17): Shoes, a shoe's page and Compare were
-  the one Progress family on the flat ground. They take Records' glow, amber
-  left and teal right, in both themes; the Background glow switch turns it
-  off as everywhere else.
-
-- No ghosts under the light compact bar (F21): on an activity, the chips and
-  the hero card's foot showed through the light scroll edge as a smudge.
-  In light the edge is now the page's ground, solid from the screen's top -
-  status bar and bar one surface - to the bar's foot, then gone over 24 pt,
-  with a 6 px blur in that band only. Dark keeps its edge.
-
-- One sheet material (F18): Filter & sort and Share run were opaque panels
-  beside the glass of Map Filters, Coach "Why" and Week of…. Every sheet, in
-  either detent, is now the same glass: the sheet fill under a 28 % sheen,
-  a 28 px blur (saturate 1.8 dark, 2 light), the rim and the sheet's drop.
-  The light scrim is a 16 % tint of the page's ink, not a 20 % grey wash.
-  Close, Reset and the segmented controls on a sheet take a light
-  translucent fill, an unticked type in Filter & sort is a 1.5 pt ring, and
-  Share run's card - the image it exports - stays opaque.
-
-- French fits a phone (393 pt), found by scanning every page, tab and
-  sheet for cut text: the sort is Récentes · Anciennes · Longues · Rapides
-  (four ellipses before), Z1 is « Récup », fitness age reads « 27 (32 ans) »
-  and a tile alone on the card's last row takes the row, the Activities
-  chips read « Tout » with 12 pt sides so all four sit beside the filter
-  button, Settings' row reads « Seuil 172 · max 189 », and the dynamics
-  legend « Ta plage habituelle sur 8 semaines ».
-
-- Light-mode glass reads as glass (F16): the bar's buttons, the tab bar,
-  the map's controls and the medium sheets were 52-82 % white, a flat
-  opaque pill on the near-white page. They are now 22 % (tab bar 36 %,
-  sheets 55 %, clear 10 %) with a wider, more saturated blur, so the Aura
-  and the cards show through; a darker hairline and drop keep every edge
-  visible on the plain page. Activities' search, chips and filter button
-  and Analytics' section track take the same glass. A medium sheet blurs
-  28 px, so the page's headings and the tab bar's labels no longer read
-  through it, and labels on light glass keep 4.5:1: secondary and accent
-  text take a darker glass shade (the active tab, a sheet's Reset, its
-  section titles), as iOS's vibrant labels do. Dark mode is unchanged.
-
-- Resting HR is read only where the watch was on for more than a run.
-  Garmin's daily resting HR is the lowest 30 minutes of the hours worn, so a
-  watch worn only to run reported a warm-up's 50-60 - and 142 on a hard day -
-  against a true 45. A day's value now counts on a night worn to sleep (it has
-  an HRV reading), on a day without a run, or on a run day with two run-free
-  days worn within a week of it: a watch worn all day but not to sleep keeps
-  its series, run days included; a watch worn only to run has none, and
-  Analytics' Recovery card and the Load "Why" sheet leave resting HR out.
-  Athlete & zones keeps the resting HR from the Garmin settings, which the
-  load maths use.
-
-- The maps keep the page's theme when you leave the app and come back. iOS
-  draws its app-switcher snapshots in both appearances, flipping the page to
-  light and back; the flip back came while the map's light style loaded, and
-  went unseen. The activity map and the heatmap check the theme again once a
-  style has loaded.
-
-- A run shows the type it was set as, by its name, where no coach session is
-  matched: `Threshold 2 x 7:00 - …` that Garmin filed as tempo reads
-  `● Threshold`, a Garmin Coach `Base` pushed into tempo reads as base - on the
-  run's page, its Activities row, the shoe page and Plan, whose day strip and
-  card now agree with them. A title that is the type's name alone leaves the
-  type to its dot. The run keeps the watch's type for Analytics and filters.
-
-- Sessions read as their set where their type is shown beside them: Activities'
-  rows, the activity page's title and Plan's day cards say `3 × 8′ @ 4:25`, the
-  type left to the dot or the eyebrow (and read out by VoiceOver on a row). A
-  name from before the naming rules said its set twice -
-  `Threshold 2 x 7:00 - 2x7'@4:25` - and reads `2 × 7′ @ 4:25`. Words that are
-  not the type stay: `6 × 20s strides`. Plan's "Planned" line gives the
-  amount, `10 km · 58 min`, and the session only when the run is called
-  something else. A row's meta line is the date, time and HR, never cut.
-- A run shows its session's type where the watch filed another: a threshold
-  session Garmin labelled tempo (heart rate too low) reads `● Threshold`, on the
-  activity page and its Activities row, as the share card already had it. The
-  run keeps the watch's type, so Analytics and the filters are unchanged.
-- Share: a **Rep pace** switch on an interval session's card. Off, the card is
-  an easy run's: the route in one colour, no rep pace, the average pace back.
-- The fullscreen heatmap's Filters badge is whole: the edge sampler cut its top.
-- Share's Stats card: Z1 and Z2 are one row, `Z1–Z2 Easy`, in the bar and the
-  legend, so the legend takes two lines and the rep pace no longer cuts Z5.
+- **Controlled threshold blocks are 3 + 1 and grow with the athlete's signals.** Three rising weeks and a lighter
+  fourth (about 20 % less, threshold time cut by a third, same runs). Green signals (no fatigue flag, easy-run
+  heart rate near normal, no run of poor check-ins, no niggle) rise about 5 % a week and start the next block 5 %
+  higher; yellow about 2 %; red holds, or comes down after a break. The plan focus says the colour and why, and the
+  volume check holds each week to its target. Open pace-guide proposals (two agreeing sessions or a 5K check) are
+  named in the focus and shown under Plan's phase card (« Allure guide proposée … »), and a 5K check no longer
+  moves a guide it already set. Athletes without an LTHR are unaffected. **Needs** `"maxWeeklyKm": 70` (or another
+  cap) in the data repo's `athlete.json` to stop growth there; without it there is no cap.
+- Controlled-threshold heart rates come from each athlete's LTHR; without one, no controlled threshold session
+  is written.
+- Bootstrap reads `coaching/guidance.md` from the data workspace and records its hash, and takes `--days`,
+  `--runs-per-week` and `--start` from the current plan. `coach:sync-garmin` uses the same data workspace as
+  `coach --apply`. When Firestore cannot answer, the coach reads the nightly `activity_notes.json`.
+
+### Notifications
+
+- **Every push opens its page (R6)** with absolute HTTPS links, and carries a tag, so a repeated warning
+  replaces the last one.
+- **An operator channel.** A failed workflow, a data token about to expire, the nightly phone-error digest and a
+  weekly coaching-block reminder go through `sendOpsPush`: with `OPS_PUSH_URL` and `OPS_PUSH_SECRET` set they
+  reach the operator's deployment at `/api/internal/ops-push`, in English. A stale sync stays with the athlete.
+- **Push tokens stay fresh (R5).** A device re-saves its FCM token when it changed or is 30 days old; the server
+  drops tokens not saved in 270 days. A push no device accepted counts as failed and is retried, and tokens FCM
+  calls invalid are deleted.
+- The morning session push arrives between 08:00 and 09:00 Paris time from Vercel Cron, reads the coach's plan
+  when Garmin's calendar is empty, and says nothing when no session is planned within a week. The later morning
+  cron sends it when the 08:xx run failed, until 10:00.
+- A Monday push sums up last week, with the coach's focus whole on its own line.
+- Settings → Notifications says "add to the Home Screen" where Safari offers no push and "blocked in Settings"
+  once refused (F6); turning pushes on takes the token on the running worker.
+- Settings' Training, Shoes and "Records and explored areas" switches decide which pushes each phone gets.
+- The operator is warned before the Garmin key (G7) or a GitHub data token expires, after three nights in which
+  the AI pass wrote nothing, when garth's token dies, and by a nightly digest of phone and server errors.
+
+### Data & sync
+
+- **Life after garth (G1).** The sync reads activities through Garmin's Personal API when the profile has a
+  `GARMIN_PERSONAL_API_KEY`, and `GARMIN_SECRET` stays optional for what only Connect serves (shoes, calendar,
+  training status, predictions, VO2max and threshold history). A 401 on garth's exchange is
+  `GarminTokenExpired`: the sync carries on with exit 0, writes `connect_status.json`, and the operator gets one
+  push with the runbook. WARP failing no longer stops a sync with a key. VO2max keeps moving from each FIT file
+  on a night without Connect. `docs/data-and-sync.md` has a sunset matrix.
+- **garminconnect instead of garth.** Garmin Connect signs in with python-garminconnect: garth is unmaintained
+  and cannot mint a token since Garmin's March 2026 auth change. `python scripts/get_secret.py` signs in again and
+  prints a new `GARMIN_SECRET`, garminconnect's token store, whose refresh token renews the day-long access token.
+  `npm run coach:garmin-auth` reports both tokens' expiries and whether a refresh worked. An old garth token keeps
+  syncing until it is replaced, with a warning in every run's log; when Garmin refuses the new refresh token, the
+  night reports Connect expired as before. Locally, `GARMIN_SECRET_WRITEBACK` keeps the refreshed token in the env
+  file. **Needs** the new token (see Manual steps).
+- Sync has a `no_warp` test input: a manual run (with dry run) reaches Garmin Connect without Cloudflare WARP, to
+  see whether Connect still refuses GitHub's network with the garminconnect token. Nightly runs keep WARP.
+- **Connect warnings (G6).** The Connect requests a step reads land in `sync_meta.json` (`warnings`,
+  `warningsAt`) with `seriesFreshness`; Health reports `connectWarnings`, `seriesFreshness` and `staleSeries`,
+  and Settings → Diagnostics lists each series and since when it stopped.
+- **Runtime data.** With `RUNOMICS_DATA_SOURCE=github` a deployment reads its data repository at run time: a sync
+  shows within seconds, each commit is checked against the data contract first, and the functions no longer ship
+  `./data` (C9). After a sync the server renders the main pages and the newest run itself.
+- **The Sync button starts a quick sync** through the Personal API alone; the nightly sync does the rest. Runs for
+  one profile wait in turn. Each sync's summary on GitHub times it from the tap.
+- **Runs follow Connect (R17).** A run deleted there moves to `removed_activities.json` (5 a night at most), one
+  re-typed to walking lands in Other training, and names follow. Guards (R10): a push validates the data
+  contract, a run that changes month leaves its old file, a duplicate id stops the sync, best efforts cap GPS
+  jumps. The Forerunner 55 profile stops re-asking for empty training-status windows (G9).
+- **Backups (R14, R18).** The sync backs up notes, check-ins, route names and avoid spots; `scripts/restore_firestore.mjs`
+  (a dry run unless `--apply`) puts them back, with shoe picks, races and goals.
+- **Server jobs (R4).** Every scheduled run and internal 5xx goes to a capped Firestore `jobEvents` (the last 200),
+  shown in Settings → Diagnostics; only the owner reads it. Each AI pass keeps its status in `aiStatus/lastPass`.
+- **A watchdog (R2).** A daily GitHub workflow checks each profile's health and fails, emailing the owner, when
+  the last sync is 36 hours old or a secret is missing; health judges staleness by the last sync. The nightly
+  sync runs at 04:00 UTC and the watchdog at 17:47.
+- Routes are stored as recorded: privacy zones are gone (**Needs** the `PRIVACY_*` variables deleted and a
+  reprocess). Each run stores its start time; month files are written at about 40 % of their size.
+- TRIMP's female weighting (F9): see the one-time shift above.
+
+### Look, French and accessibility
+
+- Liquid Glass follow-ups: cards are never blurred (D1), one caption rule (L5), an activity's numbers share a
+  baseline (L2), pages end clear of the tab bar (L1), stuck tab strips are glass over the rows (F20), Activities'
+  controls are glass in dark (F19), one sheet material (F18), light-mode glass reads as glass (F16), no ghosts
+  under the light compact bar (F21), and the background glow is on every page but the maps.
+- French fits a 393 pt phone after three probes of every page, and no longer agrees anything with the athlete
+  (« En fatigue », « Fraîcheur »); the parity test walks the whole French tree. French numbers keep a no-break
+  space inside them, the check-in's mood words are masculine, and Today resumed past midnight offers « Page
+  d'hier, actualiser ».
+- PWA (F6, F10, F11): the update banner shows only for another build's worker and can be dismissed; the
+  celebration dialog is named and closes on Escape; text tokens reach 4.5:1 on every surface; `/manifest.json`
+  adds `lang` and a localized description. The app reloads itself after a deploy.
+- Faster on the iPhone: pages stream, owner-only parts no longer wait on a Google frame, Activities filters on the
+  phone and renders as it scrolls without prefetching every run, the map's tracks are encoded polylines fetched
+  once per visit, pages skip the Firestore SDK to check the session, the server runs in Paris, and dates and
+  numbers format about 40 times faster.
+- A sheet unmounted before its close animation ends leaves no timer behind.
+- A session's colour written as text (Plan's day label, the week strip letters, Month's letters and phase label,
+  the next key session, a run's zone labels) uses a text shade of its zone that reads at 4.5:1 on every ground, in
+  both themes; bars and tiles keep the zone itself. The French plan failed AA on some days.
+
+### Security and privacy
+
+- Every API route is walked by a test: internal handlers go through `handleInternalRoute` or `scheduledRoute`,
+  others through the owner guard or an explicit gate-only list (R11, R12). One rate limiter and one `clientIp()`
+  (C7).
+- Settings fetches height and weight from an owner-only route; signing out of a private site clears the HTTP
+  cache. `/api/internal/latest-verdict` and `/firebase-messaging-sw.js` are gone, and so is
+  `https://www.gstatic.com` from `script-src`.
+- zod, pulled in by the React hooks lint plugin, is pinned to 4.6.6 or later (GHSA-mrhx-c7xc-m3w5); `npm audit`
+  reports no vulnerabilities. Dev tooling only.
+- `next.config.ts` refuses the emulator and blank-map flags on Vercel. Errors on the phone are reported with
+  every coordinate scrubbed. The security doc gains an owner/viewer table and a "Third parties" section.
+
+### CI and tests
+
+- **The second athlete's deployment has a test (E1):** `npm run demo:generate -- --profile sparse` builds a
+  made-up Forerunner 55 runner in a French run/walk return, and the `sparse-fr` Playwright project runs the
+  layout, Today, Plan and Analytics specs on the iPhone with an axe pass over seven pages.
+- **Owner e2e (E3):** a made-up owner signs in through the Firebase Auth emulator and writes to the Firestore
+  emulator (Java 21; `e2e/owner.ts`): the check-in, a note with a tag, the HR-unreliable switch, the push
+  switches and a skipped day run against the real rules.
+- **Maps in tests (E2):** the e2e build draws its maps on a blank style (`NEXT_PUBLIC_E2E_MAPS`);
+  `GlobalMapClient`'s generator wiring moves to `useExploreGenerator`, with hook tests.
+- **Visual checks (E10):** `npm run test:visual` (Actions → Visual) on a fixed day, both athletes, both themes;
+  `e2e/visual/README.md` says how to update the baselines.
+- **Export (E5):** `export:demo --check` passes and CI runs it with `--strict`, which also fails on a stale
+  config entry.
+- **Code health (C2, C3, C5, C8, C11, E8):** dead code goes; `check:cycles` fails a page awaiting `loadData()`
+  without `revalidate`; the weekly run reports `knip`; the sync stops writing `polyline`; ExcelJS rendering moves
+  to `infrastructure/export/xlsxWorkbook.ts`; `src/lib` gets a layer rule; a test fails on a stale identifier or
+  path in the docs. The demo data no longer fails the e2e build on a Wednesday.
+- **CI:** pull requests build against the E2E data; npm audit fails only a lock-file change; caches are saved from
+  main; Node 24 is pinned; E2E caches WebKit's system packages and gives each of three apt tries 3 minutes,
+  ending a held lock first; Safari's engine checks the main pages at the iPhone 16 Pro's size.
+- A `project-rules` skill gives cloud sessions the standing rules (E11). `npm run release -- <version>` cuts a
+  release (E4).
 
 ## [3.2.1] - 2026-10-22
 
