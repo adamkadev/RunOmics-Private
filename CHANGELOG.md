@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
 
 ### Watch
 
+- A session sent through intervals.icu reaches the watch with its pace targets: the event now asks intervals.icu
+  for the pace target (heart rate for a session set by zones alone) instead of leaving it to choose, which sent
+  every step untargeted. **Needs** a `coach:sync-garmin --apply` for each athlete on the intervals.icu route, and a
+  threshold pace in intervals.icu's Run settings if a step still shows no target.
 - The coach's notes no longer go to the watch, on either route: no workout description and no step notes, so a
   session reads target after target. A threshold rep keeps one line, its heart-rate range. The notes stay in the
   plan. **Needs** a `coach:sync-garmin --apply` for each athlete to update the workouts already on the watch.

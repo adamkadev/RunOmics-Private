@@ -8,6 +8,7 @@ const KEY = 'test-key-not-real'
 const EVENT: IntervalsWorkoutEvent = {
   category: 'WORKOUT',
   type: 'Run',
+  target: 'PACE',
   start_date_local: '2026-11-03T00:00:00',
   name: 'Easy Run',
   description: '- 30m 7:50-8:45/km Pace',

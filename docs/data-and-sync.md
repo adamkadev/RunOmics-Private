@@ -485,6 +485,12 @@ heart rate. A step is `- <length> <target> <intensity>`: the length in minutes (
 a bpm range rides in the description text instead. Warm-up and cool-down carry
 `intensity=warmup`/`cooldown`, a recovery or walk `intensity=rest` and no target unless prescribed.
 A repeat is a `Nx` line over its steps (strides included), each group separated by a blank line.
+intervals.icu hands Garmin one target type per workout, chosen by the event's `target`: RunOmics
+sends `PACE` when any step has a pace, `HR` when the steps are set by heart-rate zone alone, and
+`AUTO` otherwise. Left on `AUTO`, a paced run reached a Forerunner with no target on any step. In
+a session that mixes both, a step set by zone alone may reach the watch untargeted. intervals.icu
+may also need a threshold pace in the athlete's Run settings to export pace targets: set one there
+if a session synced with `PACE` still shows no target.
 As on Connect, the coach's description and notes stay in the plan: the only prose is the HR
 bounds, ahead of the steps. A step with neither duration nor distance cannot be
 written, and its session is skipped with the reason. Races follow the Connect rules.

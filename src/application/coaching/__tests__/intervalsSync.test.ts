@@ -131,6 +131,18 @@ describe('the sync plan', () => {
     expect(syncPlan.operations.map((operation) => operation.action)).toEqual(['keep', 'update'])
   })
 
+  it('sends a paced session with the pace target', () => {
+    const syncPlan = buildIntervalsSyncPlan(plan([easy]), [], null, { today: TODAY })
+
+    expect(syncPlan.operations[0]!.event?.target).toBe('PACE')
+  })
+
+  it('pushes again a paced session already sent on the automatic target', () => {
+    const state = stateWith([{ workout: easy, eventId: '1', hash: intervalsContentHash({ ...toIntervalsWorkoutEvent(easy), target: 'AUTO' }) }])
+
+    expect(buildIntervalsSyncPlan(plan([easy]), [], state, { today: TODAY }).operations[0]!.action).toBe('update')
+  })
+
   it('pushes again a session intervals.icu did not confirm', () => {
     const state = stateWith([{ workout: easy, eventId: '1', status: 'unverified' }])
 

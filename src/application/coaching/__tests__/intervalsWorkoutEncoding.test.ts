@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
 import {
   intervalsPace,
+  intervalsWorkoutTarget,
   intervalsWorkoutText,
   IntervalsEncodingError,
   toIntervalsWorkoutEvent,
@@ -52,6 +53,7 @@ describe('the event', () => {
     expect(event).toMatchObject({
       category: 'WORKOUT',
       type: 'Run',
+      target: 'AUTO',
       start_date_local: '2026-11-03T00:00:00',
       name: "Footing · 6 × 3'",
       external_id: 'runomics:plan:workout:1:1',
@@ -59,7 +61,66 @@ describe('the event', () => {
   })
 })
 
+describe('the workout target', () => {
+  it('is pace when any step carries a pace, so Garmin gets the pace ranges', () => {
+    expect(intervalsWorkoutTarget(prescription({
+      blocks: [
+        { kind: 'warmup', target: { durationSeconds: 600 } },
+        { kind: 'repeat', repetitions: 3, steps: [{ kind: 'effort', target: { durationSeconds: 600, paceSecPerKm: { min: 272, max: 280 } } }] },
+      ],
+    }))).toBe('PACE')
+  })
+
+  it('is pace over a heart-rate zone in the same session', () => {
+    expect(intervalsWorkoutTarget(prescription({
+      type: 'tempo',
+      blocks: [
+        { kind: 'effort', target: { durationSeconds: 600, hrZone: 2 } },
+        { kind: 'effort', target: { durationSeconds: 600, paceSecPerKm: SPARSE_PACE } },
+      ],
+    }))).toBe('PACE')
+  })
+
+  it('is heart rate for a session set by zones alone', () => {
+    expect(intervalsWorkoutTarget(prescription({ blocks: [{ kind: 'effort', target: { durationSeconds: 1_200, hrZone: 2 } }] }))).toBe('HR')
+  })
+
+  it('is left to intervals.icu for a session without targets', () => {
+    expect(intervalsWorkoutTarget(prescription({ blocks: [{ kind: 'effort', target: { durationSeconds: 1_200 } }] }))).toBe('AUTO')
+  })
+})
+
 describe('golden workouts', () => {
+  it('a threshold session sent with the pace target: paced warm-up, 3 × 10′ with paced recoveries, cool-down', () => {
+    const event = toIntervalsWorkoutEvent(prescription({
+      type: 'threshold',
+      title: 'Threshold 3 x 10min',
+      blocks: [
+        { kind: 'warmup', target: { distanceMeters: 1_000, paceSecPerKm: { min: 330, max: 384 } } },
+        {
+          kind: 'repeat',
+          repetitions: 3,
+          steps: [
+            { kind: 'effort', target: { durationSeconds: 600, paceSecPerKm: { min: 272, max: 280 } } },
+            { kind: 'recovery', target: { durationSeconds: 90, paceSecPerKm: { min: 360, max: 420 } } },
+          ],
+        },
+        { kind: 'cooldown', target: { durationSeconds: 600 } },
+      ],
+    }))
+
+    expect(event.target).toBe('PACE')
+    expect(event.description).toBe([
+      '- 1km 5:30-6:24/km Pace intensity=warmup',
+      '',
+      '3x',
+      '- 10m 4:32-4:40/km Pace',
+      '- 90s 6:00-7:00/km Pace intensity=rest',
+      '',
+      '- 10m intensity=cooldown',
+    ].join('\n'))
+  })
+
   it('the owner’s threshold session: warm-up, a repeat with jogged recoveries, cool-down, heart rate in the text', () => {
     const workout = prescription({
       type: 'threshold',

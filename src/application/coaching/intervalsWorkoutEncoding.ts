@@ -2,9 +2,12 @@ import type { NumberRange, WorkoutBlock, WorkoutPrescription, WorkoutSegment, Wo
 import { t } from '@/i18n'
 import { garminWorkoutName, withoutEasyHeartRate } from './garminWorkoutMapping'
 
+export type IntervalsWorkoutTarget = 'AUTO' | 'PACE' | 'HR'
+
 export interface IntervalsWorkoutEvent {
   category: 'WORKOUT'
   type: 'Run'
+  target: IntervalsWorkoutTarget
   start_date_local: string
   name: string
   description: string
@@ -98,10 +101,19 @@ export function intervalsWorkoutText(prescription: WorkoutPrescription): string 
   return [...(intro.length ? [intro.join('\n')] : []), ...steps].join('\n\n')
 }
 
+/** intervals.icu gives Garmin one target type per workout, chosen by this field; AUTO can pick one the steps lack. */
+export function intervalsWorkoutTarget(prescription: WorkoutPrescription): IntervalsWorkoutTarget {
+  const segments = prescription.blocks.flatMap((block) => (block.kind === 'repeat' ? block.steps : [block]))
+  if (segments.some((segment) => segment.target.paceSecPerKm)) return 'PACE'
+  if (segments.some((segment) => segment.target.hrZone !== undefined)) return 'HR'
+  return 'AUTO'
+}
+
 export function toIntervalsWorkoutEvent(prescription: WorkoutPrescription): IntervalsWorkoutEvent {
   return {
     category: 'WORKOUT',
     type: 'Run',
+    target: intervalsWorkoutTarget(prescription),
     start_date_local: `${prescription.date}T00:00:00`,
     name: garminWorkoutName(prescription.title),
     description: intervalsWorkoutText(prescription),
