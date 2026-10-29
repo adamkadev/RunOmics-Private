@@ -489,8 +489,10 @@ intervals.icu hands Garmin one target type per workout, chosen by the event's `t
 sends `PACE` when any step has a pace, `HR` when the steps are set by heart-rate zone alone, and
 `AUTO` otherwise. Left on `AUTO`, a paced run reached a Forerunner with no target on any step. In
 a session that mixes both, a step set by zone alone may reach the watch untargeted. intervals.icu
-may also need a threshold pace in the athlete's Run settings to export pace targets: set one there
-if a session synced with `PACE` still shows no target.
+also needs a threshold pace in the athlete's Run settings (Settings › Run › Threshold pace) to read a
+pace step at all: without it the workout's chart is empty, its axis in watts, and every step reaches
+the watch untargeted. The value only scales intervals.icu's zones and charts; the watch gets the
+step's own range. Confirmed on a Forerunner 255.
 As on Connect, the coach's description and notes stay in the plan: the only prose is the HR
 bounds, ahead of the steps. A step with neither duration nor distance cannot be
 written, and its session is skipped with the reason. Races follow the Connect rules.
