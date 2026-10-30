@@ -148,8 +148,13 @@ export function kmSplitsFromLaps(laps: readonly LapInput[], distanceKm: number):
     }))
 }
 
+/** A lap past a kilometre would be spread evenly over the kilometres it spans: a workout's 8 km step read as eight equal ones. */
+const KM_LAP_MAX_M = 1050
+
+const kmLaps = (laps: readonly LapInput[]) => laps.every((lap) => lap.distanceM <= KM_LAP_MAX_M)
+
 export function kmSplitsOf(input: KmSplitInput & { laps?: readonly LapInput[] | null }): KmSplit[] {
-  const fromLaps = input.laps ? kmSplitsFromLaps(input.laps, input.distanceKm) : []
+  const fromLaps = input.laps && kmLaps(input.laps) ? kmSplitsFromLaps(input.laps, input.distanceKm) : []
   return fromLaps.length > 1 ? fromLaps : kmSplitsFromSamples(input)
 }
 

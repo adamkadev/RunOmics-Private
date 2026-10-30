@@ -43,9 +43,9 @@ describe('KmSplits', () => {
     for (const n of ['1', '2', '3']) expect(screen.getByText(n)).toBeInTheDocument()
   })
 
-  it('shows lap duration, distance, pace and heart rate', () => {
+  it('shows lap duration, distance, pace and heart rate, and no kilometres read off laps longer than one', () => {
     render(<KmSplits activity={activityWith([split('lap', 600, 2000, 150), split('lap', 480, 2000, 158)])} />)
-    showLaps()
+    expect(screen.queryByRole('tab')).toBeNull()
 
     expect(screen.getByText('10:00')).toBeInTheDocument()
     expect(screen.getByText('5:00')).toBeInTheDocument()
@@ -57,17 +57,13 @@ describe('KmSplits', () => {
   })
 
   it('keeps the interval title and labels for a structured workout', () => {
-    render(
-      <KmSplits
-        activity={activityWith([
-          split('interval_warmup', 600, 2000, 120),
-          split('interval_active', 240, 1000, 175),
-          split('interval_recovery', 120, 300, 140),
-        ])}
-      />,
-    )
-
     // A structured session opens on its laps.
+    const run = { ...activityWith([
+      split('interval_warmup', 600, 2000, 120),
+      split('interval_active', 240, 1000, 175),
+      split('interval_recovery', 120, 300, 140),
+    ]), distanceKm: 3.3, durationSeconds: 960, paceSamples: Array.from({ length: 34 }, () => 290), paceSecPerKm: 290 }
+    render(<KmSplits activity={run} />)
     expect(screen.getByRole('tab', { name: t.activity.splits.lapTitle })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_warmup!)).toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()

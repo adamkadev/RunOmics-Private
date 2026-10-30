@@ -23,6 +23,8 @@ All notable changes to this project are documented in this file.
 
 ### Activity
 
+- A workout's km splits come from its pace samples, not its laps: a lap is a step there, and an 8 km easy step
+  read as eight identical kilometres. Laps still give the splits when each is a kilometre or less.
 - The grade-adjusted pace is gone from a run's page: no line under the stats, no second line on the pace chart.
 
 ### Plan

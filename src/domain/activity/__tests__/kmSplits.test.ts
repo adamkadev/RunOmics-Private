@@ -196,6 +196,15 @@ describe('kmSplitsOf', () => {
     expect(kmSplitsOf({ ...input, laps: OCT7_LAPS })[9]!.paceSecPerKm).toBe(355)
     expect(kmSplitsOf({ ...input, laps: null })).toEqual(kmSplitsFromSamples(input))
   })
+
+  it("reads a workout's steps off the samples: an 8 km step is no eight equal kilometres", () => {
+    const paceSamples = [...evenSamples(30, 370), ...evenSamples(31, 350), ...evenSamples(30, 300)]
+    const input = { distanceKm: 9, durationSec: 3210, paceSamples, hrSamples: null, avgPaceSecPerKm: 357 }
+    const steps = [{ durationSec: 2880, distanceM: 8000, avgHr: 144 }, { durationSec: 330, distanceM: 1000, avgHr: 158 }]
+    const splits = kmSplitsOf({ ...input, laps: steps })
+    expect(splits).toEqual(kmSplitsFromSamples(input))
+    expect(new Set(splits.slice(0, 8).map((s) => s.paceSecPerKm)).size).toBeGreaterThan(1)
+  })
 })
 
 describe('kmSplitsFromSamples, stops', () => {
