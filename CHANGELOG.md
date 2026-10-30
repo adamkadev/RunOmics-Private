@@ -23,8 +23,9 @@ All notable changes to this project are documented in this file.
 
 ### Activity
 
-- A workout's km splits come from its pace samples, not its laps: a lap is a step there, and an 8 km easy step
-  read as eight identical kilometres. Laps still give the splits when each is a kilometre or less.
+- A workout's km splits come from the kilometre laps the watch takes inside each step, as Garmin shows them: an
+  8 km easy step no longer reads as eight identical kilometres. A lap longer than a kilometre is never spread
+  evenly; without kilometre laps the splits come from the pace samples.
 - The grade-adjusted pace is gone from a run's page: no line under the stats, no second line on the pace chart.
 
 ### Plan

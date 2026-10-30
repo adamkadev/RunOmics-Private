@@ -69,6 +69,18 @@ describe('KmSplits', () => {
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
   })
 
+  it("reads a workout step's kilometres off the auto laps the watch took inside it", () => {
+    const kms = [349, 350, 340, 342, 348, 388, 370, 353]
+    const easy = split('interval_active', 2832, 8000, 144, kms.map((sec) => ({ durationSec: sec, distanceM: 1000, avgSpeedMs: 1000 / sec, avgHr: 144 })))
+    const strides = [1, 2].flatMap(() => [split('interval_active', 20, 90, 151), split('interval_recovery', 60, 170, 156)])
+    const run = { ...activityWith([easy, ...strides]), distanceKm: 8.52, durationSeconds: 2992, paceSamples: Array.from({ length: 60 }, () => 355), paceSecPerKm: 351 }
+    render(<KmSplits activity={run} />)
+    act(() => screen.getByRole('tab', { name: t.activity.splits.cols.km }).click())
+    const rows = screen.getAllByTestId('km-split').map((row) => row.textContent!)
+    expect(rows[0]).toContain('5:49')
+    expect(rows[5]).toContain('6:28')
+  })
+
   it('keeps the interval title when there are no kilometres to switch to', () => {
     render(
       <KmSplits

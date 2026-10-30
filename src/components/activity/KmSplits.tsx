@@ -334,10 +334,11 @@ export function KmSplits({ activity, plannedRepPace = null }: Props) {
 
   const set = repSet(splits, plannedRepPace)
   const lapsOnly = splits.every((s) => s.type === 'lap')
-  // One lap or one interval is the whole run: its auto laps are its laps,
-  // and what its kilometres are read from.
-  const laps: ActivitySplit[] =
-    splits.length > 1 ? splits : (splits[0]?.laps ?? []).map((lap) => ({ type: 'lap', ...lap, laps: [] }))
+  // An interval the watch auto-lapped inside (a workout's 8 km step, or the
+  // whole run) gives its auto laps, kept for the kilometres they are; the
+  // rest are laps in their own right.
+  const laps: ActivitySplit[] = splits.flatMap((split) =>
+    split.laps.length > 1 ? split.laps.map((lap) => ({ type: 'lap' as const, ...lap, laps: [] })) : [split])
   const perKm = kmSplitsOf({
     laps,
     distanceKm: activity.distanceKm,
