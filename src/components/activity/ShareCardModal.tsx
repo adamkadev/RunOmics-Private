@@ -9,7 +9,9 @@ import {
   renderShareCard, loadImage, pageFonts, shareCardMapFrame, SHARE_DESIGNS, W, H,
   type RenderOptions, type ShareDesign, type ThemeMode,
 } from '@/lib/shareCard'
-import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
+import { shareCardFile, saveCardPng, copyCardPng, shareOrSaveFile } from '@/lib/shareCardExport'
+import { renderShareVideo, shareVideoEncoder, type VideoEncoderKind } from '@/lib/shareCardVideo'
+import { VIDEO_SECONDS, videoFrameAt } from '@/lib/shareCardTimeline'
 import { useShareCardPrefs } from '@/lib/useShareCardPrefs'
 import { useShareCardMap } from '@/lib/useShareCardMap'
 import { useShareCardGeocode } from '@/lib/useShareCardGeocode'
@@ -67,7 +69,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   // height, and the card is drawn in Geist.
   const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(card, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
-  const { image: mapImage, points: mapPoints, labels: mapLabels } = useShareCardMap({
+  const { image: mapImage, points: mapPoints, labels: mapLabels, failed: mapFailed } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
@@ -76,6 +78,15 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     bands: mapFrame.bands,
     enabled: hasRoute,
   })
+
+  const [videoEncoder, setVideoEncoder] = useState<VideoEncoderKind | null>(null)
+  const [format, setFormat] = useState<'image' | 'video'>('image')
+  const [preparing, setPreparing] = useState<number | null>(null)
+  const videoCache = useRef<{ key: unknown; file: File } | null>(null)
+  const showFormat = design === 'route' && videoEncoder !== null
+  // Each frame redraws the cached map; until it has rendered, a video would capture the plain fallback.
+  const mapSettled = !!mapImage || mapFailed
+  const video = showFormat && format === 'video' && mapSettled
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
@@ -95,6 +106,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }, [close])
 
   useScrollLock()
+
+  useEffect(() => {
+    let alive = true
+    shareVideoEncoder().then((kind) => { if (alive) setVideoEncoder(kind) }).catch(() => {})
+    return () => { alive = false }
+  }, [])
 
   useEffect(() => () => {
     if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current)
@@ -130,8 +147,22 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     // Sharp at the box's own width, whatever the phone makes of 300 px.
     const dpr = Math.min(window.devicePixelRatio || 1, 3)
     const shown = canvas.parentElement?.clientWidth || W
-    renderShareCard(canvas, renderOptions(), (shown / W) * dpr)
-  }, [renderOptions, fontsReady])
+    const scale = (shown / W) * dpr
+    if (!video) {
+      renderShareCard(canvas, renderOptions(), scale)
+      return
+    }
+    const options = renderOptions()
+    const began = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const t = ((now - began) / 1000) % VIDEO_SECONDS
+      renderShareCard(canvas, { ...options, ...videoFrameAt(t), loop: true }, scale)
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [renderOptions, fontsReady, video])
 
   function step(by: number) {
     const i = designs.indexOf(design)
@@ -157,6 +188,24 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const handleShare = () =>
     shareCardFile(activity, design, renderOptions(),
       `${activity.description || t.activity.metaFallbackTitle} - RunOmics`)
+  const handleShareVideo = async () => {
+    if (!videoEncoder || preparing !== null) return
+    const title = `${activity.description || t.activity.metaFallbackTitle} - RunOmics`
+    let file = videoCache.current?.key === renderOptions ? videoCache.current.file : null
+    if (!file) {
+      setPreparing(0)
+      try {
+        file = await renderShareVideo(activity, renderOptions(), videoEncoder, (share) => setPreparing(Math.round(share * 100)))
+        videoCache.current = { key: renderOptions, file }
+      } catch (err) {
+        console.error(err)
+        return
+      } finally {
+        setPreparing(null)
+      }
+    }
+    await shareOrSaveFile(file, title)
+  }
   const handleCopy = () => {
     copyCardPng(renderOptions())
       .then(() => {
@@ -271,7 +320,28 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             ))}
           </div>
 
-          <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
+          {showFormat && (
+            <div data-testid="share-format" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
+              <span className="text-foreground" style={{ fontSize: 17 }}>{s.formatTitle}</span>
+              <div role="radiogroup" aria-label={s.formatTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+                {(['image', 'video'] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    role="radio"
+                    aria-checked={format === f}
+                    disabled={f === 'video' && !mapSettled}
+                    onClick={() => setFormat(f)}
+                    className={cn(segmentClass(format === f), 'h-[26px] px-3.5 text-[13px] disabled:opacity-40')}
+                  >
+                    {s.formatLabels[f]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: showFormat ? 0 : 4 }}>
             {design === 'photo' ? (
               <>
                 <span className="text-foreground" style={{ fontSize: 17 }}>{s.photo}</span>
@@ -312,7 +382,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             canCopyImage={canCopyImage}
             copyState={copyState}
             disabled={awaitingPhoto}
-            onShare={handleShare}
+            video={video}
+            preparing={video ? preparing : null}
+            onShare={video ? () => { void handleShareVideo() } : handleShare}
             onSave={handleSave}
             onCopy={handleCopy}
           />

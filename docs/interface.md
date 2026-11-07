@@ -211,9 +211,27 @@ The dark Stats card carries the app's glow, in the run's own zone colour, from i
 fixed faint grain over it: a smooth dark gradient bands into visible steps once Instagram or Strava
 recompress the image. The light card stays plain.
 
-- The start dot is always green; the finish dot is the accent, unless the accent sits within a
-  distance of 90 in RGB space of the green start, where it flips to red — the start/finish convention
-  Strava and Garmin use.
+- The start is an accent dot in a white ring (`#f2f4f3` on dark) with a thin dark outline; a loop
+  gets that one marker, no chequered disc. A point-to-point run adds the chequered finish. Markers
+  draw over the place names, so a district name never covers the start.
+- An interval session's Route card puts the rep pace first in the stat row (label in the session's
+  zone colour) instead of a hero over the stats, so the map keeps its full height. The Reps chip reads
+  how far off the target the reps ran: "Reps · 9 s/km under target". The Stats and Photo cards keep
+  the hero.
+- Place names: MapLibre places the districts, fenced off the route. The park the run spent most of its
+  distance in (or that a loop runs round) and the river it runs beside would sit on the route and be
+  fenced out, so `useShareCardMap` picks them itself, hides them from the map, and the card sets them
+  beside the line (`arrangeLabels`). Priority settles collisions: start district, finish district,
+  landmark, water, other districts.
+
+**Route video.** The Route design has an Image | Video switch where the browser can encode video. The
+clip is 12.2 s at 30 fps, 1080 × 1350: the map zooms in on the start, the route draws itself with the
+stats counting up, then the still card holds. Each frame is `drawShareCard` with `progress` and
+`clipTime` (`shareCardTimeline.ts`), over the one cached MapLibre render. `shareCardVideo.ts` encodes
+H.264 through WebCodecs and mediabunny (frame-exact, about 2 s in Chrome), falling back to
+`MediaRecorder` in real time, MP4 where the browser records it and WebM only as a last resort, since
+WebM shares badly to WhatsApp on iOS. `VideoEncoder` exists only in a secure context, so on plain
+http (a LAN dev server) the fallback is what runs.
 **MapLibre's worker is served from `public/`, not from the bundle.** MapLibre 6 is ESM-only and
 no longer inlines its web worker: it spawns `maplibre-gl-worker.mjs` as a module worker, resolving
 that name against `import.meta.url`. Bundled into a Turbopack chunk, that resolves to a path under

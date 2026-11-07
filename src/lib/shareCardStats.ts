@@ -55,31 +55,55 @@ export function shareCardSubtitle(activity: ShareActivity, place: string | null 
   return place ? `${date} · ${place}` : date
 }
 
+export type ShareStatKey = 'repPace' | 'distance' | 'time' | 'pace' | 'hr'
+
 export interface ShareStat {
+  key: ShareStatKey
   value: string
   unit: string
   label: string
 }
 
-function shareDuration(seconds: number): { value: string; unit: string } {
+export function shareDuration(seconds: number): { value: string; unit: string } {
   const { value, unit } = formatDurationRounded(seconds)
   return { value, unit: ` ${unit}` }
 }
 
-export function shareStats(activity: ShareActivity): ShareStat[] {
+/** `repPace` leads an interval session's row with the reps' pace: the Route card has no rep-pace hero over it. */
+export function shareStats(activity: ShareActivity, { repPace = false }: { repPace?: boolean } = {}): ShareStat[] {
   const s = t.activity.shareCard
-  const stats: ShareStat[] = [
-    { value: formatKm(activity.distanceKm, 1), unit: ` ${t.units.km}`, label: s.distance },
-    { ...shareDuration(activity.durationSeconds), label: s.time },
-  ]
+  const stats: ShareStat[] = []
+  if (repPace && activity.reps) {
+    stats.push({ key: 'repPace', value: formatClock(activity.reps.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.repPaceStat })
+  }
+  stats.push(
+    { key: 'distance', value: formatKm(activity.distanceKm, 1), unit: ` ${t.units.km}`, label: s.distance },
+    { key: 'time', ...shareDuration(activity.durationSeconds), label: s.time },
+  )
   // An interval session drops the average pace: over reps and recoveries it describes neither.
   if (!activity.reps && activity.paceSecPerKm && activity.paceSecPerKm > 0) {
-    stats.push({ value: formatClock(activity.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.pace })
+    stats.push({ key: 'pace', value: formatClock(activity.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.pace })
   }
   if (activity.avgHeartRate) {
-    stats.push({ value: String(Math.round(activity.avgHeartRate)), unit: ` ${t.units.bpm}`, label: s.avgHr })
+    stats.push({ key: 'hr', value: String(Math.round(activity.avgHeartRate)), unit: ` ${t.units.bpm}`, label: s.avgHr })
   }
   return stats
+}
+
+/** "Reps · **9 s/km** under target": the strong part is drawn bold. */
+export interface ShareRepsLegend {
+  lead: string
+  strong: string | null
+  rest: string
+}
+
+export function shareRepsLegend(activity: ShareActivity): ShareRepsLegend {
+  const s = t.activity.shareCard
+  const reps = activity.reps
+  if (!reps?.target) return { lead: s.repsLegend, strong: null, rest: '' }
+  const off = repOffset(reps.paceSecPerKm, reps.target)
+  if (off === 0) return { lead: `${s.repsLegend} · `, strong: s.onTarget, rest: '' }
+  return { lead: `${s.repsLegend} · `, strong: s.secPerKm(Math.abs(off)), rest: ` ${off < 0 ? s.underTarget : s.overTarget}` }
 }
 
 export function repLength(seconds: number): string {
@@ -111,8 +135,13 @@ export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
   }
 }
 
+/** Seconds per km outside the target band: negative is faster. */
+function repOffset(pace: number, target: { min: number; max: number }): number {
+  return Math.round(pace < target.min ? pace - target.min : pace > target.max ? pace - target.max : 0)
+}
+
 function repDelta(pace: number, target: { min: number; max: number }): string | null {
-  const off = pace < target.min ? pace - target.min : pace > target.max ? pace - target.max : 0
+  const off = repOffset(pace, target)
   if (off === 0) return null
   const sign = off > 0 ? '+' : '−'
   const abs = Math.abs(off)

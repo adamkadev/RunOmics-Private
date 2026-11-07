@@ -99,7 +99,7 @@ export function heatBasemapStyle(style: StyleSpecification, isDark: boolean): St
 
 const SHARE_BASEMAP: Record<'light' | 'dark', Partial<Record<keyof typeof MAP_STYLE_COLORS.light, string>>> = {
   light: { park: '#c6e0c2', water: '#b4d2ea', waterway: '#b4d2ea', roadCasing: '#d5d9d7' },
-  dark: { park: '#1a3326', water: '#16304a', waterway: '#16304a', roadMajor: '#2a3030' },
+  dark: { park: '#1f3b2c', water: '#16304a', waterway: '#16304a', roadMajor: '#2a3030' },
 }
 
 export function shareBasemapStyle(style: StyleSpecification, isDark: boolean): StyleSpecification {

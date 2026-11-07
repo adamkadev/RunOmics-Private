@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTE_INSET, bandFencePoints, projectRoute, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { ROUTE_INSET, bandFencePoints, pickLandmark, pickWater, projectRoute, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 
 /** The widest end marker the card draws, as a radius: the loop's, at the card's 0.85. */
 const MARKER_RADIUS = (11 + 1.5) * 0.85
@@ -88,5 +88,38 @@ describe('the label fences (redesign, Oct 2026)', () => {
   it('runs a line across the card at each band edge', () => {
     const pts = bandFencePoints(32, [80, 300], 16)
     expect(pts).toEqual([[0, 80], [16, 80], [32, 80], [0, 300], [16, 300], [32, 300]])
+  })
+})
+
+describe('the run\'s landmark and water', () => {
+  const square = (x: number, y: number, side: number): [number, number][] => [[x, y], [x + side, y], [x + side, y + side], [x, y + side], [x, y]]
+  const line: [number, number][] = Array.from({ length: 21 }, (_, i) => [i * 10, 100])
+
+  it('picks the park the route spends the most distance in', () => {
+    const areas = [
+      { name: 'Small', at: [20, 100] as [number, number], rings: [square(0, 80, 40)] },
+      { name: 'Forest', at: [120, 100] as [number, number], rings: [square(60, 60, 120)] },
+    ]
+    expect(pickLandmark(line, areas, false)?.name).toBe('Forest')
+  })
+
+  it('takes a park a loop runs round, though the route never enters it', () => {
+    const loop = square(50, 50, 100)
+    const park = { name: 'Parc Central', at: [100, 100] as [number, number], rings: [square(80, 80, 40)] }
+    expect(pickLandmark(loop, [park], true)?.name).toBe('Parc Central')
+    expect(pickLandmark(loop, [park], false)).toBeNull()
+  })
+
+  it('ignores a park the route only brushes', () => {
+    expect(pickLandmark(line, [{ name: 'Corner', at: [5, 100], rings: [square(0, 90, 15)] }], false)).toBeNull()
+  })
+
+  it('names the river the route runs beside, at a point beside the route', () => {
+    const river = { name: 'La Rivière', lines: [[[0, 115], [200, 115]] as [number, number][]] }
+    const far = { name: 'Le Fleuve', lines: [[[0, 300], [200, 300]] as [number, number][]] }
+    const water = pickWater(line, [far, river])
+    expect(water?.name).toBe('La Rivière')
+    expect(line).toContainEqual(water!.at)
+    expect(pickWater(line, [far])).toBeNull()
   })
 })

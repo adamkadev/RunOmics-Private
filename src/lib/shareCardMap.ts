@@ -79,3 +79,95 @@ export function bandFencePoints(w: number, ys: readonly number[], step = 16): [n
   }
   return out
 }
+
+type Px = [number, number]
+
+export function pointInRing([x, y]: Px, ring: readonly Px[]): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]!
+    const [xj, yj] = ring[j]!
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+
+function distanceToSegment([px, py]: Px, [x1, y1]: Px, [x2, y2]: Px): number {
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const length2 = dx * dx + dy * dy
+  const k = length2 > 0 ? Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / length2)) : 0
+  return Math.hypot(px - (x1 + k * dx), py - (y1 + k * dy))
+}
+
+export function distanceToLine(p: Px, line: readonly Px[]): number {
+  if (line.length === 1) return Math.hypot(p[0] - line[0]![0], p[1] - line[0]![1])
+  let best = Infinity
+  for (let i = 1; i < line.length; i++) best = Math.min(best, distanceToSegment(p, line[i - 1]!, line[i]!))
+  return best
+}
+
+/** The route's length, in px, over which `keep` holds at each step's middle. */
+function routeLengthWhere(route: readonly Px[], keep: (p: Px) => boolean): number {
+  let total = 0
+  for (let i = 1; i < route.length; i++) {
+    const [x1, y1] = route[i - 1]!
+    const [x2, y2] = route[i]!
+    if (keep([(x1 + x2) / 2, (y1 + y2) / 2])) total += Math.hypot(x2 - x1, y2 - y1)
+  }
+  return total
+}
+
+export function routeLength(route: readonly Px[]): number {
+  return routeLengthWhere(route, () => true)
+}
+
+/** A polygon is its outer rings; a tile cuts one park into several. */
+export interface GreenArea {
+  name: string
+  /** Where its name sits on the map. */
+  at: Px
+  rings: Px[][]
+}
+
+/** Below this share of the route, a park it only brushes past is not the run's landmark. */
+const LANDMARK_MIN_SHARE = 0.15
+
+/** The park the run spent most of its distance in, or the one a loop (`joined`) runs round. */
+export function pickLandmark(route: readonly Px[], areas: readonly GreenArea[], joined: boolean): GreenArea | null {
+  const total = routeLength(route)
+  if (total <= 0) return null
+  let best: { area: GreenArea; score: number } | null = null
+  for (const area of areas) {
+    const inside = routeLengthWhere(route, (p) => area.rings.some((ring) => pointInRing(p, ring)))
+    const share = inside / total
+    const circled = joined && pointInRing(area.at, route as Px[])
+    const score = share >= LANDMARK_MIN_SHARE ? share : circled ? LANDMARK_MIN_SHARE : 0
+    if (score > 0 && (!best || score > best.score)) best = { area, score }
+  }
+  return best?.area ?? null
+}
+
+export interface WaterLine {
+  name: string
+  lines: Px[][]
+}
+
+/** Px from the water's centre line: a riverside path runs a road's width off it. */
+const ALONGSIDE_PX = 24
+const WATER_MIN_SHARE = 0.15
+
+/** The river or canal the route runs beside the longest, and the point beside the route to name it at. */
+export function pickWater(route: readonly Px[], waters: readonly WaterLine[]): { name: string; at: Px } | null {
+  const total = routeLength(route)
+  if (total <= 0) return null
+  let best: { name: string; at: Px; share: number } | null = null
+  for (const water of waters) {
+    const near = (p: Px) => water.lines.some((line) => distanceToLine(p, line) <= ALONGSIDE_PX)
+    const share = routeLengthWhere(route, near) / total
+    if (share < WATER_MIN_SHARE || (best && share <= best.share)) continue
+    const beside = route.filter(near)
+    best = { name: water.name, at: beside[Math.floor(beside.length / 2)] ?? route[0]!, share }
+  }
+  return best ? { name: best.name, at: best.at } : null
+}

@@ -70,6 +70,26 @@ function inkChecker(x: number, y: number, radius: number): boolean {
   return (Math.floor((x - origin) / CHECKER) + Math.floor((y - origin) / CHECKER)) % 2 === 1
 }
 
+export interface DotInk {
+  fill: string
+  ring: string
+  outline: string
+}
+
+/** The share card's start, and its loop's one marker: the start's size and ring, with a thin outline for any tile. */
+export function drawStartDot(ctx: CanvasRenderingContext2D, [x, y]: Point, ink: DotInk, scale = 1) {
+  const { diameter, ring } = MARKER_SPECS.start
+  const r = (diameter / 2) * scale
+  ctx.save()
+  for (const [radius, color] of [[r + scale, ink.outline], [r, ink.ring], [r - ring * scale, ink.fill]] as const) {
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.fillStyle = color
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
 export function drawRouteMarker(ctx: CanvasRenderingContext2D, kind: MarkerKind, [x, y]: Point, accent: string, scale = 1) {
   const { outline, ring, inner, checker } = layers(kind, accent, scale)
   const disc = (radius: number, color: string) => {

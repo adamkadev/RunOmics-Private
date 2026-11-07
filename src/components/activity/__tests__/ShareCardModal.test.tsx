@@ -7,7 +7,13 @@ import { ShareCardModal } from '../ShareCardModal'
 
 const theme = vi.hoisted(() => ({ resolved: 'dark' }))
 vi.mock('next-themes', () => ({ useTheme: () => ({ resolvedTheme: theme.resolved }) }))
-vi.mock('@/lib/useShareCardMap', () => ({ useShareCardMap: () => ({ image: null, points: null, failed: false }) }))
+const map = vi.hoisted(() => ({ failed: false }))
+vi.mock('@/lib/useShareCardMap', () => ({ useShareCardMap: () => ({ image: null, points: null, failed: map.failed }) }))
+const encoder = vi.hoisted(() => ({ kind: null as 'webcodecs' | 'recorder' | null }))
+vi.mock('@/lib/shareCardVideo', () => ({
+  shareVideoEncoder: () => Promise.resolve(encoder.kind),
+  renderShareVideo: () => Promise.resolve(new File([], 'run.mp4', { type: 'video/mp4' })),
+}))
 vi.mock('@/lib/useShareCardGeocode', () => ({ useShareCardGeocode: () => ({ locationName: null }) }))
 // jsdom decodes no image: a chosen photo loads as soon as it is picked.
 // Each draw's run is kept, to see which card the preview drew.
@@ -41,6 +47,8 @@ const checked = (group: string) =>
 
 beforeEach(() => {
   drawn.runs = []
+  encoder.kind = null
+  map.failed = false
   localStorage.clear()
   theme.resolved = 'dark'
   URL.createObjectURL = () => 'blob:photo'
@@ -234,5 +242,36 @@ describe('ShareCardModal', () => {
     open()
     expect(screen.queryByRole('switch', { name: 'Rep pace' })).toBeNull()
     expect(screen.queryByTestId('share-reps')).toBeNull()
+  })
+})
+
+describe('the Route video', () => {
+  const s = t.activity.shareCard
+
+  it('offers no Image | Video choice where the browser can encode no video', async () => {
+    open()
+    await Promise.resolve()
+    expect(screen.queryByRole('radiogroup', { name: s.formatTitle })).toBeNull()
+  })
+
+  it('offers Image | Video on the Route design only, Video held until the map has rendered', async () => {
+    encoder.kind = 'webcodecs'
+    const user = userEvent.setup()
+    open()
+    const group = await screen.findByRole('radiogroup', { name: s.formatTitle })
+    expect(within(group).getByRole('radio', { name: s.formatLabels.video })).toBeDisabled()
+    await user.click(within(screen.getByTestId('share-designs')).getByRole('radio', { name: s.designLabels.stats }))
+    expect(screen.queryByRole('radiogroup', { name: s.formatTitle })).toBeNull()
+  })
+
+  it('shares a video, with no Copy image, once Video is picked', async () => {
+    encoder.kind = 'webcodecs'
+    map.failed = true
+    const user = userEvent.setup()
+    open()
+    const group = await screen.findByRole('radiogroup', { name: s.formatTitle })
+    await user.click(within(group).getByRole('radio', { name: s.formatLabels.video }))
+    expect(screen.getByRole('button', { name: s.shareVideo })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: t.activity.shareMenu.copy })).toBeNull()
   })
 })

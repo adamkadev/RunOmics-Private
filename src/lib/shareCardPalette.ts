@@ -35,14 +35,20 @@ export interface SharePalette {
   pos: string
   warn: string
   route: string
+  /** The start marker's fill and the video's head dot: the accent. */
   marker: string
+  markerRing: string
+  markerOutline: string
   /** An interval route's own grey, under its reps. */
   trace: string
   casing: string
 }
 
-/** White on dark, the accent on light, so the end markers read over an accent trace. */
-export const SHARE_MARKER_HEX = { light: null, dark: '#f2f4f3' } as const
+/** The start marker's ring and its thin outline, which keeps it clear of a pale tile or a dark one. */
+export const SHARE_MARKER_HEX = {
+  light: { ring: '#ffffff', outline: 'rgba(12, 13, 13, 0.6)' },
+  dark: { ring: '#f2f4f3', outline: '#0c0d0d' },
+} as const
 
 export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
   const s = SURFACES[mode]
@@ -59,7 +65,9 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     pos: STATUS_HEX[mode].pos,
     warn: STATUS_HEX[mode].warn,
     route: curatedAccent(accent)[mode].acc,
-    marker: SHARE_MARKER_HEX[mode] ?? curatedAccent(accent)[mode].acc,
+    marker: curatedAccent(accent)[mode].acc,
+    markerRing: SHARE_MARKER_HEX[mode].ring,
+    markerOutline: SHARE_MARKER_HEX[mode].outline,
     trace: mode === 'light' ? '#8a8a8a' : '#6b7270',
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
   }

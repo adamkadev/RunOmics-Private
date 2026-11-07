@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
-import { bandFencePoints, routeFencePoints, simplifyRoute, type LngLat, type RouteFrame } from '@/lib/shareCardMap'
+import {
+  bandFencePoints, pickLandmark, pickWater, pointInRing, routeFencePoints, simplifyRoute,
+  type GreenArea, type LngLat, type RouteFrame, type WaterLine,
+} from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { addLandmarkLabels, addParkLabels, addWaterLabels, isPlaceLabelLayer, loadMapLibre, showPlacesAtAnyZoom, styleRunMapLabels } from '@/lib/maplibre'
-import type { ShareMapLabel } from '@/lib/shareCardDraw'
+import {
+  addLandmarkLabels, addParkLabels, addWaterLabels, isPlaceLabelLayer, loadMapLibre, PARK_LABEL_LAYER, showPlacesAtAnyZoom,
+  styleRunMapLabels, WATER_LABEL_LAYER,
+} from '@/lib/maplibre'
+import { LABEL_PRIORITY, type ShareMapLabel } from '@/lib/shareCardDraw'
+import { endsJoined } from '@/lib/routeMarkers'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
@@ -105,24 +112,109 @@ function placeLayerIds(map: import('maplibre-gl').Map): string[] {
   return map.getStyle().layers.filter((layer) => isPlaceLabelLayer(layer as { id: string; type: string; 'source-layer'?: string })).map((layer) => layer.id)
 }
 
-function placedLabels(map: import('maplibre-gl').Map, mode: ThemeMode): ShareMapLabel[] {
+type Px = [number, number]
+
+function featureName(props: Record<string, unknown> | null | undefined): string {
+  return String(props?.[`name:${MAP_LANG}`] ?? props?.name ?? '').trim()
+}
+
+/** The district nearest the start leads, then the finish's when it is another: the places the run is known by. */
+function placedLabels(map: import('maplibre-gl').Map, mode: ThemeMode, start: Px, finish: Px): ShareMapLabel[] {
   const ids = placeLayerIds(map)
   if (ids.length === 0) return []
   const surface = SURFACES[mode]
   const seen = new Set<string>()
   const out: ShareMapLabel[] = []
   for (const feature of map.queryRenderedFeatures({ layers: ids })) {
-    const props = feature.properties ?? {}
-    const text = String(props[`name:${MAP_LANG}`] ?? props.name ?? '').trim()
+    const text = featureName(feature.properties)
     if (!text || seen.has(text) || feature.geometry.type !== 'Point') continue
     seen.add(text)
     const id = feature.layer.id
     const size = Number(map.getLayoutProperty(id, 'text-size')) || CARD_LABEL_SIZE
     const opacity = Number(map.getPaintProperty(id, 'text-opacity'))
     const { x, y } = map.project(feature.geometry.coordinates as [number, number])
-    out.push({ text, x, y, size, color: surface.text2, opacity: Number.isFinite(opacity) ? opacity : 1 })
+    out.push({ text, x, y, size, color: surface.text2, opacity: Number.isFinite(opacity) ? opacity : 1, priority: LABEL_PRIORITY.district })
+  }
+  const nearest = ([px, py]: Px) => out.reduce<ShareMapLabel | null>((best, l) =>
+    !best || Math.hypot(l.x - px, l.y - py) < Math.hypot(best.x - px, best.y - py) ? l : best, null)
+  const first = nearest(start)
+  if (first) first.priority = LABEL_PRIORITY.start
+  const last = nearest(finish)
+  if (last && last !== first) last.priority = LABEL_PRIORITY.finish
+  return out
+}
+
+/** The style's green fills: their polygons carry no name, a park's name is a POI point inside one. */
+const GREEN_FILL_LAYERS = ['Wood', 'Forest', 'Grass', 'Cemetery']
+const PARK_POI = { sourceLayer: 'poi_public', subclass: 'park' } as const
+const WATER_SOURCE_LAYER = 'water_label'
+
+function sourceOf(map: import('maplibre-gl').Map, sourceLayer: string): string | null {
+  const layer = map.getStyle().layers.find((l) => (l as { 'source-layer'?: string })['source-layer'] === sourceLayer) as { source?: string } | undefined
+  return layer?.source ?? null
+}
+
+function outerRings(geometry: GeoJSON.Geometry): LngLat[][] {
+  if (geometry.type === 'Polygon') return [geometry.coordinates[0] as LngLat[]]
+  if (geometry.type === 'MultiPolygon') return geometry.coordinates.map((polygon) => polygon[0] as LngLat[])
+  return []
+}
+
+function lineParts(geometry: GeoJSON.Geometry): LngLat[][] {
+  if (geometry.type === 'LineString') return [geometry.coordinates as LngLat[]]
+  if (geometry.type === 'MultiLineString') return geometry.coordinates as LngLat[][]
+  return []
+}
+
+/** The route fence drops a park the route crosses, its name point being on the line: the card names it itself. */
+function routeLandmarks(map: import('maplibre-gl').Map, route: Px[], mode: ThemeMode): ShareMapLabel[] {
+  const project = (c: LngLat): Px => { const p = map.project(c); return [p.x, p.y] }
+  const out: ShareMapLabel[] = []
+  const style = new Set(map.getStyle().layers.map((l) => l.id))
+  const greenLayers = GREEN_FILL_LAYERS.filter((id) => style.has(id))
+  const greens = greenLayers.length > 0 ? map.queryRenderedFeatures({ layers: greenLayers }) : []
+  const rings = greens.flatMap((f) => outerRings(f.geometry)).map((ring) => ring.map(project))
+  const parkSource = sourceOf(map, PARK_POI.sourceLayer)
+  const areas: GreenArea[] = []
+  const names = new Set<string>()
+  for (const poi of parkSource ? map.querySourceFeatures(parkSource, { sourceLayer: PARK_POI.sourceLayer }) : []) {
+    const name = featureName(poi.properties)
+    if (!name || names.has(name) || poi.properties?.subclass !== PARK_POI.subclass || poi.geometry.type !== 'Point') continue
+    names.add(name)
+    const at = project(poi.geometry.coordinates as LngLat)
+    const own = rings.filter((ring) => ring.length > 2 && pointInRing(at, ring))
+    areas.push({ name, at, rings: own })
+  }
+  const joined = route.length > 1 && endsJoined(route[0]!, route[route.length - 1]!)
+  const landmark = pickLandmark(route, areas, joined)
+  if (landmark) {
+    out.push({ text: landmark.name, x: landmark.at[0], y: landmark.at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, beside: true })
+  }
+
+  const waterSource = sourceOf(map, WATER_SOURCE_LAYER)
+  const byName = new Map<string, WaterLine>()
+  for (const f of waterSource ? map.querySourceFeatures(waterSource, { sourceLayer: WATER_SOURCE_LAYER }) : []) {
+    const name = featureName(f.properties)
+    if (!name || !['river', 'canal'].includes(String(f.properties?.class))) continue
+    const entry = byName.get(name) ?? { name, lines: [] }
+    entry.lines.push(...lineParts(f.geometry).map((line) => line.map(project)))
+    byName.set(name, entry)
+  }
+  const water = pickWater(route, [...byName.values()])
+  if (water && water.name !== landmark?.name) {
+    out.push({ text: water.name, x: water.at[0], y: water.at[1], size: CARD_LABEL_SIZE, color: WATER_INK[mode], opacity: 1, priority: LABEL_PRIORITY.water, beside: true })
   }
   return out
+}
+
+/** The card draws these names itself: the map must not draw them a second time. */
+function hideFromMap(map: import('maplibre-gl').Map, names: string[]) {
+  if (names.length === 0) return
+  const notNamed = ['!', ['in', ['coalesce', ['get', `name:${MAP_LANG}`], ['get', 'name']], ['literal', names]]]
+  for (const id of [PARK_LABEL_LAYER, WATER_LABEL_LAYER]) {
+    if (!map.getLayer(id)) continue
+    map.setFilter(id, ['all', map.getFilter(id) ?? true, notNamed] as unknown as Parameters<typeof map.setFilter>[1])
+  }
 }
 
 async function renderRouteMap(opts: RenderOptions): Promise<Render> {
@@ -182,7 +274,11 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
 
     // Read where MapLibre placed each name, then capture the map without
     // them: the card paints its route over the map, and the names over that.
-    const labels = placedLabels(map, isDark ? 'dark' : 'light')
+    const mode = isDark ? 'dark' : 'light'
+    const screen = points.map((c): Px => { const p = map.project(c); return [p.x, p.y] })
+    const landmarks = routeLandmarks(map, screen, mode)
+    const labels = [...placedLabels(map, mode, screen[0]!, screen[screen.length - 1]!), ...landmarks]
+    hideFromMap(map, landmarks.map((l) => l.text))
     if (labels.length > 0) {
       for (const id of placeLayerIds(map)) map.setLayoutProperty(id, 'visibility', 'none')
       await settled(map, RENDER_TIMEOUT_MS)
@@ -195,7 +291,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     image.height = src.height
     image.getContext('2d')?.drawImage(src, 0, 0)
 
-    return { image, points: points.map((c) => { const p = map.project(c); return [p.x, p.y] }), labels }
+    return { image, points: screen, labels }
   } finally {
     map.remove()
     container.remove()

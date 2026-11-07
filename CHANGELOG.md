@@ -23,6 +23,12 @@ All notable changes to this project are documented in this file.
 
 ### Activity
 
+- The Route share card has a Video option: a 12 s MP4 where the route draws itself, the distance and
+  time count up and it ends on the still card, to share to WhatsApp or Instagram like an image.
+- The Route share card reads better small: one start marker on a loop (no chequered disc), the markers
+  over the place names, the park the run went through and the river it followed named beside the
+  route, and on an interval session the rep pace in the stat row, so the map keeps its full height.
+  The Reps chip says how far off the target the reps ran ("9 s/km under target").
 - A workout's km splits come from the kilometre laps the watch takes inside each step, as Garmin shows them: an
   8 km easy step no longer reads as eight identical kilometres. A lap longer than a kilometre is never spread
   evenly; without kilometre laps the splits come from the pace samples.

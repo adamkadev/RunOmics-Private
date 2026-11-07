@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  percentsTo100, repLength, zoneName, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity, shareRepDetail, shareStructure,
+  percentsTo100, repLength, zoneName, shareCardSubtitle, shareCardTitle, shareRepHero, shareRepsLegend, shareStats, shareZones, type ShareActivity, shareRepDetail, shareStructure,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
 
@@ -28,16 +28,16 @@ describe('shareStats', () => {
   // The activity page's order: one order everywhere.
   it('reads Distance, Time, Pace, Avg HR, units apart from the values', () => {
     expect(shareStats(RUN)).toEqual([
-      { value: '10.0', unit: ' km', label: 'Distance' },
-      { value: '57:33', unit: ' min', label: 'Time' },
-      { value: '5:44', unit: ' /km', label: 'Pace' },
-      { value: '153', unit: ' bpm', label: 'Avg HR' },
+      { key: 'distance', value: '10.0', unit: ' km', label: 'Distance' },
+      { key: 'time', value: '57:33', unit: ' min', label: 'Time' },
+      { key: 'pace', value: '5:44', unit: ' /km', label: 'Pace' },
+      { key: 'hr', value: '153', unit: ' bpm', label: 'Avg HR' },
     ])
   })
 
   // To the minute, as the activity page writes it.
   it('writes an hour-long run as h:mm, not to the second', () => {
-    expect(shareStats({ ...RUN, durationSeconds: 3999 })[1]).toEqual({ value: '1:07', unit: ' h', label: 'Time' })
+    expect(shareStats({ ...RUN, durationSeconds: 3999 })[1]).toEqual({ key: 'time', value: '1:07', unit: ' h', label: 'Time' })
   })
 
   it('leaves out what the run did not record', () => {
@@ -146,6 +146,21 @@ describe('an interval session (design review, Oct 2026)', () => {
 
   it('drops the average pace, which describes neither the reps nor the recoveries', () => {
     expect(shareStats({ ...RUN, reps: REPS }).map((s) => s.label)).toEqual(['Distance', 'Time', 'Avg HR'])
+  })
+
+  it('leads the Route card\'s row with the rep pace, then Distance, Time and Avg HR', () => {
+    expect(shareStats({ ...RUN, reps: REPS }, { repPace: true }).map((s) => [s.label, s.value])).toEqual([
+      ['Rep pace', '4:24'], ['Distance', '10.0'], ['Time', '57:33'], ['Avg HR', '153'],
+    ])
+    expect(shareStats(RUN, { repPace: true }).map((s) => s.key)).toEqual(['distance', 'time', 'pace', 'hr'])
+  })
+
+  it('says how far off the target the reps ran, in seconds per km, or that they were on it', () => {
+    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, paceSecPerKm: 256 } })).toEqual({ lead: 'Reps · ', strong: '9 s/km', rest: ' under target' })
+    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } }))
+      .toEqual({ lead: 'Reps · ', strong: '5 s/km', rest: ' over target' })
+    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })).toEqual({ lead: 'Reps · ', strong: 'on target', rest: '' })
+    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, target: null } })).toEqual({ lead: 'Reps', strong: null, rest: '' })
   })
 
   it('writes a rep in minutes, or seconds under one', () => {
