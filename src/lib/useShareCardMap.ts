@@ -11,7 +11,8 @@ import {
   addLandmarkLabels, addParkLabels, addWaterLabels, isPlaceLabelLayer, loadMapLibre, PARK_LABEL_LAYER, showPlacesAtAnyZoom,
   styleRunMapLabels, WATER_LABEL_LAYER,
 } from '@/lib/maplibre'
-import { LABEL_PRIORITY, type ShareMapLabel } from '@/lib/shareCardDraw'
+import { LABEL_PRIORITY, MARKER_CLEARANCE, shareMarkerRadius, type ShareMapLabel } from '@/lib/shareCardDraw'
+import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
 import { endsJoined } from '@/lib/routeMarkers'
 import { nearbyPark } from '@/lib/reverseGeocode'
 import { SURFACES } from '@/lib/themeTokens'
@@ -276,7 +277,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     addLandmarkLabels(map, { halo: surface.background, landmark: LANDMARK_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
     addWaterLabels(map, { halo: surface.background, water: WATER_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
     showPlacesAtAnyZoom(map, { districtOpacity: DISTRICT_OPACITY[theme] })
-    addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
+    const fence = (kind: 'start' | 'finish') => clearMarkerImage(shareMarkerRadius(kind, { markerOutline: SHARE_MARKER_HEX[theme].outline }) + MARKER_CLEARANCE)
+    addRunMarkers(map, first, { start: fence('start'), finish: fence('finish') })
     const last = points[points.length - 1]
     if (last && last !== first) setRunFinish(map, first, last)
     addEdgeFence(map)

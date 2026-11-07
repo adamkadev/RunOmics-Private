@@ -6,7 +6,7 @@ import {
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
-import { drawRouteMarker, drawStartDot, endsJoined } from '@/lib/routeMarkers'
+import { drawRouteMarker, drawStartDot, endsJoined, MARKER_SPECS } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
@@ -397,7 +397,7 @@ function legendParts(scene: ShareCardScene, palette: SharePalette): { parts: Chi
   return { parts, bar: rep }
 }
 
-function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, top: number, motion: VideoMotion) {
+function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, top: number) {
   const { palette, fonts } = scene
   const BAR_W = 14
   const BAR_H = 3
@@ -411,7 +411,6 @@ function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, top: number, motion: Vi
   const x = RIGHT - width
   const y = top + 8
   ctx.save()
-  ctx.globalAlpha *= motion.intro
   ctx.fillStyle = palette.bg
   roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)
   ctx.fill()
@@ -518,10 +517,40 @@ function overlaps(a: Placed['box'], b: Placed['box']): boolean {
   return a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
 }
 
+/** A marker as a name must keep clear of it: centre and radius, in the card's px. */
+export interface MarkerObstacle {
+  x: number
+  y: number
+  r: number
+}
+
+/** Room a name keeps from a marker's edge. */
+export const MARKER_CLEARANCE = 4
+
+/** As drawn on the card, outline included. */
+export function shareMarkerRadius(kind: 'start' | 'finish', palette: Pick<SharePalette, 'markerOutline'>): number {
+  const spec = MARKER_SPECS[kind]
+  const outline = kind === 'start' ? (palette.markerOutline ? 1 : 0) : spec.outline
+  return (spec.diameter / 2 + outline) * MARKER_SCALE
+}
+
+export function markerObstacles(pts: readonly [number, number][], palette: Pick<SharePalette, 'markerOutline'>): MarkerObstacle[] {
+  const first = pts[0]!
+  const last = pts[pts.length - 1]!
+  const at = (p: [number, number], kind: 'start' | 'finish') => ({ x: p[0], y: p[1], r: shareMarkerRadius(kind, palette) + MARKER_CLEARANCE })
+  return endsJoined(first, last) ? [at(first, 'start')] : [at(first, 'start'), at(last, 'finish')]
+}
+
+function touches(box: Placed['box'], { x, y, r }: MarkerObstacle): boolean {
+  const dx = x - Math.max(box[0], Math.min(x, box[2]))
+  const dy = y - Math.max(box[1], Math.min(y, box[3]))
+  return dx * dx + dy * dy < r * r
+}
+
 /** Highest priority first, a clash dropped; MapLibre's names keep their spot, a name beside the route moves off it. */
 export function arrangeLabels(
   ctx: Ctx, labels: readonly ShareMapLabel[], route: readonly [number, number][] | null, { textTop, textBottom }: Pick<ShareCardLayout, 'textTop' | 'textBottom'>,
-  fonts: ShareFonts,
+  fonts: ShareFonts, obstacles: readonly MarkerObstacle[] = [],
 ): Placed[] {
   const fence = route ? routeFencePoints(route, 3) : []
   const placed: Placed[] = []
@@ -544,6 +573,7 @@ export function arrangeLabels(
       if (box[1] < textTop + ROUTE_TEXT_GAP || box[3] > textBottom - ROUTE_TEXT_GAP) continue
       if (box[0] < PAD_X || box[2] > W - PAD_X) continue
       if (placed.some((p) => overlaps(p.box, box))) continue
+      if (obstacles.some((o) => touches(box, o))) continue
       if (label.beside && fence.some(([px, py]) => px > box[0] - ROUTE_CLEAR && px < box[2] + ROUTE_CLEAR && py > box[1] - ROUTE_CLEAR && py < box[3] + ROUTE_CLEAR)) continue
       placed.push({ label, lines, x, y, box })
       break
@@ -552,8 +582,8 @@ export function arrangeLabels(
   return placed
 }
 
-/** Only between the bands, where no fade can cut one, and only a name whole inside the side margins. */
-function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, route: [number, number][] | null) {
+/** Only between the bands, where no fade can cut one, only a name whole inside the side margins, and none under a marker. */
+function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, obstacles: MarkerObstacle[] | null, route: [number, number][] | null) {
   const { mapLabels, palette, fonts } = scene
   if (!mapLabels?.length) return
   ctx.save()
@@ -561,7 +591,7 @@ function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
   const base = ctx.globalAlpha
-  for (const { label, lines, x, y } of arrangeLabels(ctx, mapLabels, route, layout, fonts)) {
+  for (const { label, lines, x, y } of arrangeLabels(ctx, mapLabels, route, layout, fonts, obstacles ?? [])) {
     ctx.font = `600 ${label.size}px ${fonts.text}`
     ctx.globalAlpha = base * label.opacity
     ctx.lineWidth = 3
@@ -576,7 +606,7 @@ function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
   ctx.restore()
 }
 
-/** The intro's zoom, around the start, and its fade: the map layer only, never the bands or the words over it. */
+/** The intro's zoom, around the start: the map layer only, never the bands or the words over it. */
 function drawMapLayer(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, motion: VideoMotion) {
   const pts = routePoints(scene, layout)
   ctx.save()
@@ -586,10 +616,9 @@ function drawMapLayer(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, 
     ctx.translate(x, y)
     ctx.scale(zoom, zoom)
     ctx.translate(-x, -y)
-    ctx.globalAlpha *= 0.4 + 0.6 * motion.intro
   }
   if (pts) drawRoute(ctx, scene, pts, motion)
-  drawPlaceLabels(ctx, scene, layout, pts)
+  drawPlaceLabels(ctx, scene, layout, pts && markerObstacles(pts, scene.palette), pts)
   if (pts) drawMarkers(ctx, scene, pts, motion)
   ctx.restore()
 }
@@ -980,8 +1009,8 @@ function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
 
 /** Two stats spread edge to edge read as unrelated: they sit side by side instead. */
 const STAT_PAIR_GAP = 28
-/** U+2013 en dashes, the shape of the pace the finish fills in. */
-const PACE_PENDING = '\u2013:\u2013\u2013'
+/** A single U+2013 en dash: Geist draws it digit-wide, so a clock of dashes read as long rules. */
+const PACE_PENDING = '\u2013'
 
 /** Each cell keeps the still card's place, so the row does not shuffle as the video counts up. */
 function drawStats(ctx: Ctx, scene: ShareCardScene, top: number, ink: Ink, motion: VideoMotion) {
@@ -1057,7 +1086,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
     drawMapLayer(ctx, scene, layout, motion)
     drawBands(ctx, scene, layout)
     // Over the bands, so the stats' fade does not cover it.
-    if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop, motion)
+    if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop)
   } else {
     if (scene.design === 'stats') drawGlow(ctx, scene)
     ctx.save()

@@ -214,7 +214,10 @@ recompress the image. The light card stays plain.
 - The start is an accent dot in a white ring, with no outline on light and a thin dark one on dark
   (ring `#f2f4f3`). A loop gets that one marker, on the card and on the Activity map alike: there is
   no chequered loop disc. A point-to-point run adds the chequered finish. Markers draw over the place
-  names, so a district name never covers the start.
+  names, and a name keeps 4 px clear of a marker's drawn edge: MapLibre's fence and `arrangeLabels`
+  both treat the markers as obstacles, so a name is moved off one or dropped by priority. On the
+  Activity map the hero's bottom padding keeps the route above its 64 pt fade, so the start dot is
+  never washed out by it.
 - An interval session's Route card puts the rep pace first in the stat row (label in the session's
   zone colour) instead of a hero over the stats, so the map keeps its full height. The Reps chip reads
   how far off the target the reps ran: "Reps · 9 s/km under target". The Stats and Photo cards keep
@@ -230,7 +233,8 @@ recompress the image. The light card stays plain.
 **Route video.** The Route design has an Image | Video switch where the browser can encode video. The
 clip is 12.2 s at 30 fps, 1080 × 1350: the map zooms in on the start, the route draws itself with the
 stats counting up, then the still card holds. The file opens on one frame of the still card, the one
-WhatsApp and iMessage show as its thumbnail, then cuts to the intro. Each frame is `drawShareCard` with `progress` and
+WhatsApp and iMessage show as its thumbnail, then cuts to the intro: the map at full strength, only
+zooming 1.06 → 1, the route cleared to be drawn again. A pending pace reads as one en dash. Each frame is `drawShareCard` with `progress` and
 `clipTime` (`shareCardTimeline.ts`), over the one cached MapLibre render. `shareCardVideo.ts` encodes
 H.264 through WebCodecs and mediabunny (frame-exact, about 2 s in Chrome), falling back to
 `MediaRecorder` in real time, MP4 where the browser records it and WebM only as a last resort, since

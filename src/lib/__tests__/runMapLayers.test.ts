@@ -14,6 +14,7 @@ import {
   RUN_FINISH_SOURCE,
   RUN_MARKERS_LAYER,
   RUN_START_LAYER,
+  RUN_START_OUTLINE_LAYER,
   RUN_START_SOURCE,
   START_ICON,
   addEdgeFence,
@@ -62,7 +63,7 @@ function fakeMap() {
 const IMAGE = { width: 2, height: 2, data: new Uint8Array(16) }
 
 const RUN = {
-  accent: '#2dd4a7', ring: '#ffffff', route: [[7.7, 48.6], [7.71, 48.61]] as [number, number][],
+  accent: '#2dd4a7', ring: '#0b0c0c', startRing: '#f2f4f3', startOutline: '#0c0d0d' as string | null, route: [[7.7, 48.6], [7.71, 48.61]] as [number, number][],
   start: [7.7, 48.6] as [number, number], finish: [7.71, 48.61] as [number, number], joined: false, cursor: null,
 }
 
@@ -71,7 +72,7 @@ describe('the run map layers (v4.17)', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
     // The route under every label, as the heatmap's tracks are; the markers on top.
-    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
+    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_OUTLINE_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
     const route = layers.find((l) => l.id === ROUTE_LINE_LAYER)!
     expect(route).toMatchObject({ type: 'line', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': RUN.accent, 'line-width': 4 } })
   })
@@ -92,13 +93,28 @@ describe('the run map layers (v4.17)', () => {
     expect(layers.filter((l) => l.layout?.['symbol-placement'] === 'line')).toEqual([])
   })
 
-  it('draws the start, a 7 px dot, and the scrub marker as accent circles in a ring', () => {
+  it('draws the start as the share card does: a solid accent dot, its ring #f2f4f3 on dark, outlined in ink', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
-    expect(layers.find((l) => l.id === RUN_START_LAYER)).toMatchObject({
+    const start = layers.find((l) => l.id === RUN_START_LAYER)!
+    expect(start).toMatchObject({
       type: 'circle',
-      paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 2.5 },
+      paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': '#f2f4f3', 'circle-stroke-width': 2.5 },
     })
+    expect(Object.keys(start.paint!).some((key) => key.includes('opacity'))).toBe(false)
+    expect(layers.find((l) => l.id === RUN_START_OUTLINE_LAYER)).toMatchObject({ type: 'circle', paint: { 'circle-radius': 10.5, 'circle-color': '#0c0d0d' } })
+  })
+
+  it('rings the start in white on light, with no outline', () => {
+    const { map, layers } = fakeMap()
+    addRunLayers(map, { ...RUN, startRing: '#ffffff', startOutline: null })
+    expect(layers.find((l) => l.id === RUN_START_LAYER)!.paint!['circle-stroke-color']).toBe('#ffffff')
+    expect(layers.find((l) => l.id === RUN_START_OUTLINE_LAYER)!.paint!['circle-color']).toBe('rgba(0, 0, 0, 0)')
+  })
+
+  it('draws the scrub marker as an accent circle in the page\'s ring', () => {
+    const { map, layers } = fakeMap()
+    addRunLayers(map, RUN)
     expect(layers.find((l) => l.id === RUN_CURSOR_LAYER)).toMatchObject({
       type: 'circle',
       paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 3 },
@@ -198,6 +214,6 @@ describe('the run map layers (v4.17)', () => {
   })
 
   it('fits the route as large as 3.0 drew it in the hero', () => {
-    expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 36, left: 24 })
+    expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 74, left: 24 })
   })
 })

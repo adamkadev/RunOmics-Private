@@ -10,7 +10,7 @@ export interface VideoFrame {
 }
 
 export interface VideoMotion {
-  /** 0 → 1 over the intro: the map's zoom and fade. */
+  /** 0 → 1 over the intro: the map's zoom. */
   intro: number
   /** The start marker's pop, overshooting past 1 a little. */
   startPop: number

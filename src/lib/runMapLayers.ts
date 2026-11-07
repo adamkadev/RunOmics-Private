@@ -2,7 +2,7 @@ import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { distanceKm } from '@/lib/math'
 import { firstSymbolLayerId } from '@/lib/maplibre'
-import { JOIN_PX as JOIN_DISTANCE_PX, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
+import { JOIN_PX as JOIN_DISTANCE_PX, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 import { MAP_PADDING } from './routeFrame'
 
 export const ROUTE_SOURCE = 'route'
@@ -10,6 +10,7 @@ export const ROUTE_LINE_LAYER = 'route-line'
 export const ROUTE_HALO_LAYER = 'route-halo'
 export const RUN_START_SOURCE = 'run-start-dot'
 export const RUN_START_LAYER = 'run-start-dot'
+export const RUN_START_OUTLINE_LAYER = 'run-start-outline'
 export const RUN_FINISH_SOURCE = 'run-finish-mark'
 export const RUN_FINISH_LAYER = 'run-finish-mark'
 export const FINISH_MARK_ICON = 'run-finish-mark'
@@ -33,8 +34,11 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
 export interface RunLayersState {
   /** The accent, as a literal colour: MapLibre paints values, not CSS variables. */
   accent: string
-  /** The page ground, so the line and its dots lift off the tiles. */
+  /** The page ground, so the line lifts off the tiles. */
   ring: string
+  /** The start's ring and outline, as on the share card: white, outlined only on dark. */
+  startRing: string
+  startOutline: string | null
   route: LngLat[]
   start: LngLat
   /** Null until the draw-in reaches the end. */
@@ -67,6 +71,8 @@ function setOrAddSource(map: MapLibreMap, id: string, data: FeatureCollection): 
 }
 
 const ICON_PIXEL_RATIO = 2
+const START_RADIUS = 7
+const START_RING = 2.5
 
 function endsData(start: LngLat, finish: LngLat | null, joined: boolean) {
   const ends = routeEnds(start, finish, joined)
@@ -126,10 +132,16 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   }
   if (setOrAddSource(map, RUN_START_SOURCE, ends.start) || !map.getLayer(RUN_START_LAYER)) {
     map.addLayer({
+      id: RUN_START_OUTLINE_LAYER,
+      type: 'circle',
+      source: RUN_START_SOURCE,
+      paint: { 'circle-radius': START_RADIUS + START_RING + 1, 'circle-color': state.startOutline ?? 'rgba(0, 0, 0, 0)' },
+    })
+    map.addLayer({
       id: RUN_START_LAYER,
       type: 'circle',
       source: RUN_START_SOURCE,
-      paint: { 'circle-radius': 7, 'circle-color': state.accent, 'circle-stroke-color': state.ring, 'circle-stroke-width': 2.5 },
+      paint: { 'circle-radius': START_RADIUS, 'circle-color': state.accent, 'circle-stroke-color': state.startRing, 'circle-stroke-width': START_RING },
     })
   }
   if (setOrAddSource(map, RUN_CURSOR_SOURCE, pointData(state.cursor)) || !map.getLayer(RUN_CURSOR_LAYER)) {
@@ -268,8 +280,8 @@ export function addEdgeFence(map: MapLibreMap): () => void {
   }
 }
 
-/** Collision without paint, for maps whose markers are drawn elsewhere. */
-export function clearMarkerImage(diameter = markerExtent('finish')): Image {
-  const size = (diameter + 2) * 2
+/** Collision without paint, for maps whose markers are drawn elsewhere: `radius` in CSS px, at the icons' pixel ratio 2. */
+export function clearMarkerImage(radius: number): Image {
+  const size = Math.ceil(radius * 2 * 2)
   return { width: size, height: size, data: new Uint8Array(size * size * 4) }
 }

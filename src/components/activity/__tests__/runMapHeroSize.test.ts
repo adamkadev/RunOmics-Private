@@ -6,9 +6,11 @@ import { MAP_PADDING } from '@/lib/routeFrame'
 const hero = readFileSync(path.resolve(__dirname, '../RunMapHero.tsx'), 'utf8')
 
 describe('the run map hero', () => {
-  it("is 3.0's 330 pt tall and frames the route as 3.0 did", () => {
+  it("is 3.0's 330 pt tall, the route's foot clear of the 64 pt bottom fade and the start dot's 9.5 pt", () => {
     expect(hero).toContain('className="relative -mx-4 h-[330px] overflow-hidden')
-    expect(MAP_PADDING.hero).toEqual({ top: 32, right: 24, bottom: 36, left: 24 })
+    expect(hero).toContain('bottom-0 z-10 h-16 bg-gradient-to-t from-background')
+    expect(MAP_PADDING.hero).toEqual({ top: 32, right: 24, bottom: 74, left: 24 })
+    expect(MAP_PADDING.hero.bottom).toBeGreaterThanOrEqual(64 + 9.5)
   })
 
   // So no line shows under the status bar.

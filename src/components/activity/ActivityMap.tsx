@@ -11,6 +11,7 @@ import { Glass, GlassLayers, GLASS_CIRCLE, GLASS_GROUP_BUTTON, glassClass } from
 import { t } from '@/i18n'
 import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, showPlacesAtAnyZoom } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
+import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
 import { MAP_PADDING } from '@/lib/routeFrame'
 import { watchMapMoving } from '@/lib/mapMoving'
 import {
@@ -233,6 +234,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         addRunLayers(map, {
           accent,
           ring: readRing(dark),
+          startRing: SHARE_MARKER_HEX[dark ? 'dark' : 'light'].ring,
+          startOutline: SHARE_MARKER_HEX[dark ? 'dark' : 'light'].outline,
           route: route.slice(0, drawnRef.current),
           start,
           finish: finishShown() ? finish : null,

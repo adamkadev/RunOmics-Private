@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { arrangeLabels, balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, photoScrim, shareCardLayout, slicePolyline, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { arrangeLabels, balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, SHARE_MARKER_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
@@ -589,7 +589,7 @@ describe('the route video\'s frames', () => {
 
   it('counts distance and time up and holds the pace back', () => {
     const all = texts(draw({ design: 'route', progress: 0.5 }))
-    expect(all.slice(-12)).toEqual(['5.0', ' km', 'Distance', '28:47', ' min', 'Time', '–:––', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
+    expect(all.slice(-12)).toEqual(['5.0', ' km', 'Distance', '28:47', ' min', 'Time', '\u2013', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
   })
 
   it('reads the reps legend as the run\'s phase while it draws, at each window\'s edges', () => {
@@ -614,12 +614,31 @@ describe('the route video\'s frames', () => {
     expect(chip(1)).toEqual([' under target', palette.mu, '400', rep])
   })
 
-  it('draws the pending pace as U+2013 en dashes in the value\'s font, muted', () => {
+  it('draws the pending pace as one U+2013 en dash in the value\'s font, muted, the unit kept', () => {
     const ops = draw({ design: 'route', progress: 0.5 })
-    const pending = ops.find((o) => o.op === 'fillText' && o.args[0] === '\u2013:\u2013\u2013')!
+    const at = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === '\u2013')
+    const pending = ops[at]!
+    expect(ops[at + 1]!.args[0]).toBe(' /km')
     const distance = ops.find((o) => o.op === 'fillText' && o.args[0] === '5.0')!
     expect(pending.font).toBe(distance.font)
     expect(pending.fill).toBe(palette.mu)
+  })
+})
+
+describe('the intro', () => {
+  const alphas = (clipTime: number) => {
+    const { ctx, ops } = recorder()
+    const seen: number[] = []
+    const drawImage = (ctx as unknown as { drawImage: (...a: unknown[]) => void }).drawImage
+    ;(ctx as unknown as { drawImage: (...a: unknown[]) => void }).drawImage = (...a: unknown[]) => { seen.push(ctx.globalAlpha); drawImage(...a) }
+    drawShareCard(ctx, { activity: { ...RUN, type: 'Threshold', reps: REPS }, palette, fonts: FALLBACK_FONTS, design: 'route', mapImage: {} as HTMLCanvasElement, mapPoints: [[40, 100], [200, 250], [260, 120]], progress: 0, clipTime })
+    return { seen, ops }
+  }
+
+  it('starts the map at full strength, only zoomed, and the legend with it', () => {
+    const { seen, ops } = alphas(0)
+    expect(seen).toEqual([1])
+    expect(texts(ops)).toContain('Warm-up')
   })
 })
 
@@ -639,6 +658,24 @@ describe('arranging the place names', () => {
     const [park] = arrangeLabels(measure, [name('Parc Central', 150, LABEL_PRIORITY.landmark, true)], route, l, FALLBACK_FONTS)
     expect(park).toBeDefined()
     expect(park!.box[3] < y - 4 || park!.box[1] > y + 4).toBe(true)
+  })
+
+  it('keeps a name off a marker, with 4 px to spare, and moves a landmark clear of it', () => {
+    const finish = { x: 150, y, r: 8.5 + 4 }
+    expect(arrangeLabels(measure, [name('Quartier Nord', 150, LABEL_PRIORITY.district)], null, l, FALLBACK_FONTS, [finish])).toEqual([])
+    const [park] = arrangeLabels(measure, [name('Parc', 150, LABEL_PRIORITY.landmark, true)], null, l, FALLBACK_FONTS, [finish])
+    const [x0, y0, x1, y1] = park!.box
+    const dx = 150 - Math.max(x0, Math.min(150, x1))
+    const dy = y - Math.max(y0, Math.min(y, y1))
+    expect(Math.hypot(dx, dy)).toBeGreaterThanOrEqual(12.5)
+  })
+
+  it('draws no name over the finish marker on the card', () => {
+    const pts: [number, number][] = [[60, 120], [150, 200], [220, 250]]
+    const ops = draw({ design: 'route', mapImage: {} as HTMLCanvasElement, mapPoints: pts, mapLabels: [{ text: 'Au Bout', x: 220, y: 250, size: 10, color: '#8d9391', opacity: 1 }] })
+    expect(texts(ops)).not.toContain('Au Bout')
+    expect(shareMarkerRadius('finish', palette)).toBeCloseTo(8.5, 9)
+    expect(markerObstacles(pts, palette).map((o) => o.r)).toEqual([shareMarkerRadius('start', palette) + 4, 8.5 + 4])
   })
 
   it('breaks a long park name over two balanced lines', () => {
