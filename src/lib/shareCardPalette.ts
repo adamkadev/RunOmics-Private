@@ -38,15 +38,15 @@ export interface SharePalette {
   /** The start marker's fill and the video's head dot: the accent. */
   marker: string
   markerRing: string
-  markerOutline: string
+  markerOutline: string | null
   /** An interval route's own grey, under its reps. */
   trace: string
   casing: string
 }
 
-/** The start marker's ring and its thin outline, which keeps it clear of a pale tile or a dark one. */
+/** The start marker's ring, and on dark a thin outline that keeps it off the dark tiles. */
 export const SHARE_MARKER_HEX = {
-  light: { ring: '#ffffff', outline: 'rgba(12, 13, 13, 0.6)' },
+  light: { ring: '#ffffff', outline: null },
   dark: { ring: '#f2f4f3', outline: '#0c0d0d' },
 } as const
 

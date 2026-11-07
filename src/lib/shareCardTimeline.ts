@@ -42,6 +42,14 @@ export function videoFrameAt(t: number): VideoFrame {
   return { progress: span(t, VIDEO_CUES.run, VIDEO_CUES.finish, easeInOutSine), clipTime: t }
 }
 
+/** One frame of the still card first: WhatsApp and iMessage show a video's first frame as its thumbnail. */
+export const EXPORT_FRAMES = Math.round(VIDEO_SECONDS * VIDEO_FPS) + 1
+
+/** Null is the still card. */
+export function exportFrameAt(f: number): VideoFrame | null {
+  return f === 0 ? null : videoFrameAt((f - 1) / VIDEO_FPS)
+}
+
 /** `loop` fades the route out over the last 0.4 s, so a looping preview has a clean seam; the file keeps it. */
 export function videoMotion(t: number, loop = false): VideoMotion {
   const { intro, finish } = VIDEO_CUES
@@ -58,7 +66,7 @@ export type RepPhase =
   | { kind: 'none' }
   | { kind: 'warmUp' }
   | { kind: 'rep'; n: number; count: number }
-  | { kind: 'recovery'; n: number; count: number }
+  | { kind: 'recovery' }
   | { kind: 'coolDown' }
 
 /** `windows` are shares of the route, in order; `progress` how much of it is drawn. */
@@ -70,7 +78,7 @@ export function repPhase(windows: readonly [number, number][], progress: number)
     const [from, to] = windows[i]!
     if (progress >= from && progress <= to) return { kind: 'rep', n: i + 1, count }
     const next = windows[i + 1]
-    if (next && progress > to && progress < next[0]) return { kind: 'recovery', n: i + 1, count }
+    if (next && progress > to && progress < next[0]) return { kind: 'recovery' }
   }
   return { kind: 'coolDown' }
 }

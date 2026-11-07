@@ -1370,6 +1370,7 @@ export const en = {
       // The route video's legend while the run draws itself.
       warmUp: 'Warm-up',
       repOf: (n: number, count: number) => `Rep ${n} of ${count}`,
+      recovery: 'Recovery',
       coolDown: 'Cool-down',
       photo: 'Photo',
       choosePhoto: 'Choose photo',

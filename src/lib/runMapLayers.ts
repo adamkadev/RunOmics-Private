@@ -13,7 +13,6 @@ export const RUN_START_LAYER = 'run-start-dot'
 export const RUN_FINISH_SOURCE = 'run-finish-mark'
 export const RUN_FINISH_LAYER = 'run-finish-mark'
 export const FINISH_MARK_ICON = 'run-finish-mark'
-export const LOOP_MARK_ICON = 'run-loop-mark'
 export const RUN_CURSOR_SOURCE = 'run-cursor'
 export const RUN_CURSOR_LAYER = 'run-cursor'
 export const RUN_MARKERS_SOURCE = 'run-start-finish'
@@ -72,11 +71,10 @@ const ICON_PIXEL_RATIO = 2
 function endsData(start: LngLat, finish: LngLat | null, joined: boolean) {
   const ends = routeEnds(start, finish, joined)
   const startAt = ends.find((end) => end.kind === 'start')?.at ?? null
-  const mark = ends.find((end) => end.kind !== 'start')
-  const icon = mark?.kind === 'loop' ? LOOP_MARK_ICON : FINISH_MARK_ICON
+  const mark = ends.find((end) => end.kind === 'finish')
   const marks: FeatureCollection<Point> = {
     type: 'FeatureCollection',
-    features: mark ? [{ type: 'Feature', properties: { icon }, geometry: { type: 'Point', coordinates: mark.at } }] : [],
+    features: mark ? [{ type: 'Feature', properties: { icon: FINISH_MARK_ICON }, geometry: { type: 'Point', coordinates: mark.at } }] : [],
   }
   return { start: pointData(startAt), marks }
 }
@@ -117,9 +115,6 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   if (!map.hasImage(FINISH_MARK_ICON)) {
     map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
   }
-  if (!map.hasImage(LOOP_MARK_ICON)) {
-    map.addImage(LOOP_MARK_ICON, routeMarkerImage('loop', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
-  }
   const ends = endsData(state.start, state.finish, state.joined)
   if (setOrAddSource(map, RUN_FINISH_SOURCE, ends.marks) || !map.getLayer(RUN_FINISH_LAYER)) {
     map.addLayer({
@@ -147,11 +142,9 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   }
 }
 
-/** The loop marker's ring is in the accent, so its image is redrawn too. */
 export function setRunAccent(map: MapLibreMap, accent: string): void {
   if (map.getLayer(ROUTE_LINE_LAYER)) map.setPaintProperty(ROUTE_LINE_LAYER, 'line-color', accent)
   for (const id of [RUN_START_LAYER, RUN_CURSOR_LAYER]) if (map.getLayer(id)) map.setPaintProperty(id, 'circle-color', accent)
-  if (map.hasImage(LOOP_MARK_ICON)) map.updateImage(LOOP_MARK_ICON, routeMarkerImage('loop', accent, ICON_PIXEL_RATIO))
 }
 
 export function runEndsJoined(map: Pick<MapLibreMap, 'project'>, start: LngLat, finish: LngLat): boolean {
@@ -276,7 +269,7 @@ export function addEdgeFence(map: MapLibreMap): () => void {
 }
 
 /** Collision without paint, for maps whose markers are drawn elsewhere. */
-export function clearMarkerImage(diameter = markerExtent('loop')): Image {
+export function clearMarkerImage(diameter = markerExtent('finish')): Image {
   const size = (diameter + 2) * 2
   return { width: size, height: size, data: new Uint8Array(size * size * 4) }
 }

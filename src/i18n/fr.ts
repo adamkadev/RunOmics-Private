@@ -1286,6 +1286,7 @@ export const fr = {
       // La légende de la vidéo du parcours pendant que la sortie se dessine.
       warmUp: 'Échauffement',
       repOf: (n: number, count: number) => `Fraction ${n} sur ${count}`,
+      recovery: 'Récupération',
       coolDown: 'Retour au calme',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',

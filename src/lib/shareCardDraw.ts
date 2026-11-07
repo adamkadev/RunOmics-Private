@@ -383,7 +383,7 @@ function legendParts(scene: ShareCardScene, palette: SharePalette): { parts: Chi
       case 'rep':
         return { parts: [{ text: s.repOf(phase.n, phase.count), color: palette.tx, weight: 600 }], bar: rep }
       case 'recovery':
-        return { parts: [muted(s.repOf(phase.n, phase.count))], bar: palette.trace }
+        return { parts: [muted(s.recovery)], bar: palette.trace }
       case 'warmUp':
         return { parts: [muted(s.warmUp)], bar: palette.trace }
       default:
@@ -978,6 +978,11 @@ function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
   ctx.fillRect(0, 0, W, H)
 }
 
+/** Two stats spread edge to edge read as unrelated: they sit side by side instead. */
+const STAT_PAIR_GAP = 28
+/** U+2013 en dashes, the shape of the pace the finish fills in. */
+const PACE_PENDING = '\u2013:\u2013\u2013'
+
 /** Each cell keeps the still card's place, so the row does not shuffle as the video counts up. */
 function drawStats(ctx: Ctx, scene: ShareCardScene, top: number, ink: Ink, motion: VideoMotion) {
   const { activity, fonts, palette, progress } = scene
@@ -995,17 +1000,18 @@ function drawStats(ctx: Ctx, scene: ShareCardScene, top: number, ink: Ink, motio
     return { stat, width: Math.max(valueW + unitW, labelW) }
   })
   const used = cells.reduce((sum, c) => sum + c.width, 0)
-  const gap = cells.length > 1 ? (RIGHT - PAD_X - used) / (cells.length - 1) : 0
+  const gap = cells.length > 2 ? (RIGHT - PAD_X - used) / (cells.length - 1) : STAT_PAIR_GAP
 
   ctx.textAlign = 'left'
   let x = PAD_X
   for (const { stat, width } of cells) {
     let { value, unit } = stat
     let alpha = 1
+    let pending = false
     if (progress !== undefined && progress < 1) {
       if (stat.key === 'distance') value = formatKm(activity.distanceKm * progress, 1)
       else if (stat.key === 'time') ({ value, unit } = shareDuration(activity.durationSeconds * progress))
-      else if (stat.key === 'pace' || stat.key === 'repPace') value = '–:––'
+      else if (stat.key === 'pace' || stat.key === 'repPace') ({ value, pending } = { value: PACE_PENDING, pending: true })
     }
     if (progress !== undefined && (stat.key === 'pace' || stat.key === 'repPace' || stat.key === 'hr')) {
       alpha = progress < 1 ? 0.35 : 0.35 + 0.65 * motion.finish
@@ -1014,7 +1020,7 @@ function drawStats(ctx: Ctx, scene: ShareCardScene, top: number, ink: Ink, motio
     ctx.globalAlpha *= alpha
     ctx.textBaseline = 'alphabetic'
     ctx.font = valueFont
-    ctx.fillStyle = ink.tx
+    ctx.fillStyle = pending ? ink.mu : ink.tx
     ctx.fillText(value, x, top + 13)
     if (unit) {
       const valueW = ctx.measureText(value).width

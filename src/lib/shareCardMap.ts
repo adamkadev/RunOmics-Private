@@ -122,6 +122,54 @@ export function routeLength(route: readonly Px[]): number {
   return routeLengthWhere(route, () => true)
 }
 
+export function ringArea(ring: readonly Px[]): number {
+  let twice = 0
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) twice += ring[j]![0] * ring[i]![1] - ring[i]![0] * ring[j]![1]
+  return twice / 2
+}
+
+/** The area-weighted centre of a group of rings. */
+export function ringsCentroid(rings: readonly Px[][]): Px {
+  let [ax, ay, total] = [0, 0, 0]
+  for (const ring of rings) {
+    const area = ringArea(ring)
+    if (area === 0) continue
+    let [cx, cy] = [0, 0]
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const cross = ring[j]![0] * ring[i]![1] - ring[i]![0] * ring[j]![1]
+      cx += (ring[j]![0] + ring[i]![0]) * cross
+      cy += (ring[j]![1] + ring[i]![1]) * cross
+    }
+    const weight = Math.abs(area)
+    ax += (cx / (6 * area)) * weight
+    ay += (cy / (6 * area)) * weight
+    total += weight
+  }
+  return total > 0 ? [ax / total, ay / total] : rings[0]?.[0] ?? [0, 0]
+}
+
+function bbox(ring: readonly Px[]): [number, number, number, number] {
+  const xs = ring.map((p) => p[0])
+  const ys = ring.map((p) => p[1])
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]
+}
+
+/** A tile cuts one park into pieces along its edges: pieces whose boxes touch are one park again. */
+export function groupRings(rings: readonly Px[][], tolerance = 1): Px[][][] {
+  const boxes = rings.map(bbox)
+  const parent = rings.map((_, i) => i)
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)))
+  for (let i = 0; i < rings.length; i++) {
+    for (let j = i + 1; j < rings.length; j++) {
+      const [a, b] = [boxes[i]!, boxes[j]!]
+      if (a[0] <= b[2] + tolerance && b[0] <= a[2] + tolerance && a[1] <= b[3] + tolerance && b[1] <= a[3] + tolerance) parent[find(i)] = find(j)
+    }
+  }
+  const groups = new Map<number, Px[][]>()
+  rings.forEach((ring, i) => groups.set(find(i), [...(groups.get(find(i)) ?? []), ring as Px[]]))
+  return [...groups.values()]
+}
+
 /** A polygon is its outer rings; a tile cuts one park into several. */
 export interface GreenArea {
   name: string

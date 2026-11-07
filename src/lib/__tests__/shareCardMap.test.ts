@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTE_INSET, bandFencePoints, pickLandmark, pickWater, projectRoute, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { ROUTE_INSET, bandFencePoints, groupRings, pickLandmark, pickWater, projectRoute, ringsCentroid, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 
-/** The widest end marker the card draws, as a radius: the loop's, at the card's 0.85. */
-const MARKER_RADIUS = (11 + 1.5) * 0.85
+/** The widest end marker the card draws, as a radius: the finish's, at the card's 0.85. */
+const MARKER_RADIUS = (9 + 1) * 0.85
 
 describe('simplifyRoute', () => {
   it('leaves short routes untouched', () => {
@@ -121,5 +121,19 @@ describe('the run\'s landmark and water', () => {
     expect(water?.name).toBe('La Rivière')
     expect(line).toContainEqual(water!.at)
     expect(pickWater(line, [far])).toBeNull()
+  })
+})
+
+describe('a park cut into tiles', () => {
+  const square = (x: number, y: number, side: number): [number, number][] => [[x, y], [x + side, y], [x + side, y + side], [x, y + side], [x, y]]
+
+  it('joins the pieces whose boxes touch, and keeps a park apart', () => {
+    const groups = groupRings([square(0, 0, 10), square(10, 0, 10), square(50, 50, 5)])
+    expect(groups.map((g) => g.length).sort()).toEqual([1, 2])
+  })
+
+  it('centres a group by area', () => {
+    expect(ringsCentroid([square(0, 0, 10), square(10, 0, 10)])[0]).toBeCloseTo(10, 0)
+    expect(ringsCentroid([square(0, 0, 20), square(100, 0, 2)])[0]).toBeLessThan(15)
   })
 })

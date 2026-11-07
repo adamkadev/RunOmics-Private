@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { repPhase, VIDEO_CUES, VIDEO_FPS, VIDEO_SECONDS, videoFrameAt, videoMotion } from '@/lib/shareCardTimeline'
+import { EXPORT_FRAMES, exportFrameAt, repPhase, VIDEO_CUES, VIDEO_FPS, VIDEO_SECONDS, videoFrameAt, videoMotion } from '@/lib/shareCardTimeline'
 
 describe('videoFrameAt', () => {
   it('runs 12.2 s at 30 fps', () => {
@@ -49,9 +49,20 @@ describe('repPhase', () => {
     expect(repPhase(windows, 0.19)).toEqual({ kind: 'warmUp' })
     expect(repPhase(windows, 0.2)).toEqual({ kind: 'rep', n: 1, count: 2 })
     expect(repPhase(windows, 0.35)).toEqual({ kind: 'rep', n: 1, count: 2 })
-    expect(repPhase(windows, 0.4)).toEqual({ kind: 'recovery', n: 1, count: 2 })
+    expect(repPhase(windows, 0.36)).toEqual({ kind: 'recovery' })
+    expect(repPhase(windows, 0.44)).toEqual({ kind: 'recovery' })
+    expect(repPhase(windows, 0.45)).toEqual({ kind: 'rep', n: 2, count: 2 })
     expect(repPhase(windows, 0.6)).toEqual({ kind: 'rep', n: 2, count: 2 })
     expect(repPhase(windows, 0.61)).toEqual({ kind: 'coolDown' })
     expect(repPhase([], 0.5)).toEqual({ kind: 'none' })
+  })
+})
+
+describe('the exported file\'s frames', () => {
+  it('opens on one frame of the still card, then cuts to the intro', () => {
+    expect(EXPORT_FRAMES).toBe(367)
+    expect(exportFrameAt(0)).toBeNull()
+    expect(exportFrameAt(1)).toEqual({ progress: 0, clipTime: 0 })
+    expect(exportFrameAt(EXPORT_FRAMES - 1)!.clipTime).toBeCloseTo((EXPORT_FRAMES - 2) / VIDEO_FPS, 9)
   })
 })

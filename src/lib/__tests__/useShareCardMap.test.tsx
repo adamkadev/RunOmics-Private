@@ -237,6 +237,31 @@ describe('the share card names', () => {
     expect(result.current.labels).toEqual([{ text: 'Devant-les-Ponts', x: 120, y: 140, size: 9, color: expect.any(String), opacity: 0.8, priority: 1 }])
   })
 
+  it('asks the geocoder to name the green the route runs through when the tiles name no park', async () => {
+    const fetchMock = vi.fn<(url: string) => Promise<unknown>>(() => Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ features: [
+        { text: 'Ball field', center: [2.5, 48.895], properties: { categories: ['pitch'] } },
+        { text: 'Parc des Tilleuls', center: [2.51, 48.896], properties: { categories: ['park'] } },
+      ] }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    maps.FakeMap.script = (map) => {
+      const fake = map as unknown as { styleLayers: unknown[]; rendered: unknown[] }
+      fake.styleLayers = [{ id: 'Grass', type: 'fill', 'source-layer': 'grass', source: 'maptiler' }]
+      fake.rendered = [{ properties: {}, geometry: { type: 'Polygon', coordinates: [[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]] }, layer: { id: 'Grass' } }]
+      map.emit('load')
+      const again = (n: number) => { map.emit('idle'); if (n > 0) setTimeout(() => again(n - 1), 10) }
+      again(50)
+    }
+    const { result } = renderHook(() => useShareCardMap({ route: route(2.62), theme: 'light', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+    await act(() => vi.advanceTimersByTimeAsync(1000))
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('types=poi')
+    expect(result.current.labels).toEqual([expect.objectContaining({ text: 'Parc des Tilleuls', x: 2.51, y: 48.896, beside: true, priority: 3 })])
+    vi.unstubAllGlobals()
+  })
+
   it('names the park the route runs through itself, beside the route, and keeps the map from drawing it too', async () => {
     let drawn: { filters: Map<string, unknown> } | null = null
     maps.FakeMap.script = (map) => {

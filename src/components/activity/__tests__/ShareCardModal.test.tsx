@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ShareActivity } from '@/lib/shareCardStats'
@@ -9,10 +9,17 @@ const theme = vi.hoisted(() => ({ resolved: 'dark' }))
 vi.mock('next-themes', () => ({ useTheme: () => ({ resolvedTheme: theme.resolved }) }))
 const map = vi.hoisted(() => ({ failed: false }))
 vi.mock('@/lib/useShareCardMap', () => ({ useShareCardMap: () => ({ image: null, points: null, failed: map.failed }) }))
-const encoder = vi.hoisted(() => ({ kind: null as 'webcodecs' | 'recorder' | null }))
+const encoder = vi.hoisted(() => ({
+  kind: null as 'webcodecs' | 'recorder' | null,
+  hold: false,
+  calls: [] as { signal: AbortSignal; progress: (share: number) => void }[],
+}))
 vi.mock('@/lib/shareCardVideo', () => ({
   shareVideoEncoder: () => Promise.resolve(encoder.kind),
-  renderShareVideo: () => Promise.resolve(new File([], 'run.mp4', { type: 'video/mp4' })),
+  renderShareVideo: (_a: unknown, _o: unknown, _k: unknown, progress: (share: number) => void, signal: AbortSignal) => {
+    encoder.calls.push({ signal, progress })
+    return encoder.hold ? new Promise(() => {}) : Promise.resolve(new File([], 'run.mp4', { type: 'video/mp4' }))
+  },
 }))
 vi.mock('@/lib/useShareCardGeocode', () => ({ useShareCardGeocode: () => ({ locationName: null }) }))
 // jsdom decodes no image: a chosen photo loads as soon as it is picked.
@@ -48,6 +55,8 @@ const checked = (group: string) =>
 beforeEach(() => {
   drawn.runs = []
   encoder.kind = null
+  encoder.hold = false
+  encoder.calls = []
   map.failed = false
   localStorage.clear()
   theme.resolved = 'dark'
@@ -264,14 +273,50 @@ describe('the Route video', () => {
     expect(screen.queryByRole('radiogroup', { name: s.formatTitle })).toBeNull()
   })
 
-  it('shares a video, with no Copy image, once Video is picked', async () => {
+  async function pickVideo(user: ReturnType<typeof userEvent.setup>) {
+    const group = await screen.findByRole('radiogroup', { name: s.formatTitle })
+    await user.click(within(group).getByRole('radio', { name: s.formatLabels.video }))
+  }
+
+  it('encodes as soon as Video is picked, the share button held until the file is ready', async () => {
     encoder.kind = 'webcodecs'
+    encoder.hold = true
     map.failed = true
     const user = userEvent.setup()
     open()
-    const group = await screen.findByRole('radiogroup', { name: s.formatTitle })
-    await user.click(within(group).getByRole('radio', { name: s.formatLabels.video }))
-    expect(screen.getByRole('button', { name: s.shareVideo })).toBeEnabled()
+    await pickVideo(user)
+    expect(encoder.calls).toHaveLength(1)
+    expect(screen.getByRole('button', { name: s.preparingVideo(0) })).toBeDisabled()
+    act(() => encoder.calls[0]!.progress(0.42))
+    expect(screen.getByRole('button', { name: s.preparingVideo(42) })).toBeDisabled()
     expect(screen.queryByRole('button', { name: t.activity.shareMenu.copy })).toBeNull()
+  })
+
+  it('shares the ready file in the tap itself, with nothing awaited before navigator.share', async () => {
+    encoder.kind = 'webcodecs'
+    map.failed = true
+    const share = vi.fn(() => Promise.resolve())
+    Object.assign(navigator, { canShare: () => true, share })
+    const user = userEvent.setup()
+    open()
+    await pickVideo(user)
+    const button = await screen.findByRole('button', { name: s.shareVideo })
+    act(() => button.click())
+    expect(share).toHaveBeenCalledWith(expect.objectContaining({ files: [expect.any(File)] }))
+  })
+
+  it('cancels the encode on a switch back to Image, and restarts it on a theme change', async () => {
+    encoder.kind = 'webcodecs'
+    encoder.hold = true
+    map.failed = true
+    const user = userEvent.setup()
+    open()
+    await pickVideo(user)
+    await user.click(within(screen.getByRole('radiogroup', { name: s.background })).getByRole('radio', { name: s.themeLabels.light }))
+    expect(encoder.calls).toHaveLength(2)
+    expect(encoder.calls[0]!.signal.aborted).toBe(true)
+    await user.click(within(screen.getByRole('radiogroup', { name: s.formatTitle })).getByRole('radio', { name: s.formatLabels.image }))
+    expect(encoder.calls[1]!.signal.aborted).toBe(true)
+    expect(encoder.calls).toHaveLength(2)
   })
 })

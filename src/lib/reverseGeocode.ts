@@ -105,3 +105,29 @@ function extractName(features: GeoFeature[]): string | null {
     null
   );
 }
+
+const PARK_CATEGORIES = new Set(["park", "forest", "wood", "garden", "nature_reserve", "national_park"]);
+
+type PoiFeature = { text?: string; center?: [number, number]; properties?: { categories?: string[] } };
+
+/** The park nearest a point: at a share card's zoom the tiles name no park. */
+export async function nearbyPark(lon: number, lat: number, token: string): Promise<{ name: string; at: [number, number] } | null> {
+  const key = `nearby_park:${CACHE_VERSION}:${lon.toFixed(4)},${lat.toFixed(4)}`;
+  const cached = readCache(key);
+  if (cached !== undefined) return cached ? (JSON.parse(cached) as { name: string; at: [number, number] }) : null;
+  try {
+    const res = await fetch(
+      `https://api.maptiler.com/geocoding/${lon.toFixed(4)},${lat.toFixed(4)}.json?key=${token}&types=poi&limit=10&language=${GEOCODE_LANGUAGE}`,
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as { features?: PoiFeature[] };
+    const park = (json.features ?? []).find(
+      (f) => f.text && f.center && f.properties?.categories?.some((c) => PARK_CATEGORIES.has(c)),
+    );
+    const found = park ? { name: park.text!, at: park.center! } : null;
+    writeCache(key, found ? JSON.stringify(found) : null);
+    return found;
+  } catch {
+    return null;
+  }
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import {
-  bandFencePoints, pickLandmark, pickWater, pointInRing, routeFencePoints, simplifyRoute,
+  bandFencePoints, groupRings, pickLandmark, pickWater, pointInRing, ringsCentroid, routeFencePoints, simplifyRoute,
   type GreenArea, type LngLat, type RouteFrame, type WaterLine,
 } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
@@ -13,6 +13,7 @@ import {
 } from '@/lib/maplibre'
 import { LABEL_PRIORITY, type ShareMapLabel } from '@/lib/shareCardDraw'
 import { endsJoined } from '@/lib/routeMarkers'
+import { nearbyPark } from '@/lib/reverseGeocode'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
@@ -149,9 +150,11 @@ const GREEN_FILL_LAYERS = ['Wood', 'Forest', 'Grass', 'Cemetery']
 const PARK_POI = { sourceLayer: 'poi_public', subclass: 'park' } as const
 const WATER_SOURCE_LAYER = 'water_label'
 
+/** The tiles hold every source layer, styled or not: the vector source behind any styled one reads them all. */
 function sourceOf(map: import('maplibre-gl').Map, sourceLayer: string): string | null {
-  const layer = map.getStyle().layers.find((l) => (l as { 'source-layer'?: string })['source-layer'] === sourceLayer) as { source?: string } | undefined
-  return layer?.source ?? null
+  const layers = map.getStyle().layers as { 'source-layer'?: string; source?: string }[]
+  const own = layers.find((l) => l['source-layer'] === sourceLayer) ?? layers.find((l) => l['source-layer'] && l.source)
+  return own?.source ?? null
 }
 
 function outerRings(geometry: GeoJSON.Geometry): LngLat[][] {
@@ -167,7 +170,7 @@ function lineParts(geometry: GeoJSON.Geometry): LngLat[][] {
 }
 
 /** The route fence drops a park the route crosses, its name point being on the line: the card names it itself. */
-function routeLandmarks(map: import('maplibre-gl').Map, route: Px[], mode: ThemeMode): ShareMapLabel[] {
+async function routeLandmarks(map: import('maplibre-gl').Map, route: Px[], mode: ThemeMode, token: string): Promise<ShareMapLabel[]> {
   const project = (c: LngLat): Px => { const p = map.project(c); return [p.x, p.y] }
   const out: ShareMapLabel[] = []
   const style = new Set(map.getStyle().layers.map((l) => l.id))
@@ -186,7 +189,7 @@ function routeLandmarks(map: import('maplibre-gl').Map, route: Px[], mode: Theme
     areas.push({ name, at, rings: own })
   }
   const joined = route.length > 1 && endsJoined(route[0]!, route[route.length - 1]!)
-  const landmark = pickLandmark(route, areas, joined)
+  const landmark = pickLandmark(route, areas, joined) ?? await namedGreen(map, route, rings, joined, token, project)
   if (landmark) {
     out.push({ text: landmark.name, x: landmark.at[0], y: landmark.at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, beside: true })
   }
@@ -205,6 +208,21 @@ function routeLandmarks(map: import('maplibre-gl').Map, route: Px[], mode: Theme
     out.push({ text: water.name, x: water.at[0], y: water.at[1], size: CARD_LABEL_SIZE, color: WATER_INK[mode], opacity: 1, priority: LABEL_PRIORITY.water, beside: true })
   }
   return out
+}
+
+/** Under zoom 14 the tiles carry no park names: the green the run went through is named by the geocoder instead. */
+async function namedGreen(
+  map: import('maplibre-gl').Map, route: Px[], rings: Px[][], joined: boolean, token: string, project: (c: LngLat) => Px,
+): Promise<GreenArea | null> {
+  const groups = groupRings(rings.filter((ring) => ring.length > 2))
+  const green = pickLandmark(route, groups.map((group) => ({ name: '', at: ringsCentroid(group), rings: group })), joined)
+  if (!green) return null
+  const { lng, lat } = map.unproject(green.at)
+  const park = await nearbyPark(lng, lat, token)
+  if (!park) return null
+  const at = project(park.at)
+  const inside = green.rings.some((ring) => pointInRing(at, ring))
+  return inside ? { name: park.name, at, rings: green.rings } : null
 }
 
 /** The card draws these names itself: the map must not draw them a second time. */
@@ -276,7 +294,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     // them: the card paints its route over the map, and the names over that.
     const mode = isDark ? 'dark' : 'light'
     const screen = points.map((c): Px => { const p = map.project(c); return [p.x, p.y] })
-    const landmarks = routeLandmarks(map, screen, mode)
+    const landmarks = await routeLandmarks(map, screen, mode, token)
     const labels = [...placedLabels(map, mode, screen[0]!, screen[screen.length - 1]!), ...landmarks]
     hideFromMap(map, landmarks.map((l) => l.text))
     if (labels.length > 0) {

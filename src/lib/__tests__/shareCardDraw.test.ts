@@ -319,15 +319,33 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(ops.some((o) => o.op === 'fillRect' && o.fill === '#0c0d0d')).toBe(false)
   })
 
-  it('rings the start in white on light and #f2f4f3 on dark, outlined, filled with the accent', () => {
-    for (const mode of ['light', 'dark'] as const) {
-      const colours = sharePalette('violet', mode)
-      const ops = draw({ design: 'route' }, mode)
-      const at = ops.findLastIndex((o) => o.op === 'arc' && o.args[2] === START_OUTLINE)
-      expect(ops.slice(at).filter((o) => o.op === 'fill').slice(0, 3).map((o) => o.fill))
-        .toEqual([SHARE_MARKER_HEX[mode].outline, SHARE_MARKER_HEX[mode].ring, curatedAccent('violet')[mode].acc])
-      expect(colours.marker).toBe(curatedAccent('violet')[mode].acc)
+  it('rings the start in white on light with no outline, and in #f2f4f3 on dark, outlined; the accent inside', () => {
+    const loop = { ...RUN, route: [...RUN.route!, RUN.route![0]!] as [number, number][] }
+    const startFills = (mode: 'light' | 'dark') => {
+      const ops = draw({ design: 'route', activity: loop }, mode)
+      const at = ops.findIndex((o) => o.op === 'arc' && (o.args[2] === START_OUTLINE || o.args[2] === 8 * k))
+      return { ops, fills: ops.slice(at).filter((o) => o.op === 'fill').map((o) => o.fill) }
     }
+    const light = startFills('light')
+    expect(light.fills).toEqual(['#ffffff', curatedAccent('violet').light.acc])
+    expect(light.ops.some((o) => o.op === 'arc' && o.args[2] === START_OUTLINE)).toBe(false)
+    expect(startFills('dark').fills).toEqual(['#0c0d0d', '#f2f4f3', curatedAccent('violet').dark.acc])
+    expect(SHARE_MARKER_HEX.light.outline).toBeNull()
+  })
+
+  it('keeps the finish\'s thin dark outline on light', () => {
+    const ops = draw({ design: 'route' }, 'light')
+    const at = ops.findIndex((o) => o.op === 'arc' && o.args[2] === FINISH_OUTLINE)
+    expect(ops.slice(at).find((o) => o.op === 'fill')!.fill).toBe('rgba(12, 13, 13, 0.6)')
+  })
+
+  it('sets two stats side by side, not at the card\'s two edges', () => {
+    const ops = draw({ design: 'route', activity: { ...RUN, paceSecPerKm: null, avgHeartRate: null } })
+    const at = (text: string) => ops.find((o) => o.op === 'fillText' && o.args[0] === text)!.args[1] as number
+    expect(at('10.0')).toBe(16)
+    const distanceEnd = 16 + Math.max('10.0'.length * 7 + ' km'.length * 7, 'Distance'.length * 7)
+    expect(at('57:33') - distanceEnd).toBe(28)
+    expect(at('57:33')).toBeLessThan(W / 2)
   })
 
   it('draws the markers over the place names', () => {
@@ -574,19 +592,34 @@ describe('the route video\'s frames', () => {
     expect(all.slice(-12)).toEqual(['5.0', ' km', 'Distance', '28:47', ' min', 'Time', '–:––', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
   })
 
-  it('reads the reps legend as the run\'s phase while it draws', () => {
+  it('reads the reps legend as the run\'s phase while it draws, at each window\'s edges', () => {
     const chip = (progress: number) => {
-      const all = texts(draw({ design: 'route', activity: session, progress }))
-      return all[all.indexOf('RunOmics') - 1]
+      const ops = draw({ design: 'route', activity: session, progress })
+      const head = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'RunOmics')
+      const at = ops.slice(0, head).findLastIndex((o) => o.op === 'fillText')
+      const text = ops[at]!
+      const bar = ops.slice(0, at).filter((o) => o.op === 'fill').at(-1)!
+      return [text.args[0], text.fill, text.font.split(' ')[0], bar.fill]
     }
-    expect(chip(0.1)).toBe('Warm-up')
-    expect(chip(0.2)).toBe('Rep 1 of 3')
-    expect(chip(0.35)).toBe('Rep 1 of 3')
-    expect(chip(0.4)).toBe('Rep 1 of 3')
-    expect(chip(0.45)).toBe('Rep 2 of 3')
-    expect(chip(0.85)).toBe('Rep 3 of 3')
-    expect(chip(0.9)).toBe('Cool-down')
-    expect(chip(1)).toBe(' under target')
+    const grey = palette.trace
+    const rep = palette.zones[3]
+    expect(chip(0.19)).toEqual(['Warm-up', palette.mu, '400', grey])
+    expect(chip(0.2)).toEqual(['Rep 1 of 3', palette.tx, '600', rep])
+    expect(chip(0.35)).toEqual(['Rep 1 of 3', palette.tx, '600', rep])
+    expect(chip(0.36)).toEqual(['Recovery', palette.mu, '400', grey])
+    expect(chip(0.44)).toEqual(['Recovery', palette.mu, '400', grey])
+    expect(chip(0.45)).toEqual(['Rep 2 of 3', palette.tx, '600', rep])
+    expect(chip(0.85)).toEqual(['Rep 3 of 3', palette.tx, '600', rep])
+    expect(chip(0.86)).toEqual(['Cool-down', palette.mu, '400', grey])
+    expect(chip(1)).toEqual([' under target', palette.mu, '400', rep])
+  })
+
+  it('draws the pending pace as U+2013 en dashes in the value\'s font, muted', () => {
+    const ops = draw({ design: 'route', progress: 0.5 })
+    const pending = ops.find((o) => o.op === 'fillText' && o.args[0] === '\u2013:\u2013\u2013')!
+    const distance = ops.find((o) => o.op === 'fillText' && o.args[0] === '5.0')!
+    expect(pending.font).toBe(distance.font)
+    expect(pending.fill).toBe(palette.mu)
   })
 })
 

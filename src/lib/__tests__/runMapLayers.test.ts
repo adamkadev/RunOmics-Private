@@ -4,7 +4,6 @@ import {
   EDGE_FENCE_LAYER,
   FINISH_ICON,
   FINISH_MARK_ICON,
-  LOOP_MARK_ICON,
   ROUTE_FIT_PADDING,
   ROUTE_HALO_LAYER,
   ROUTE_LINE_LAYER,
@@ -109,7 +108,7 @@ describe('the run map layers (v4.17)', () => {
   it('puts the checkered finish on the drawn line\'s own last point', () => {
     const { map, layers, images, data } = fakeMap()
     addRunLayers(map, RUN)
-    expect([...images]).toEqual(expect.arrayContaining([FINISH_MARK_ICON, LOOP_MARK_ICON]))
+    expect([...images]).toEqual(expect.arrayContaining([FINISH_MARK_ICON]))
     expect(layers.find((l) => l.id === RUN_FINISH_LAYER)).toMatchObject({
       type: 'symbol',
       layout: { 'icon-image': ['get', 'icon'], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
@@ -120,29 +119,33 @@ describe('the run map layers (v4.17)', () => {
     expect((data[RUN_START_SOURCE] as { features: unknown[] }).features).toHaveLength(1)
   })
 
-  it('draws a loop as one combined marker on the start while the ends touch, then both once apart', () => {
+  it('draws a loop as the start dot alone while the ends touch, then the finish too once apart', () => {
     const { map, data } = fakeMap()
     addRunLayers(map, { ...RUN, joined: true })
     const marks = () => (data[RUN_FINISH_SOURCE] as { features: { properties: { icon: string }; geometry: { coordinates: unknown } }[] }).features
     const starts = () => (data[RUN_START_SOURCE] as { features: unknown[] }).features
-    expect(marks()).toEqual([expect.objectContaining({ properties: { icon: LOOP_MARK_ICON }, geometry: expect.objectContaining({ coordinates: RUN.start }) })])
-    expect(starts()).toHaveLength(0)
+    expect(marks()).toEqual([])
+    expect(starts()).toHaveLength(1)
     setRunEnds(map, RUN.start, RUN.finish, false)
     expect(marks()[0]!.properties.icon).toBe(FINISH_MARK_ICON)
     expect(starts()).toHaveLength(1)
+  })
+
+  it('repaints the line, the start and the cursor in a new accent', () => {
+    const { map } = fakeMap()
+    const painted: [string, string, unknown][] = []
+    addRunLayers(map, RUN)
+    map.setPaintProperty = ((id: string, key: string, value: unknown) => { painted.push([id, key, value]) }) as typeof map.setPaintProperty
+    setRunAccent(map, '#ff0000')
+    expect(painted).toEqual(expect.arrayContaining([
+      [ROUTE_LINE_LAYER, 'line-color', '#ff0000'], [RUN_START_LAYER, 'circle-color', '#ff0000'], [RUN_CURSOR_LAYER, 'circle-color', '#ff0000'],
+    ]))
   })
 
   it('asks at the current zoom whether the ends are under 20 px apart', () => {
     const at = (px: number) => ({ project: ([lng]: [number, number]) => ({ x: lng === 0 ? 0 : px, y: 0 }) }) as unknown as Parameters<typeof runEndsJoined>[0]
     expect(runEndsJoined(at(19), [0, 0], [1, 0])).toBe(true)
     expect(runEndsJoined(at(20), [0, 0], [1, 0])).toBe(false)
-  })
-
-  it('repaints the loop marker\'s accent ring with a new accent', () => {
-    const { map, updated } = fakeMap()
-    addRunLayers(map, RUN)
-    setRunAccent(map, '#ff0000')
-    expect(updated).toContain(LOOP_MARK_ICON)
   })
 
   // The layers go on again after a style change, as they were.

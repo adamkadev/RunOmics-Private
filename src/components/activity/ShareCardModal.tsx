@@ -81,8 +81,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const [videoEncoder, setVideoEncoder] = useState<VideoEncoderKind | null>(null)
   const [format, setFormat] = useState<'image' | 'video'>('image')
-  const [preparing, setPreparing] = useState<number | null>(null)
-  const videoCache = useRef<{ key: unknown; file: File } | null>(null)
+  const [encoding, setEncoding] = useState<{ key: string; percent: number } | null>(null)
+  const [videoFiles, setVideoFiles] = useState<Record<string, File>>({})
   const showFormat = design === 'route' && videoEncoder !== null
   // Each frame redraws the cached map; until it has rendered, a video would capture the plain fallback.
   const mapSettled = !!mapImage || mapFailed
@@ -141,6 +141,31 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     fonts: pageFonts(),
   }), [card, design, accent, theme, photoImage, locationName, mapImage, mapPoints, mapLabels])
 
+  const videoKey = [card.id, theme, accent, showReps, locationName ?? '', mapImage ? 'map' : 'plain', fontsReady].join('|')
+  const videoReady = !!videoFiles[videoKey]
+
+  // The key names what changes the clip; renderOptions follows the same inputs, so a change cancels and restarts.
+  useEffect(() => {
+    if (!video || !videoEncoder || videoReady) return
+    const controller = new AbortController()
+    renderShareVideo(card, renderOptions(), videoEncoder, (share) => {
+      if (!controller.signal.aborted) setEncoding({ key: videoKey, percent: Math.round(share * 100) })
+    }, controller.signal)
+      .then((file) => {
+        setVideoFiles((files) => ({ ...files, [videoKey]: file }))
+        setEncoding(null)
+      })
+      .catch((err: unknown) => {
+        if ((err as Error).name === 'AbortError') return
+        console.error(err)
+        setEncoding(null)
+        setFormat('image')
+      })
+    return () => controller.abort()
+  }, [video, videoEncoder, videoKey, videoReady, card, renderOptions])
+
+  const preparing = !video || videoReady ? null : encoding?.key === videoKey ? encoding.percent : 0
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -188,23 +213,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const handleShare = () =>
     shareCardFile(activity, design, renderOptions(),
       `${activity.description || t.activity.metaFallbackTitle} - RunOmics`)
-  const handleShareVideo = async () => {
-    if (!videoEncoder || preparing !== null) return
-    const title = `${activity.description || t.activity.metaFallbackTitle} - RunOmics`
-    let file = videoCache.current?.key === renderOptions ? videoCache.current.file : null
-    if (!file) {
-      setPreparing(0)
-      try {
-        file = await renderShareVideo(activity, renderOptions(), videoEncoder, (share) => setPreparing(Math.round(share * 100)))
-        videoCache.current = { key: renderOptions, file }
-      } catch (err) {
-        console.error(err)
-        return
-      } finally {
-        setPreparing(null)
-      }
-    }
-    await shareOrSaveFile(file, title)
+  // Safari drops the tap's user activation across an await: the file must be ready before the tap, never awaited on it.
+  const handleShareVideo = () => {
+    const file = videoFiles[videoKey]
+    if (!file) return
+    void shareOrSaveFile(file, `${activity.description || t.activity.metaFallbackTitle} - RunOmics`)
   }
   const handleCopy = () => {
     copyCardPng(renderOptions())
@@ -383,8 +396,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             copyState={copyState}
             disabled={awaitingPhoto}
             video={video}
-            preparing={video ? preparing : null}
-            onShare={video ? () => { void handleShareVideo() } : handleShare}
+            preparing={preparing}
+            onShare={video ? handleShareVideo : handleShare}
             onSave={handleSave}
             onCopy={handleCopy}
           />
