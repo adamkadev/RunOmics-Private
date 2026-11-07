@@ -211,9 +211,41 @@ The dark Stats card carries the app's glow, in the run's own zone colour, from i
 fixed faint grain over it: a smooth dark gradient bands into visible steps once Instagram or Strava
 recompress the image. The light card stays plain.
 
-- The start dot is always green; the finish dot is the accent, unless the accent sits within a
-  distance of 90 in RGB space of the green start, where it flips to red — the start/finish convention
-  Strava and Garmin use.
+- The start is an accent dot in a white ring, with no outline on light and a thin dark one on dark
+  (ring `#f2f4f3`). A loop gets that one marker, on the card and on the Activity map alike: there is
+  no chequered loop disc. A point-to-point run adds the chequered finish. Markers draw over the place
+  names, and a name keeps 4 px clear of a marker's drawn edge, on the card and on the Activity map:
+  clear collision icons at each end (`addMarkerFences`, the share map's fence) and `arrangeLabels`
+  treat the markers as obstacles, so a name is moved off one or dropped by priority. On the
+  Activity map the hero's bottom padding keeps the route above its 64 pt fade, so the start dot is
+  never washed out by it.
+- An interval session's Route card puts the rep pace first in the stat row (label in the session's
+  zone colour) instead of a hero over the stats, so the map keeps its full height. The Reps chip reads
+  how far off the target the reps ran: "Reps · 9 s/km under target". The Stats and Photo cards keep
+  the hero.
+- Place names: MapLibre places the districts, fenced off the route. The park the run spent most of its
+  distance in (or that a loop runs round) would sit on the route and be fenced out, so
+  `useShareCardMap` picks it itself and the card sets it beside the line (`arrangeLabels`). Under zoom
+  14, where a city run's card sits, the Planet v4 tiles name no park and no river: the park comes from
+  the green fills the route crosses, named by MapTiler's geocoder at their centre (`nearbyPark`). The
+  river label only shows on a card zoomed in far enough for the tiles to name it. Priority settles
+  collisions: start district, finish district, landmark, water, other districts.
+
+**Route video.** The Route design has an Image | Video switch where the browser can encode video. The
+clip is 12.2 s at 30 fps, 1080 × 1350: the map zooms in on the start, the route draws itself with the
+stats counting up, then the still card holds. The file opens on one frame of the still card, the one
+WhatsApp and iMessage show as its thumbnail, then cuts to the intro: the map at full strength, only
+zooming 1.06 → 1, the route cleared to be drawn again. A pending pace reads as one en dash. Each frame is `drawShareCard` with `progress` and
+`clipTime` (`shareCardTimeline.ts`), over the one cached MapLibre render. `shareCardVideo.ts` encodes
+H.264 through WebCodecs and mediabunny (frame-exact, about 2 s in Chrome), falling back to
+`MediaRecorder` in real time, MP4 where the browser records it and WebM only as a last resort, since
+WebM shares badly to WhatsApp on iOS. `VideoEncoder` exists only in a secure context, so on plain
+http (a LAN dev server) the fallback is what runs.
+
+The sheet encodes as soon as Video is picked, while the preview loops, and caches the file per run,
+theme and settings; a change cancels the encode and starts again. The share button waits for the file,
+so its tap calls `navigator.share` with nothing awaited first: Safari refuses a share sheet once the
+tap's user activation has gone, and an encode outlasts it.
 **MapLibre's worker is served from `public/`, not from the bundle.** MapLibre 6 is ESM-only and
 no longer inlines its web worker: it spawns `maplibre-gl-worker.mjs` as a module worker, resolving
 that name against `import.meta.url`. Bundled into a Turbopack chunk, that resolves to a path under

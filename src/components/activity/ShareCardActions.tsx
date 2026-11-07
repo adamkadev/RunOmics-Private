@@ -11,21 +11,38 @@ interface Props {
   copyState: 'idle' | 'copied'
   /** Nothing to share yet: the Photo design before a photo is chosen. */
   disabled?: boolean
+  /** A video shares as a file only: there is no video on the clipboard. */
+  video?: boolean
+  /** The video's encoding, in per cent; null when idle. */
+  preparing?: number | null
   onShare: () => void
   onSave: () => void
   onCopy: () => void
 }
 
-export function ShareCardActions({ canShareFiles, canCopyImage, copyState, disabled = false, onShare, onSave, onCopy }: Props) {
+export function ShareCardActions({
+  canShareFiles, canCopyImage, copyState, disabled = false, video = false, preparing = null, onShare, onSave, onCopy,
+}: Props) {
   const copied = copyState === 'copied'
+  const copy = canCopyImage && !video
+  const s = t.activity.shareCard
+  const label = preparing !== null
+    ? s.preparingVideo(preparing)
+    : canShareFiles ? (video ? s.shareVideo : t.activity.shareMenu.share) : t.activity.shareMenu.download
   return (
-    <div className={cn('mt-1 grid shrink-0 gap-2.5', canCopyImage ? 'grid-cols-2' : 'grid-cols-1')}>
-      <Button size="lg" onClick={canShareFiles ? onShare : onSave} disabled={disabled} className="gap-2">
+    <div className={cn('mt-1 grid shrink-0 gap-2.5', copy ? 'grid-cols-2' : 'grid-cols-1')}>
+      <Button
+        size="lg"
+        onClick={video || canShareFiles ? onShare : onSave}
+        disabled={disabled || preparing !== null}
+        aria-live={video ? 'polite' : undefined}
+        className="gap-2"
+      >
         {canShareFiles ? <Share2 size={18} /> : <Download size={18} />}
-        {canShareFiles ? t.activity.shareMenu.share : t.activity.shareMenu.download}
+        {label}
       </Button>
 
-      {canCopyImage && (
+      {copy && (
         <Button size="lg" variant="secondary" onClick={onCopy} disabled={disabled} aria-live="polite" className="gap-2">
           {copied ? <Check size={18} /> : <Copy size={18} />}
           {copied ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}

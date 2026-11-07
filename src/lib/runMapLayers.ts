@@ -2,7 +2,7 @@ import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { distanceKm } from '@/lib/math'
 import { firstSymbolLayerId } from '@/lib/maplibre'
-import { JOIN_PX as JOIN_DISTANCE_PX, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
+import { JOIN_PX as JOIN_DISTANCE_PX, MARKER_CLEARANCE, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 import { MAP_PADDING } from './routeFrame'
 
 export const ROUTE_SOURCE = 'route'
@@ -10,10 +10,14 @@ export const ROUTE_LINE_LAYER = 'route-line'
 export const ROUTE_HALO_LAYER = 'route-halo'
 export const RUN_START_SOURCE = 'run-start-dot'
 export const RUN_START_LAYER = 'run-start-dot'
+export const RUN_START_OUTLINE_LAYER = 'run-start-outline'
+export const RUN_START_FENCE_LAYER = 'run-start-fence'
+export const RUN_FINISH_FENCE_LAYER = 'run-finish-fence'
+const START_FENCE_ICON = 'run-start-fence'
+const FINISH_FENCE_ICON = 'run-finish-fence'
 export const RUN_FINISH_SOURCE = 'run-finish-mark'
 export const RUN_FINISH_LAYER = 'run-finish-mark'
 export const FINISH_MARK_ICON = 'run-finish-mark'
-export const LOOP_MARK_ICON = 'run-loop-mark'
 export const RUN_CURSOR_SOURCE = 'run-cursor'
 export const RUN_CURSOR_LAYER = 'run-cursor'
 export const RUN_MARKERS_SOURCE = 'run-start-finish'
@@ -34,8 +38,11 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
 export interface RunLayersState {
   /** The accent, as a literal colour: MapLibre paints values, not CSS variables. */
   accent: string
-  /** The page ground, so the line and its dots lift off the tiles. */
+  /** The page ground, so the line lifts off the tiles. */
   ring: string
+  /** The start's ring and outline, as on the share card: white, outlined only on dark. */
+  startRing: string
+  startOutline: string | null
   route: LngLat[]
   start: LngLat
   /** Null until the draw-in reaches the end. */
@@ -68,15 +75,16 @@ function setOrAddSource(map: MapLibreMap, id: string, data: FeatureCollection): 
 }
 
 const ICON_PIXEL_RATIO = 2
+const START_RADIUS = 7
+const START_RING = 2.5
 
 function endsData(start: LngLat, finish: LngLat | null, joined: boolean) {
   const ends = routeEnds(start, finish, joined)
   const startAt = ends.find((end) => end.kind === 'start')?.at ?? null
-  const mark = ends.find((end) => end.kind !== 'start')
-  const icon = mark?.kind === 'loop' ? LOOP_MARK_ICON : FINISH_MARK_ICON
+  const mark = ends.find((end) => end.kind === 'finish')
   const marks: FeatureCollection<Point> = {
     type: 'FeatureCollection',
-    features: mark ? [{ type: 'Feature', properties: { icon }, geometry: { type: 'Point', coordinates: mark.at } }] : [],
+    features: mark ? [{ type: 'Feature', properties: { icon: FINISH_MARK_ICON }, geometry: { type: 'Point', coordinates: mark.at } }] : [],
   }
   return { start: pointData(startAt), marks }
 }
@@ -117,9 +125,6 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   if (!map.hasImage(FINISH_MARK_ICON)) {
     map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
   }
-  if (!map.hasImage(LOOP_MARK_ICON)) {
-    map.addImage(LOOP_MARK_ICON, routeMarkerImage('loop', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
-  }
   const ends = endsData(state.start, state.finish, state.joined)
   if (setOrAddSource(map, RUN_FINISH_SOURCE, ends.marks) || !map.getLayer(RUN_FINISH_LAYER)) {
     map.addLayer({
@@ -131,12 +136,19 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   }
   if (setOrAddSource(map, RUN_START_SOURCE, ends.start) || !map.getLayer(RUN_START_LAYER)) {
     map.addLayer({
+      id: RUN_START_OUTLINE_LAYER,
+      type: 'circle',
+      source: RUN_START_SOURCE,
+      paint: { 'circle-radius': START_RADIUS + START_RING + 1, 'circle-color': state.startOutline ?? 'rgba(0, 0, 0, 0)' },
+    })
+    map.addLayer({
       id: RUN_START_LAYER,
       type: 'circle',
       source: RUN_START_SOURCE,
-      paint: { 'circle-radius': 7, 'circle-color': state.accent, 'circle-stroke-color': state.ring, 'circle-stroke-width': 2.5 },
+      paint: { 'circle-radius': START_RADIUS, 'circle-color': state.accent, 'circle-stroke-color': state.startRing, 'circle-stroke-width': START_RING },
     })
   }
+  addMarkerFences(map, state)
   if (setOrAddSource(map, RUN_CURSOR_SOURCE, pointData(state.cursor)) || !map.getLayer(RUN_CURSOR_LAYER)) {
     map.addLayer({
       id: RUN_CURSOR_LAYER,
@@ -147,11 +159,34 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   }
 }
 
-/** The loop marker's ring is in the accent, so its image is redrawn too. */
+/** The drawn radius, outline included, in CSS px. */
+export function startDotRadius(outline: string | null): number {
+  return START_RADIUS + START_RING + (outline ? 1 : 0)
+}
+
+/** A circle layer and an overlap-allowed icon join no label collision: clear icons above the labels keep names off the dots. */
+function addMarkerFences(map: MapLibreMap, state: RunLayersState): void {
+  const fences = [
+    [START_FENCE_ICON, RUN_START_FENCE_LAYER, RUN_START_SOURCE, startDotRadius(state.startOutline)],
+    [FINISH_FENCE_ICON, RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, markerExtent('finish') / 2],
+  ] as const
+  for (const [icon, layer, source, radius] of fences) {
+    const image = clearMarkerImage(radius + MARKER_CLEARANCE)
+    if (map.hasImage(icon)) map.updateImage(icon, image)
+    else map.addImage(icon, image, { pixelRatio: ICON_PIXEL_RATIO })
+    if (map.getLayer(layer)) continue
+    map.addLayer({
+      id: layer,
+      type: 'symbol',
+      source,
+      layout: { 'icon-image': icon, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
+    })
+  }
+}
+
 export function setRunAccent(map: MapLibreMap, accent: string): void {
   if (map.getLayer(ROUTE_LINE_LAYER)) map.setPaintProperty(ROUTE_LINE_LAYER, 'line-color', accent)
   for (const id of [RUN_START_LAYER, RUN_CURSOR_LAYER]) if (map.getLayer(id)) map.setPaintProperty(id, 'circle-color', accent)
-  if (map.hasImage(LOOP_MARK_ICON)) map.updateImage(LOOP_MARK_ICON, routeMarkerImage('loop', accent, ICON_PIXEL_RATIO))
 }
 
 export function runEndsJoined(map: Pick<MapLibreMap, 'project'>, start: LngLat, finish: LngLat): boolean {
@@ -275,8 +310,8 @@ export function addEdgeFence(map: MapLibreMap): () => void {
   }
 }
 
-/** Collision without paint, for maps whose markers are drawn elsewhere. */
-export function clearMarkerImage(diameter = markerExtent('loop')): Image {
-  const size = (diameter + 2) * 2
+/** Collision without paint, for maps whose markers are drawn elsewhere: `radius` in CSS px, at the icons' pixel ratio 2. */
+export function clearMarkerImage(radius: number): Image {
+  const size = Math.ceil(radius * 2 * 2)
   return { width: size, height: size, data: new Uint8Array(size * size * 4) }
 }

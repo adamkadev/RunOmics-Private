@@ -3,7 +3,7 @@
  * is a point marker's only: no trace or data colour takes it.
  */
 
-export type MarkerKind = 'start' | 'finish' | 'loop'
+export type MarkerKind = 'start' | 'finish'
 
 type Point = [number, number]
 
@@ -17,10 +17,11 @@ interface MarkerSpec {
 export const MARKER_SPECS: Record<MarkerKind, MarkerSpec> = {
   start: { diameter: 16, ring: 2.5, outline: 0 },
   finish: { diameter: 18, ring: 2.5, outline: 1 },
-  loop: { diameter: 22, ring: 3, outline: 1.5 },
 }
 
 export const JOIN_PX = 20
+/** Px a place name keeps from a marker's drawn edge, on every map and on the share card. */
+export const MARKER_CLEARANCE = 4
 /** The checkers' side, in px. */
 const CHECKER = 3
 export const MARKER_INK = '#0c0d0d'
@@ -41,10 +42,9 @@ export interface RouteEnd<P> {
   at: P
 }
 
-/** Finish first, so the start sits on top. */
+/** Finish first, so the start sits on top; a loop is its start alone. */
 export function routeEnds<P>(start: P, finish: P | null, joined: boolean): RouteEnd<P>[] {
-  if (!finish) return [{ kind: 'start', at: start }]
-  if (joined) return [{ kind: 'loop', at: start }]
+  if (!finish || joined) return [{ kind: 'start', at: start }]
   return [{ kind: 'finish', at: finish }, { kind: 'start', at: start }]
 }
 
@@ -52,8 +52,8 @@ function layers(kind: MarkerKind, accent: string, scale = 1) {
   const spec = MARKER_SPECS[kind]
   const r = (spec.diameter / 2) * scale
   return {
-    outline: spec.outline > 0 ? { radius: r + spec.outline * scale, color: kind === 'loop' ? MARKER_INK : FINISH_OUTLINE } : null,
-    ring: { radius: r, color: kind === 'loop' ? accent : WHITE },
+    outline: spec.outline > 0 ? { radius: r + spec.outline * scale, color: FINISH_OUTLINE } : null,
+    ring: { radius: r, color: WHITE },
     inner: { radius: r - spec.ring * scale, checkered: kind !== 'start', color: accent },
     checker: CHECKER * scale,
   }
@@ -68,6 +68,29 @@ function checkerGrid(radius: number, size: number) {
 function inkChecker(x: number, y: number, radius: number): boolean {
   const { origin } = checkerGrid(radius, CHECKER)
   return (Math.floor((x - origin) / CHECKER) + Math.floor((y - origin) / CHECKER)) % 2 === 1
+}
+
+export interface DotInk {
+  fill: string
+  ring: string
+  /** Null on light: the white ring alone reads on a pale tile. */
+  outline: string | null
+}
+
+/** The share card's start, and its loop's one marker: the start's size and ring, with a thin outline for any tile. */
+export function drawStartDot(ctx: CanvasRenderingContext2D, [x, y]: Point, ink: DotInk, scale = 1) {
+  const { diameter, ring } = MARKER_SPECS.start
+  const r = (diameter / 2) * scale
+  ctx.save()
+  const discs: [number, string][] = [[r, ink.ring], [r - ring * scale, ink.fill]]
+  if (ink.outline) discs.unshift([r + scale, ink.outline])
+  for (const [radius, color] of discs) {
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.fillStyle = color
+    ctx.fill()
+  }
+  ctx.restore()
 }
 
 export function drawRouteMarker(ctx: CanvasRenderingContext2D, kind: MarkerKind, [x, y]: Point, accent: string, scale = 1) {

@@ -1353,6 +1353,25 @@ export const en = {
       repsLegend: 'Reps',
       // The switch on an interval session: off, the card is an easy run's.
       showReps: 'Rep pace',
+      // The stat row's first cell on an interval session's Route card.
+      repPaceStat: 'Rep pace',
+      // The Reps legend's bold part: "Reps · 9 s/km under target".
+      secPerKm: (n: number) => `${n} s/km`,
+      underTarget: 'under target',
+      overTarget: 'over target',
+      onTarget: 'on target',
+      formatTitle: 'Format',
+      formatLabels: {
+        image: 'Image',
+        video: 'Video',
+      },
+      shareVideo: 'Share video',
+      preparingVideo: (percent: number) => `Preparing video… ${percent} %`,
+      // The route video's legend while the run draws itself.
+      warmUp: 'Warm-up',
+      repOf: (n: number, count: number) => `Rep ${n} of ${count}`,
+      recovery: 'Recovery',
+      coolDown: 'Cool-down',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
       photoHint: 'This frame is the exact crop',

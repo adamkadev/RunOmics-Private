@@ -1269,6 +1269,25 @@ export const fr = {
       repsLegend: 'Fractions',
       // L’interrupteur d’une séance de fractionné : éteint, la carte est celle d’une sortie facile.
       showReps: 'Allure des fractions',
+      // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
+      repPaceStat: 'Allure fractions',
+      // La partie en gras de la légende : « Fractions · 9 s/km sous la cible ».
+      secPerKm: (n: number) => `${n} s/km`,
+      underTarget: 'sous la cible',
+      overTarget: 'au-dessus de la cible',
+      onTarget: 'dans la cible',
+      formatTitle: 'Format',
+      formatLabels: {
+        image: 'Image',
+        video: 'Vidéo',
+      },
+      shareVideo: 'Partager la vidéo',
+      preparingVideo: (percent: number) => `Préparation de la vidéo… ${percent} %`,
+      // La légende de la vidéo du parcours pendant que la sortie se dessine.
+      warmUp: 'Échauffement',
+      repOf: (n: number, count: number) => `Fraction ${n} sur ${count}`,
+      recovery: 'Récupération',
+      coolDown: 'Retour au calme',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',
       photoHint: 'Ce cadre est le recadrage exact',

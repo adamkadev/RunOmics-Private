@@ -4,7 +4,6 @@ import {
   EDGE_FENCE_LAYER,
   FINISH_ICON,
   FINISH_MARK_ICON,
-  LOOP_MARK_ICON,
   ROUTE_FIT_PADDING,
   ROUTE_HALO_LAYER,
   ROUTE_LINE_LAYER,
@@ -15,6 +14,10 @@ import {
   RUN_FINISH_SOURCE,
   RUN_MARKERS_LAYER,
   RUN_START_LAYER,
+  RUN_START_OUTLINE_LAYER,
+  RUN_START_FENCE_LAYER,
+  RUN_FINISH_FENCE_LAYER,
+  startDotRadius,
   RUN_START_SOURCE,
   START_ICON,
   addEdgeFence,
@@ -63,7 +66,7 @@ function fakeMap() {
 const IMAGE = { width: 2, height: 2, data: new Uint8Array(16) }
 
 const RUN = {
-  accent: '#2dd4a7', ring: '#ffffff', route: [[7.7, 48.6], [7.71, 48.61]] as [number, number][],
+  accent: '#2dd4a7', ring: '#0b0c0c', startRing: '#f2f4f3', startOutline: '#0c0d0d' as string | null, route: [[7.7, 48.6], [7.71, 48.61]] as [number, number][],
   start: [7.7, 48.6] as [number, number], finish: [7.71, 48.61] as [number, number], joined: false, cursor: null,
 }
 
@@ -72,7 +75,7 @@ describe('the run map layers (v4.17)', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
     // The route under every label, as the heatmap's tracks are; the markers on top.
-    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
+    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_OUTLINE_LAYER, RUN_START_LAYER, RUN_START_FENCE_LAYER, RUN_FINISH_FENCE_LAYER, RUN_CURSOR_LAYER])
     const route = layers.find((l) => l.id === ROUTE_LINE_LAYER)!
     expect(route).toMatchObject({ type: 'line', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': RUN.accent, 'line-width': 4 } })
   })
@@ -93,13 +96,46 @@ describe('the run map layers (v4.17)', () => {
     expect(layers.filter((l) => l.layout?.['symbol-placement'] === 'line')).toEqual([])
   })
 
-  it('draws the start, a 7 px dot, and the scrub marker as accent circles in a ring', () => {
+  it('draws the start as the share card does: a solid accent dot, its ring #f2f4f3 on dark, outlined in ink', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
-    expect(layers.find((l) => l.id === RUN_START_LAYER)).toMatchObject({
+    const start = layers.find((l) => l.id === RUN_START_LAYER)!
+    expect(start).toMatchObject({
       type: 'circle',
-      paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 2.5 },
+      paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': '#f2f4f3', 'circle-stroke-width': 2.5 },
     })
+    expect(Object.keys(start.paint!).some((key) => key.includes('opacity'))).toBe(false)
+    expect(layers.find((l) => l.id === RUN_START_OUTLINE_LAYER)).toMatchObject({ type: 'circle', paint: { 'circle-radius': 10.5, 'circle-color': '#0c0d0d' } })
+  })
+
+  it('keeps place names 4 px clear of the start and finish dots: clear icons above the labels, in the collision', () => {
+    const { map, layers } = fakeMap()
+    const added: Record<string, { width: number; options?: { pixelRatio?: number } }> = {}
+    map.addImage = ((id: string, image: { width: number }, options?: { pixelRatio?: number }) => { added[id] = { width: image.width, options } }) as unknown as typeof map.addImage
+    addRunLayers(map, RUN)
+    const ids = layers.map((l) => l.id)
+    for (const [id, source, radius] of [[RUN_START_FENCE_LAYER, RUN_START_SOURCE, 10.5], [RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, 10]] as const) {
+      const fence = layers.find((l) => l.id === id) as unknown as { source: string; layout: Record<string, unknown> }
+      expect(fence.source).toBe(source)
+      expect(fence.layout).toMatchObject({ 'icon-allow-overlap': true, 'icon-ignore-placement': false })
+      expect(ids.indexOf(id)).toBeGreaterThan(ids.indexOf('Town labels'))
+      const image = added[fence.layout['icon-image'] as string]!
+      expect(image.width / image.options!.pixelRatio! / 2).toBe(radius + 4)
+    }
+    expect(startDotRadius('#0c0d0d')).toBe(10.5)
+    expect(startDotRadius(null)).toBe(9.5)
+  })
+
+  it('rings the start in white on light, with no outline', () => {
+    const { map, layers } = fakeMap()
+    addRunLayers(map, { ...RUN, startRing: '#ffffff', startOutline: null })
+    expect(layers.find((l) => l.id === RUN_START_LAYER)!.paint!['circle-stroke-color']).toBe('#ffffff')
+    expect(layers.find((l) => l.id === RUN_START_OUTLINE_LAYER)!.paint!['circle-color']).toBe('rgba(0, 0, 0, 0)')
+  })
+
+  it('draws the scrub marker as an accent circle in the page\'s ring', () => {
+    const { map, layers } = fakeMap()
+    addRunLayers(map, RUN)
     expect(layers.find((l) => l.id === RUN_CURSOR_LAYER)).toMatchObject({
       type: 'circle',
       paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 3 },
@@ -109,7 +145,7 @@ describe('the run map layers (v4.17)', () => {
   it('puts the checkered finish on the drawn line\'s own last point', () => {
     const { map, layers, images, data } = fakeMap()
     addRunLayers(map, RUN)
-    expect([...images]).toEqual(expect.arrayContaining([FINISH_MARK_ICON, LOOP_MARK_ICON]))
+    expect([...images]).toEqual(expect.arrayContaining([FINISH_MARK_ICON]))
     expect(layers.find((l) => l.id === RUN_FINISH_LAYER)).toMatchObject({
       type: 'symbol',
       layout: { 'icon-image': ['get', 'icon'], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
@@ -120,29 +156,33 @@ describe('the run map layers (v4.17)', () => {
     expect((data[RUN_START_SOURCE] as { features: unknown[] }).features).toHaveLength(1)
   })
 
-  it('draws a loop as one combined marker on the start while the ends touch, then both once apart', () => {
+  it('draws a loop as the start dot alone while the ends touch, then the finish too once apart', () => {
     const { map, data } = fakeMap()
     addRunLayers(map, { ...RUN, joined: true })
     const marks = () => (data[RUN_FINISH_SOURCE] as { features: { properties: { icon: string }; geometry: { coordinates: unknown } }[] }).features
     const starts = () => (data[RUN_START_SOURCE] as { features: unknown[] }).features
-    expect(marks()).toEqual([expect.objectContaining({ properties: { icon: LOOP_MARK_ICON }, geometry: expect.objectContaining({ coordinates: RUN.start }) })])
-    expect(starts()).toHaveLength(0)
+    expect(marks()).toEqual([])
+    expect(starts()).toHaveLength(1)
     setRunEnds(map, RUN.start, RUN.finish, false)
     expect(marks()[0]!.properties.icon).toBe(FINISH_MARK_ICON)
     expect(starts()).toHaveLength(1)
+  })
+
+  it('repaints the line, the start and the cursor in a new accent', () => {
+    const { map } = fakeMap()
+    const painted: [string, string, unknown][] = []
+    addRunLayers(map, RUN)
+    map.setPaintProperty = ((id: string, key: string, value: unknown) => { painted.push([id, key, value]) }) as typeof map.setPaintProperty
+    setRunAccent(map, '#ff0000')
+    expect(painted).toEqual(expect.arrayContaining([
+      [ROUTE_LINE_LAYER, 'line-color', '#ff0000'], [RUN_START_LAYER, 'circle-color', '#ff0000'], [RUN_CURSOR_LAYER, 'circle-color', '#ff0000'],
+    ]))
   })
 
   it('asks at the current zoom whether the ends are under 20 px apart', () => {
     const at = (px: number) => ({ project: ([lng]: [number, number]) => ({ x: lng === 0 ? 0 : px, y: 0 }) }) as unknown as Parameters<typeof runEndsJoined>[0]
     expect(runEndsJoined(at(19), [0, 0], [1, 0])).toBe(true)
     expect(runEndsJoined(at(20), [0, 0], [1, 0])).toBe(false)
-  })
-
-  it('repaints the loop marker\'s accent ring with a new accent', () => {
-    const { map, updated } = fakeMap()
-    addRunLayers(map, RUN)
-    setRunAccent(map, '#ff0000')
-    expect(updated).toContain(LOOP_MARK_ICON)
   })
 
   // The layers go on again after a style change, as they were.
@@ -195,6 +235,6 @@ describe('the run map layers (v4.17)', () => {
   })
 
   it('fits the route as large as 3.0 drew it in the hero', () => {
-    expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 36, left: 24 })
+    expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 74, left: 24 })
   })
 })

@@ -49,3 +49,16 @@ export function copyCardPng(options: RenderOptions): Promise<void> {
   renderShareCard(canvas, options, EXPORT_SCALE)
   return navigator.clipboard.write([new ClipboardItem({ 'image/png': canvasToBlob(canvas) })])
 }
+
+/** The share sheet where it takes the file, else a download. A cancelled sheet is an AbortError, not a failure. */
+export async function shareOrSaveFile(file: File, title: string): Promise<void> {
+  if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title })
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') console.error(err)
+    }
+    return
+  }
+  await saveFileWithFallback(file)
+}

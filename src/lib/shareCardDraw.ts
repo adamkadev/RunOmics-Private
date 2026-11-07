@@ -1,18 +1,20 @@
 import {
-  shareCardSubtitle, shareCardTitle, shareRepDetail, shareRepHero, shareStats, shareStructure, shareZones, zoneName,
+  shareCardSubtitle, shareCardTitle, shareDuration, shareRepDetail, shareRepHero, shareRepsLegend, shareStats, shareStructure,
+  shareZones, zoneName,
   type ShareActivity, type ShareRepDetail, type ShareRepHero, type ShareVerdict, type ShareZoneRow,
 } from '@/lib/shareCardStats'
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
-import { projectRoute, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
+import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
+import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SPECS } from '@/lib/routeMarkers'
+import { drawMark } from '@/lib/brandMark'
+import { t } from '@/i18n'
+import { formatKm, formatPercent } from '@/lib/formatters'
+import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
 
 function repColor(activity: ShareActivity, palette: SharePalette): string {
   return palette.zones[runTypeZone(activity.type) - 1] ?? palette.zones[3]!
 }
-import { drawRouteMarker, endsJoined, routeEnds } from '@/lib/routeMarkers'
-import { drawMark } from '@/lib/brandMark'
-import { t } from '@/i18n'
-import { formatPercent } from '@/lib/formatters'
 
 type Ctx = CanvasRenderingContext2D
 
@@ -38,6 +40,12 @@ export interface ShareCardScene {
   mapPoints?: [number, number][] | null
   /** As MapLibre placed them, drawn over the route. */
   mapLabels?: ShareMapLabel[] | null
+  /** 0..1 share of the route drawn, for the video; undefined is the still card. */
+  progress?: number
+  /** Seconds into the video, for the marker pops and fades. */
+  clipTime?: number
+  /** A looping preview: the route fades out at the clip's end. */
+  loop?: boolean
 }
 
 /** In the card's px. */
@@ -48,7 +56,13 @@ export interface ShareMapLabel {
   size: number
   color: string
   opacity: number
+  /** Lower survives a collision: the start district, the finish's, the landmark, the water, then every other district. */
+  priority?: number
+  /** MapLibre did not place it: the card sets it beside the route, off the line, and may break it over two lines. */
+  beside?: boolean
 }
+
+export const LABEL_PRIORITY = { start: 1, finish: 2, landmark: 3, water: 4, district: 5 } as const
 
 const PAD_X = 16
 /** Small enough to take the 3-arc variant. */
@@ -75,6 +89,8 @@ const REP_DETAIL_H = { chips: CHIP_H, bars: BAR_MAX + 12 } as const
 const STATS_PAD_TOP_AFTER_HERO = 16
 /** The card is a phone map's width less its margins. */
 const MARKER_SCALE = 0.85
+/** The video's head dot is a step under the start's 13.6 px. */
+const HEAD_SCALE = 11 / 16
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -155,10 +171,11 @@ export interface ShareCardLayout {
   routeFrame: RouteFrame
 }
 
+/** The Route card carries the rep pace in its stat row, so the map keeps its full height. */
 export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareFonts, design: ShareDesign = 'route'): ShareCardLayout {
   const title = titleLines(ctx, shareCardTitle(activity), fonts)
   const middleTop = HEADER_BASE + (title.lines.length - 1) * title.lineHeight
-  const hero = shareRepHero(activity)
+  const hero = design === 'route' ? null : shareRepHero(activity)
   const repDetail = hero ? shareRepDetail(activity) : null
   const detailH = repDetail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[repDetail.kind] : 0
   const statsTop = H - STATS_PAD_BOTTOM - STATS_BLOCK
@@ -349,15 +366,51 @@ const TRACE_W = 3
 const GREY_W = 2.5
 const REP_W = GREY_W * 1.6
 
-function drawRepsLegend(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, top: number) {
+interface ChipPart {
+  text: string
+  color: string
+  weight: 400 | 600
+}
+
+function legendParts(scene: ShareCardScene, palette: SharePalette): { parts: ChipPart[]; bar: string } {
+  const { activity, progress } = scene
+  const s = t.activity.shareCard
+  const rep = repColor(activity, palette)
+  const muted = (text: string): ChipPart => ({ text, color: palette.mu, weight: 400 })
+  if (progress !== undefined && progress < 1) {
+    const phase = repPhase(activity.reps!.windows, progress)
+    switch (phase.kind) {
+      case 'rep':
+        return { parts: [{ text: s.repOf(phase.n, phase.count), color: palette.tx, weight: 600 }], bar: rep }
+      case 'recovery':
+        return { parts: [muted(s.recovery)], bar: palette.trace }
+      case 'warmUp':
+        return { parts: [muted(s.warmUp)], bar: palette.trace }
+      default:
+        return { parts: [muted(s.coolDown)], bar: palette.trace }
+    }
+  }
+  const legend = shareRepsLegend(activity)
+  const parts = [muted(legend.lead)]
+  if (legend.strong) parts.push({ text: legend.strong, color: palette.tx, weight: 600 })
+  if (legend.rest) parts.push(muted(legend.rest))
+  return { parts, bar: rep }
+}
+
+function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, top: number) {
+  const { palette, fonts } = scene
   const BAR_W = 14
   const BAR_H = 3
   const PILL_H = 18
-  ctx.font = `400 9px ${fonts.text}`
-  const label = t.activity.shareCard.repsLegend
-  const width = 7 + BAR_W + 5 + ctx.measureText(label).width + 7
+  const { parts, bar } = legendParts(scene, palette)
+  const widths = parts.map((part) => {
+    ctx.font = `${part.weight} 9px ${fonts.text}`
+    return ctx.measureText(part.text).width
+  })
+  const width = 7 + BAR_W + 5 + widths.reduce((a, b) => a + b, 0) + 7
   const x = RIGHT - width
   const y = top + 8
+  ctx.save()
   ctx.fillStyle = palette.bg
   roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)
   ctx.fill()
@@ -365,17 +418,34 @@ function drawRepsLegend(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, 
   ctx.strokeStyle = palette.line
   ctx.stroke()
   const mid = y + PILL_H / 2
-  ctx.fillStyle = repColor(activity, palette)
+  ctx.fillStyle = bar
   roundRect(ctx, x + 7, mid - BAR_H / 2, BAR_W, BAR_H, BAR_H / 2)
   ctx.fill()
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  ctx.fillStyle = palette.mu
-  ctx.fillText(label, x + 7 + BAR_W + 5, mid)
+  let at = x + 7 + BAR_W + 5
+  parts.forEach((part, i) => {
+    ctx.font = `${part.weight} 9px ${fonts.text}`
+    ctx.fillStyle = part.color
+    ctx.fillText(part.text, at, mid)
+    at += widths[i]!
+  })
+  ctx.restore()
 }
 
 function hasReps(scene: ShareCardScene): boolean {
   return (scene.activity.reps?.windows.length ?? 0) > 0
+}
+
+function routePoints(scene: ShareCardScene, layout: ShareCardLayout): [number, number][] | null {
+  const route = scene.activity.route
+  if (!route || route.length < 2) return null
+  if (scene.mapImage && scene.mapPoints && scene.mapPoints.length > 1) return scene.mapPoints
+  return projectRoute(route, W, H, layout.routeFrame)
+}
+
+function sceneMotion(scene: ShareCardScene): VideoMotion {
+  return scene.clipTime === undefined ? STILL_MOTION : videoMotion(scene.clipTime, scene.loop)
 }
 
 /**
@@ -383,61 +453,171 @@ function hasReps(scene: ShareCardScene): boolean {
  * An interval session draws the run in grey and its reps over it, wider, so a
  * rep run down the warm-up's road still shows.
  */
-function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
+function drawRoute(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], motion: VideoMotion) {
   const { activity, palette, mapImage, mapPoints } = scene
-  const route = activity.route
-  if (!route || route.length < 2) return
-  let pts: [number, number][]
-  if (mapImage && mapPoints && mapPoints.length > 1) {
-    ctx.drawImage(mapImage, 0, 0, W, H)
-    pts = mapPoints
-  } else {
-    pts = projectRoute(route, W, H, layout.routeFrame)
-  }
+  if (mapImage && mapPoints && mapPoints.length > 1) ctx.drawImage(mapImage, 0, 0, W, H)
+  const progress = scene.progress ?? 1
+  if (progress <= 0) return
+  const drawn = progress >= 1 ? pts : slicePolyline(pts, 0, progress)
 
+  ctx.save()
+  ctx.globalAlpha *= motion.route
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
   ctx.save()
-  ctx.globalAlpha = 0.85
+  ctx.globalAlpha *= 0.85
   const reps = hasReps(scene)
-  strokeLine(ctx, pts, palette.casing, (reps ? GREY_W : TRACE_W) + 3)
+  strokeLine(ctx, drawn, palette.casing, (reps ? GREY_W : TRACE_W) + 3)
   ctx.restore()
   if (reps) {
-    strokeLine(ctx, pts, palette.trace, GREY_W)
-    for (const [from, to] of activity.reps!.windows) strokeLine(ctx, slicePolyline(pts, from, to), repColor(activity, palette), REP_W)
+    strokeLine(ctx, drawn, palette.trace, GREY_W)
+    for (const [from, to] of activity.reps!.windows) {
+      if (from < progress) strokeLine(ctx, slicePolyline(pts, from, Math.min(to, progress)), repColor(activity, palette), REP_W)
+    }
   } else {
-    strokeLine(ctx, pts, palette.route, TRACE_W)
+    strokeLine(ctx, drawn, palette.route, TRACE_W)
   }
-
-  const first = pts[0]!
-  const last = pts[pts.length - 1]!
-  for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.marker, MARKER_SCALE)
+  ctx.restore()
 }
 
-/**
- * Only between the bands, where no fade can cut one, and only a name whole
- * inside the side margins: MapLibre placed it beside its point, but the card
- * centres it on the point.
- */
-function drawPlaceLabels(ctx: Ctx, { mapLabels, palette, fonts }: ShareCardScene, { textTop, textBottom }: ShareCardLayout) {
+/** Over the place names, so no name covers the start. */
+function drawMarkers(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], motion: VideoMotion) {
+  const { activity, palette } = scene
+  const first = pts[0]!
+  const last = pts[pts.length - 1]!
+  const progress = scene.progress ?? 1
+  const ink = { fill: palette.marker, ring: palette.markerRing, outline: palette.markerOutline }
+  if (progress >= 1 && !endsJoined(first, last) && motion.finishPop > 0) {
+    drawRouteMarker(ctx, 'finish', last, palette.marker, MARKER_SCALE * motion.finishPop)
+  }
+  if (motion.startPop > 0) drawStartDot(ctx, first, ink, MARKER_SCALE * motion.startPop)
+  if (progress > 0 && progress < 1) {
+    const head = slicePolyline(pts, 0, progress).at(-1) ?? first
+    const inRep = hasReps(scene) && repPhase(activity.reps!.windows, progress).kind === 'rep'
+    drawStartDot(ctx, head, { ...ink, fill: inRep ? repColor(activity, palette) : palette.marker }, HEAD_SCALE)
+  }
+}
+
+/** Two lines at most, balanced, for a park's long name: "Forêt de la / Clairière". */
+const BESIDE_MAX_W = 96
+/** Px a name beside the route keeps off the line: the trace and its casing. */
+const ROUTE_CLEAR = 4
+const BESIDE_RADII = [0, 14, 24, 36, 50] as const
+const BESIDE_ANGLES = 8
+
+interface Placed {
+  label: ShareMapLabel
+  lines: string[]
+  x: number
+  y: number
+  box: [number, number, number, number]
+}
+
+function overlaps(a: Placed['box'], b: Placed['box']): boolean {
+  return a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
+}
+
+/** A marker as a name must keep clear of it: centre and radius, in the card's px. */
+export interface MarkerObstacle {
+  x: number
+  y: number
+  r: number
+}
+
+
+/** As drawn on the card, outline included. */
+export function shareMarkerRadius(kind: 'start' | 'finish', palette: Pick<SharePalette, 'markerOutline'>): number {
+  const spec = MARKER_SPECS[kind]
+  const outline = kind === 'start' ? (palette.markerOutline ? 1 : 0) : spec.outline
+  return (spec.diameter / 2 + outline) * MARKER_SCALE
+}
+
+export function markerObstacles(pts: readonly [number, number][], palette: Pick<SharePalette, 'markerOutline'>): MarkerObstacle[] {
+  const first = pts[0]!
+  const last = pts[pts.length - 1]!
+  const at = (p: [number, number], kind: 'start' | 'finish') => ({ x: p[0], y: p[1], r: shareMarkerRadius(kind, palette) + MARKER_CLEARANCE })
+  return endsJoined(first, last) ? [at(first, 'start')] : [at(first, 'start'), at(last, 'finish')]
+}
+
+function touches(box: Placed['box'], { x, y, r }: MarkerObstacle): boolean {
+  const dx = x - Math.max(box[0], Math.min(x, box[2]))
+  const dy = y - Math.max(box[1], Math.min(y, box[3]))
+  return dx * dx + dy * dy < r * r
+}
+
+/** Highest priority first, a clash dropped; MapLibre's names keep their spot, a name beside the route moves off it. */
+export function arrangeLabels(
+  ctx: Ctx, labels: readonly ShareMapLabel[], route: readonly [number, number][] | null, { textTop, textBottom }: Pick<ShareCardLayout, 'textTop' | 'textBottom'>,
+  fonts: ShareFonts, obstacles: readonly MarkerObstacle[] = [],
+): Placed[] {
+  const fence = route ? routeFencePoints(route, 3) : []
+  const placed: Placed[] = []
+  const order = labels.map((label, i) => ({ label, i })).sort((a, b) => (a.label.priority ?? 5) - (b.label.priority ?? 5) || a.i - b.i)
+  for (const { label } of order) {
+    ctx.font = `600 ${label.size}px ${fonts.text}`
+    const lines = label.beside ? (balanceLines(ctx, label.text, BESIDE_MAX_W) ?? [label.text]) : [label.text]
+    const halfW = Math.max(...lines.map((line) => ctx.measureText(line).width)) / 2
+    const halfH = (label.size * lines.length + (lines.length - 1) * 2) / 2
+    const spots: [number, number][] = label.beside
+      ? BESIDE_RADII.flatMap((r) => (r === 0 ? [[0, 0] as [number, number]] : Array.from({ length: BESIDE_ANGLES }, (_, k): [number, number] => {
+        const a = (k / BESIDE_ANGLES) * Math.PI * 2 - Math.PI / 2
+        return [Math.cos(a) * r, Math.sin(a) * r]
+      })))
+      : [[0, 0]]
+    for (const [dx, dy] of spots) {
+      const x = label.x + dx
+      const y = label.y + dy
+      const box: Placed['box'] = [x - halfW, y - halfH, x + halfW, y + halfH]
+      if (box[1] < textTop + ROUTE_TEXT_GAP || box[3] > textBottom - ROUTE_TEXT_GAP) continue
+      if (box[0] < PAD_X || box[2] > W - PAD_X) continue
+      if (placed.some((p) => overlaps(p.box, box))) continue
+      if (obstacles.some((o) => touches(box, o))) continue
+      if (label.beside && fence.some(([px, py]) => px > box[0] - ROUTE_CLEAR && px < box[2] + ROUTE_CLEAR && py > box[1] - ROUTE_CLEAR && py < box[3] + ROUTE_CLEAR)) continue
+      placed.push({ label, lines, x, y, box })
+      break
+    }
+  }
+  return placed
+}
+
+/** Only between the bands, where no fade can cut one, only a name whole inside the side margins, and none under a marker. */
+function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, obstacles: MarkerObstacle[] | null, route: [number, number][] | null) {
+  const { mapLabels, palette, fonts } = scene
   if (!mapLabels?.length) return
   ctx.save()
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
-  for (const label of mapLabels) {
-    const half = label.size / 2
-    if (label.y - half < textTop + ROUTE_TEXT_GAP || label.y + half > textBottom - ROUTE_TEXT_GAP) continue
+  const base = ctx.globalAlpha
+  for (const { label, lines, x, y } of arrangeLabels(ctx, mapLabels, route, layout, fonts, obstacles ?? [])) {
     ctx.font = `600 ${label.size}px ${fonts.text}`
-    const halfWidth = ctx.measureText(label.text).width / 2
-    if (label.x - halfWidth < PAD_X || label.x + halfWidth > W - PAD_X) continue
-    ctx.globalAlpha = label.opacity
+    ctx.globalAlpha = base * label.opacity
     ctx.lineWidth = 3
-    ctx.strokeStyle = palette.bg
-    ctx.strokeText(label.text, label.x, label.y)
-    ctx.fillStyle = label.color
-    ctx.fillText(label.text, label.x, label.y)
+    lines.forEach((line, i) => {
+      const ly = y + (i - (lines.length - 1) / 2) * (label.size + 2)
+      ctx.strokeStyle = palette.bg
+      ctx.strokeText(line, x, ly)
+      ctx.fillStyle = label.color
+      ctx.fillText(line, x, ly)
+    })
   }
+  ctx.restore()
+}
+
+/** The intro's zoom, around the start: the map layer only, never the bands or the words over it. */
+function drawMapLayer(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, motion: VideoMotion) {
+  const pts = routePoints(scene, layout)
+  ctx.save()
+  if (motion.intro < 1) {
+    const [x, y] = pts?.[0] ?? [W / 2, H / 2]
+    const zoom = 1.06 - 0.06 * motion.intro
+    ctx.translate(x, y)
+    ctx.scale(zoom, zoom)
+    ctx.translate(-x, -y)
+  }
+  if (pts) drawRoute(ctx, scene, pts, motion)
+  drawPlaceLabels(ctx, scene, layout, pts && markerObstacles(pts, scene.palette), pts)
+  if (pts) drawMarkers(ctx, scene, pts, motion)
   ctx.restore()
 }
 
@@ -825,8 +1005,15 @@ function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
   ctx.fillRect(0, 0, W, H)
 }
 
-function drawStats(ctx: Ctx, { activity, fonts }: ShareCardScene, top: number, ink: Ink) {
-  const stats = shareStats(activity)
+/** Two stats spread edge to edge read as unrelated: they sit side by side instead. */
+const STAT_PAIR_GAP = 28
+/** A single U+2013 en dash: Geist draws it digit-wide, so a clock of dashes read as long rules. */
+const PACE_PENDING = '\u2013'
+
+/** Each cell keeps the still card's place, so the row does not shuffle as the video counts up. */
+function drawStats(ctx: Ctx, scene: ShareCardScene, top: number, ink: Ink, motion: VideoMotion) {
+  const { activity, fonts, palette, progress } = scene
+  const stats = shareStats(activity, { repPace: scene.design === 'route' })
   const valueFont = `700 15px ${fonts.display}`
   const unitFont = `500 9px ${fonts.text}`
   const labelFont = `400 9.5px ${fonts.text}`
@@ -837,27 +1024,43 @@ function drawStats(ctx: Ctx, { activity, fonts }: ShareCardScene, top: number, i
     const unitW = stat.unit ? ctx.measureText(stat.unit).width : 0
     ctx.font = labelFont
     const labelW = ctx.measureText(stat.label).width
-    return { stat, valueW, width: Math.max(valueW + unitW, labelW) }
+    return { stat, width: Math.max(valueW + unitW, labelW) }
   })
   const used = cells.reduce((sum, c) => sum + c.width, 0)
-  const gap = cells.length > 1 ? (RIGHT - PAD_X - used) / (cells.length - 1) : 0
+  const gap = cells.length > 2 ? (RIGHT - PAD_X - used) / (cells.length - 1) : STAT_PAIR_GAP
 
   ctx.textAlign = 'left'
   let x = PAD_X
-  for (const { stat, valueW, width } of cells) {
+  for (const { stat, width } of cells) {
+    let { value, unit } = stat
+    let alpha = 1
+    let pending = false
+    if (progress !== undefined && progress < 1) {
+      if (stat.key === 'distance') value = formatKm(activity.distanceKm * progress, 1)
+      else if (stat.key === 'time') ({ value, unit } = shareDuration(activity.durationSeconds * progress))
+      else if (stat.key === 'pace' || stat.key === 'repPace') ({ value, pending } = { value: PACE_PENDING, pending: true })
+    }
+    if (progress !== undefined && (stat.key === 'pace' || stat.key === 'repPace' || stat.key === 'hr')) {
+      alpha = progress < 1 ? 0.35 : 0.35 + 0.65 * motion.finish
+    }
+    ctx.save()
+    ctx.globalAlpha *= alpha
     ctx.textBaseline = 'alphabetic'
     ctx.font = valueFont
-    ctx.fillStyle = ink.tx
-    ctx.fillText(stat.value, x, top + 13)
-    if (stat.unit) {
+    ctx.fillStyle = pending ? ink.mu : ink.tx
+    ctx.fillText(value, x, top + 13)
+    if (unit) {
+      const valueW = ctx.measureText(value).width
       ctx.font = unitFont
       ctx.fillStyle = ink.mu
-      ctx.fillText(stat.unit, x + valueW, top + 13)
+      ctx.fillText(unit, x + valueW, top + 13)
     }
     ctx.textBaseline = 'top'
-    ctx.font = labelFont
-    ctx.fillStyle = ink.mu
+    const rep = stat.key === 'repPace'
+    ctx.font = rep ? `600 9.5px ${fonts.text}` : labelFont
+    ctx.fillStyle = rep ? repColor(activity, palette) : ink.mu
     ctx.fillText(stat.label, x, top + 19)
+    ctx.restore()
     x += width + gap
   }
 }
@@ -869,6 +1072,7 @@ const MIDDLES: Record<Exclude<ShareDesign, 'route'>, (ctx: Ctx, scene: ShareCard
 
 export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const layout = shareCardLayout(ctx, scene.activity, scene.fonts, scene.design)
+  const motion = sceneMotion(scene)
   const { palette } = scene
   ctx.fillStyle = palette.bg
   ctx.fillRect(0, 0, W, H)
@@ -877,8 +1081,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   if (photo) {
     drawPhoto(ctx, photo, layout)
   } else if (scene.design === 'route') {
-    drawRoute(ctx, scene, layout)
-    drawPlaceLabels(ctx, scene, layout)
+    drawMapLayer(ctx, scene, layout, motion)
     drawBands(ctx, scene, layout)
     // Over the bands, so the stats' fade does not cover it.
     if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop)
@@ -903,5 +1106,5 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   drawHeader(ctx, scene, layout, ink)
   if (layout.hero) drawHero(ctx, scene, layout.hero, layout.heroTop, ink)
   if (layout.repDetail) drawRepDetail(ctx, scene, layout.repDetail, layout.repDetailTop, ink)
-  drawStats(ctx, scene, layout.statsTop, ink)
+  drawStats(ctx, scene, layout.statsTop, ink, motion)
 }

@@ -18,6 +18,10 @@ export interface RenderOptions {
   mapPoints?: [number, number][] | null
   mapLabels?: ShareMapLabel[] | null
   fonts?: ShareFonts
+  /** The video's frame: see ShareCardScene. */
+  progress?: number
+  clipTime?: number
+  loop?: boolean
 }
 
 /**
@@ -47,13 +51,16 @@ export function shareCardMapFrame(activity: ShareActivity, fonts: ShareFonts): S
   return { frame: routeFrame, bands: [textTop + half, textBottom - half] }
 }
 
+/** A frame of the video redraws the same canvas: resizing it each time would reallocate it 366 times. */
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
-  canvas.width = Math.round(W * scale)
-  canvas.height = Math.round(H * scale)
+  const width = Math.round(W * scale)
+  const height = Math.round(H * scale)
+  if (canvas.width !== width) canvas.width = width
+  if (canvas.height !== height) canvas.height = height
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   const fonts = options.fonts ?? pageFonts()
-  if (scale !== 1) ctx.scale(scale, scale)
+  ctx.setTransform(scale, 0, 0, scale, 0, 0)
   drawShareCard(ctx, {
     activity: options.activity,
     design: options.design,
@@ -64,6 +71,9 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     mapImage: options.mapImage,
     mapPoints: options.mapPoints,
     mapLabels: options.mapLabels,
+    progress: options.progress,
+    clipTime: options.clipTime,
+    loop: options.loop,
   })
 }
 

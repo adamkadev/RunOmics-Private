@@ -10,9 +10,9 @@ function pixel(image: { width: number; data: Uint8ClampedArray }, x: number, y: 
 }
 
 describe('the route markers (design review, Oct 2026)', () => {
-  it('draws two ends apart, the finish under the start, and one loop marker where they touch', () => {
+  it('draws two ends apart, the finish under the start, and the start alone where they touch', () => {
     expect(routeEnds('A', 'B', false)).toEqual([{ kind: 'finish', at: 'B' }, { kind: 'start', at: 'A' }])
-    expect(routeEnds('A', 'B', true)).toEqual([{ kind: 'loop', at: 'A' }])
+    expect(routeEnds('A', 'B', true)).toEqual([{ kind: 'start', at: 'A' }])
     // The finish waits for the draw-in to reach it.
     expect(routeEnds('A', null, false)).toEqual([{ kind: 'start', at: 'A' }])
   })
@@ -23,8 +23,8 @@ describe('the route markers (design review, Oct 2026)', () => {
     expect(endsJoined([0, 0], [12, 16])).toBe(false)
   })
 
-  it('sizes them 16, 18 and 22 px across, the outlines outside', () => {
-    expect([markerExtent('start'), markerExtent('finish'), markerExtent('loop')]).toEqual([16, 20, 25])
+  it('sizes them 16 and 18 px across, the outline outside', () => {
+    expect([markerExtent('start'), markerExtent('finish')]).toEqual([16, 20])
   })
 
   it('draws the finish as an ink-and-white checkered dot in a white ring and a thin dark outline', () => {
@@ -38,14 +38,6 @@ describe('the route markers (design review, Oct 2026)', () => {
     expect(outline.slice(0, 3)).toEqual([12, 13, 13])
     expect(outline[3]).toBeGreaterThan(100)
     expect(pixel(image, 0, 0)[3]).toBe(0)
-  })
-
-  it('rings the loop marker in the accent, outlined in ink', () => {
-    const image = routeMarkerImage('loop', ACCENT, 2)
-    expect(image.width).toBe(50)
-    // 9.5 px from the centre: the accent ring; 11.75 px: the ink outline.
-    expect(pixel(image, 25, 25 - 19)).toEqual([0x2d, 0xd4, 0xa7, 255])
-    expect(pixel(image, 25, 25 - 23).slice(0, 3)).toEqual([12, 13, 13])
   })
 
   it('draws the same markers on a canvas: an accent start, checkers clipped to the finish', () => {
