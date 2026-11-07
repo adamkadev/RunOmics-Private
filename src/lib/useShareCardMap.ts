@@ -11,9 +11,9 @@ import {
   addLandmarkLabels, addParkLabels, addWaterLabels, isPlaceLabelLayer, loadMapLibre, PARK_LABEL_LAYER, showPlacesAtAnyZoom,
   styleRunMapLabels, WATER_LABEL_LAYER,
 } from '@/lib/maplibre'
-import { LABEL_PRIORITY, MARKER_CLEARANCE, shareMarkerRadius, type ShareMapLabel } from '@/lib/shareCardDraw'
+import { LABEL_PRIORITY, shareMarkerRadius, type ShareMapLabel } from '@/lib/shareCardDraw'
 import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
-import { endsJoined } from '@/lib/routeMarkers'
+import { endsJoined, MARKER_CLEARANCE } from '@/lib/routeMarkers'
 import { nearbyPark } from '@/lib/reverseGeocode'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'

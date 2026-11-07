@@ -6,7 +6,7 @@ import {
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
-import { drawRouteMarker, drawStartDot, endsJoined, MARKER_SPECS } from '@/lib/routeMarkers'
+import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SPECS } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
@@ -524,8 +524,6 @@ export interface MarkerObstacle {
   r: number
 }
 
-/** Room a name keeps from a marker's edge. */
-export const MARKER_CLEARANCE = 4
 
 /** As drawn on the card, outline included. */
 export function shareMarkerRadius(kind: 'start' | 'finish', palette: Pick<SharePalette, 'markerOutline'>): number {

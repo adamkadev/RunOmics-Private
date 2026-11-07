@@ -15,6 +15,9 @@ import {
   RUN_MARKERS_LAYER,
   RUN_START_LAYER,
   RUN_START_OUTLINE_LAYER,
+  RUN_START_FENCE_LAYER,
+  RUN_FINISH_FENCE_LAYER,
+  startDotRadius,
   RUN_START_SOURCE,
   START_ICON,
   addEdgeFence,
@@ -72,7 +75,7 @@ describe('the run map layers (v4.17)', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
     // The route under every label, as the heatmap's tracks are; the markers on top.
-    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_OUTLINE_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
+    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_OUTLINE_LAYER, RUN_START_LAYER, RUN_START_FENCE_LAYER, RUN_FINISH_FENCE_LAYER, RUN_CURSOR_LAYER])
     const route = layers.find((l) => l.id === ROUTE_LINE_LAYER)!
     expect(route).toMatchObject({ type: 'line', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': RUN.accent, 'line-width': 4 } })
   })
@@ -103,6 +106,24 @@ describe('the run map layers (v4.17)', () => {
     })
     expect(Object.keys(start.paint!).some((key) => key.includes('opacity'))).toBe(false)
     expect(layers.find((l) => l.id === RUN_START_OUTLINE_LAYER)).toMatchObject({ type: 'circle', paint: { 'circle-radius': 10.5, 'circle-color': '#0c0d0d' } })
+  })
+
+  it('keeps place names 4 px clear of the start and finish dots: clear icons above the labels, in the collision', () => {
+    const { map, layers } = fakeMap()
+    const added: Record<string, { width: number; options?: { pixelRatio?: number } }> = {}
+    map.addImage = ((id: string, image: { width: number }, options?: { pixelRatio?: number }) => { added[id] = { width: image.width, options } }) as unknown as typeof map.addImage
+    addRunLayers(map, RUN)
+    const ids = layers.map((l) => l.id)
+    for (const [id, source, radius] of [[RUN_START_FENCE_LAYER, RUN_START_SOURCE, 10.5], [RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, 10]] as const) {
+      const fence = layers.find((l) => l.id === id) as unknown as { source: string; layout: Record<string, unknown> }
+      expect(fence.source).toBe(source)
+      expect(fence.layout).toMatchObject({ 'icon-allow-overlap': true, 'icon-ignore-placement': false })
+      expect(ids.indexOf(id)).toBeGreaterThan(ids.indexOf('Town labels'))
+      const image = added[fence.layout['icon-image'] as string]!
+      expect(image.width / image.options!.pixelRatio! / 2).toBe(radius + 4)
+    }
+    expect(startDotRadius('#0c0d0d')).toBe(10.5)
+    expect(startDotRadius(null)).toBe(9.5)
   })
 
   it('rings the start in white on light, with no outline', () => {

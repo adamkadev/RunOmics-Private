@@ -20,6 +20,8 @@ export const MARKER_SPECS: Record<MarkerKind, MarkerSpec> = {
 }
 
 export const JOIN_PX = 20
+/** Px a place name keeps from a marker's drawn edge, on every map and on the share card. */
+export const MARKER_CLEARANCE = 4
 /** The checkers' side, in px. */
 const CHECKER = 3
 export const MARKER_INK = '#0c0d0d'

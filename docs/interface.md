@@ -214,8 +214,9 @@ recompress the image. The light card stays plain.
 - The start is an accent dot in a white ring, with no outline on light and a thin dark one on dark
   (ring `#f2f4f3`). A loop gets that one marker, on the card and on the Activity map alike: there is
   no chequered loop disc. A point-to-point run adds the chequered finish. Markers draw over the place
-  names, and a name keeps 4 px clear of a marker's drawn edge: MapLibre's fence and `arrangeLabels`
-  both treat the markers as obstacles, so a name is moved off one or dropped by priority. On the
+  names, and a name keeps 4 px clear of a marker's drawn edge, on the card and on the Activity map:
+  clear collision icons at each end (`addMarkerFences`, the share map's fence) and `arrangeLabels`
+  treat the markers as obstacles, so a name is moved off one or dropped by priority. On the
   Activity map the hero's bottom padding keeps the route above its 64 pt fade, so the start dot is
   never washed out by it.
 - An interval session's Route card puts the rep pace first in the stat row (label in the session's

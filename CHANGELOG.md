@@ -31,7 +31,7 @@ All notable changes to this project are documented in this file.
   draws.
 - The Route share card reads better small: one start marker on a loop (no chequered disc, on the
   Activity map too, where the start dot is solid and kept clear of the map's bottom fade), no dark
-  ring round the start on light, no place name under a marker, the park
+  ring round the start on light, no place name touching a start or finish dot (on the Activity map too), the park
   the run went through named beside the route, a two-stat row kept together, and on an interval session
   the rep pace in the stat row, so the map keeps its full height.
   The Reps chip says how far off the target the reps ran ("9 s/km under target").

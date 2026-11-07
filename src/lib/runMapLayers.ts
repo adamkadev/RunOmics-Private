@@ -2,7 +2,7 @@ import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { distanceKm } from '@/lib/math'
 import { firstSymbolLayerId } from '@/lib/maplibre'
-import { JOIN_PX as JOIN_DISTANCE_PX, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
+import { JOIN_PX as JOIN_DISTANCE_PX, MARKER_CLEARANCE, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 import { MAP_PADDING } from './routeFrame'
 
 export const ROUTE_SOURCE = 'route'
@@ -11,6 +11,10 @@ export const ROUTE_HALO_LAYER = 'route-halo'
 export const RUN_START_SOURCE = 'run-start-dot'
 export const RUN_START_LAYER = 'run-start-dot'
 export const RUN_START_OUTLINE_LAYER = 'run-start-outline'
+export const RUN_START_FENCE_LAYER = 'run-start-fence'
+export const RUN_FINISH_FENCE_LAYER = 'run-finish-fence'
+const START_FENCE_ICON = 'run-start-fence'
+const FINISH_FENCE_ICON = 'run-finish-fence'
 export const RUN_FINISH_SOURCE = 'run-finish-mark'
 export const RUN_FINISH_LAYER = 'run-finish-mark'
 export const FINISH_MARK_ICON = 'run-finish-mark'
@@ -144,12 +148,38 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
       paint: { 'circle-radius': START_RADIUS, 'circle-color': state.accent, 'circle-stroke-color': state.startRing, 'circle-stroke-width': START_RING },
     })
   }
+  addMarkerFences(map, state)
   if (setOrAddSource(map, RUN_CURSOR_SOURCE, pointData(state.cursor)) || !map.getLayer(RUN_CURSOR_LAYER)) {
     map.addLayer({
       id: RUN_CURSOR_LAYER,
       type: 'circle',
       source: RUN_CURSOR_SOURCE,
       paint: { 'circle-radius': 7, 'circle-color': state.accent, 'circle-stroke-color': state.ring, 'circle-stroke-width': 3 },
+    })
+  }
+}
+
+/** The drawn radius, outline included, in CSS px. */
+export function startDotRadius(outline: string | null): number {
+  return START_RADIUS + START_RING + (outline ? 1 : 0)
+}
+
+/** A circle layer and an overlap-allowed icon join no label collision: clear icons above the labels keep names off the dots. */
+function addMarkerFences(map: MapLibreMap, state: RunLayersState): void {
+  const fences = [
+    [START_FENCE_ICON, RUN_START_FENCE_LAYER, RUN_START_SOURCE, startDotRadius(state.startOutline)],
+    [FINISH_FENCE_ICON, RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, markerExtent('finish') / 2],
+  ] as const
+  for (const [icon, layer, source, radius] of fences) {
+    const image = clearMarkerImage(radius + MARKER_CLEARANCE)
+    if (map.hasImage(icon)) map.updateImage(icon, image)
+    else map.addImage(icon, image, { pixelRatio: ICON_PIXEL_RATIO })
+    if (map.getLayer(layer)) continue
+    map.addLayer({
+      id: layer,
+      type: 'symbol',
+      source,
+      layout: { 'icon-image': icon, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
     })
   }
 }
