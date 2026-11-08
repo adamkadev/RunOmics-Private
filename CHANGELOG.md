@@ -23,6 +23,8 @@ All notable changes to this project are documented in this file.
 
 ### Activity
 
+- The share card's subtitle names the town the start is in, the same one the map's start label sits
+  in: a start near a town border no longer reads as the town next door.
 - The Route share card names its places again on a long loop: the start's quarter always (the town only
   when no quarter is evident), the finish's when it is another, the park or forest the run spent the most
   distance in, and the other quarters it passed, a route line free to cross a name. At least two names on

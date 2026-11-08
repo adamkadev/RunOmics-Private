@@ -63,13 +63,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   // Without its reps the card is an easy run's: one colour on the route, the
   // average pace back in the stats.
   const card = useMemo(() => (showReps || !activity.reps ? activity : { ...activity, reps: null }), [activity, showReps])
-  const { locationName } = useShareCardGeocode(activity)
+  const { locationName: roughPlace } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
   // Measured again once Geist has loaded: the title's lines set the stats'
   // height, and the card is drawn in Geist.
   const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(card, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
-  const { image: mapImage, points: mapPoints, labels: mapLabels, failed: mapFailed } = useShareCardMap({
+  const { image: mapImage, points: mapPoints, labels: mapLabels, place: mapPlace, failed: mapFailed } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
@@ -78,6 +78,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     bands: mapFrame.bands,
     enabled: hasRoute,
   })
+  // The map's town comes from the start rounded to ~110 m; the rough one, at 0.01°, could name the next town over.
+  const locationName = mapPlace ?? roughPlace
 
   const [videoEncoder, setVideoEncoder] = useState<VideoEncoderKind | null>(null)
   const [format, setFormat] = useState<'image' | 'video'>('image')

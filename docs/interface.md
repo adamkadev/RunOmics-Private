@@ -229,7 +229,8 @@ recompress the image. The light card stays plain.
   - **Start area**, always shown, nudged off the start marker: the smallest area the start is
     evidently in, quarter, then district, then town. Evident means a tile name within 300 m, else an
     area the geocoder says holds the point. The finish's area too when it is another. The subtitle
-    keeps the town.
+    keeps the town, taken from the same lookup once the map has rendered: the Nominatim town, at 0.01°
+    (about 1 km), named the next town over for a start near a border.
   - **Landmark**: the green fill holding the most route distance, named by the geocoder at its centre,
     then at points of the route inside it, then by a name the tiles hold inside it, else the locality
     the route spends the most distance in. Under zoom 14, where a city run's card sits, the Planet v4

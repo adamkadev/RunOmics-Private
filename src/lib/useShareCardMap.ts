@@ -28,6 +28,8 @@ export interface ShareCardMap {
   image: HTMLCanvasElement | null
   points: [number, number][] | null
   labels: ShareMapLabel[] | null
+  /** The town the start is in, from the same lookup as its label, so the subtitle and the map agree. */
+  place: string | null
   failed: boolean
 }
 
@@ -35,6 +37,7 @@ interface Render {
   image: HTMLCanvasElement
   points: [number, number][]
   labels: ShareMapLabel[]
+  place: string | null
 }
 
 export interface ShareCardMapOptions {
@@ -199,7 +202,7 @@ interface LabelContext {
 }
 
 /** Chooses the card's names: the start's area, the finish's, the landmark, the water, then the areas passed. */
-async function routeLabels({ map, route, mode, token, project }: LabelContext): Promise<ShareMapLabel[]> {
+async function routeLabels({ map, route, mode, token, project }: LabelContext): Promise<{ labels: ShareMapLabel[]; place: string | null }> {
   const surface = SURFACES[mode]
   const areaStyle = (level: PlaceLevel) => ({ size: CARD_LABEL_SIZE, color: surface.text2, opacity: level === 'city' ? 1 : DISTRICT_OPACITY[mode] })
   const start = route[0]!
@@ -214,6 +217,7 @@ async function routeLabels({ map, route, mode, token, project }: LabelContext): 
     return fromTiles?.level === 'fine' ? fromTiles : evidentArea(at, places, await geocodedAt(map, at, token, project), mPerPx)
   }
   const startArea = await areaAt(start)
+  const place = (await geocodedAt(map, start, token, project)).find((g) => g.level === 'city' && g.contains)?.name ?? null
   if (startArea) labels.push({ text: startArea.name, x: start[0], y: start[1], kind: 'start', priority: LABEL_PRIORITY.start, ...areaStyle(startArea.level) })
   else console.warn('Share card: no area found at the start')
   labelDebug('start area', startArea, `${places.length} tile places`)
@@ -242,8 +246,8 @@ async function routeLabels({ map, route, mode, token, project }: LabelContext): 
     if (fallback) labels.push({ text: fallback.name, x: fallback.at[0], y: fallback.at[1], kind: 'area', priority: LABEL_PRIORITY.area, ...areaStyle(fallback.level) })
     else console.warn('Share card: one place name only, nothing else found along the route')
   }
-  labelDebug('candidates', labels.map((l) => `${l.text} (${l.kind})`))
-  return labels
+  labelDebug('candidates', labels.map((l) => `${l.text} (${l.kind})`), 'town', place)
+  return { labels, place }
 }
 
 /** The green holding most of the route, named at its centre, then inside it, then from the tiles, else its locality. */
@@ -380,7 +384,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     const mode = isDark ? 'dark' : 'light'
     const project = (c: LngLat): Px => { const p = map.project(c); return [p.x, p.y] }
     const screen = points.map(project)
-    const labels = await routeLabels({ map, route: screen, mode, token, project })
+    const { labels, place } = await routeLabels({ map, route: screen, mode, token, project })
     const drawnByCard = labels.filter((l) => l.kind === 'landmark' || l.kind === 'water').map((l) => l.text)
     if (drawnByCard.length > 0) {
       hideFromMap(map, drawnByCard)
@@ -394,7 +398,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     image.height = src.height
     image.getContext('2d')?.drawImage(src, 0, 0)
 
-    return { image, points: screen, labels }
+    return { image, points: screen, labels, place }
   } finally {
     map.remove()
     container.remove()
@@ -445,6 +449,7 @@ export function useShareCardMap({
     image: hit?.image ?? null,
     points: hit?.points ?? null,
     labels: hit?.labels ?? null,
+    place: hit?.place ?? null,
     failed: !!key && failedKey === key,
   }
 }

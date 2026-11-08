@@ -301,6 +301,24 @@ describe('the share card names', () => {
     expect(labels.find((l) => l.kind === 'start')?.text).toBe('Quartier des Lilas')
   })
 
+  it('gives the subtitle the town the geocoder puts the start in, from the start label\'s own lookup', async () => {
+    const fetchMock = geocoder((url) => (url.includes('types=') ? [] : [
+      { text: 'Quartier des Lilas', place_type: ['locality'], center: at(2520, 2520) },
+      { text: 'Grandville', place_type: ['municipality'], center: at(2700, 2700) },
+    ]))
+    maps.FakeMap.scale = K
+    maps.FakeMap.script = (map) => {
+      ;(map as unknown as Fake).styleLayers = styleLayers
+      map.emit('load')
+      const again = (n: number) => { map.emit('idle'); if (n > 0) setTimeout(() => again(n - 1), 10) }
+      again(50)
+    }
+    const hook = renderHook(() => useShareCardMap({ route: loop(2500, 2500, 2600, 2640), theme: 'dark', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+    await act(() => vi.advanceTimersByTimeAsync(1000))
+    expect(hook.result.current.place).toBe('Grandville')
+    expect(fetchMock.mock.calls.some(([url]) => /geocoding\/0\.225,0\.225\.json/.test(String(url)))).toBe(true)
+  })
+
   it('names the finish\'s area when it is another, but one place only once', async () => {
     geocoder()
     const route = [at(900, 900), at(950, 900), at(1000, 900), at(1050, 900), at(1100, 900)]
