@@ -78,7 +78,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     bands: mapFrame.bands,
     enabled: hasRoute,
   })
-  // The map's town comes from the start rounded to ~110 m; the rough one, at 0.01°, could name the next town over.
   const locationName = mapPlace ?? roughPlace
 
   const [videoEncoder, setVideoEncoder] = useState<VideoEncoderKind | null>(null)

@@ -157,3 +157,12 @@ export async function geocodeAreas(lon: number, lat: number, token: string, deci
     return [];
   }
 }
+
+/** A run's start is often a home: its town is asked for at about 110 m, enough to tell which side of a border it is. */
+export const START_DECIMALS = 3;
+const TOWN_TYPES = new Set(["municipality", "joint_municipality"]);
+
+/** The town a run starts in, as the Activity page and the share card both name it. */
+export async function townAt(lon: number, lat: number, token: string): Promise<string | null> {
+  return (await geocodeAreas(lon, lat, token, START_DECIMALS)).find((f) => TOWN_TYPES.has(f.placeType))?.text ?? null;
+}

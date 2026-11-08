@@ -19,7 +19,7 @@ import {
 import { distanceKm } from '@/lib/math'
 import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
 import { endsJoined, MARKER_CLEARANCE } from '@/lib/routeMarkers'
-import { geocodeAreas, GREEN_CATEGORIES, nearbyPark } from '@/lib/reverseGeocode'
+import { geocodeAreas, GREEN_CATEGORIES, nearbyPark, START_DECIMALS } from '@/lib/reverseGeocode'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
@@ -180,13 +180,10 @@ function metresPerPx(map: import('maplibre-gl').Map, at: Px): number {
   return (distanceKm(a.lng, a.lat, b.lng, b.lat) * 1000) / 100 || 1
 }
 
-/** A run's start is often a home: its area is asked for at about 110 m, enough to find the quarter it is in. */
-const END_DECIMALS = 3
-
 async function geocodedAt(map: import('maplibre-gl').Map, at: Px, token: string, project: (c: LngLat) => Px): Promise<GeocodedArea[]> {
   const { lng, lat } = map.unproject(at)
   const out: GeocodedArea[] = []
-  for (const f of await geocodeAreas(lng, lat, token, END_DECIMALS)) {
+  for (const f of await geocodeAreas(lng, lat, token, START_DECIMALS)) {
     const level = geocodeLevel(f.placeType)
     if (level) out.push({ name: f.text, ...level, at: f.center ? project(f.center) : undefined })
   }

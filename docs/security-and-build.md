@@ -157,11 +157,11 @@ What leaves the app, and from where:
   are fetched, that is, the areas being viewed. Reverse geocoding for route and cluster names sends
   a point rounded to 4 decimals (about 11 m). The share card's park name sends the centre of the park
   the route crosses, and points of the route inside it, rounded the same way. The share card's start
-  sends its point rounded to 3 decimals (about 110 m) for the start's area and the subtitle's town; the
-  finish sends its own, the same way, when the tiles name no quarter within 300 m of it. All are
-  cached in the browser.
-- **OpenStreetMap Nominatim** (browser). The share card's place name, from the run's first point
-  rounded to 0.01°.
+  sends its point rounded to 3 decimals (about 110 m) for the start's area and the run's town, on the
+  Activity page and the card alike; the finish sends its own, the same way, when the tiles name no
+  quarter within 300 m of it. All are cached in the browser.
+- **OpenStreetMap Nominatim** (browser). A run's town, from its first point rounded to 0.01°, only
+  without a MapTiler token or when MapTiler names no town there.
 - **OpenRouteService** (server only, `OpenRouteServiceGateway.ts`). Explore's loop requests: the
   start point as picked, any via points, the loop length and seed, and the avoid spots near the loop
   as polygons. Its logs replace every coordinate with `#`.
