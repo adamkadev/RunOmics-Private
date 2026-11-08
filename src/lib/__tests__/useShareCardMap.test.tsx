@@ -31,11 +31,12 @@ const maps = vi.hoisted(() => {
     getCanvas() {
       return Object.assign(document.createElement('canvas'), { width: 900, height: 708 })
     }
+    static scale = 1
     project([x, y]: [number, number]) {
-      return { x, y }
+      return { x: x * FakeMap.scale, y: y * FakeMap.scale }
     }
     unproject([x, y]: [number, number]) {
-      return { lng: x, lat: y }
+      return { lng: x / FakeMap.scale, lat: y / FakeMap.scale }
     }
     styleLayers: { id: string; type: string; 'source-layer'?: string; source?: string }[] = []
     rendered: unknown[] = []
@@ -131,6 +132,7 @@ const route = (east: number): LngLat[] => [[2.43, 48.89], [east, 48.9]]
 
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_MAPTILER_TOKEN', 'key')
+  vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ features: [] }) })))
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame'] })
 })
@@ -139,6 +141,8 @@ afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllEnvs()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 describe('the share card basemap', () => {
@@ -213,75 +217,137 @@ describe('the share card basemap', () => {
 })
 
 describe('the share card names', () => {
-  it('lifts the towns and districts over the fence, reads where they were placed, and captures the map without them', async () => {
-    const drawnMaps: { moved: string[]; hidden: string[] }[] = []
-    maps.FakeMap.script = (map) => {
-      const fake = map as unknown as { styleLayers: unknown[]; rendered: unknown[] }
-      fake.styleLayers = [{ id: 'Road labels', type: 'symbol', 'source-layer': 'road_label' }, { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label' }]
-      fake.rendered = [
-        { properties: { name: 'Devant-les-Ponts' }, geometry: { type: 'Point', coordinates: [120, 140] }, layer: { id: 'Place labels' } },
-        { properties: { name: 'Devant-les-Ponts' }, geometry: { type: 'Point', coordinates: [121, 141] }, layer: { id: 'Place labels' } },
-      ]
-      drawnMaps.push(map as unknown as (typeof drawnMaps)[number])
-      map.emit('load')
-      map.emit('idle')
-      // The second idle: the map again, once the names are hidden.
-      const again = (n: number) => { map.emit('idle'); if (n > 0) setTimeout(() => again(n - 1), 10) }
-      setTimeout(() => again(50), 10)
-    }
-    const { result } = renderHook(() => useShareCardMap({ route: route(2.59), theme: 'dark', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
-    await act(() => vi.advanceTimersByTimeAsync(1000))
+  /** Px a degree at the equator, so a px is about 10 m. */
+  const K = 11132
+  const at = (x: number, y: number): LngLat => [x / K, y / K]
+  const point = (name: string, x: number, y: number, props: Record<string, unknown> = {}) =>
+    ({ properties: { name, ...props }, geometry: { type: 'Point', coordinates: at(x, y) } })
+  const square = (x0: number, y0: number, x1: number, y1: number) =>
+    ({ properties: {}, geometry: { type: 'Polygon', coordinates: [[at(x0, y0), at(x1, y0), at(x1, y1), at(x0, y1), at(x0, y0)]] }, layer: { id: 'Wood' } })
+  const loop = (x0: number, y0: number, x1: number, y1: number, n = 10): LngLat[] => {
+    const corners: [number, number][] = [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]
+    return corners.slice(1).flatMap(([x, y], c) => Array.from({ length: n }, (_, i) => {
+      const [px, py] = corners[c]!
+      return at(px + ((x - px) * (i + 1)) / n, py + ((y - py) * (i + 1)) / n)
+    })).concat([at(x0, y0)]).slice(-41).reverse().concat([at(x0, y0)]).reverse()
+  }
+  const styleLayers = [
+    { id: 'Wood', type: 'fill', 'source-layer': 'wood', source: 'maptiler' },
+    { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label', source: 'maptiler' },
+  ]
+  type Fake = { styleLayers: unknown[]; rendered: unknown[]; sourceFeatures: Record<string, unknown[]>; filters: Map<string, unknown>; hidden: string[]; layers: { id: string; source: string }[] }
 
-    expect(drawnMaps[0]!.moved).toEqual(['Place labels'])
-    expect(drawnMaps[0]!.hidden).toEqual(['Place labels'])
-    expect(result.current.labels).toEqual([{ text: 'Devant-les-Ponts', x: 120, y: 140, size: 9, color: expect.any(String), opacity: 0.8, priority: 1 }])
-  })
-
-  it('asks the geocoder to name the green the route runs through when the tiles name no park', async () => {
-    const fetchMock = vi.fn<(url: string) => Promise<unknown>>(() => Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve({ features: [
-        { text: 'Ball field', center: [2.5, 48.895], properties: { categories: ['pitch'] } },
-        { text: 'Parc des Tilleuls', center: [2.51, 48.896], properties: { categories: ['park'] } },
-      ] }),
-    }))
+  function geocoder(answer: (url: string) => unknown[] = () => []) {
+    const fetchMock = vi.fn<(url: string) => Promise<unknown>>((url) => Promise.resolve({ ok: true, json: () => Promise.resolve({ features: answer(url) }) }))
     vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  async function draw(route: LngLat[], setup: (fake: Fake) => void) {
+    let drawn: Fake | null = null
+    maps.FakeMap.scale = K
     maps.FakeMap.script = (map) => {
-      const fake = map as unknown as { styleLayers: unknown[]; rendered: unknown[] }
-      fake.styleLayers = [{ id: 'Grass', type: 'fill', 'source-layer': 'grass', source: 'maptiler' }]
-      fake.rendered = [{ properties: {}, geometry: { type: 'Polygon', coordinates: [[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]] }, layer: { id: 'Grass' } }]
+      const fake = map as unknown as Fake
+      fake.styleLayers = styleLayers
+      setup(fake)
+      drawn = fake
       map.emit('load')
       const again = (n: number) => { map.emit('idle'); if (n > 0) setTimeout(() => again(n - 1), 10) }
       again(50)
     }
-    const { result } = renderHook(() => useShareCardMap({ route: route(2.62), theme: 'light', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+    const { result } = renderHook(() => useShareCardMap({ route, theme: 'dark', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
     await act(() => vi.advanceTimersByTimeAsync(1000))
+    return { labels: result.current.labels ?? [], map: drawn! }
+  }
 
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('types=poi')
-    expect(result.current.labels).toEqual([expect.objectContaining({ text: 'Parc des Tilleuls', x: 2.51, y: 48.896, beside: true, priority: 3 })])
+  afterEach(() => {
+    maps.FakeMap.scale = 1
     vi.unstubAllGlobals()
+    localStorage.clear()
   })
 
-  it('names the park the route runs through itself, beside the route, and keeps the map from drawing it too', async () => {
-    let drawn: { filters: Map<string, unknown> } | null = null
-    maps.FakeMap.script = (map) => {
-      const fake = map as unknown as { styleLayers: unknown[]; rendered: unknown[]; sourceFeatures: Record<string, unknown[]> }
-      fake.styleLayers = [
-        { id: 'Wood', type: 'fill', 'source-layer': 'wood', source: 'maptiler' },
-        { id: 'POI', type: 'symbol', 'source-layer': 'poi_public', source: 'maptiler' },
-      ]
-      fake.rendered = [{ properties: {}, geometry: { type: 'Polygon', coordinates: [[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]] }, layer: { id: 'Wood' } }]
-      fake.sourceFeatures = { poi_public: [{ properties: { name: 'Parc des Tilleuls', subclass: 'park' }, geometry: { type: 'Point', coordinates: [2.5, 48.895] } }] }
-      drawn = map as unknown as { filters: Map<string, unknown> }
-      map.layers.push({ id: 'runomics-park-label', source: 'maptiler' })
-      map.emit('load')
-      const again = (n: number) => { map.emit('idle'); if (n > 0) setTimeout(() => again(n - 1), 10) }
-      again(50)
-    }
-    const { result } = renderHook(() => useShareCardMap({ route: route(2.61), theme: 'dark', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
-    await act(() => vi.advanceTimersByTimeAsync(1000))
+  it('names a forest loop\'s start and one more place though the geocoder answers nothing', async () => {
+    geocoder()
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { labels, map } = await draw(loop(100, 100, 200, 250), (fake) => {
+      fake.rendered = [square(90, 90, 210, 260)]
+      fake.sourceFeatures = { place_label: [point('Les Prés', 104, 96, { class: 'neighbourhood' }), point('Nordville', 230, 180, { class: 'suburb' })] }
+    })
+    expect(labels.length).toBeGreaterThanOrEqual(2)
+    expect(labels.find((l) => l.kind === 'start')).toMatchObject({ text: 'Les Prés', x: 100, y: 100 })
+    expect(labels.map((l) => l.text)).toContain('Nordville')
+    expect(map.hidden).toContain('Place labels')
+  })
 
-    expect(result.current.labels).toEqual([{ text: 'Parc des Tilleuls', x: 2.5, y: 48.895, size: 10, color: '#5f8a6d', opacity: 1, priority: 3, beside: true }])
-    expect(JSON.stringify(drawn!.filters.get('runomics-park-label'))).toContain('Parc des Tilleuls')
+  it('labels the start with its quarter, not the town it is in, the town at most a second name', async () => {
+    geocoder()
+    const { labels } = await draw(loop(300, 300, 400, 420), (fake) => {
+      fake.sourceFeatures = {
+        place_label: [point('Les Prés', 305, 295, { class: 'neighbourhood' })],
+        town_label: [point('Grandville', 310, 310)],
+      }
+    })
+    expect(labels.filter((l) => l.kind === 'start').map((l) => l.text)).toEqual(['Les Prés'])
+  })
+
+  it('takes the geocoder\'s quarter at the start when the tiles name none near it', async () => {
+    geocoder((url) => (url.includes('types=') ? [] : [
+      { text: 'Quartier des Lilas', place_type: ['locality'], center: at(520, 520) },
+      { text: 'Grandville', place_type: ['municipality'], center: at(700, 700) },
+    ]))
+    const { labels } = await draw(loop(500, 500, 600, 640), (fake) => {
+      fake.sourceFeatures = { town_label: [point('Grandville', 700, 700)] }
+    })
+    expect(labels.find((l) => l.kind === 'start')?.text).toBe('Quartier des Lilas')
+  })
+
+  it('names the finish\'s area when it is another, but one place only once', async () => {
+    geocoder()
+    const route = [at(900, 900), at(950, 900), at(1000, 900), at(1050, 900), at(1100, 900)]
+    const { labels } = await draw(route, (fake) => {
+      fake.sourceFeatures = { place_label: [
+        point('Les Prés', 902, 898, { class: 'neighbourhood' }),
+        point('Le Moulin', 1098, 902, { class: 'neighbourhood' }),
+      ] }
+    })
+    expect(labels.filter((l) => l.kind === 'start' || l.kind === 'finish').map((l) => [l.kind, l.text])).toEqual([['start', 'Les Prés'], ['finish', 'Le Moulin']])
+    expect(labels.filter((l) => l.text === 'Le Moulin')).toHaveLength(1)
+  })
+
+  it('names the green by the geocoder at its centre, then at points inside it, then by a landform there', async () => {
+    const calls: string[] = []
+    geocoder((url) => {
+      calls.push(url.includes('types=poi') ? 'poi' : 'areas')
+      return url.includes('types=poi') ? [] : [{ text: 'Forêt des Hêtres', place_type: ['major_landform'], properties: { categories: ['forest'] }, center: at(0, 0) }]
+    })
+    const { labels } = await draw(loop(1300, 1300, 1400, 1450), (fake) => {
+      fake.rendered = [square(1290, 1290, 1410, 1460)]
+    })
+    expect(labels.find((l) => l.kind === 'landmark')?.text).toBe('Forêt des Hêtres')
+    const landmarkCalls = calls.slice(1)
+    expect(landmarkCalls.slice(0, 3)).toEqual(['poi', 'poi', 'areas'])
+  })
+
+  it('falls back to the locality the route spends the most distance in when nothing names the green', async () => {
+    geocoder()
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { labels } = await draw(loop(1700, 1700, 1800, 1850), (fake) => {
+      fake.rendered = [square(1690, 1690, 1810, 1860)]
+      fake.sourceFeatures = { place_label: [point('Le Bois-Joli', 1760, 1780, { class: 'suburb' })] }
+    })
+    expect(labels).toContainEqual(expect.objectContaining({ text: 'Le Bois-Joli', priority: 3 }))
+  })
+
+  it('names the park from the tiles when the geocoder names none, and keeps the map from drawing it too', async () => {
+    geocoder()
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { labels, map } = await draw(loop(2100, 2100, 2200, 2250), (fake) => {
+      fake.styleLayers = [...styleLayers, { id: 'POI', type: 'symbol', 'source-layer': 'poi_public', source: 'maptiler' }]
+      fake.rendered = [square(2090, 2090, 2210, 2260)]
+      fake.sourceFeatures = { poi_public: [point('Parc des Tilleuls', 2150, 2170, { subclass: 'park' })] }
+      fake.layers.push({ id: 'runomics-park-label', source: 'maptiler' })
+    })
+    expect(labels).toContainEqual(expect.objectContaining({ text: 'Parc des Tilleuls', kind: 'landmark', priority: 3, color: '#5f8a6d' }))
+    expect(JSON.stringify(map.filters.get('runomics-park-label'))).toContain('Parc des Tilleuls')
   })
 })

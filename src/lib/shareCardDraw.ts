@@ -56,13 +56,25 @@ export interface ShareMapLabel {
   size: number
   color: string
   opacity: number
-  /** Lower survives a collision: the start district, the finish's, the landmark, the water, then every other district. */
+  /** Lower survives a collision: the start area, the finish's, the landmark, the water, then every other area. */
   priority?: number
-  /** MapLibre did not place it: the card sets it beside the route, off the line, and may break it over two lines. */
-  beside?: boolean
+  /** How the card places it; an area by default. */
+  kind?: LabelKind
 }
 
-export const LABEL_PRIORITY = { start: 1, finish: 2, landmark: 3, water: 4, district: 5 } as const
+/** start, finish: nudged, never dropped; landmark: off the route if it can; water: off it or dropped; area: at its point. */
+export type LabelKind = 'start' | 'finish' | 'landmark' | 'water' | 'area'
+
+export const LABEL_PRIORITY = { start: 1, finish: 2, landmark: 3, water: 4, area: 5 } as const
+
+/** Set `runomics:debug-labels` in localStorage to log why each name was dropped. */
+export function labelDebug(...args: unknown[]): void {
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('runomics:debug-labels')) console.debug('[share labels]', ...args)
+  } catch {
+    // Storage blocked: no debug.
+  }
+}
 
 const PAD_X = 16
 /** Small enough to take the 3-arc variant. */
@@ -503,7 +515,9 @@ const BESIDE_MAX_W = 96
 /** Px a name beside the route keeps off the line: the trace and its casing. */
 const ROUTE_CLEAR = 4
 const BESIDE_RADII = [0, 14, 24, 36, 50] as const
-const BESIDE_ANGLES = 8
+/** Up, down, then sideways, then the diagonals: a nudge off a marker keeps the name above or below it first. */
+const ANGLES = [-90, 90, 180, 0, -135, -45, 135, 45].map((deg) => (deg * Math.PI) / 180)
+const NUDGE_RADII = [0, 12, 18, 26, 36, 50, 66] as const
 
 interface Placed {
   label: ShareMapLabel
@@ -545,37 +559,105 @@ function touches(box: Placed['box'], { x, y, r }: MarkerObstacle): boolean {
   return dx * dx + dy * dy < r * r
 }
 
-/** Highest priority first, a clash dropped; MapLibre's names keep their spot, a name beside the route moves off it. */
+export type DropReason = 'band' | 'margin' | 'collision' | 'marker' | 'route'
+
+function spotsAt(radii: readonly number[]): [number, number][] {
+  return radii.flatMap((r) => (r === 0 ? [[0, 0] as [number, number]] : ANGLES.map((a): [number, number] => [Math.cos(a) * r, Math.sin(a) * r])))
+}
+
+interface Fit {
+  lines: string[]
+  halfW: number
+  halfH: number
+}
+
+/** Highest priority first; a name gives way to a higher one, a band, a margin or a marker, as its kind allows. */
 export function arrangeLabels(
   ctx: Ctx, labels: readonly ShareMapLabel[], route: readonly [number, number][] | null, { textTop, textBottom }: Pick<ShareCardLayout, 'textTop' | 'textBottom'>,
-  fonts: ShareFonts, obstacles: readonly MarkerObstacle[] = [],
+  fonts: ShareFonts, obstacles: readonly MarkerObstacle[] = [], onDrop?: (label: ShareMapLabel, reason: DropReason) => void,
 ): Placed[] {
   const fence = route ? routeFencePoints(route, 3) : []
+  const top = textTop + ROUTE_TEXT_GAP
+  const bottom = textBottom - ROUTE_TEXT_GAP
   const placed: Placed[] = []
-  const order = labels.map((label, i) => ({ label, i })).sort((a, b) => (a.label.priority ?? 5) - (b.label.priority ?? 5) || a.i - b.i)
-  for (const { label } of order) {
+  const fits = new Map<ShareMapLabel, Fit>()
+  const fitOf = (label: ShareMapLabel): Fit => {
+    const known = fits.get(label)
+    if (known) return known
     ctx.font = `600 ${label.size}px ${fonts.text}`
-    const lines = label.beside ? (balanceLines(ctx, label.text, BESIDE_MAX_W) ?? [label.text]) : [label.text]
-    const halfW = Math.max(...lines.map((line) => ctx.measureText(line).width)) / 2
-    const halfH = (label.size * lines.length + (lines.length - 1) * 2) / 2
-    const spots: [number, number][] = label.beside
-      ? BESIDE_RADII.flatMap((r) => (r === 0 ? [[0, 0] as [number, number]] : Array.from({ length: BESIDE_ANGLES }, (_, k): [number, number] => {
-        const a = (k / BESIDE_ANGLES) * Math.PI * 2 - Math.PI / 2
-        return [Math.cos(a) * r, Math.sin(a) * r]
-      })))
-      : [[0, 0]]
+    const wraps = label.kind && label.kind !== 'area'
+    const lines = wraps ? (balanceLines(ctx, label.text, BESIDE_MAX_W) ?? [label.text]) : [label.text]
+    const fit = { lines, halfW: Math.max(...lines.map((line) => ctx.measureText(line).width)) / 2, halfH: (label.size * lines.length + (lines.length - 1) * 2) / 2 }
+    fits.set(label, fit)
+    return fit
+  }
+  const onRoute = (box: Placed['box']) => fence.some(([px, py]) => px > box[0] - ROUTE_CLEAR && px < box[2] + ROUTE_CLEAR && py > box[1] - ROUTE_CLEAR && py < box[3] + ROUTE_CLEAR)
+  const why = (box: Placed['box'], avoidRoute: boolean): DropReason | null => {
+    if (box[1] < top || box[3] > bottom) return 'band'
+    if (box[0] < PAD_X || box[2] > W - PAD_X) return 'margin'
+    if (obstacles.some((o) => touches(box, o))) return 'marker'
+    if (placed.some((p) => overlaps(p.box, box))) return 'collision'
+    if (avoidRoute && onRoute(box)) return 'route'
+    return null
+  }
+  const tryPlace = (label: ShareMapLabel, spots: readonly [number, number][], avoidRoute: boolean): DropReason | null => {
+    const { lines, halfW, halfH } = fitOf(label)
+    let first: DropReason | null = null
     for (const [dx, dy] of spots) {
       const x = label.x + dx
       const y = label.y + dy
       const box: Placed['box'] = [x - halfW, y - halfH, x + halfW, y + halfH]
-      if (box[1] < textTop + ROUTE_TEXT_GAP || box[3] > textBottom - ROUTE_TEXT_GAP) continue
-      if (box[0] < PAD_X || box[2] > W - PAD_X) continue
-      if (placed.some((p) => overlaps(p.box, box))) continue
-      if (obstacles.some((o) => touches(box, o))) continue
-      if (label.beside && fence.some(([px, py]) => px > box[0] - ROUTE_CLEAR && px < box[2] + ROUTE_CLEAR && py > box[1] - ROUTE_CLEAR && py < box[3] + ROUTE_CLEAR)) continue
-      placed.push({ label, lines, x, y, box })
-      break
+      const reason = why(box, avoidRoute)
+      if (!reason) {
+        placed.push({ label, lines, x, y, box })
+        return null
+      }
+      first ??= reason
     }
+    return first ?? 'collision'
+  }
+  /** Inside the margins and bands, off the markers, whatever it overlaps: a name that must show. */
+  const force = (label: ShareMapLabel) => {
+    const { lines, halfW, halfH } = fitOf(label)
+    for (const [dx, dy] of spotsAt(NUDGE_RADII)) {
+      const x = Math.min(Math.max(label.x + dx, PAD_X + halfW), W - PAD_X - halfW)
+      const y = Math.min(Math.max(label.y + dy, top + halfH), bottom - halfH)
+      const box: Placed['box'] = [x - halfW, y - halfH, x + halfW, y + halfH]
+      if (obstacles.some((o) => touches(box, o))) continue
+      placed.push({ label, lines, x, y, box })
+      return true
+    }
+    return false
+  }
+  const order = labels.map((label, i) => ({ label, i })).sort((a, b) => (a.label.priority ?? 5) - (b.label.priority ?? 5) || a.i - b.i)
+  const dropped: ShareMapLabel[] = []
+  for (const { label } of order) {
+    const kind = label.kind ?? 'area'
+    let reason: DropReason | null
+    if (kind === 'start' || kind === 'finish') {
+      reason = tryPlace(label, spotsAt(NUDGE_RADII), false)
+      if (reason && force(label)) reason = null
+    } else if (kind === 'landmark') {
+      reason = tryPlace(label, spotsAt(BESIDE_RADII), true)
+      if (reason) reason = tryPlace(label, spotsAt(BESIDE_RADII), false)
+    } else if (kind === 'water') {
+      reason = tryPlace(label, spotsAt(BESIDE_RADII), true)
+    } else {
+      const { halfW } = fitOf(label)
+      const inside = Math.min(Math.max(label.x, PAD_X + halfW), W - PAD_X - halfW) - label.x
+      reason = tryPlace(label, inside === 0 ? [[0, 0]] : [[0, 0], [inside, 0]], false)
+    }
+    if (reason) {
+      dropped.push(label)
+      onDrop?.(label, reason)
+    }
+  }
+  // A card always names two places: the start, and the best of what is left, nudged where it fits.
+  if (placed.length < 2) {
+    for (const label of dropped) {
+      if (!tryPlace(label, spotsAt(NUDGE_RADII), false)) break
+    }
+    if (placed.length < 2 && labels.length > 0) console.warn(`Share card: ${placed.length} place name(s) on the map, two wanted`)
   }
   return placed
 }
@@ -589,7 +671,10 @@ function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
   const base = ctx.globalAlpha
-  for (const { label, lines, x, y } of arrangeLabels(ctx, mapLabels, route, layout, fonts, obstacles ?? [])) {
+  const still = scene.progress === undefined
+  const placed = arrangeLabels(ctx, mapLabels, route, layout, fonts, obstacles ?? [], still ? (label, reason) => labelDebug(`dropped "${label.text}" (${label.kind ?? 'area'}): ${reason}`) : undefined)
+  if (still) labelDebug('placed', placed.map((p) => `${p.label.text} (${p.label.kind ?? 'area'})`))
+  for (const { label, lines, x, y } of placed) {
     ctx.font = `600 ${label.size}px ${fonts.text}`
     ctx.globalAlpha = base * label.opacity
     ctx.lineWidth = 3

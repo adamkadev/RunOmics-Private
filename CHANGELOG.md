@@ -23,6 +23,10 @@ All notable changes to this project are documented in this file.
 
 ### Activity
 
+- The Route share card names its places again on a long loop: the start's quarter always (the town only
+  when no quarter is evident), the finish's when it is another, the park or forest the run spent the most
+  distance in, and the other quarters it passed, a route line free to cross a name. At least two names on
+  every card.
 - The Route share card has a Video option: a 12 s MP4 where the route draws itself, the distance and
   time count up and it ends on the still card, to share to WhatsApp or Instagram like an image. It is
   prepared as soon as Video is picked, so Share video opens the share sheet at once (Safari refuses one
@@ -31,8 +35,8 @@ All notable changes to this project are documented in this file.
   draws.
 - The Route share card reads better small: one start marker on a loop (no chequered disc, on the
   Activity map too, where the start dot is solid and kept clear of the map's bottom fade), no dark
-  ring round the start on light, no place name touching a start or finish dot (on the Activity map too), the park
-  the run went through named beside the route, a two-stat row kept together, and on an interval session
+  ring round the start on light, no place name touching a start or finish dot (on the Activity map too), a
+  two-stat row kept together, and on an interval session
   the rep pace in the stat row, so the map keeps its full height.
   The Reps chip says how far off the target the reps ran ("9 s/km under target").
 - A workout's km splits come from the kilometre laps the watch takes inside each step, as Garmin shows them: an

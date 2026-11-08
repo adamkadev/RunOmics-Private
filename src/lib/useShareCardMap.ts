@@ -4,17 +4,22 @@ import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import {
   bandFencePoints, groupRings, pickLandmark, pickWater, pointInRing, ringsCentroid, routeFencePoints, simplifyRoute,
-  type GreenArea, type LngLat, type RouteFrame, type WaterLine,
+  type LngLat, type RouteFrame, type WaterLine,
 } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
 import {
   addLandmarkLabels, addParkLabels, addWaterLabels, isPlaceLabelLayer, loadMapLibre, PARK_LABEL_LAYER, showPlacesAtAnyZoom,
   styleRunMapLabels, WATER_LABEL_LAYER,
 } from '@/lib/maplibre'
-import { LABEL_PRIORITY, shareMarkerRadius, type ShareMapLabel } from '@/lib/shareCardDraw'
+import { LABEL_PRIORITY, labelDebug, shareMarkerRadius, type ShareMapLabel } from '@/lib/shareCardDraw'
+import {
+  areaLimit, EVIDENT_M, evidentArea, firstName, geocodeLevel, passedAreas, PLACE_LEVELS, pointsInside, sameArea, tilePlaceLevel,
+  type GeocodedArea, type PlaceLevel, type TilePlace,
+} from '@/lib/shareCardPlaces'
+import { distanceKm } from '@/lib/math'
 import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
 import { endsJoined, MARKER_CLEARANCE } from '@/lib/routeMarkers'
-import { nearbyPark } from '@/lib/reverseGeocode'
+import { geocodeAreas, GREEN_CATEGORIES, nearbyPark } from '@/lib/reverseGeocode'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
@@ -120,32 +125,6 @@ function featureName(props: Record<string, unknown> | null | undefined): string 
   return String(props?.[`name:${MAP_LANG}`] ?? props?.name ?? '').trim()
 }
 
-/** The district nearest the start leads, then the finish's when it is another: the places the run is known by. */
-function placedLabels(map: import('maplibre-gl').Map, mode: ThemeMode, start: Px, finish: Px): ShareMapLabel[] {
-  const ids = placeLayerIds(map)
-  if (ids.length === 0) return []
-  const surface = SURFACES[mode]
-  const seen = new Set<string>()
-  const out: ShareMapLabel[] = []
-  for (const feature of map.queryRenderedFeatures({ layers: ids })) {
-    const text = featureName(feature.properties)
-    if (!text || seen.has(text) || feature.geometry.type !== 'Point') continue
-    seen.add(text)
-    const id = feature.layer.id
-    const size = Number(map.getLayoutProperty(id, 'text-size')) || CARD_LABEL_SIZE
-    const opacity = Number(map.getPaintProperty(id, 'text-opacity'))
-    const { x, y } = map.project(feature.geometry.coordinates as [number, number])
-    out.push({ text, x, y, size, color: surface.text2, opacity: Number.isFinite(opacity) ? opacity : 1, priority: LABEL_PRIORITY.district })
-  }
-  const nearest = ([px, py]: Px) => out.reduce<ShareMapLabel | null>((best, l) =>
-    !best || Math.hypot(l.x - px, l.y - py) < Math.hypot(best.x - px, best.y - py) ? l : best, null)
-  const first = nearest(start)
-  if (first) first.priority = LABEL_PRIORITY.start
-  const last = nearest(finish)
-  if (last && last !== first) last.priority = LABEL_PRIORITY.finish
-  return out
-}
-
 /** The style's green fills: their polygons carry no name, a park's name is a POI point inside one. */
 const GREEN_FILL_LAYERS = ['Wood', 'Forest', 'Grass', 'Cemetery']
 const PARK_POI = { sourceLayer: 'poi_public', subclass: 'park' } as const
@@ -170,31 +149,156 @@ function lineParts(geometry: GeoJSON.Geometry): LngLat[][] {
   return []
 }
 
-/** The route fence drops a park the route crosses, its name point being on the line: the card names it itself. */
-async function routeLandmarks(map: import('maplibre-gl').Map, route: Px[], mode: ThemeMode, token: string): Promise<ShareMapLabel[]> {
-  const project = (c: LngLat): Px => { const p = map.project(c); return [p.x, p.y] }
-  const out: ShareMapLabel[] = []
+const PLACE_SOURCE_LAYERS = ['place_label', 'town_label', 'city_label'] as const
+/** Area names further apart than this, so the card does not stack them. */
+const AREA_SPACING_PX = 60
+
+/** Every named place in the tiles, styled or not, so the card can choose: MapLibre's own placement fenced them off the route. */
+function tilePlaces(map: import('maplibre-gl').Map, project: (c: LngLat) => Px): TilePlace[] {
+  const source = sourceOf(map, 'place_label')
+  if (!source) return []
+  const seen = new Set<string>()
+  const out: TilePlace[] = []
+  for (const sourceLayer of PLACE_SOURCE_LAYERS) {
+    for (const f of map.querySourceFeatures(source, { sourceLayer })) {
+      const name = featureName(f.properties)
+      const level = tilePlaceLevel(sourceLayer, f.properties?.class)
+      if (!name || !level || f.geometry.type !== 'Point' || seen.has(`${level}:${name}`)) continue
+      seen.add(`${level}:${name}`)
+      out.push({ name, level, at: project(f.geometry.coordinates as LngLat) })
+    }
+  }
+  return out
+}
+
+function metresPerPx(map: import('maplibre-gl').Map, at: Px): number {
+  const a = map.unproject(at)
+  const b = map.unproject([at[0] + 100, at[1]])
+  return (distanceKm(a.lng, a.lat, b.lng, b.lat) * 1000) / 100 || 1
+}
+
+/** A run's start is often a home: its area is asked for at about 110 m, enough to find the quarter it is in. */
+const END_DECIMALS = 3
+
+async function geocodedAt(map: import('maplibre-gl').Map, at: Px, token: string, project: (c: LngLat) => Px): Promise<GeocodedArea[]> {
+  const { lng, lat } = map.unproject(at)
+  const out: GeocodedArea[] = []
+  for (const f of await geocodeAreas(lng, lat, token, END_DECIMALS)) {
+    const level = geocodeLevel(f.placeType)
+    if (level) out.push({ name: f.text, ...level, at: f.center ? project(f.center) : undefined })
+  }
+  return out
+}
+
+interface LabelContext {
+  map: import('maplibre-gl').Map
+  route: Px[]
+  mode: ThemeMode
+  token: string
+  project: (c: LngLat) => Px
+}
+
+/** Chooses the card's names: the start's area, the finish's, the landmark, the water, then the areas passed. */
+async function routeLabels({ map, route, mode, token, project }: LabelContext): Promise<ShareMapLabel[]> {
+  const surface = SURFACES[mode]
+  const areaStyle = (level: PlaceLevel) => ({ size: CARD_LABEL_SIZE, color: surface.text2, opacity: level === 'city' ? 1 : DISTRICT_OPACITY[mode] })
+  const start = route[0]!
+  const finish = route[route.length - 1]!
+  const joined = endsJoined(start, finish)
+  const places = tilePlaces(map, project)
+  const mPerPx = metresPerPx(map, start)
+  const labels: ShareMapLabel[] = []
+
+  const areaAt = async (at: Px) => {
+    const fromTiles = evidentArea(at, places, [], mPerPx)
+    return fromTiles?.level === 'fine' ? fromTiles : evidentArea(at, places, await geocodedAt(map, at, token, project), mPerPx)
+  }
+  const startArea = await areaAt(start)
+  if (startArea) labels.push({ text: startArea.name, x: start[0], y: start[1], kind: 'start', priority: LABEL_PRIORITY.start, ...areaStyle(startArea.level) })
+  else console.warn('Share card: no area found at the start')
+  labelDebug('start area', startArea, `${places.length} tile places`)
+
+  if (!joined) {
+    const finishArea = await areaAt(finish)
+    if (finishArea && !(startArea && sameArea(finishArea.name, startArea.name))) {
+      labels.push({ text: finishArea.name, x: finish[0], y: finish[1], kind: 'finish', priority: LABEL_PRIORITY.finish, ...areaStyle(finishArea.level) })
+    }
+  }
+
+  const landmark = await routeLandmark({ map, route, mode, token, project }, places, mPerPx, joined, labels.map((l) => l.text))
+  if (landmark) labels.push(landmark)
+
+  const water = routeWater(map, route, project)
+  if (water && !(landmark && sameArea(water.name, landmark.text))) {
+    labels.push({ text: water.name, x: water.at[0], y: water.at[1], size: CARD_LABEL_SIZE, color: WATER_INK[mode], opacity: 1, priority: LABEL_PRIORITY.water, kind: 'water' })
+  }
+
+  const named = labels.map((l) => l.text)
+  for (const area of passedAreas(route, places, mPerPx, { exclude: named, limit: areaLimit(route, mPerPx), spacingPx: AREA_SPACING_PX })) {
+    labels.push({ text: area.name, x: area.at[0], y: area.at[1], kind: 'area', priority: LABEL_PRIORITY.area, ...areaStyle(area.level) })
+  }
+  if (labels.length < 2) {
+    const [fallback] = passedAreas(route, places, mPerPx, { exclude: named, limit: 1, levels: PLACE_LEVELS })
+    if (fallback) labels.push({ text: fallback.name, x: fallback.at[0], y: fallback.at[1], kind: 'area', priority: LABEL_PRIORITY.area, ...areaStyle(fallback.level) })
+    else console.warn('Share card: one place name only, nothing else found along the route')
+  }
+  labelDebug('candidates', labels.map((l) => `${l.text} (${l.kind})`))
+  return labels
+}
+
+/** The green holding most of the route, named at its centre, then inside it, then from the tiles, else its locality. */
+async function routeLandmark(
+  { map, route, mode, token, project }: LabelContext, places: readonly TilePlace[], mPerPx: number, joined: boolean, named: readonly string[],
+): Promise<ShareMapLabel | null> {
   const style = new Set(map.getStyle().layers.map((l) => l.id))
   const greenLayers = GREEN_FILL_LAYERS.filter((id) => style.has(id))
   const greens = greenLayers.length > 0 ? map.queryRenderedFeatures({ layers: greenLayers }) : []
-  const rings = greens.flatMap((f) => outerRings(f.geometry)).map((ring) => ring.map(project))
-  const parkSource = sourceOf(map, PARK_POI.sourceLayer)
-  const areas: GreenArea[] = []
-  const names = new Set<string>()
-  for (const poi of parkSource ? map.querySourceFeatures(parkSource, { sourceLayer: PARK_POI.sourceLayer }) : []) {
-    const name = featureName(poi.properties)
-    if (!name || names.has(name) || poi.properties?.subclass !== PARK_POI.subclass || poi.geometry.type !== 'Point') continue
-    names.add(name)
-    const at = project(poi.geometry.coordinates as LngLat)
-    const own = rings.filter((ring) => ring.length > 2 && pointInRing(at, ring))
-    areas.push({ name, at, rings: own })
+  const rings = greens.flatMap((f) => outerRings(f.geometry)).map((ring) => ring.map(project)).filter((ring) => ring.length > 2)
+  const groups = groupRings(rings)
+  const green = pickLandmark(route, groups.map((group) => ({ name: '', at: ringsCentroid(group), rings: group })), joined)
+  if (!green) {
+    labelDebug('landmark: no green holds enough of the route')
+    return null
   }
-  const joined = route.length > 1 && endsJoined(route[0]!, route[route.length - 1]!)
-  const landmark = pickLandmark(route, areas, joined) ?? await namedGreen(map, route, rings, joined, token, project)
-  if (landmark) {
-    out.push({ text: landmark.name, x: landmark.at[0], y: landmark.at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, beside: true })
+  const inGreen = (at: Px) => green.rings.some((ring) => pointInRing(at, ring))
+  const parkAt = (at: Px, near: number) => async () => {
+    const { lng, lat } = map.unproject(at)
+    const park = await nearbyPark(lng, lat, token)
+    if (!park) return null
+    const p = project(park.at)
+    return inGreen(p) || Math.hypot(p[0] - at[0], p[1] - at[1]) <= near ? { name: park.name, at: inGreen(p) ? p : green.at } : null
   }
+  const landformAt = (at: Px) => async () => {
+    const { lng, lat } = map.unproject(at)
+    const found = (await geocodeAreas(lng, lat, token)).find((f) => f.categories.some((c) => GREEN_CATEGORIES.has(c)))
+    return found ? { name: found.text, at: green.at } : null
+  }
+  const tileName = async () => {
+    const source = sourceOf(map, PARK_POI.sourceLayer)
+    for (const poi of source ? map.querySourceFeatures(source, { sourceLayer: PARK_POI.sourceLayer }) : []) {
+      const name = featureName(poi.properties)
+      if (!name || poi.geometry.type !== 'Point') continue
+      const at = project(poi.geometry.coordinates as LngLat)
+      if (inGreen(at)) return { name, at }
+    }
+    return null
+  }
+  const inside = pointsInside(green, route)
+  const reach = EVIDENT_M / mPerPx
+  const found = await firstName([
+    parkAt(green.at, 0),
+    ...inside.flatMap((p) => [parkAt(p, reach), landformAt(p)]),
+    tileName,
+  ])
+  if (found) return { text: found.name, x: found.at[0], y: found.at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, kind: 'landmark' }
+  const [locality] = passedAreas(route, places, mPerPx, { exclude: named, limit: 1, levels: PLACE_LEVELS })
+  labelDebug('landmark: no name for the green, locality', locality?.name ?? 'none')
+  return locality
+    ? { text: locality.name, x: locality.at[0], y: locality.at[1], size: CARD_LABEL_SIZE, color: SURFACES[mode].text2, opacity: DISTRICT_OPACITY[mode], priority: LABEL_PRIORITY.landmark, kind: 'area' }
+    : null
+}
 
+function routeWater(map: import('maplibre-gl').Map, route: Px[], project: (c: LngLat) => Px): { name: string; at: Px } | null {
   const waterSource = sourceOf(map, WATER_SOURCE_LAYER)
   const byName = new Map<string, WaterLine>()
   for (const f of waterSource ? map.querySourceFeatures(waterSource, { sourceLayer: WATER_SOURCE_LAYER }) : []) {
@@ -204,26 +308,7 @@ async function routeLandmarks(map: import('maplibre-gl').Map, route: Px[], mode:
     entry.lines.push(...lineParts(f.geometry).map((line) => line.map(project)))
     byName.set(name, entry)
   }
-  const water = pickWater(route, [...byName.values()])
-  if (water && water.name !== landmark?.name) {
-    out.push({ text: water.name, x: water.at[0], y: water.at[1], size: CARD_LABEL_SIZE, color: WATER_INK[mode], opacity: 1, priority: LABEL_PRIORITY.water, beside: true })
-  }
-  return out
-}
-
-/** Under zoom 14 the tiles carry no park names: the green the run went through is named by the geocoder instead. */
-async function namedGreen(
-  map: import('maplibre-gl').Map, route: Px[], rings: Px[][], joined: boolean, token: string, project: (c: LngLat) => Px,
-): Promise<GreenArea | null> {
-  const groups = groupRings(rings.filter((ring) => ring.length > 2))
-  const green = pickLandmark(route, groups.map((group) => ({ name: '', at: ringsCentroid(group), rings: group })), joined)
-  if (!green) return null
-  const { lng, lat } = map.unproject(green.at)
-  const park = await nearbyPark(lng, lat, token)
-  if (!park) return null
-  const at = project(park.at)
-  const inside = green.rings.some((ring) => pointInRing(at, ring))
-  return inside ? { name: park.name, at, rings: green.rings } : null
+  return pickWater(route, [...byName.values()])
 }
 
 /** The card draws these names itself: the map must not draw them a second time. */
@@ -283,8 +368,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     if (last && last !== first) setRunFinish(map, first, last)
     addEdgeFence(map)
     fenceLabels(map, points, width, bands)
-    // Places above the fence are placed first, so the line drops none of them.
-    for (const id of placeLayerIds(map)) map.moveLayer(id)
+    // The card draws the place names itself, from the tiles: the map shows none.
+    for (const id of placeLayerIds(map)) map.setLayoutProperty(id, 'visibility', 'none')
   })
 
   try {
@@ -292,15 +377,13 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
 
-    // Read where MapLibre placed each name, then capture the map without
-    // them: the card paints its route over the map, and the names over that.
     const mode = isDark ? 'dark' : 'light'
-    const screen = points.map((c): Px => { const p = map.project(c); return [p.x, p.y] })
-    const landmarks = await routeLandmarks(map, screen, mode, token)
-    const labels = [...placedLabels(map, mode, screen[0]!, screen[screen.length - 1]!), ...landmarks]
-    hideFromMap(map, landmarks.map((l) => l.text))
-    if (labels.length > 0) {
-      for (const id of placeLayerIds(map)) map.setLayoutProperty(id, 'visibility', 'none')
+    const project = (c: LngLat): Px => { const p = map.project(c); return [p.x, p.y] }
+    const screen = points.map(project)
+    const labels = await routeLabels({ map, route: screen, mode, token, project })
+    const drawnByCard = labels.filter((l) => l.kind === 'landmark' || l.kind === 'water').map((l) => l.text)
+    if (drawnByCard.length > 0) {
+      hideFromMap(map, drawnByCard)
       await settled(map, RENDER_TIMEOUT_MS)
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
     }
