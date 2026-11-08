@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import {
-  bandFencePoints, groupRings, pickLandmark, pickWater, pointInRing, ringsCentroid, routeFencePoints, simplifyRoute,
+  bandFencePoints, clipRing, groupRings, pickLandmark, pickWater, pointInRing, ringsCentroid, routeFencePoints, simplifyRoute,
   type LngLat, type RouteFrame, type WaterLine,
 } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
@@ -196,10 +196,13 @@ interface LabelContext {
   mode: ThemeMode
   token: string
   project: (c: LngLat) => Px
+  /** The route's room on the card, [left, top, right, bottom]. */
+  room: readonly [number, number, number, number]
 }
 
 /** Chooses the card's names: the start's area, the finish's, the landmark, the water, then the areas passed. */
-async function routeLabels({ map, route, mode, token, project }: LabelContext): Promise<{ labels: ShareMapLabel[]; place: string | null }> {
+async function routeLabels(context: LabelContext): Promise<{ labels: ShareMapLabel[]; place: string | null }> {
+  const { map, route, mode, token, project } = context
   const surface = SURFACES[mode]
   const areaStyle = (level: PlaceLevel) => ({ size: CARD_LABEL_SIZE, color: surface.text2, opacity: level === 'city' ? 1 : DISTRICT_OPACITY[mode] })
   const start = route[0]!
@@ -226,7 +229,7 @@ async function routeLabels({ map, route, mode, token, project }: LabelContext): 
     }
   }
 
-  const landmark = await routeLandmark({ map, route, mode, token, project }, places, mPerPx, joined, labels.map((l) => l.text))
+  const landmark = await routeLandmark(context, places, mPerPx, joined, labels.map((l) => l.text))
   if (landmark) labels.push(landmark)
 
   const water = routeWater(map, route, project)
@@ -249,7 +252,7 @@ async function routeLabels({ map, route, mode, token, project }: LabelContext): 
 
 /** The green holding most of the route, named at its centre, then inside it, then from the tiles, else its locality. */
 async function routeLandmark(
-  { map, route, mode, token, project }: LabelContext, places: readonly TilePlace[], mPerPx: number, joined: boolean, named: readonly string[],
+  { map, route, mode, token, project, room }: LabelContext, places: readonly TilePlace[], mPerPx: number, joined: boolean, named: readonly string[],
 ): Promise<ShareMapLabel | null> {
   const style = new Set(map.getStyle().layers.map((l) => l.id))
   const greenLayers = GREEN_FILL_LAYERS.filter((id) => style.has(id))
@@ -261,18 +264,20 @@ async function routeLandmark(
     labelDebug('landmark: no green holds enough of the route')
     return null
   }
+  const shown = green.rings.map((ring) => clipRing(ring, room)).filter((ring) => ring.length > 2)
+  const anchor = shown.length > 0 ? ringsCentroid(shown) : green.at
   const inGreen = (at: Px) => green.rings.some((ring) => pointInRing(at, ring))
   const parkAt = (at: Px, near: number) => async () => {
     const { lng, lat } = map.unproject(at)
     const park = await nearbyPark(lng, lat, token)
     if (!park) return null
     const p = project(park.at)
-    return inGreen(p) || Math.hypot(p[0] - at[0], p[1] - at[1]) <= near ? { name: park.name, at: inGreen(p) ? p : green.at } : null
+    return inGreen(p) || Math.hypot(p[0] - at[0], p[1] - at[1]) <= near ? { name: park.name, at: inGreen(p) ? p : anchor } : null
   }
   const landformAt = (at: Px) => async () => {
     const { lng, lat } = map.unproject(at)
     const found = (await geocodeAreas(lng, lat, token)).find((f) => f.categories.some((c) => GREEN_CATEGORIES.has(c)))
-    return found ? { name: found.text, at: green.at } : null
+    return found ? { name: found.text, at: anchor } : null
   }
   const tileName = async () => {
     const source = sourceOf(map, PARK_POI.sourceLayer)
@@ -291,7 +296,9 @@ async function routeLandmark(
     ...inside.flatMap((p) => [parkAt(p, reach), landformAt(p)]),
     tileName,
   ])
-  if (found) return { text: shortGreenName(found.name), x: found.at[0], y: found.at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, kind: 'landmark' }
+  const onCard = (at: Px) => at[0] >= room[0] && at[0] <= room[2] && at[1] >= room[1] && at[1] <= room[3]
+  const at = found && onCard(found.at) ? found.at : anchor
+  if (found) return { text: shortGreenName(found.name), x: at[0], y: at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, kind: 'landmark' }
   const [locality] = passedAreas(route, places, mPerPx, { exclude: named, limit: 1, levels: PLACE_LEVELS })
   labelDebug('landmark: no name for the green, locality', locality?.name ?? 'none')
   return locality
@@ -381,7 +388,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     const mode = isDark ? 'dark' : 'light'
     const project = (c: LngLat): Px => { const p = map.project(c); return [p.x, p.y] }
     const screen = points.map(project)
-    const { labels, place } = await routeLabels({ map, route: screen, mode, token, project })
+    const { labels, place } = await routeLabels({ map, route: screen, mode, token, project, room: [frame.left, frame.top, width - frame.right, height - frame.bottom] })
     const drawnByCard = labels.filter((l) => l.kind === 'landmark' || l.kind === 'water').map((l) => l.text)
     if (drawnByCard.length > 0) {
       hideFromMap(map, drawnByCard)

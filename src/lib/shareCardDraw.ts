@@ -6,7 +6,7 @@ import {
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
-import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SPECS } from '@/lib/routeMarkers'
+import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
@@ -99,8 +99,6 @@ const BAR_MAX = 16
 const REP_DETAIL_PAD_TOP = 8
 const REP_DETAIL_H = { chips: CHIP_H, bars: BAR_MAX + 12 } as const
 const STATS_PAD_TOP_AFTER_HERO = 16
-/** The card is a phone map's width less its margins. */
-const MARKER_SCALE = 0.85
 /** The video's head dot is a step under the start's 13.6 px. */
 const HEAD_SCALE = 11 / 16
 

@@ -235,6 +235,7 @@ recompress the image. The light card stays plain.
     then at points of the route inside it, then by a name the tiles hold inside it, else the locality
     the route spends the most distance in. Under zoom 14, where a city run's card sits, the Planet v4
     tiles name no park and no river, so the geocoder does most of this.
+    The name sits at the centre of the part of the green inside the route's room, not of the whole polygon.
   - **Other areas** the route passes: a stretch of route belongs to the nearest name within 1.5 km, and
     an area counts when it holds 10 % of the route or the route nears its name. Quarters and districts
     first, the town only when none is; two of them, four on a route over 8 km across.
