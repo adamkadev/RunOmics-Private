@@ -219,6 +219,9 @@ recompress the image. The light card stays plain.
   treat the markers as obstacles, so a name is moved off one or dropped by priority. On the
   Activity map the hero's bottom padding keeps the route above its 64 pt fade, so the start dot is
   never washed out by it.
+- The Activity map's markers are the card's size (`MARKER_SCALE`, 0.85). It names the start's quarter beside the
+  start dot and the park or forest the run spent the most distance in, both found as the card finds them
+  (`findRouteNames` in `runMapNames.ts`, asked once at the fitted camera); the style's own label for either is hidden.
 - An interval session's Route card puts the rep pace first in the stat row (label in the session's
   zone colour) instead of a hero over the stats, so the map keeps its full height. The Reps chip reads
   how far off the target the reps ran: "Reps · 9 s/km under target". The Stats and Photo cards keep

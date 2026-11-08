@@ -268,3 +268,75 @@ export async function loadMapLibre(): Promise<MapLibre> {
 
   return mgl
 }
+
+export const ROUTE_NAMES_SOURCE = 'runomics-route-names'
+export const ROUTE_START_NAME_LAYER = 'runomics-route-start-name'
+export const ROUTE_GREEN_NAME_LAYER = 'runomics-route-green-name'
+
+export interface RouteName {
+  name: string
+  at: [number, number]
+  kind: 'start' | 'green'
+}
+
+export interface RouteNameInk {
+  halo: string
+  start: string
+  green: string
+  /** The start dot's radius plus its clearance, in px: the start's name sits just off it. */
+  startClear: number
+  lang?: string
+}
+
+const ROUTE_NAME_SIZE = 12
+const ROUTE_NAME_PADDING = 2
+
+/**
+ * The start's quarter and the run's park, found as the share card finds them:
+ * the tiles name no park at a run's zoom and fence the start's quarter off its dot.
+ */
+export function setRouteNames(map: MapLibreMap, names: readonly RouteName[], ink: RouteNameInk, before?: string): void {
+  const data: GeoJSON.FeatureCollection = {
+    type: 'FeatureCollection',
+    features: names.map(({ name, at, kind }) => ({ type: 'Feature', properties: { name, kind }, geometry: { type: 'Point', coordinates: at } })),
+  }
+  const source = map.getSource(ROUTE_NAMES_SOURCE) as { setData?: (d: GeoJSON.FeatureCollection) => void } | undefined
+  if (source?.setData) source.setData(data)
+  else map.addSource(ROUTE_NAMES_SOURCE, { type: 'geojson', data })
+  hideNamedInStyle(map, names.map((n) => n.name), ink.lang)
+  const layers = [
+    [ROUTE_START_NAME_LAYER, 'start', ink.start, ['bottom', 'top', 'left', 'right'], (ink.startClear + ROUTE_NAME_PADDING + 1) / ROUTE_NAME_SIZE],
+    [ROUTE_GREEN_NAME_LAYER, 'green', ink.green, ['center', 'top', 'bottom', 'left', 'right'], 0.6],
+  ] as const
+  for (const [id, kind, color, anchors, offset] of layers) {
+    if (map.getLayer(id)) continue
+    map.addLayer({
+      id,
+      type: 'symbol',
+      source: ROUTE_NAMES_SOURCE,
+      filter: ['==', ['get', 'kind'], kind],
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': PLACE_FONT,
+        'text-size': ROUTE_NAME_SIZE,
+        'text-max-width': 8,
+        'text-padding': ROUTE_NAME_PADDING,
+        'text-variable-anchor': [...anchors],
+        'text-radial-offset': offset,
+      },
+      paint: { 'text-color': color, 'text-halo-color': ink.halo, 'text-halo-width': 1.5, 'text-halo-blur': 0.5 },
+    } as unknown as Parameters<MapLibreMap['addLayer']>[0], before)
+  }
+}
+
+/** The style's own label for a name drawn by the route's layers, which would read twice. */
+function hideNamedInStyle(map: MapLibreMap, names: readonly string[], lang: string | undefined): void {
+  if (names.length === 0) return
+  const notNamed = ['!', ['in', localName(lang), ['literal', names]]]
+  for (const raw of map.getStyle().layers) {
+    const layer = raw as StyleLayer
+    if (layer.type !== 'symbol' || layer.id.startsWith('runomics-route-')) continue
+    if (!isPlaceLabelLayer(layer) && layer.id !== PARK_LABEL_LAYER) continue
+    map.setFilter(layer.id, ['all', map.getFilter(layer.id) ?? true, notNamed] as unknown as Parameters<MapLibreMap['setFilter']>[1])
+  }
+}
