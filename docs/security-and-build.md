@@ -156,7 +156,9 @@ What leaves the app, and from where:
   card's basemap. The token is public (`NEXT_PUBLIC_MAPTILER_TOKEN`), so MapTiler sees which tiles
   are fetched, that is, the areas being viewed. Reverse geocoding for route and cluster names sends
   a point rounded to 4 decimals (about 11 m). The share card's park name sends the centre of the park
-  the route crosses, rounded the same way. Both are cached in the browser.
+  the route crosses, and points of the route inside it, rounded the same way. The share card's start
+  and finish areas send those points rounded to 3 decimals (about 110 m), and only when the tiles name
+  no quarter within 300 m. All are cached in the browser.
 - **OpenStreetMap Nominatim** (browser). The share card's place name, from the run's first point
   rounded to 0.01°.
 - **OpenRouteService** (server only, `OpenRouteServiceGateway.ts`). Explore's loop requests: the

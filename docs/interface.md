@@ -223,13 +223,23 @@ recompress the image. The light card stays plain.
   zone colour) instead of a hero over the stats, so the map keeps its full height. The Reps chip reads
   how far off the target the reps ran: "Reps · 9 s/km under target". The Stats and Photo cards keep
   the hero.
-- Place names: MapLibre places the districts, fenced off the route. The park the run spent most of its
-  distance in (or that a loop runs round) would sit on the route and be fenced out, so
-  `useShareCardMap` picks it itself and the card sets it beside the line (`arrangeLabels`). Under zoom
-  14, where a city run's card sits, the Planet v4 tiles name no park and no river: the park comes from
-  the green fills the route crosses, named by MapTiler's geocoder at their centre (`nearbyPark`). The
-  river label only shows on a card zoomed in far enough for the tiles to name it. Priority settles
-  collisions: start district, finish district, landmark, water, other districts.
+- Place names: the map draws none. `useShareCardMap` reads every named place out of the tiles and
+  chooses (`shareCardPlaces.ts`); the card places them (`arrangeLabels`), a route line free to cross
+  an area's name.
+  - **Start area**, always shown, nudged off the start marker: the smallest area the start is
+    evidently in, quarter, then district, then town. Evident means a tile name within 300 m, else an
+    area the geocoder says holds the point. The finish's area too when it is another. The subtitle
+    keeps the town.
+  - **Landmark**: the green fill holding the most route distance, named by the geocoder at its centre,
+    then at points of the route inside it, then by a name the tiles hold inside it, else the locality
+    the route spends the most distance in. Under zoom 14, where a city run's card sits, the Planet v4
+    tiles name no park and no river, so the geocoder does most of this.
+  - **Other areas** the route passes: a stretch of route belongs to the nearest name within 1.5 km, and
+    an area counts when it holds 10 % of the route or the route nears its name. Quarters and districts
+    first, the town only when none is; two of them, four on a route over 8 km across.
+  - A card shows at least two names; with fewer it logs a warning. Priority settles collisions: start,
+    finish, landmark, water, other areas. Set `runomics:debug-labels` in localStorage to log every
+    candidate and why one was dropped.
 
 **Route video.** The Route design has an Image | Video switch where the browser can encode video. The
 clip is 12.2 s at 30 fps, 1080 × 1350: the map zooms in on the start, the route draws itself with the

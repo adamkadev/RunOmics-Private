@@ -106,7 +106,10 @@ function extractName(features: GeoFeature[]): string | null {
   );
 }
 
-const PARK_CATEGORIES = new Set(["park", "forest", "wood", "garden", "nature_reserve", "national_park"]);
+/** What a landmark may be: a park, a forest, a wood or a protected area, as MapTiler names its categories. */
+export const GREEN_CATEGORIES = new Set([
+  "park", "forest", "wood", "garden", "nature_reserve", "nature reserve", "national_park", "protected area",
+]);
 
 type PoiFeature = { text?: string; center?: [number, number]; properties?: { categories?: string[] } };
 
@@ -122,12 +125,35 @@ export async function nearbyPark(lon: number, lat: number, token: string): Promi
     if (!res.ok) return null;
     const json = (await res.json()) as { features?: PoiFeature[] };
     const park = (json.features ?? []).find(
-      (f) => f.text && f.center && f.properties?.categories?.some((c) => PARK_CATEGORIES.has(c)),
+      (f) => f.text && f.center && f.properties?.categories?.some((c) => GREEN_CATEGORIES.has(c)),
     );
     const found = park ? { name: park.text!, at: park.center! } : null;
     writeCache(key, found ? JSON.stringify(found) : null);
     return found;
   } catch {
     return null;
+  }
+}
+
+export type GeocodedFeature = { text: string; placeType: string; categories: string[]; center: [number, number] | null };
+
+/** Every area MapTiler holds at a point, quarter to country, landforms included; `decimals` sets how much it is told. */
+export async function geocodeAreas(lon: number, lat: number, token: string, decimals = 4): Promise<GeocodedFeature[]> {
+  const key = `geocode_areas:${CACHE_VERSION}:${lon.toFixed(decimals)},${lat.toFixed(decimals)}`;
+  const cached = readCache(key);
+  if (cached) return JSON.parse(cached) as GeocodedFeature[];
+  try {
+    const res = await fetch(
+      `https://api.maptiler.com/geocoding/${lon.toFixed(decimals)},${lat.toFixed(decimals)}.json?key=${token}&language=${GEOCODE_LANGUAGE}`,
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as { features?: (PoiFeature & { place_type?: string[] })[] };
+    const features = (json.features ?? [])
+      .filter((f) => f.text)
+      .map((f) => ({ text: f.text!, placeType: f.place_type?.[0] ?? "", categories: f.properties?.categories ?? [], center: f.center ?? null }));
+    writeCache(key, JSON.stringify(features));
+    return features;
+  } catch {
+    return [];
   }
 }

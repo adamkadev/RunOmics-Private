@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { arrangeLabels, balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { describe, expect, it, vi } from 'vitest'
+import { arrangeLabels, type LabelKind, balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, SHARE_MARKER_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
@@ -522,7 +522,7 @@ describe('the place names on the Route card', () => {
   it('draws them over the route, on a halo of the ground, and none a band would cut', () => {
     const l = layout()
     const inside = (l.textTop + l.textBottom) / 2
-    const ops = draw({ design: 'route', mapLabels: [label('Devant-les-Ponts', inside), label('Under the header', l.textTop + 2)] })
+    const ops = draw({ design: 'route', mapLabels: [label('Devant-les-Ponts', inside), { ...label('Les Prés', inside + 40), x: 80 }, label('Under the header', l.textTop + 2)] })
     const name = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'Devant-les-Ponts')
     const lastTrace = ops.map((o) => o.op).lastIndexOf('lineTo')
     expect(name).toBeGreaterThan(lastTrace)
@@ -530,10 +530,9 @@ describe('the place names on the Route card', () => {
     expect(texts(ops)).not.toContain('Under the header')
   })
 
-  it('drops a name that would run past the card\'s side margins', () => {
+  it('slides a name that would run past a side margin back inside it, beside its point', () => {
     const l = layout()
     const y = (l.textTop + l.textBottom) / 2
-    // 7 px a character in the test canvas: "Longeville-lès-Metz" is 133 px wide.
     const ops = draw({
       design: 'route',
       mapLabels: [
@@ -542,9 +541,10 @@ describe('the place names on the Route card', () => {
         { ...label('Metz', y + 40), x: W / 2 },
       ],
     })
-    expect(texts(ops)).toContain('Metz')
-    expect(texts(ops)).not.toContain('Longeville-lès-Metz')
-    expect(texts(ops)).not.toContain('Bellecroix')
+    const at = (text: string) => ops.find((o) => o.op === 'fillText' && o.args[0] === text)!.args[1] as number
+    expect(at('Metz')).toBe(W / 2)
+    expect(at('Longeville-lès-Metz') - ('Longeville-lès-Metz'.length * 7) / 2).toBeCloseTo(16, 6)
+    expect(at('Bellecroix') + ('Bellecroix'.length * 7) / 2).toBeCloseTo(W - 16, 6)
   })
 })
 
@@ -646,40 +646,79 @@ describe('arranging the place names', () => {
   const measure = recorder().ctx
   const l = layout()
   const y = (l.textTop + l.textBottom) / 2
-  const name = (text: string, x: number, priority: number, beside = false) => ({ text, x, y, size: 10, color: '#5e7f65', opacity: 1, priority, beside })
+  const name = (text: string, x: number, kind: LabelKind, ny = y) =>
+    ({ text, x, y: ny, size: 10, color: '#8d9391', opacity: 1, priority: LABEL_PRIORITY[kind], kind })
+  const clear = (box: [number, number, number, number], { x, y: cy, r }: { x: number; y: number; r: number }) =>
+    Math.hypot(x - Math.max(box[0], Math.min(x, box[2])), cy - Math.max(box[1], Math.min(cy, box[3]))) >= r
+  const across: [number, number][] = [[20, y], [280, y]]
 
-  it('keeps the higher priority where two names collide', () => {
-    const placed = arrangeLabels(measure, [name('Quartier Nord', 150, LABEL_PRIORITY.district), name('Quartier Sud', 160, LABEL_PRIORITY.start)], null, l, FALLBACK_FONTS)
-    expect(placed.map((p) => p.label.text)).toEqual(['Quartier Sud'])
+  it('keeps the higher priority where two names collide, and drops the lower', () => {
+    const drops: string[] = []
+    const placed = arrangeLabels(measure, [name('Quartier Nord', 150, 'area'), name('Les Prés', 160, 'start'), name('Parc Central', 150, 'landmark', y + 60)], null, l, FALLBACK_FONTS, [], (label, reason) => drops.push(`${label.text}: ${reason}`))
+    expect(placed.map((p) => p.label.text)).toEqual(['Les Prés', 'Parc Central'])
+    expect(drops).toEqual(['Quartier Nord: collision'])
   })
 
-  it('moves a landmark off the route rather than drop it', () => {
-    const route: [number, number][] = [[40, y], [260, y]]
-    const [park] = arrangeLabels(measure, [name('Parc Central', 150, LABEL_PRIORITY.landmark, true)], route, l, FALLBACK_FONTS)
-    expect(park).toBeDefined()
-    expect(park!.box[3] < y - 4 || park!.box[1] > y + 4).toBe(true)
+  it('keeps the start area\'s name where the route crosses it', () => {
+    const [start] = arrangeLabels(measure, [name('Les Prés', 150, 'start')], across, l, FALLBACK_FONTS)
+    expect([start!.x, start!.y]).toEqual([150, y])
   })
 
-  it('keeps a name off a marker, with 4 px to spare, and moves a landmark clear of it', () => {
+  it('moves the start area\'s name off its marker, never drops it', () => {
+    const marker = { x: 150, y, r: 7.65 + 4 }
+    const [start] = arrangeLabels(measure, [name('Les Prés', 150, 'start')], across, l, FALLBACK_FONTS, [marker])
+    expect(start).toBeDefined()
+    expect(clear(start!.box, marker)).toBe(true)
+    expect(start!.x).toBe(150)
+  })
+
+  it('leaves another area\'s name on its point, under the route', () => {
+    const placed = arrangeLabels(measure, [name('Les Prés', 60, 'start', y - 60), name('Quartier Nord', 150, 'area')], across, l, FALLBACK_FONTS)
+    expect(placed.find((p) => p.label.text === 'Quartier Nord')).toMatchObject({ x: 150, y })
+  })
+
+  it('drops another area\'s name that would touch a marker, and moves a landmark clear of one', () => {
     const finish = { x: 150, y, r: 8.5 + 4 }
-    expect(arrangeLabels(measure, [name('Quartier Nord', 150, LABEL_PRIORITY.district)], null, l, FALLBACK_FONTS, [finish])).toEqual([])
-    const [park] = arrangeLabels(measure, [name('Parc', 150, LABEL_PRIORITY.landmark, true)], null, l, FALLBACK_FONTS, [finish])
-    const [x0, y0, x1, y1] = park!.box
-    const dx = 150 - Math.max(x0, Math.min(150, x1))
-    const dy = y - Math.max(y0, Math.min(y, y1))
-    expect(Math.hypot(dx, dy)).toBeGreaterThanOrEqual(12.5)
+    const placed = arrangeLabels(measure, [name('Les Prés', 60, 'start', y - 60), name('Parc', 150, 'landmark'), name('Quartier Nord', 150, 'area', y + 2)], null, l, FALLBACK_FONTS, [finish])
+    expect(placed.map((p) => p.label.text)).toEqual(['Les Prés', 'Parc'])
+    expect(clear(placed[1]!.box, finish)).toBe(true)
+  })
+
+  it('moves a landmark off the route when it can, and keeps it on the route when it cannot', () => {
+    const [park] = arrangeLabels(measure, [name('Parc Central', 150, 'landmark')], across, l, FALLBACK_FONTS)
+    expect(park!.box[3] < y - 4 || park!.box[1] > y + 4).toBe(true)
+    const grid: [number, number][] = Array.from({ length: 60 }, (_, i) => [i % 2 === 0 ? 0 : W, l.textTop + i * 5])
+    expect(arrangeLabels(measure, [name('Parc Central', 150, 'landmark')], grid, l, FALLBACK_FONTS)).toHaveLength(1)
+  })
+
+  it('always shows a second name: the best one dropped is nudged where it fits', () => {
+    const marker = { x: 150, y, r: 12 }
+    const placed = arrangeLabels(measure, [name('Les Prés', 60, 'start', y - 60), name('Quartier Nord', 150, 'area')], null, l, FALLBACK_FONTS, [marker])
+    expect(placed.map((p) => p.label.text)).toEqual(['Les Prés', 'Quartier Nord'])
+    expect(clear(placed[1]!.box, marker)).toBe(true)
+  })
+
+  it('warns when the card can show only one name', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    arrangeLabels(measure, [name('Les Prés', 150, 'start')], null, l, FALLBACK_FONTS)
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('1 place name'))
+    warn.mockRestore()
   })
 
   it('draws no name over the finish marker on the card', () => {
     const pts: [number, number][] = [[60, 120], [150, 200], [220, 250]]
-    const ops = draw({ design: 'route', mapImage: {} as HTMLCanvasElement, mapPoints: pts, mapLabels: [{ text: 'Au Bout', x: 220, y: 250, size: 10, color: '#8d9391', opacity: 1 }] })
+    const ops = draw({ design: 'route', mapImage: {} as HTMLCanvasElement, mapPoints: pts, mapLabels: [
+      { text: 'Les Prés', x: 60, y: 120, size: 10, color: '#8d9391', opacity: 1, kind: 'start', priority: 1 },
+      { text: 'Parc', x: 150, y: 160, size: 10, color: '#8d9391', opacity: 1, kind: 'landmark', priority: 3 },
+      { text: 'Au Bout', x: 220, y: 250, size: 10, color: '#8d9391', opacity: 1 },
+    ] })
     expect(texts(ops)).not.toContain('Au Bout')
     expect(shareMarkerRadius('finish', palette)).toBeCloseTo(8.5, 9)
     expect(markerObstacles(pts, palette).map((o) => o.r)).toEqual([shareMarkerRadius('start', palette) + 4, 8.5 + 4])
   })
 
   it('breaks a long park name over two balanced lines', () => {
-    const [park] = arrangeLabels(measure, [name('Forêt de la Clairière', 150, LABEL_PRIORITY.landmark, true)], null, l, FALLBACK_FONTS)
+    const [park] = arrangeLabels(measure, [name('Forêt de la Clairière', 150, 'landmark')], null, l, FALLBACK_FONTS)
     expect(park!.lines).toEqual(['Forêt de la', 'Clairière'])
   })
 })
