@@ -23,6 +23,8 @@ All notable changes to this project are documented in this file.
 
 ### Activity
 
+- The share card names a nature reserve by the place it protects ("Massif forestier de …"), not its
+  full legal name, which never fit; and a reserve named after a quarter no longer hides that quarter.
 - A run's town, on its page and on its share card, is the one the start is in, the same one the share
   card's start label sits in: a start near a town border no longer reads as the town next door. Towns
   already shown are looked up once more.

@@ -346,6 +346,18 @@ describe('the share card names', () => {
     expect(landmarkCalls.slice(0, 3)).toEqual(['poi', 'poi', 'areas'])
   })
 
+  it('names a reserve called after a quarter by its short name, and still names that quarter', async () => {
+    geocoder((url) => (url.includes('types=') ? [] : [
+      { text: 'Réserve naturelle nationale du massif forestier des Prés et de la Combe', place_type: ['major_landform'], properties: { categories: ['protected area', 'nature reserve'] }, center: at(0, 0) },
+    ]))
+    const { labels } = await draw(loop(2900, 2900, 3000, 3050), (fake) => {
+      fake.rendered = [square(2890, 2890, 3010, 3060)]
+      fake.sourceFeatures = { place_label: [point('Le Moulin', 2902, 2898, { class: 'neighbourhood' }), point('Les Prés', 2960, 3040, { class: 'suburb' })] }
+    })
+    expect(labels.find((l) => l.kind === 'landmark')?.text).toBe('Massif forestier des Prés')
+    expect(labels.map((l) => l.text)).toEqual(expect.arrayContaining(['Le Moulin', 'Les Prés']))
+  })
+
   it('falls back to the locality the route spends the most distance in when nothing names the green', async () => {
     geocoder()
     vi.spyOn(console, 'warn').mockImplementation(() => {})

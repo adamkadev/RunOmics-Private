@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  areaLimit, evidentArea, firstName, geocodeLevel, passedAreas, pointsInside, sameArea, tilePlaceLevel, type TilePlace,
+  areaLimit, evidentArea, firstName, geocodeLevel, passedAreas, pointsInside, sameArea, shortGreenName, tilePlaceLevel, type TilePlace,
 } from '@/lib/shareCardPlaces'
 
 const M = 10
@@ -33,9 +33,10 @@ describe('the start area', () => {
       .toEqual([{ level: 'fine', contains: true }, { level: 'fine', contains: false }, { level: 'mid', contains: true }, { level: 'city', contains: true }, null])
   })
 
-  it('treats a quarter named with and without "Quartier" as one place', () => {
+  it('treats a quarter named with and without "Quartier" as one place, but not a reserve named after it', () => {
     expect(sameArea('Quartier du Gros-Caillou', 'Gros-Caillou')).toBe(true)
     expect(sameArea('Les Prés', 'Le Moulin')).toBe(false)
+    expect(sameArea('Réserve naturelle du bois des Prés', 'Les Prés')).toBe(false)
   })
 })
 
@@ -63,6 +64,12 @@ describe('the areas the route passes', () => {
 })
 
 describe('naming the landmark', () => {
+  it('cuts a reserve\'s long legal name to the place it names, to fit two lines', () => {
+    expect(shortGreenName('Réserve naturelle nationale du massif forestier des Prés et de la Combe')).toBe('Massif forestier des Prés')
+    expect(shortGreenName('Parc naturel régional des Monts Bleus')).toBe('Monts Bleus')
+    expect(shortGreenName('Bois des Hêtres')).toBe('Bois des Hêtres')
+  })
+
   it('asks each source in turn until one names it', async () => {
     const asked: string[] = []
     const source = (name: string, answer: string | null) => async () => { asked.push(name); return answer }

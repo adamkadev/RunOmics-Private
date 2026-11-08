@@ -37,10 +37,20 @@ function bare(name: string): string {
     .replace(/^quartier\s+(de la |de l'|du |des |de |d')?/, '').replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
-/** "Quartier du Gros-Caillou" from the geocoder and "Gros-Caillou" from the tiles are one place. */
+/** "Quartier du Gros-Caillou" and "Gros-Caillou" are one place; a reserve named after a quarter is not that quarter. */
 export function sameArea(a: string, b: string): boolean {
-  const [x, y] = [bare(a), bare(b)]
-  return x === y || (x.length > 0 && y.length > 0 && (` ${x} `.includes(` ${y} `) || ` ${y} `.includes(` ${x} `)))
+  return bare(a) === bare(b)
+}
+
+/** Longer than this, a landmark's name cannot fit two lines of the card. */
+const SHORT_NAME = 28
+const DESIGNATION = /^(r[ée]serve naturelle( nationale| r[ée]gionale)?|parc naturel( r[ée]gional)?|parc national|nature reserve|national park|site class[ée])\s+(du |de la |de l'|des |de |d'|of the |of )?/i
+
+/** "Réserve naturelle nationale du massif forestier des Prés et de la Combe" reads "Massif forestier des Prés". */
+export function shortGreenName(name: string): string {
+  if (name.length <= SHORT_NAME) return name
+  const short = name.replace(DESIGNATION, '').split(/\s+(?:et|and|und)\s+/i)[0]!.trim()
+  return short ? short.charAt(0).toLocaleUpperCase() + short.slice(1) : name
 }
 
 export function tilePlaceLevel(sourceLayer: string, placeClass: unknown): PlaceLevel | null {

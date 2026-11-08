@@ -13,7 +13,7 @@ import {
 } from '@/lib/maplibre'
 import { LABEL_PRIORITY, labelDebug, shareMarkerRadius, type ShareMapLabel } from '@/lib/shareCardDraw'
 import {
-  areaLimit, EVIDENT_M, evidentArea, firstName, geocodeLevel, passedAreas, PLACE_LEVELS, pointsInside, sameArea, tilePlaceLevel,
+  areaLimit, EVIDENT_M, evidentArea, firstName, geocodeLevel, passedAreas, PLACE_LEVELS, pointsInside, sameArea, shortGreenName, tilePlaceLevel,
   type GeocodedArea, type PlaceLevel, type TilePlace,
 } from '@/lib/shareCardPlaces'
 import { distanceKm } from '@/lib/math'
@@ -291,7 +291,7 @@ async function routeLandmark(
     ...inside.flatMap((p) => [parkAt(p, reach), landformAt(p)]),
     tileName,
   ])
-  if (found) return { text: found.name, x: found.at[0], y: found.at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, kind: 'landmark' }
+  if (found) return { text: shortGreenName(found.name), x: found.at[0], y: found.at[1], size: CARD_LABEL_SIZE, color: PARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.landmark, kind: 'landmark' }
   const [locality] = passedAreas(route, places, mPerPx, { exclude: named, limit: 1, levels: PLACE_LEVELS })
   labelDebug('landmark: no name for the green, locality', locality?.name ?? 'none')
   return locality
