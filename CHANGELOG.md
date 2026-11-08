@@ -23,6 +23,12 @@ All notable changes to this project are documented in this file.
 
 ### Activity
 
+- The share card names the forest a long run went through: the name sits on the part of the forest the card
+  shows, not at the middle of the whole forest, which the map carries past the card's edge, so it was always dropped.
+- The Activity map's start and finish dots are the share card's size: the start dot read too big beside the route.
+- The Activity map names the quarter a run starts in beside the start dot, and the park or forest it spent the
+  most distance in, the same names as the share card: at a run's zoom the map held no park name, and the start's
+  quarter was hidden by the dot.
 - The share card names a nature reserve by the place it protects ("Massif forestier de …"), not its
   full legal name, which never fit; and a reserve named after a quarter no longer hides that quarter.
 - A run's town, on its page and on its share card, is the one the start is in, the same one the share

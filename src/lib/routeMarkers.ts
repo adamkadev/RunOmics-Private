@@ -19,6 +19,9 @@ export const MARKER_SPECS: Record<MarkerKind, MarkerSpec> = {
   finish: { diameter: 18, ring: 2.5, outline: 1 },
 }
 
+/** The share card's dots are drawn at this size, and the Activity map's match them. */
+export const MARKER_SCALE = 0.85
+
 export const JOIN_PX = 20
 /** Px a place name keeps from a marker's drawn edge, on every map and on the share card. */
 export const MARKER_CLEARANCE = 4

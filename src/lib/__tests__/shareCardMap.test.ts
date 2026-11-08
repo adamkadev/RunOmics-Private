@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTE_INSET, bandFencePoints, groupRings, pickLandmark, pickWater, projectRoute, ringsCentroid, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { ROUTE_INSET, bandFencePoints, clipRing, groupRings, pickLandmark, pickWater, projectRoute, ringsCentroid, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 
 /** The widest end marker the card draws, as a radius: the finish's, at the card's 0.85. */
 const MARKER_RADIUS = (9 + 1) * 0.85
@@ -135,5 +135,14 @@ describe('a park cut into tiles', () => {
   it('centres a group by area', () => {
     expect(ringsCentroid([square(0, 0, 10), square(10, 0, 10)])[0]).toBeCloseTo(10, 0)
     expect(ringsCentroid([square(0, 0, 20), square(100, 0, 2)])[0]).toBeLessThan(15)
+  })
+
+  it('keeps the part of a park inside the card, centred there', () => {
+    const clipped = clipRing(square(200, 0, 400), [0, 0, 300, 375])
+    expect(ringsCentroid([clipped])).toEqual([250, 187.5])
+  })
+
+  it('drops a park entirely off the card', () => {
+    expect(clipRing(square(400, 0, 50), [0, 0, 300, 375])).toEqual([])
   })
 })

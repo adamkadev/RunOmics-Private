@@ -9,13 +9,16 @@ import { basemapStyle, TEST_MAPS } from '@/lib/maptiler'
 import { MapAttribution } from '@/components/ui/MapAttribution'
 import { Glass, GlassLayers, GLASS_CIRCLE, GLASS_GROUP_BUTTON, glassClass } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
-import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, showPlacesAtAnyZoom } from '@/lib/maplibre'
+import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, setRouteNames, showPlacesAtAnyZoom } from '@/lib/maplibre'
+import { findRouteNames, type FoundRouteName } from '@/lib/runMapNames'
+import { MARKER_CLEARANCE } from '@/lib/routeMarkers'
 import { SURFACES } from '@/lib/themeTokens'
 import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
 import { MAP_PADDING } from '@/lib/routeFrame'
 import { watchMapMoving } from '@/lib/mapMoving'
 import {
   ROUTE_FIT_PADDING,
+  RUN_START_FENCE_LAYER,
   addEdgeFence,
   addRunLayers,
   setRunAccent,
@@ -24,6 +27,7 @@ import {
   setRunCursor,
   setRunEnds,
   setRunRoute,
+  startDotRadius,
 } from '@/lib/runMapLayers'
 
 type LngLat = [number, number]
@@ -224,6 +228,27 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         animFrameRef.current = requestAnimationFrame(animate)
       }
 
+      let names: FoundRouteName[] | null = null
+      const showNames = () => {
+        if (!names?.length) return
+        const mode = dark ? 'dark' : 'light'
+        const ink = { halo: SURFACES[mode].background, start: SURFACES[mode].text2, green: PARK_INK[mode], lang: MAP_LANG }
+        const startClear = startDotRadius(SHARE_MARKER_HEX[mode].outline) + MARKER_CLEARANCE
+        setRouteNames(map, names, { ...ink, startClear }, map.getLayer(RUN_START_FENCE_LAYER) ? RUN_START_FENCE_LAYER : undefined)
+      }
+      // Asked once, at the fitted camera: the tiles there hold the start's quarter and the greens the route crosses.
+      map.once('idle', async () => {
+        const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
+        if (cancelled || !token) return
+        const { width, height } = map.getContainer().getBoundingClientRect()
+        const { top, right, bottom, left } = ROUTE_FIT_PADDING
+        const joined = !finish || runEndsJoined(map, start, finish)
+        const found = await findRouteNames(map, route, token, [left, top, width - right, height - bottom], joined).catch(() => [])
+        if (cancelled) return
+        names = found
+        if (layersReadyRef.current) showNames()
+      })
+
       // The first style and every one after it: the camera stays and the run comes
       // back as far as it was drawn.
       let drawn = false
@@ -247,6 +272,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         addLandmarkLabels(map, { halo: SURFACES[mode].background, landmark: LANDMARK_INK[mode], lang: MAP_LANG })
         addWaterLabels(map, { halo: SURFACES[mode].background, water: WATER_INK[mode], lang: MAP_LANG })
         showPlacesAtAnyZoom(map)
+        showNames()
         layersReadyRef.current = true
         removeFence?.()
         removeFence = addEdgeFence(map)

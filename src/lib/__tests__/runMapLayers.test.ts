@@ -102,10 +102,10 @@ describe('the run map layers (v4.17)', () => {
     const start = layers.find((l) => l.id === RUN_START_LAYER)!
     expect(start).toMatchObject({
       type: 'circle',
-      paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': '#f2f4f3', 'circle-stroke-width': 2.5 },
+      paint: { 'circle-radius': expect.closeTo(4.675), 'circle-color': RUN.accent, 'circle-stroke-color': '#f2f4f3', 'circle-stroke-width': expect.closeTo(2.125) },
     })
     expect(Object.keys(start.paint!).some((key) => key.includes('opacity'))).toBe(false)
-    expect(layers.find((l) => l.id === RUN_START_OUTLINE_LAYER)).toMatchObject({ type: 'circle', paint: { 'circle-radius': 10.5, 'circle-color': '#0c0d0d' } })
+    expect(layers.find((l) => l.id === RUN_START_OUTLINE_LAYER)).toMatchObject({ type: 'circle', paint: { 'circle-radius': expect.closeTo(7.65), 'circle-color': '#0c0d0d' } })
   })
 
   it('keeps place names 4 px clear of the start and finish dots: clear icons above the labels, in the collision', () => {
@@ -114,16 +114,16 @@ describe('the run map layers (v4.17)', () => {
     map.addImage = ((id: string, image: { width: number }, options?: { pixelRatio?: number }) => { added[id] = { width: image.width, options } }) as unknown as typeof map.addImage
     addRunLayers(map, RUN)
     const ids = layers.map((l) => l.id)
-    for (const [id, source, radius] of [[RUN_START_FENCE_LAYER, RUN_START_SOURCE, 10.5], [RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, 10]] as const) {
+    for (const [id, source, radius] of [[RUN_START_FENCE_LAYER, RUN_START_SOURCE, 7.65], [RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, 8.5]] as const) {
       const fence = layers.find((l) => l.id === id) as unknown as { source: string; layout: Record<string, unknown> }
       expect(fence.source).toBe(source)
       expect(fence.layout).toMatchObject({ 'icon-allow-overlap': true, 'icon-ignore-placement': false })
       expect(ids.indexOf(id)).toBeGreaterThan(ids.indexOf('Town labels'))
       const image = added[fence.layout['icon-image'] as string]!
-      expect(image.width / image.options!.pixelRatio! / 2).toBe(radius + 4)
+      expect(image.width / image.options!.pixelRatio! / 2).toBeCloseTo(radius + 4, 0)
     }
-    expect(startDotRadius('#0c0d0d')).toBe(10.5)
-    expect(startDotRadius(null)).toBe(9.5)
+    expect(startDotRadius('#0c0d0d')).toBeCloseTo(7.65)
+    expect(startDotRadius(null)).toBeCloseTo(6.8)
   })
 
   it('rings the start in white on light, with no outline', () => {

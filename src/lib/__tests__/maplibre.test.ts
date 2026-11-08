@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { showPlacesAtAnyZoom, LANDMARK_LABEL_LAYER, PARK_LABEL_LAYER, WATER_LABEL_LAYER, addLandmarkLabels, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
+import { showPlacesAtAnyZoom, LANDMARK_LABEL_LAYER, PARK_LABEL_LAYER, WATER_LABEL_LAYER, addLandmarkLabels, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels, setRouteNames, ROUTE_START_NAME_LAYER, ROUTE_GREEN_NAME_LAYER } from '../maplibre'
 
 type Layer = { id: string; type: string; 'source-layer'?: string; source?: string; filter?: unknown }
 
@@ -262,5 +262,44 @@ describe('where the app puts its own labels', () => {
     expect(ours.at(-1)).toBe(WATER_LABEL_LAYER)
     expect(order.indexOf(WATER_LABEL_LAYER)).toBeLessThan(order.indexOf('Road labels'))
     expect(order.indexOf(WATER_LABEL_LAYER)).toBeLessThan(order.indexOf('Place labels'))
+  })
+})
+
+describe('setRouteNames', () => {
+  const INK = { halo: '#000', start: '#8d9391', green: '#5f8a6d', startClear: 12 }
+  const NAMES = [
+    { name: "Cité de l'Ill", at: [7.77, 48.61] as [number, number], kind: 'start' as const },
+    { name: 'Parc de la Citadelle', at: [7.78, 48.58] as [number, number], kind: 'green' as const },
+  ]
+  const withSources = (layers: Layer[]) => {
+    const made = fakeMap(layers)
+    const sources: Record<string, unknown> = {}
+    Object.assign(made.map, {
+      getSource: (id: string) => sources[id],
+      addSource: (id: string, spec: unknown) => { sources[id] = spec },
+    })
+    return { ...made, sources, layers }
+  }
+
+  it('draws the start and the green on their own layers, under the fence', () => {
+    const { map, layers } = withSources([{ id: 'Place labels', type: 'symbol', 'source-layer': 'place' }, { id: 'run-start-fence', type: 'symbol' }])
+    setRouteNames(map, NAMES, INK, 'run-start-fence')
+    const ids = layers.map((l) => l.id)
+    expect(ids).toEqual(['Place labels', ROUTE_START_NAME_LAYER, ROUTE_GREEN_NAME_LAYER, 'run-start-fence'])
+  })
+
+  it('puts the start name clear of the dot and its fence', () => {
+    const { map, layers } = withSources([])
+    setRouteNames(map, NAMES, INK)
+    const start = layers.find((l) => l.id === ROUTE_START_NAME_LAYER) as unknown as { layout: Record<string, unknown> }
+    expect((start.layout['text-radial-offset'] as number) * 12).toBeGreaterThan(INK.startClear + 2)
+    expect(start.layout['text-variable-anchor']).not.toContain('center')
+  })
+
+  it("hides the style's own label for a name it draws", () => {
+    const { map, setFilters } = withSources([{ id: 'Place labels', type: 'symbol', 'source-layer': 'place' }, { id: 'Road labels', type: 'symbol', 'source-layer': 'transportation_name' }])
+    setRouteNames(map, NAMES, INK)
+    expect(JSON.stringify(setFilters['Place labels'])).toContain("Cité de l'Ill")
+    expect(setFilters['Road labels']).toBeUndefined()
   })
 })

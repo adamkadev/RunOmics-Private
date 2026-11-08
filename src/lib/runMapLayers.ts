@@ -2,7 +2,7 @@ import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { distanceKm } from '@/lib/math'
 import { firstSymbolLayerId } from '@/lib/maplibre'
-import { JOIN_PX as JOIN_DISTANCE_PX, MARKER_CLEARANCE, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
+import { JOIN_PX as JOIN_DISTANCE_PX, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 import { MAP_PADDING } from './routeFrame'
 
 export const ROUTE_SOURCE = 'route'
@@ -75,8 +75,9 @@ function setOrAddSource(map: MapLibreMap, id: string, data: FeatureCollection): 
 }
 
 const ICON_PIXEL_RATIO = 2
-const START_RADIUS = 7
-const START_RING = 2.5
+const START_RING = MARKER_SPECS.start.ring * MARKER_SCALE
+const START_RADIUS = (MARKER_SPECS.start.diameter / 2) * MARKER_SCALE - START_RING
+const START_OUTLINE = MARKER_SCALE
 
 function endsData(start: LngLat, finish: LngLat | null, joined: boolean) {
   const ends = routeEnds(start, finish, joined)
@@ -123,7 +124,7 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
     }, underLabels)
   }
   if (!map.hasImage(FINISH_MARK_ICON)) {
-    map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
+    map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO / MARKER_SCALE })
   }
   const ends = endsData(state.start, state.finish, state.joined)
   if (setOrAddSource(map, RUN_FINISH_SOURCE, ends.marks) || !map.getLayer(RUN_FINISH_LAYER)) {
@@ -139,7 +140,7 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
       id: RUN_START_OUTLINE_LAYER,
       type: 'circle',
       source: RUN_START_SOURCE,
-      paint: { 'circle-radius': START_RADIUS + START_RING + 1, 'circle-color': state.startOutline ?? 'rgba(0, 0, 0, 0)' },
+      paint: { 'circle-radius': START_RADIUS + START_RING + START_OUTLINE, 'circle-color': state.startOutline ?? 'rgba(0, 0, 0, 0)' },
     })
     map.addLayer({
       id: RUN_START_LAYER,
@@ -161,14 +162,14 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
 
 /** The drawn radius, outline included, in CSS px. */
 export function startDotRadius(outline: string | null): number {
-  return START_RADIUS + START_RING + (outline ? 1 : 0)
+  return START_RADIUS + START_RING + (outline ? START_OUTLINE : 0)
 }
 
 /** A circle layer and an overlap-allowed icon join no label collision: clear icons above the labels keep names off the dots. */
 function addMarkerFences(map: MapLibreMap, state: RunLayersState): void {
   const fences = [
     [START_FENCE_ICON, RUN_START_FENCE_LAYER, RUN_START_SOURCE, startDotRadius(state.startOutline)],
-    [FINISH_FENCE_ICON, RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, markerExtent('finish') / 2],
+    [FINISH_FENCE_ICON, RUN_FINISH_FENCE_LAYER, RUN_FINISH_SOURCE, (markerExtent('finish') / 2) * MARKER_SCALE],
   ] as const
   for (const [icon, layer, source, radius] of fences) {
     const image = clearMarkerImage(radius + MARKER_CLEARANCE)

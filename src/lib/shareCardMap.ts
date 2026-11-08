@@ -148,6 +148,32 @@ export function ringsCentroid(rings: readonly Px[][]): Px {
   return total > 0 ? [ax / total, ay / total] : rings[0]?.[0] ?? [0, 0]
 }
 
+/** The part of a ring inside a box [left, top, right, bottom]: a tile carries a forest far past the card's edges. */
+export function clipRing(ring: readonly Px[], [left, top, right, bottom]: readonly [number, number, number, number]): Px[] {
+  const edges: [(p: Px) => boolean, (a: Px, b: Px) => Px][] = [
+    [(p) => p[0] >= left, (a, b) => [left, a[1] + ((b[1] - a[1]) * (left - a[0])) / (b[0] - a[0])]],
+    [(p) => p[0] <= right, (a, b) => [right, a[1] + ((b[1] - a[1]) * (right - a[0])) / (b[0] - a[0])]],
+    [(p) => p[1] >= top, (a, b) => [a[0] + ((b[0] - a[0]) * (top - a[1])) / (b[1] - a[1]), top]],
+    [(p) => p[1] <= bottom, (a, b) => [a[0] + ((b[0] - a[0]) * (bottom - a[1])) / (b[1] - a[1]), bottom]],
+  ]
+  let out: Px[] = [...ring]
+  for (const [inside, cross] of edges) {
+    const input = out
+    out = []
+    for (let i = 0; i < input.length; i++) {
+      const a = input[(i + input.length - 1) % input.length]!
+      const b = input[i]!
+      if (inside(b)) {
+        if (!inside(a)) out.push(cross(a, b))
+        out.push(b)
+      } else if (inside(a)) {
+        out.push(cross(a, b))
+      }
+    }
+  }
+  return out
+}
+
 function bbox(ring: readonly Px[]): [number, number, number, number] {
   const xs = ring.map((p) => p[0])
   const ys = ring.map((p) => p[1])
