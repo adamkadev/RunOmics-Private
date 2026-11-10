@@ -208,8 +208,8 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
   )
 }
 
-/** Slots: `explored` is a client island, `checkpoint` comes from a use case of its own. */
-export function ProgressHub({ view, explored, checkpoint }: { view: ProgressHubView; explored?: ReactNode; checkpoint?: ReactNode }) {
+/** Slots: `explored` is a client island, `checkpoint` and `homeRuns` come from use cases of their own. */
+export function ProgressHub({ view, explored, checkpoint, homeRuns }: { view: ProgressHubView; explored?: ReactNode; checkpoint?: ReactNode; homeRuns?: ReactNode }) {
   const h = t.profile.hub
   const { vo2max, consistency, shoes, allTime } = view
   const bestYearKm = Math.max(1, ...allTime.years.slice(-2).map((y) => y.km))
@@ -272,6 +272,8 @@ export function ProgressHub({ view, explored, checkpoint }: { view: ProgressHubV
         </Tile>
         {explored}
       </div>
+
+      {homeRuns}
 
       <Records records={view.records} vo2max={vo2max} />
 

@@ -200,6 +200,22 @@ one list per area, and the first check of an area only takes note of the quartie
 **Credits:** OpenStreetMap (ODbL), the Metz quartiers and IGN ADMIN EXPRESS (Licence Ouverte 2.0),
 and openrouteservice (CC BY-SA) are listed in the map's ⓘ while Districts or the generator shows.
 
+## Home runs
+
+`/home-runs`, opened from Progress's Home runs card, replays every run that started from one place: all of them
+leave together at their own pace, a street run often glows brighter (strokes add up on a dark canvas), and a
+clock, a "still running" count and a histogram of finish times fill in. It is modelled on
+[strava-home-runs](https://github.com/AlFontal/strava-home-runs), drawn in 2D on a canvas instead of rendered in
+Blender.
+
+- **Start points** (`homeSpots`, `GetHomeRuns`): runs whose first point is within 200 m of the busiest start;
+  up to three spots of five runs or more, each a chip. Nothing is trimmed around the start: the site is private.
+- **Timing** (`pointSeconds`): the stored routes carry no timestamps, so each point's time comes from
+  `paceSamples` (150, evenly spaced in time) and the run's duration. Pauses are smoothed over.
+- **Clock** (`warpSeconds`): exponential, so the crowded first minutes read and the long runs don't drag.
+- **Video**: Save video encodes 24 s at 1080 × 1920 through `src/lib/canvasVideo.ts`, the same WebCodecs then
+  MediaRecorder path as the share card's route video.
+
 ## Share card
 
 The canvas cannot read CSS variables, so the card names its own surfaces. It is painted in three
