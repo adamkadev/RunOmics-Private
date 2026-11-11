@@ -1746,8 +1746,10 @@ export const en = {
     play: 'Play',
     pause: 'Pause',
     restart: 'Restart',
-    exportVideo: 'Save video',
-    exporting: (pct: string) => `Saving ${pct}`,
+    makeVideo: 'Make video',
+    making: (pct: string) => `Making video ${pct}`,
+    saveVideo: 'Save video',
+    videoFailed: 'The video could not be made on this browser.',
     empty: 'Five runs from the same start, and they all replay here together.',
   },
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Download, Pause, Play, RotateCcw } from 'lucide-react'
+import { Clapperboard, Download, Pause, Play, RotateCcw } from 'lucide-react'
 import type { HomeRunSpot } from '@/application/usecases/GetHomeRuns'
 import { Button } from '@/components/ui/Button'
 import { SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
@@ -25,6 +25,8 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
   const [playing, setPlaying] = useState(true)
   const [encoder, setEncoder] = useState<VideoEncoderKind | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
+  const [video, setVideo] = useState<{ scene: ReplayScene; file: File } | null>(null)
+  const [failed, setFailed] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const spot = spots[spotIdx] ?? spots[0]!
@@ -84,10 +86,14 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
     setPlaying(true)
   }
 
-  const exportVideo = async () => {
+  const videoFile = video?.scene === scene ? video.file : null
+
+  // Encoding outlasts the few seconds a tap lets a page open the share sheet: the file is shared on a second tap.
+  const makeVideo = async () => {
     if (!encoder || progress !== null) return
     const controller = new AbortController()
     abortRef.current = controller
+    setFailed(false)
     setProgress(0)
     try {
       const blob = await encodeCanvasClip({
@@ -101,10 +107,12 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
           if (ctx) drawReplay(ctx, scene, replaySeconds(f / REPLAY_FPS, scene.maxSeconds), canvas.width, canvas.height)
         },
       }, encoder, setProgress, controller.signal)
-      const file = new File([blob], `runomics-home-runs.${videoExtension(blob.type)}`, { type: blob.type })
-      await shareOrSaveFile(file, t.homeRuns.title)
+      setVideo({ scene, file: new File([blob], `runomics-home-runs.${videoExtension(blob.type)}`, { type: blob.type }) })
     } catch (err) {
-      if ((err as Error).name !== 'AbortError') console.error(err)
+      if ((err as Error).name !== 'AbortError') {
+        console.error(err)
+        setFailed(true)
+      }
     } finally {
       setProgress(null)
     }
@@ -146,13 +154,19 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
           <RotateCcw size={16} aria-hidden="true" />
           {t.homeRuns.restart}
         </Button>
-        {encoder && (
-          <Button onClick={() => void exportVideo()} disabled={progress !== null} data-testid="home-runs-export">
+        {encoder && (videoFile ? (
+          <Button onClick={() => void shareOrSaveFile(videoFile, t.homeRuns.title)} data-testid="home-runs-save">
             <Download size={16} aria-hidden="true" />
-            {progress === null ? t.homeRuns.exportVideo : t.homeRuns.exporting(formatPercent(progress * 100))}
+            {t.homeRuns.saveVideo}
           </Button>
-        )}
+        ) : (
+          <Button onClick={() => void makeVideo()} disabled={progress !== null} data-testid="home-runs-export">
+            <Clapperboard size={16} aria-hidden="true" />
+            {progress === null ? t.homeRuns.makeVideo : t.homeRuns.making(formatPercent(progress * 100))}
+          </Button>
+        ))}
       </div>
+      {failed && <p className="text-footnote text-muted-foreground" role="status" data-testid="home-runs-failed">{t.homeRuns.videoFailed}</p>}
     </div>
   )
 }
