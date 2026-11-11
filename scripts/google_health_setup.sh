@@ -353,12 +353,13 @@ set_env_secret GOOGLE_HEALTH_CLIENT_SECRET "$GOOGLE_HEALTH_CLIENT_SECRET" "$PROF
 set_env_secret GOOGLE_HEALTH_REFRESH_TOKEN "$REFRESH_TOKEN" "$PROFILE"
 
 ACCESS_TOKEN=$(json_field access_token "$TOKEN_JSON")
+# Only the three granted scopes may be exercised here: users/me/profile needs the profile scope, which this app never asks for.
 IDENTITY=$(curl -sS -H "Authorization: Bearer ${ACCESS_TOKEN}" -H "Accept: application/json" \
-  "https://health.googleapis.com/v4/users/me/profile" || true)
+  "https://health.googleapis.com/v4/users/me/dataTypes/sleep/dataPoints?pageSize=1" || true)
 if printf '%s' "$IDENTITY" | grep -q '"error"'; then
   warn "The token works but the API refused the first call:"
   note "$(printf '%s' "$IDENTITY" | tr -d '\n' | cut -c1-300)"
-  say "Most often the account has not opened the Google Health app yet, or a scope was left unticked."
+  say "Most often the account has not opened the Google Health app yet, or the sleep scope was left unticked."
 else
   printf '  %s✓%s Google Health answered for this account.\n' "$GREEN" "$RESET"
 fi
