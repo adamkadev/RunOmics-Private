@@ -1733,6 +1733,24 @@ export const en = {
     },
   },
 
+  homeRuns: {
+    title: 'Home runs',
+    back: 'Progress',
+    tileDetail: (runs: number, since: string) => `${runs} runs from your usual start since ${since}, replayed together`,
+    subtitle: (runs: number, since: string) => `${runs} runs from one start · since ${since}`,
+    spot: (runs: number) => `${runs} runs`,
+    spots: 'Start points',
+    running: (n: number) => `${n} still running`,
+    finished: (n: number) => `${n} run${n === 1 ? '' : 's'} finished`,
+    canvasLabel: (runs: number) => `Replay of ${runs} runs leaving the same start at once`,
+    play: 'Play',
+    pause: 'Pause',
+    restart: 'Restart',
+    exportVideo: 'Save video',
+    exporting: (pct: string) => `Saving ${pct}`,
+    empty: 'Five runs from the same start, and they all replay here together.',
+  },
+
   allTime: {
     title: 'All time',
     back: 'Progress',

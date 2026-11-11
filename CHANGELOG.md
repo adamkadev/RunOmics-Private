@@ -6,6 +6,9 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Progress has a Home runs card: it opens a replay of every run from the usual start, all leaving together at
+  their own pace, with the most-run streets glowing brightest, a clock, a count still running and the finish times
+  filling in. More than one start point gets a chip each, and Save video exports the replay as a 1080 × 1920 MP4.
 - Every sheet closes the same way: the × at the top left, a tap outside, a swipe down or Escape. The coach read on
   Analytics and the export sheet lose their Close button, a quartier's sheet its × beside the name, and a card's
   explanation on Analytics opens as a sheet instead of a centred dialog.

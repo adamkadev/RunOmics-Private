@@ -1616,6 +1616,24 @@ export const fr = {
     },
   },
 
+  homeRuns: {
+    title: 'Sorties depuis la maison',
+    back: 'Progression',
+    tileDetail: (runs: number, since: string) => `${runs} sorties depuis le point de départ habituel, depuis ${since}, rejouées ensemble`,
+    subtitle: (runs: number, since: string) => `${runs} sorties depuis un même départ · depuis ${since}`,
+    spot: (runs: number) => `${runs} sorties`,
+    spots: 'Points de départ',
+    running: (n: number) => `${n} encore en course`,
+    finished: (n: number) => `${n} sortie${n > 1 ? 's' : ''} terminée${n > 1 ? 's' : ''}`,
+    canvasLabel: (runs: number) => `${runs} sorties qui partent toutes du même point en même temps`,
+    play: 'Lecture',
+    pause: 'Pause',
+    restart: 'Recommencer',
+    exportVideo: 'Enregistrer la vidéo',
+    exporting: (pct: string) => `Enregistrement ${pct}`,
+    empty: 'Cinq sorties depuis un même départ, et elles se rejouent ici toutes ensemble.',
+  },
+
   allTime: {
     title: 'Depuis le début',
     back: 'Progression',

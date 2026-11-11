@@ -48,13 +48,18 @@ jobs:
         id: playwright-version
         run: echo "version=$(node -p 'require("@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
 
+      # Playwright ships a WebKit per Ubuntu release: one cached on 24.04 fails on a newer image for want of libicu74.
+      - name: Name the runner's Ubuntu release
+        id: os
+        run: echo "release=$(. /etc/os-release && echo "${ID}${VERSION_ID}")" >> "$GITHUB_OUTPUT"
+
       # Chromium's headless shell needs no apt step: the runner image ships Chrome and its libraries.
       - name: Restore Playwright's browsers
         id: playwright
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-shell-webkit-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+          key: playwright-shell-webkit-${{ steps.os.outputs.release }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright's browsers
         if: steps.playwright.outputs.cache-hit != 'true'
@@ -74,8 +79,8 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/webkit-apt
-          key: webkit-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-${{ steps.week.outputs.week }}
-          restore-keys: webkit-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-
+          key: webkit-apt-${{ steps.os.outputs.release }}-${{ steps.playwright-version.outputs.version }}-${{ steps.week.outputs.week }}
+          restore-keys: webkit-apt-${{ steps.os.outputs.release }}-${{ steps.playwright-version.outputs.version }}-
 
       # The iPhone and sparse-fr projects run in WebKit, whose system libraries the runner image does not ship.
       # apt has hung for a whole job and crawled on a slow mirror: each try gets its own 3 minutes.

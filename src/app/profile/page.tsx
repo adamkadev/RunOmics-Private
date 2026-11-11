@@ -6,12 +6,14 @@ import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getRecords } from '@/application/usecases/GetRecords'
 import { getExploredAreas } from '@/application/usecases/GetExploreGains'
+import { getHomeRunsSummary } from '@/application/usecases/GetHomeRuns'
 import { getCycleCheckpoint } from '@/application/usecases/GetCycleCheckpoint'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { ProgressHub } from '@/components/profile/ProgressHub'
 import { ExploredCard } from '@/components/explore/ExploredCard'
+import { HomeRunsTile } from '@/components/homeRuns/HomeRunsTile'
 import { CheckpointTile } from '@/components/checkpoint/Checkpoint'
 import { checkpointTileView } from '@/components/checkpoint/checkpointView'
 import { progressHubView } from '@/components/profile/progressHubView'
@@ -59,5 +61,8 @@ export default async function ProfilePage() {
 
   const checkpoint = <CheckpointTile view={checkpointTileView(getCycleCheckpoint(today), today)} />
 
-  return <ProgressHub view={view} explored={explored} checkpoint={checkpoint} />
+  const homeRunsSummary = getHomeRunsSummary()
+  const homeRuns = homeRunsSummary ? <HomeRunsTile summary={homeRunsSummary} /> : undefined
+
+  return <ProgressHub view={view} explored={explored} checkpoint={checkpoint} homeRuns={homeRuns} />
 }

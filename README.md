@@ -15,6 +15,7 @@ A personal running dashboard that pulls your data from Garmin Connect and turns 
 - **All-time records** - best 1K/5K/10K/half/marathon detected from FIT files
 - **Race page** - the next race: Garmin's prediction against your target and best, its 12-week trend, and even splits at both times; a VDOT estimate from your best recent effort when Garmin's predictions are missing or two weeks old
 - **Explore** - quartier coverage on the Activities map (Districts layer), a loop-route generator for unexplored quartiers (flat and traffic-free on a reps day), GPX export, the quartiers each run pushed forward, and a push when one passes 90 %
+- **Home runs** - every run from the usual start replayed at once on Progress, each at its real pace, the most-run streets glowing brightest, and exported as a 9:16 video
 - **Pushes** - the morning session, Monday's digest, Friday's goal check-in, new runs and their verdict, records, shoe wear, quartiers past 90 %, and sync failures; each phone picks Training, Shoes and "Records and explored areas" in Settings
 - **Dark mode** - system preference + manual toggle
 
