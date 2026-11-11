@@ -261,6 +261,21 @@ ask_secret GOOGLE_HEALTH_CLIENT_SECRET "Paste the Client secret:"
 write_env GOOGLE_HEALTH_CLIENT_ID "$GOOGLE_HEALTH_CLIENT_ID"
 write_env GOOGLE_HEALTH_CLIENT_SECRET "$GOOGLE_HEALTH_CLIENT_SECRET"
 
+# A deliberately bad code separates the two failures: invalid_client is the secret, invalid_grant is the code.
+PROBE=$(curl -sS -X POST https://oauth2.googleapis.com/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "code=probe-not-a-real-code" \
+  -d "client_id=${GOOGLE_HEALTH_CLIENT_ID}" \
+  -d "client_secret=${GOOGLE_HEALTH_CLIENT_SECRET}" \
+  -d "redirect_uri=https://www.google.com" \
+  -d "grant_type=authorization_code" || true)
+if printf '%s' "$PROBE" | grep -q "invalid_client"; then
+  warn "Google rejected that client ID and secret pair."
+  say "Copy the secret again from the client's panel, or add a second one; a client may hold several."
+  exit 1
+fi
+printf '  %s✓%s Client ID and secret accepted.\n' "$GREEN" "$RESET"
+
 stage "Scopes"
 say "Three scopes cover sleep, the overnight metrics and steps."
 open_url "https://console.cloud.google.com/auth/scopes"
