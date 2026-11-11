@@ -138,6 +138,10 @@ All notable changes to this project are documented in this file.
 
 ### Data & sync
 
+- The site serves a privacy policy and terms of service at `/privacy.html` and `/terms.html`. Google refuses to
+  publish an external OAuth app without both, and publishing is what keeps a refresh token alive beyond 7 days.
+  **Needs** a deploy before the Google Health connection can be set up, then `scripts/google_health_setup.sh`
+  for the owner's deployment.
 - The activity list is retried like every other Garmin read: one 503 or timeout on a page no longer stops the night
   before anything is committed.
 - A 429 or 5xx carrying `Retry-After` waits what Garmin asked for, up to 5 minutes, instead of a fixed 60 s.

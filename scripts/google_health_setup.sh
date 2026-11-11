@@ -225,10 +225,11 @@ set_env_secret() {
 
 run_wizard() {
 
-TOTAL_STAGES=7
+TOTAL_STAGES=8
 
 # Only the owner wears a tracker overnight; the second athlete's watch is off for sleep.
 PROFILE="adam"
+APP_DOMAIN="runomics.vercel.app"
 ENV_FILE=".env.$PROFILE.local"
 
 banner "Google Health API access"
@@ -270,6 +271,21 @@ say "Google's docs spell the metrics scope two ways; the console is right, so co
 ask GOOGLE_HEALTH_METRICS_SCOPE "Paste the metrics scope exactly as listed [Enter for the documented one]:"
 [[ -z "$GOOGLE_HEALTH_METRICS_SCOPE" ]] && GOOGLE_HEALTH_METRICS_SCOPE="$SCOPE_METRICS_DEFAULT"
 write_env GOOGLE_HEALTH_METRICS_SCOPE "$GOOGLE_HEALTH_METRICS_SCOPE"
+
+stage "Branding"
+say "Google will not publish an external app without a homepage, a privacy policy and terms."
+open_url "https://console.cloud.google.com/auth/branding"
+step "App name: RunOmics.  User support email: your own address."
+warn "Leave the logo empty: uploading one forces the app into verification."
+step "App homepage:     https://$APP_DOMAIN"
+step "Privacy policy:   https://$APP_DOMAIN/privacy.html"
+step "Terms of service: https://$APP_DOMAIN/terms.html"
+step "Authorised domain 1: $APP_DOMAIN"
+step "Add your email under Developer contact information, then Save."
+if ! confirm "Do both links open a page when you visit them?"; then
+  warn "Deploy the branch first: the two pages ship in public/ and must be live before Google accepts them."
+  exit 1
+fi
 
 stage "Publish the app"
 warn "This one matters: a project left in Testing issues refresh tokens that die after 7 days."
