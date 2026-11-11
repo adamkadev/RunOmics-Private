@@ -73,6 +73,7 @@ no 0, no empty card and no English word on her French deployment.
 | Running form | A watch or strap that records dynamics | The card is left out |
 | Explore's quartiers | `explore/` areas, built by `npm run explore:areas` | The Districts layer and the Explored card are not shown |
 | Shoes from Garmin | `GARMIN_SECRET` | Picks and the default shoe in the app |
+| Sleep, HRV and a resting HR read asleep | A tracker worn to sleep, read through the Google Health API (the owner's) | The watch's resting HR, filtered by run days; no sleep or HRV row; the coach gets no `overnight` |
 
 The demo generator builds a profile like hers (`npm run demo:generate -- --profile sparse`), and the `sparse-fr`
 Playwright project runs it in French on an iPhone. Check every change against both.

@@ -574,6 +574,10 @@ nightly sync then pushes from 14 days before that date, and warns in the run's a
 the variable is missing; update it with each new key. These are separate from the Vercel env vars above, and `INTERNAL_NOTIFY_SECRET`
 must match on both sides.
 
+Where the athlete sleeps with a tracker, `scripts/google_health_setup.sh` adds `GOOGLE_HEALTH_CLIENT_ID`,
+`GOOGLE_HEALTH_CLIENT_SECRET` and `GOOGLE_HEALTH_REFRESH_TOKEN` to that Environment - see
+[Google Health](docs/data-and-sync.md#google-health-the-owners-tracker). Without them the sync skips the step.
+
 That indirection is what lets one repository drive several deployments - one per
 athlete, each with its own data repository, Firebase project, domain and UI
 language; with a single profile it is just a place to keep the secrets. [docs/profiles.md](docs/profiles.md) lists

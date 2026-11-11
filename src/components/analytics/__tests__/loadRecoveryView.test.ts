@@ -8,8 +8,10 @@ import {
   loadTrendView,
   loadFocusView,
   loadTrendYMax,
+  overnightView,
   recoveryView,
   RECOVERY_MIN_DAYS,
+  type NightReading,
   type LoadTrendView,
   type RecoveryView,
 } from '../loadRecoveryView'
@@ -157,6 +159,38 @@ describe('recoveryView', () => {
   it('does not flag a resting HR below its baseline', () => {
     const view = recoveryView(days(90, (i) => (i >= 88 ? 40 : steady(i))), dayWindow(TODAY, '4w'))!
     expect(view.restingHr.side).toBe('low')
+    expect(view.out).toBe(false)
+  })
+})
+
+const nights = (n: number, night: (i: number) => Omit<NightReading, 'date'>): NightReading[] =>
+  Array.from({ length: n }, (_, i) => ({ date: day(n - 1 - i), ...night(i) }))
+const usualHrv = (i: number) => 60 + (i % 5) * 2
+
+describe('overnightView', () => {
+  it('is absent without a tracker', () => {
+    expect(overnightView([], dayWindow(TODAY, '4w'))).toBeNull()
+  })
+
+  it('gives the last night asleep and the mean of the seven to it', () => {
+    const view = overnightView(nights(10, (i) => ({ asleepMinutes: i === 9 ? 360 : 420 })), dayWindow(TODAY, '4w'))!
+    expect(view.sleep).toEqual({ last: 360, week: Math.round((360 + 6 * 420) / 7) })
+    expect(view.hrv).toBeNull()
+  })
+
+  it('holds back the HRV until it has a baseline', () => {
+    expect(overnightView(nights(5, (i) => ({ hrvMs: usualHrv(i) })), dayWindow(TODAY, '4w'))!).toBeNull()
+  })
+
+  it('flags an HRV under its own baseline', () => {
+    const view = overnightView(nights(30, (i) => ({ hrvMs: i === 29 ? 40 : usualHrv(i) })), dayWindow(TODAY, '4w'))!
+    expect(view.hrv).toMatchObject({ now: 40, side: 'low' })
+    expect(view.out).toBe(true)
+  })
+
+  it('does not flag an HRV above its baseline', () => {
+    const view = overnightView(nights(30, (i) => ({ hrvMs: i === 29 ? 95 : usualHrv(i) })), dayWindow(TODAY, '4w'))!
+    expect(view.hrv?.side).toBe('high')
     expect(view.out).toBe(false)
   })
 })

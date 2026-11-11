@@ -195,6 +195,10 @@ jobs:
         env:
           GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          # Set only in the owner's environment (scripts/google_health_setup.sh); unset, the step is skipped.
+          GOOGLE_HEALTH_CLIENT_ID: ${{ secrets.GOOGLE_HEALTH_CLIENT_ID }}
+          GOOGLE_HEALTH_CLIENT_SECRET: ${{ secrets.GOOGLE_HEALTH_CLIENT_SECRET }}
+          GOOGLE_HEALTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_HEALTH_REFRESH_TOKEN }}
           SYNC_LIMIT: ${{ inputs.limit }}
           SYNC_DRY_RUN: ${{ inputs.dry_run }}
           SYNC_FORCE: ${{ inputs.force }}

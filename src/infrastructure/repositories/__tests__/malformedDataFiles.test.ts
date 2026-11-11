@@ -27,6 +27,7 @@ describe('a truncated data file degrades the section instead of the page', () =>
     ['upcoming_races.json', '../JsonUpcomingRaceRepository', 'getUpcomingRaceYears', []],
     ['training_status.json', '../JsonTrainingStatusRepository', 'getTrainingStatusDays', []],
     ['recovery_history.json', '../JsonRecoveryRepository', 'getRecoveryDays', []],
+    ['health_history.json', '../JsonHealthRepository', 'getHealthDays', []],
     ['vo2max_history.json', '../JsonVo2maxHistoryRepository', 'getVo2maxSamples', { months: [], days: [] }],
   ])('%s', async (_file, modulePath, exportName, empty) => {
     const repository = (await import(modulePath)) as Record<string, () => unknown>
@@ -46,6 +47,25 @@ describe('a well-formed file still reads normally', () => {
     const { getRecoveryDays } = await import('../JsonRecoveryRepository')
 
     expect(getRecoveryDays()).toEqual([{ date: '2026-08-15', restingHr: 46 }])
+  })
+
+  it('health_history.json, dropping each reading no body has and a day left with none', async () => {
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      JSON.stringify({
+        days: {
+          '2026-03-02': { restingHr: 47, hrvMs: 61.2, steps: 8123, sleep: { start: 'a', end: 'b', asleepMinutes: 401, awakeMinutes: 22, deepMinutes: 70 } },
+          '2026-03-03': { restingHr: 140, hrvMs: 0, steps: -1, sleep: { start: 'a', end: 'b', asleepMinutes: 0 } },
+          '2026-03-04': { restingHr: 48, sleep: { start: 'a', end: 'b', asleepMinutes: 380, awakeMinutes: 'x' } },
+          'not-a-date': { restingHr: 48 },
+        },
+      })
+    )
+    const { getHealthDays } = await import('../JsonHealthRepository')
+
+    expect(getHealthDays()).toEqual([
+      { date: '2026-03-02', restingHr: 47, hrvMs: 61.2, steps: 8123, sleep: { start: 'a', end: 'b', asleepMinutes: 401, awakeMinutes: 22, deepMinutes: 70 } },
+      { date: '2026-03-04', restingHr: 48, sleep: { start: 'a', end: 'b', asleepMinutes: 380, awakeMinutes: 0 } },
+    ])
   })
 
   it('goals.json', async () => {

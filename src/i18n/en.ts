@@ -977,6 +977,10 @@ export const en = {
         safe: (lo: number, hi: number) => `safe ${lo}–${hi}`,
         fitnessWeek: 'fitness / week',
         restingHr: 'Resting HR',
+        sleep: 'Sleep',
+        duration: (minutes: number) => `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`,
+        sleepWeek: (average: string) => `7-night avg ${average}`,
+        hrv: 'HRV',
         baseline: (side: 'low' | 'high' | null, lo: number, hi: number) =>
           side === 'high' ? `above ${lo}–${hi} baseline` : side === 'low' ? `below ${lo}–${hi} baseline` : `inside ${lo}–${hi} baseline`,
         ok: 'OK',
