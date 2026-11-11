@@ -1629,8 +1629,10 @@ export const fr = {
     play: 'Lecture',
     pause: 'Pause',
     restart: 'Recommencer',
-    exportVideo: 'Enregistrer la vidéo',
-    exporting: (pct: string) => `Enregistrement ${pct}`,
+    makeVideo: 'Créer la vidéo',
+    making: (pct: string) => `Création de la vidéo ${pct}`,
+    saveVideo: 'Enregistrer la vidéo',
+    videoFailed: 'La vidéo n’a pas pu être créée sur ce navigateur.',
     empty: 'Cinq sorties depuis un même départ, et elles se rejouent ici toutes ensemble.',
   },
 

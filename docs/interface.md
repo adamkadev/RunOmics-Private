@@ -213,8 +213,9 @@ Blender.
 - **Timing** (`pointSeconds`): the stored routes carry no timestamps, so each point's time comes from
   `paceSamples` (150, evenly spaced in time) and the run's duration. Pauses are smoothed over.
 - **Clock** (`warpSeconds`): exponential, so the crowded first minutes read and the long runs don't drag.
-- **Video**: Save video encodes 24 s at 1080 × 1920 through `src/lib/canvasVideo.ts`, the same WebCodecs then
-  MediaRecorder path as the share card's route video.
+- **Video**: Make video encodes 24 s at 1080 × 1920 through `src/lib/canvasVideo.ts`, the same WebCodecs then
+  MediaRecorder path as the share card's route video. Save video shares it on a second tap: a browser opens the share
+  sheet only within a few seconds of a tap, and the encode takes longer.
 
 ## Share card
 
