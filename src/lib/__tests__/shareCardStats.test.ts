@@ -92,6 +92,11 @@ describe('shareZones', () => {
     expect(shareZones({ ...RUN, type: 'Threshold' })!.headline).toEqual({ percent: 5, label: 'in Z4' })
   })
 
+  it('heads a session that never reached its zone with the hardest zone it did, never 0%', () => {
+    const missed = { ...RUN, type: 'Threshold' as const, hrZones: [600, 1300, 1600, 0, 0].map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) }
+    expect(shareZones(missed)!.headline).toEqual({ percent: 46, label: 'in Z3' })
+  })
+
   it('heads a run of no known kind with its main zone', () => {
     expect(shareZones(RUN)!.headline).toEqual({ percent: 72, label: 'in Z2' })
   })

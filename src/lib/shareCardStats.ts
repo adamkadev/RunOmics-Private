@@ -242,7 +242,10 @@ export function shareZones(activity: ShareActivity): ShareZones | null {
   if (zones) {
     const percent = zones.reduce((sum, z) => sum + (percents[z - 1] ?? 0), 0)
     const label = zones.length > 1 ? s.easyZones(zones[0]!, zones[zones.length - 1]!) : s.inZone(zones[0]!)
-    return { rows, headline: { percent, label } }
+    if (percent > 0) return { rows, headline: { percent, label } }
+    // Never a 0% hero: a session that missed its zone leads with the hardest one it reached.
+    const reached = percents.slice(0, zones[0]! - 1).findLastIndex((p) => p > 0)
+    if (reached >= 0) return { rows, headline: { percent: percents[reached]!, label: s.inZone(reached + 1) } }
   }
   const main = percents.indexOf(Math.max(...percents))
   return { rows, headline: { percent: percents[main]!, label: s.inZone(main + 1) } }
