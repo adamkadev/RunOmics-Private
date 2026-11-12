@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- The share card's Stats design no longer leads with 0%: a session that never reached its zone (a threshold run
+  held in Z3) now leads with the hardest zone it did reach, "45% in Z3" rather than "0% in Z4".
 - Progress has a Home runs card: it opens a replay of every run from the usual start, all leaving together at
   their own pace, with the most-run streets glowing brightest, a clock, a count still running and the finish times
   filling in. More than one start point gets a chip each, and Make video turns the replay into a 1080 × 1920 MP4 that Save
