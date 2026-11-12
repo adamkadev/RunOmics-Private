@@ -34,10 +34,10 @@ describe('TodaySessionCard', () => {
     expect(screen.getAllByRole('link')).toHaveLength(1)
   })
 
-  it('heads the card with the day in the accent', () => {
+  it('heads the card with the day in grey, not the accent', () => {
     render(<TodaySessionCard card={card()} />)
     const eyebrow = screen.getByText('Tomorrow · Tue 20')
-    expect(eyebrow.className).toContain('text-accent-text')
+    expect(eyebrow.className).toContain('text-muted-foreground')
     expect(eyebrow.className).toContain('uppercase')
   })
 

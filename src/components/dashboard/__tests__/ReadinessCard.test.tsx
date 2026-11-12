@@ -59,9 +59,9 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(fatigue!.dataset.tone).toBe('worse')
   })
 
-  it('says its line in the accent while load is in range, and opens Analytics', () => {
+  it('says a neutral line in grey, never the accent, and opens Analytics', () => {
     render(<ReadinessCard status={STATUS} />)
-    expect(screen.getByTestId('readiness-status').getAttribute('style')).toContain('var(--accent-text)')
+    expect(screen.getByTestId('readiness-status').getAttribute('style')).toContain('var(--muted-foreground)')
     expect(screen.getByRole('link', { name: t.dashboard.readiness.open })).toHaveAttribute('href', '/analytics')
   })
 

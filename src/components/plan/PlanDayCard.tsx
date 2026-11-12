@@ -396,10 +396,7 @@ export function ComingUpCard({ rows, selectedDate, onSelect }: { rows: ComingUpR
   const c = t.plan.comingUp
   return (
     <section className="content-card rounded-[24px] bg-card shadow-[var(--card-edge)] px-4 pb-1 pt-3.5" data-testid="coming-up">
-      <div className="flex items-baseline justify-between gap-3 pb-2">
-        <h2 className="text-headline text-foreground">{c.title}</h2>
-        <span className="text-xs text-muted-foreground">{c.hint}</span>
-      </div>
+      <h2 className="pb-2 text-headline text-foreground">{c.title}</h2>
       <ul>
         {rows.map((row) => (
           <li key={row.key} className="border-t border-border">

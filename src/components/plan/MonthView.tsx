@@ -246,7 +246,9 @@ export function MonthView({
     onSelectDay(date ?? (row.current ? today : row.monday))
   }
 
-  const monthName = formatDate(monthStart, { precision: 'month', style: 'full', year: 'never' })
+  const spelled = formatDate(monthStart, { precision: 'month', style: 'full', year: 'never' })
+  // French months are lowercase mid-sentence; as a title the month opens the line.
+  const monthName = spelled.charAt(0).toLocaleUpperCase(t.locale) + spelled.slice(1)
   const key = monthEnd >= today ? nextKeySession(monthStart > today ? monthStart : today, byDatePlanned, byDateCoach) : null
   const m = t.plan.month
 
@@ -371,7 +373,7 @@ export function MonthView({
         <h2 className="text-headline text-foreground">{monthName}</h2>
         {plannedKm > 0 && (
           <div aria-hidden className="h-2 overflow-hidden rounded-full bg-[var(--line-2)]">
-            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.round((againstPlanKm / plannedKm) * 100))}%` }} />
+            <div className="h-full rounded-full bg-[var(--data-done)]" data-testid="month-plan-fill" style={{ width: `${Math.min(100, Math.round((againstPlanKm / plannedKm) * 100))}%` }} />
           </div>
         )}
         <p className="text-xs text-muted-foreground" data-testid="month-km">

@@ -2,10 +2,9 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from './SectionLabel'
 
-export type VerdictTone = 'pos' | 'warn' | 'neg' | 'muted' | 'neutral' | 'accent'
+export type VerdictTone = 'pos' | 'warn' | 'neg' | 'muted' | 'neutral'
 
 const TONE_COLOR: Record<VerdictTone, string> = {
-  accent: 'var(--accent-text)',
   pos: 'var(--pos)',
   warn: 'var(--warn)',
   neg: 'var(--neg)',

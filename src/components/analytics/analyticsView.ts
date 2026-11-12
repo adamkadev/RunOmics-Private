@@ -460,6 +460,16 @@ export interface WeekRow {
   point: WeeklyTrendPoint | null
 }
 
+const MIN_RUN_WEEKS = 4
+
+/** Twelve weeks over three weeks of running draw a mostly empty chart, so a short history opens on four. */
+export function openingPeriod(period: Period, weeks: Pick<WeeklyTrendPoint, 'date' | 'distanceKm'>[], today: string): Period {
+  if (period !== '12w') return period
+  const window = weekWindow(today, period)
+  const ran = weeks.filter((w) => w.date >= window.start && w.date <= window.end && w.distanceKm > 0).length
+  return ran < MIN_RUN_WEEKS ? '4w' : period
+}
+
 export function weekRows(weeks: WeeklyTrendPoint[], plan: PlanWeekInput[], window: WeekWindow, today: string): WeekRow[] {
   const byWeek = new Map(weeks.map((w) => [w.date, w]))
   const planByWeek = new Map(plan.map((p) => [p.week, p]))
@@ -673,6 +683,7 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
 
   const finished = rows.filter((r) => !r.current)
   if (!finished.length && weeks.every((w) => w.length === 0)) return null
+  if (done === 0 && !plannedTotal) return null
   const planned = known(rows.map((r) => planByWeek.get(r.week)))
   return {
     weeks,

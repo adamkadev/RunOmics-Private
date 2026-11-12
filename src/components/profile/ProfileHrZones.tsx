@@ -18,6 +18,7 @@ const HR_PERCENTS = [0.65, 0.8, 0.89, 0.95, 1.0]
 
 /** The time column fits French's « 10 h 48 · 32 % » on a 393 pt screen. */
 const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_5.5rem] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_110px_90px_96px] sm:gap-3'
+const ROW_GRID_NO_PACE = 'grid grid-cols-[minmax(0,1fr)_3.75rem_5.5rem] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_90px_96px] sm:gap-3'
 
 /** So a 1 % zone still shows on the bar. */
 const MIN_SEGMENT_PCT = 3
@@ -84,14 +85,22 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   const easyZone = paceByHrZone.get(2)
   const warmupPaceSecPerKm = easyZone ? easyZone.paceMaxSecPerKm + 1 : null
 
+  const paceLabel = (zone: number): string | null => {
+    if (zone === 1) return warmupPaceSecPerKm !== null ? `≥ ${fmt(warmupPaceSecPerKm)}` : null
+    const pace = paceByHrZone.get(zone)
+    return pace ? `${fmt(pace.paceMinSecPerKm)}–${fmt(pace.paceMaxSecPerKm)}` : null
+  }
+
   // Z1 first, the order every zone list in the app uses.
   const zones = [
-    { zone: 1, min: bounds[0], max: bounds[1] - 1, pace: undefined },
-    { zone: 2, min: bounds[1], max: bounds[2] - 1, pace: paceByHrZone.get(2) },
-    { zone: 3, min: bounds[2], max: bounds[3] - 1, pace: paceByHrZone.get(3) },
-    { zone: 4, min: bounds[3], max: bounds[4] - 1, pace: paceByHrZone.get(4) },
-    { zone: 5, min: bounds[4], max: null as number | null, pace: paceByHrZone.get(5) },
-  ]
+    { zone: 1, min: bounds[0], max: bounds[1] - 1 },
+    { zone: 2, min: bounds[1], max: bounds[2] - 1 },
+    { zone: 3, min: bounds[2], max: bounds[3] - 1 },
+    { zone: 4, min: bounds[3], max: bounds[4] - 1 },
+    { zone: 5, min: bounds[4], max: null as number | null },
+  ].map((z) => ({ ...z, pace: paceLabel(z.zone) }))
+  const showPace = zones.some((z) => z.pace !== null)
+  const rowGrid = showPace ? ROW_GRID : ROW_GRID_NO_PACE
 
   const timeByZone = new Map(zoneTime.map((z) => [z.zone, z]))
   const windowTotal = totalSeconds(zoneTime)
@@ -146,11 +155,11 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
 
         <div>
           <div
-            className={`${ROW_GRID} pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground`}
+            className={`${rowGrid} pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground`}
             data-testid="zone-columns"
           >
             <span>{s.columnZone}</span>
-            <span className="whitespace-nowrap text-right">{s.columnPace}</span>
+            {showPace && <span className="whitespace-nowrap text-right">{s.columnPace}</span>}
             <span className="whitespace-nowrap text-right">
               <span className="sm:hidden">{s.columnHrShort}</span>
               <span className="hidden sm:inline">{s.columnHr}</span>
@@ -161,17 +170,9 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
           {zones.map(({ zone, min, max, pace }) => {
             const seconds = timeByZone.get(zone)?.seconds ?? 0
             const share = segments.find((z) => z.zone === zone)?.pct ?? null
-            const paceLabel =
-              zone === 1
-                ? warmupPaceSecPerKm !== null
-                  ? `≥ ${fmt(warmupPaceSecPerKm)}`
-                  : '-'
-                : pace
-                  ? `${fmt(pace.paceMinSecPerKm)}–${fmt(pace.paceMaxSecPerKm)}`
-                  : '-'
 
             return (
-              <div key={zone} className={`${ROW_GRID} min-h-[38px] border-t border-border py-1.5`} data-testid={`zone-row-${zone}`}>
+              <div key={zone} className={`${rowGrid} min-h-[38px] border-t border-border py-1.5`} data-testid={`zone-row-${zone}`}>
                 <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
                   <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
                   {/* Wraps, not truncates: "Recovery" and "Threshold" lost their ends in the name column. */}
@@ -179,7 +180,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                     <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
                   </span>
                 </span>
-                <span className="whitespace-nowrap text-right text-xs tabular-nums tracking-[-0.01em] text-[var(--text-2)]">{paceLabel}</span>
+                {showPace && <span className="whitespace-nowrap text-right text-xs tabular-nums tracking-[-0.01em] text-[var(--text-2)]">{pace ?? '-'}</span>}
                 <span className="whitespace-nowrap text-right text-xs tabular-nums text-[var(--text-2)]">{bpmRangeLabel(min, max)}</span>
                 <span className="whitespace-nowrap text-right text-xs font-semibold tabular-nums text-foreground">
                   {zoneTimeLabel(seconds)}

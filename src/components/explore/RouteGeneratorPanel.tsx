@@ -282,7 +282,7 @@ export function RouteGeneratorPanel({
               className={cn(GROUPED, 'flex min-h-[64px] items-center gap-3 py-3 pl-4 pr-3.5 text-left')}
             >
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-[11px] font-semibold uppercase leading-[14px] tracking-[0.1em] text-accent-text">{plan.heading}</span>
+                <span className="text-[11px] font-semibold uppercase leading-[14px] tracking-[0.1em] text-muted-foreground">{plan.heading}</span>
                 <span className="truncate text-[16px] font-semibold leading-[22px] text-foreground">{plan.label}</span>
               </span>
               {onPlan && (

@@ -23,7 +23,7 @@ function medalClass(i: number): string {
 }
 
 const GAP_TONE = {
-  faster: 'text-accent-text',
+  faster: 'text-[var(--pos)]',
   at: 'text-muted-foreground',
   slower: 'text-muted-foreground',
 } as const
@@ -55,6 +55,9 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
   const predictionByKey = new Map(predictions.map((p) => [p.key, p]))
 
   if (!records.some((r) => r.seconds !== null)) return null
+  const ranked = records.filter((r) => r.key !== 'longest')
+  const missing = ranked.filter((r) => r.seconds === null)
+  const missingText = t.records.missing(missing.map((r) => r.label), missing.some((r) => predictionByKey.has(r.key)))
 
   const toggle = (key: string) => {
     setExpandedKey(expandedKey === key ? null : key)
@@ -68,29 +71,9 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
         <span className="text-right">{t.records.cols.best}</span>
         <span className="text-right">{t.records.cols.predicted}</span>
       </div>
-      {records.filter((r) => r.key !== 'longest').map((r, index) => {
+      {ranked.filter((r): r is RecordEntry & { seconds: number } => r.seconds !== null).map((r, index) => {
         const prediction = predictionByKey.get(r.key)
         const divider = index > 0 && 'border-t border-border'
-
-        if (r.seconds === null) {
-          return (
-            <div key={r.key} className={cn(ROW_GRID, 'min-h-14.5 py-2.5', divider)}>
-              <div className="min-w-0">
-                <p className="truncate text-subhead font-semibold text-subtle">{r.label}</p>
-                {prediction ? (
-                  <Link href="/goals" className="block truncate text-xs font-semibold text-accent-text">
-                    {t.records.findRace(r.label)}
-                  </Link>
-                ) : (
-                  <p className="truncate text-xs text-muted-foreground">{t.records.noRecordYet}</p>
-                )}
-              </div>
-              <span className="text-right text-base font-bold text-subtle">—</span>
-              <PredictedCell best={null} prediction={prediction} />
-            </div>
-          )
-        }
-
         const entries = topEfforts[r.key] ?? []
         const expandable = entries.length > 1
         const isExpanded = expandable && expandedKey === r.key
@@ -182,6 +165,15 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
           </div>
         )
       })}
+      {missing.length > 0 && (
+        <div className="border-t border-border py-3" data-testid="records-missing">
+          {missing.some((r) => predictionByKey.has(r.key)) ? (
+            <Link href="/goals" className="block text-xs font-semibold text-accent-text text-pretty">{missingText}</Link>
+          ) : (
+            <p className="text-xs text-muted-foreground text-pretty">{missingText}</p>
+          )}
+        </div>
+      )}
     </section>
   )
 }

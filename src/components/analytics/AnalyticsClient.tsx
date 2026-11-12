@@ -26,6 +26,7 @@ import {
   PERIODS,
   WEEK_PERIODS,
   dayWindow,
+  openingPeriod,
   weekRows,
   weekWindow,
   type GoalRaceInput,
@@ -96,8 +97,8 @@ function parseAnalyticsTab(value: string | null): TabId {
   return TABS.find((tb) => tb.id === value)?.id ?? 'fitness'
 }
 
-function parseAnalyticsPeriod(value: string | null, tab: TabId): LoadPeriod {
-  return PERIODS.find((p) => p === value) ?? DEFAULT_PERIOD[tab]
+function parseAnalyticsPeriod(value: string | null, fallback: LoadPeriod): LoadPeriod {
+  return PERIODS.find((p) => p === value) ?? fallback
 }
 
 export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsBoardData; today: string }) {
@@ -106,14 +107,15 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   const [tabParam, setTabParam] = useUrlParam('tab')
   const [periodParam, setPeriodParam] = useUrlParam('period')
   const tab = parseAnalyticsTab(tabParam)
-  const period = parseAnalyticsPeriod(periodParam, tab)
+  const opening = (id: TabId) => openingPeriod(DEFAULT_PERIOD[id], data.weeks, serverToday)
+  const period = parseAnalyticsPeriod(periodParam, opening(tab))
   const [periods, setPeriods] = useState<Partial<Record<TabId, LoadPeriod>>>({})
   const [offsets, setOffsets] = useState<Partial<Record<TabId, number>>>({})
   const offset = offsets[tab] ?? 0
   const tabsRef = useRef<HTMLDivElement>(null)
 
   function writePeriod(next: TabId, value: LoadPeriod) {
-    setPeriodParam(value === DEFAULT_PERIOD[next] ? null : value)
+    setPeriodParam(value === opening(next) ? null : value)
   }
 
   function selectTab(id: TabId) {
@@ -121,7 +123,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
     if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
     setPeriods((all) => ({ ...all, [tab]: period }))
     setTabParam(id === 'fitness' ? null : id)
-    writePeriod(id, periods[id] ?? DEFAULT_PERIOD[id])
+    writePeriod(id, periods[id] ?? opening(id))
   }
 
   // A tab swap changes the page under the title without a scroll: have the
@@ -172,7 +174,6 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
     const weekly = loadTab ? [] : weekRows(data.weeks, data.plan, live as ReturnType<typeof weekWindow>, today)
     return tabRead({ tab, data, today, period, days: loadTab ? (live as ReturnType<typeof dayWindow>) : null, rows: weekly, live: live.live })
   }, [data, today, tab, period, offset, loadTab])
-  const coachEyebrow = t.analytics.cards.coachRead.eyebrow(t.analytics.cards.period.words[period]!, t.analytics.tabs[tab])
 
   return (
     <div className="flex flex-col gap-5">
@@ -196,7 +197,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
         <SegmentedTabs tabs={analyticsTabs} items={TABS} label={t.analytics.title} size="md" fill onAura />
       </StickyBar>
 
-      {coach && <CoachRead read={coach} eyebrow={coachEyebrow} />}
+      {coach && <CoachRead read={coach} eyebrow={t.analytics.cards.coachRead.eyebrow} />}
 
       <div {...analyticsTabs.panelProps} {...swipeHandlers}>
         {tab === 'fitness' && days && (

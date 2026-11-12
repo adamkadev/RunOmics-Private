@@ -143,7 +143,7 @@ export function CelebrationOverlay({
           <Trophy size={52} className="text-accent-foreground" />
         </div>
 
-        <div className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent-text" id={`${titleId}-eyebrow`}>{item.eyebrow}</div>
+        <div className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--pos)]" id={`${titleId}-eyebrow`}>{item.eyebrow}</div>
         <div className="mb-1 text-2xl font-bold" id={titleId}>{item.title}</div>
         {item.value && <div className="text-4xl font-bold tabular-nums">{item.value}</div>}
 

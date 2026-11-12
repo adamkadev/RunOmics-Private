@@ -188,9 +188,9 @@ function LoadCard({
       {/* The chart sets its height; the out-of-range dots lie over it. */}
       <div className="relative">
         <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden data-testid="load-mini">
-          <polygon points={band} fill="color-mix(in srgb, var(--accent) 8%, transparent)" />
-          <polyline points={pts.map((p, i) => `${x(i)},${y(p.hi)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--accent) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-          <polyline points={pts.map((p, i) => `${x(i)},${y(p.lo)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--accent) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+          <polygon points={band} fill="color-mix(in srgb, var(--data-done) 8%, transparent)" />
+          <polyline points={pts.map((p, i) => `${x(i)},${y(p.hi)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--data-done) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+          <polyline points={pts.map((p, i) => `${x(i)},${y(p.lo)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--data-done) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
           <polyline points={pts.map((p, i) => `${x(i)},${y(p.acute)}`).join(' ')} fill="none" stroke="var(--foreground)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
         </svg>
         <div className="absolute inset-0" aria-hidden>

@@ -30,7 +30,7 @@ export function TodaySessionCard({ card }: { card: SessionCard }) {
       className={cardClass({ clickable: true, className: 'flex flex-col gap-1.5' })}
     >
       <span className="flex items-center justify-between gap-3">
-        <span className="text-eyebrow uppercase text-accent-text">{card.eyebrow}</span>
+        <span className="text-eyebrow uppercase text-muted-foreground">{card.eyebrow}</span>
         <ChevronRight size={18} aria-hidden className="shrink-0 text-muted-foreground" />
       </span>
       <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">

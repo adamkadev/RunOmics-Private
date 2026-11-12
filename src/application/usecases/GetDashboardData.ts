@@ -1,3 +1,4 @@
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { toActivitySummary } from '@/domain/activity/summary'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -12,5 +13,6 @@ export function computeWeekActivityDays(activities: Activity[], now: Date): bool
 }
 
 export function getDashboardData(): DashboardData {
-  return { recentActivities: getAllActivities().slice(0, RECENT_ACTIVITY_COUNT).map(toActivitySummary) }
+  const hasLthr = !!getAthleteProfile().lthrBpm
+  return { recentActivities: getAllActivities().slice(0, RECENT_ACTIVITY_COUNT).map((a) => toActivitySummary(a, hasLthr)) }
 }

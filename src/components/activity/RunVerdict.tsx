@@ -20,9 +20,10 @@ interface Props {
 export const RUN_CHIP_CLASS =
   'hit-44 inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full bg-[var(--fill-3)] px-3 py-1 text-[13px] text-foreground'
 
+// Status, never the accent: an accent eyebrow read as "good" on a neutral run.
 const STATUS_TONE: Record<RunTone, VerdictTone> = {
-  positive: 'accent',
-  neutral: 'accent',
+  positive: 'pos',
+  neutral: 'muted',
   caution: 'warn',
 }
 

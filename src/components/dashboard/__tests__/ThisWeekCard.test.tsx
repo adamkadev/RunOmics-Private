@@ -43,8 +43,8 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(bars[1]!.label).toBe('10')
   })
 
-  it('dashes the days to come, tints today, and reads the load in the header', () => {
-    render(<ThisWeekCard target={WEEK} today={TODAY} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79, estimated: false }} />)
+  it('dashes the days to come, tints today, and leaves the load to the readiness card', () => {
+    render(<ThisWeekCard target={WEEK} today={TODAY} />)
 
     const card = screen.getByTestId('this-week-card')
     expect(screen.getByTestId('this-week-link')).toHaveAttribute('href', '/plan?view=week')
@@ -60,28 +60,25 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
       t.dashboard.weeklyStreak.kinds.easy,
       t.dashboard.weeklyStreak.kinds.threshold,
     ])
-    const reading = screen.getByTestId('load-reading')
-    expect(reading.textContent).toBe(t.dashboard.thisWeek.load(456, 462, 750))
-    expect(reading.style.color).toBe('var(--warn)')
+    expect(card.textContent).not.toContain('462')
     expect(card).toHaveTextContent(t.dashboard.thisWeek.runsLeft(3))
   })
 
   const MISSED = weekTarget([day('2026-10-19', { plannedKm: 8, plannedSessions: 1 }), ...DAYS.slice(1)], TODAY, null)
 
   it('dashes a missed day in amber, keeps its km, keys it and counts it', () => {
-    render(<ThisWeekCard target={MISSED} today={TODAY} load={null} />)
+    render(<ThisWeekCard target={MISSED} today={TODAY} />)
     expect(screen.getAllByTestId('week-bar')[0]!.getAttribute('style')).toContain('var(--warn)')
     const link = screen.getByTestId('missed-bar-link')
     expect(link).toHaveAttribute('href', '/plan?date=2026-10-19')
     expect(link.textContent).toBe('8')
     expect(screen.getByTestId('legend-missed')).toBeInTheDocument()
     expect(screen.getByTestId('week-footer-count').textContent).toBe(`${t.dashboard.thisWeek.runsLeft(3)} · ${t.dashboard.thisWeek.missedCount(1)}`)
-    expect(screen.queryByTestId('load-reading')).toBeNull()
   })
 
   it('draws a day skipped in Plan as a rest stub, and stops counting it', () => {
     skipped.set('2026-10-19', 'ill')
-    render(<ThisWeekCard target={MISSED} today={TODAY} load={null} />)
+    render(<ThisWeekCard target={MISSED} today={TODAY} />)
     expect(screen.getAllByTestId('week-bar')[0]!.dataset.state).toBe('rest')
     expect(screen.queryByTestId('legend-missed')).toBeNull()
     expect(screen.queryByTestId('missed-bar-link')).toBeNull()
@@ -98,7 +95,7 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
   })
 
   it('hides the missed key when nothing is missed', () => {
-    render(<ThisWeekCard target={WEEK} today={TODAY} load={null} />)
+    render(<ThisWeekCard target={WEEK} today={TODAY} />)
     expect(screen.queryByTestId('legend-missed')).toBeNull()
   })
 })

@@ -23,11 +23,11 @@ import { IntervalSet } from './IntervalSet'
  */
 const TYPE_COLORS: Record<string, string> = {
   interval_warmup:   'text-subtle',
-  interval_active:   'text-accent-text',
+  interval_active:   'text-[var(--zone-4-text)]',
   interval_rest:     'text-blue-600 dark:text-blue-400',
   interval_recovery: 'text-blue-600 dark:text-blue-400',
   interval_cooldown: 'text-subtle',
-  lap:               'text-accent-text',
+  lap:               'text-foreground',
 }
 
 const NUMBERED_TYPES = new Set(['interval_active', 'lap'])
@@ -125,14 +125,14 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
             <span className="tabular-nums text-muted-foreground">
               {split.distanceKm < 1 ? formatKm(split.distanceKm, 1) : split.km}
             </span>
-            <span className={cn('font-mono font-medium tabular-nums', best ? 'text-accent-text' : 'text-foreground')}>
+            <span className={cn('font-mono font-medium tabular-nums', best ? 'font-semibold text-foreground' : 'text-foreground')}>
               {formatClock(split.paceSecPerKm)}
             </span>
             <span className="block h-2 overflow-hidden rounded-full bg-[var(--track)]" aria-hidden="true">
               <span
                 className="block h-full rounded-full"
                 data-testid="km-bar"
-                style={{ width: `${width(paces[i]!)}%`, background: best ? 'var(--accent)' : 'var(--line-2)' }}
+                style={{ width: `${width(paces[i]!)}%`, background: best ? 'var(--data-done)' : 'var(--line-2)' }}
               />
             </span>
             <span className="text-right tabular-nums text-muted-foreground" data-testid="km-elev">
@@ -152,7 +152,7 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
             {fastest && (
               <>
                 {sp.fastest}{' '}
-                <b className="font-semibold text-accent-text">{sp.fastestKm(fastest.km, formatClock(fastest.paceSecPerKm))}</b>
+                <b className="font-semibold text-foreground">{sp.fastestKm(fastest.km, formatClock(fastest.paceSecPerKm))}</b>
               </>
             )}
           </span>

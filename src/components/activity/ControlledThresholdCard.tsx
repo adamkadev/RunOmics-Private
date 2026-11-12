@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 export const VERDICT_TONE: Record<SessionVerdict, StatusTone> = {
-  under: 'accent',
+  under: 'zinc',
   on_target: 'good',
   over: 'warn',
   off_guide: 'neutral',
@@ -25,7 +25,7 @@ function HrTrack({ hr, target, ceiling, low, high }: { hr: number; target: numbe
       <span aria-hidden className="absolute inset-y-0 bg-[var(--band)]" style={{ left: `${at(target)}%`, right: `${100 - at(ceiling)}%` }} />
       <span
         aria-hidden
-        className={cn('absolute -top-[3px] -bottom-[3px] w-1 rounded-sm', hr > target ? 'bg-[var(--warn)]' : 'bg-accent')}
+        className={cn('absolute -top-[3px] -bottom-[3px] w-1 rounded-sm', hr > target ? 'bg-[var(--warn)]' : 'bg-[var(--data-done)]')}
         style={{ left: `calc(${at(hr)}% - 2px)` }}
       />
     </span>

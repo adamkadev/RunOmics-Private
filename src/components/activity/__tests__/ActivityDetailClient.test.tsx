@@ -266,11 +266,11 @@ describe('ActivityDetailClient', () => {
     expect(scrollTo).not.toHaveBeenCalled()
   })
 
-  it('heads the verdict with one accent label: how it went and what it was', () => {
+  it('heads the verdict with one status label: how it went and what it was', () => {
     renderDetail({ activity: { ...ACTIVITY, rpe: 7 } as ActivityDetailView })
 
     const session = t.activity.verdict.headline.positive(t.activityTypes[ACTIVITY.type])
     const eyebrow = screen.getByText(session)
-    expect(eyebrow.getAttribute('style')).toContain('--accent-text')
+    expect(eyebrow.getAttribute('style')).toContain('var(--pos)')
   })
 })

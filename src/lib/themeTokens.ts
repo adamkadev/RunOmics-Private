@@ -32,6 +32,8 @@ export const STATUS_HEX = {
   dark: { pos: '#2dd4a7', warn: '#f0b73c', neg: '#ff8a80' },
 } as const
 
+export const DATA_DONE_HEX = { light: '#2a2e33', dark: '#a9b0b8' } as const
+
 /**
  * The same under every accent: colour is for data and the active state, never
  * for a background, a card, a border or a shadow.
@@ -411,6 +413,9 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--chart-hard': 'var(--zone-4)',
     '--chart-ground-contact': mode === 'dark' ? c.amber500 : c.amberLine,
     '--chart-brand': 'var(--accent)',
+    // Done against a target: a neutral ink, so the accent never reads as "good", as Z2 or as Z5.
+    '--data-done': DATA_DONE_HEX[mode],
+    '--data-done-soft': `color-mix(in srgb, ${DATA_DONE_HEX[mode]} 30%, transparent)`,
     // The busiest street's colour: in dark, the near-white the additive heat map burns to.
     '--heat-end': mode === 'dark' ? 'color-mix(in srgb, var(--accent) 35%, #ffffff)' : 'color-mix(in srgb, var(--accent) 45%, #000000)',
     '--ro-accent': 'var(--accent)',

@@ -44,7 +44,7 @@ describe('YearView annual goal card', () => {
     for (const projection of [BEHIND, onTrack]) {
       const { container } = render(<YearView yearData={yearData(projection)} today={TODAY} />)
       const fill = container.querySelector<HTMLElement>('[data-testid="goal-fill"]')
-      expect(fill!.className).toContain('bg-accent')
+      expect(fill!.className).toContain('bg-[var(--data-done)]')
     }
   })
 

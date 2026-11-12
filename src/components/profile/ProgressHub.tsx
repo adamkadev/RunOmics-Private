@@ -73,7 +73,7 @@ function RaceCard({ race }: { race: ProgressHubView['race'] }) {
       {race ? (
         <>
           <div className="flex min-w-0 flex-col gap-[3px]">
-            <span className={cn(EYEBROW_CLASS, 'text-accent-text')} data-testid="race-eyebrow">
+            <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="race-eyebrow">
               {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare', year: 'never' })} · {h.inDays(race.daysUntil)}
             </span>
             {race.name && <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="race-name">{race.name}</p>}
@@ -100,7 +100,7 @@ function BlockCard({ block }: { block: NonNullable<ProgressHubView['block']> }) 
     <Link href="/plan" className={cardClass({ className: cn('flex flex-col gap-2.5 px-4 py-3.5', LINK_CARD) })} data-testid="block-tile">
       <div className="flex items-baseline justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-[3px]">
-          <span className={cn(EYEBROW_CLASS, 'text-accent-text')}>{h.currentBlock}</span>
+          <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{h.currentBlock}</span>
           <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="block-name"><CoachBlockName fallback={block.name} general={block.general} /></p>
         </div>
         <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" data-testid="block-week">
@@ -145,7 +145,7 @@ function YearCard({ view }: { view: ProgressHubView }) {
       </div>
       {hero.goalKm !== null && (
         <div className="relative h-1.5 rounded-[3px] bg-[var(--track)]" data-testid="year-bar">
-          <div className="absolute inset-y-0 left-0 rounded-[3px] bg-accent" style={{ width: `${share(hero.km)}%` }} />
+          <div className="absolute inset-y-0 left-0 rounded-[3px] bg-[var(--data-done)]" style={{ width: `${share(hero.km)}%` }} />
           {projection && (
             <div className="absolute -top-[3px] h-3 w-0.5" style={{ left: `${share(projection.yearKm)}%`, background: projectionColor(hero) }} data-testid="projection-tick" />
           )}
@@ -173,7 +173,7 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
               <dt className="flex items-baseline gap-1 whitespace-nowrap text-[11.5px] text-muted-foreground">
                 {h.recordLabels[r.key] ?? r.label}
                 {r.recent && (
-                  <span data-testid="latest-record" aria-label={h.newRecordLabel} className="text-caption font-bold text-accent-text">
+                  <span data-testid="latest-record" aria-label={h.newRecordLabel} className="text-caption font-bold text-[var(--pos)]">
                     {h.newRecord}
                   </span>
                 )}
@@ -264,7 +264,9 @@ export function ProgressHub({ view, explored, checkpoint, homeRuns }: { view: Pr
                   height: `${week.heightPct}%`,
                   ...(week.current
                     ? { border: '1px dashed var(--accent)' }
-                    : { background: week.hit ? 'var(--accent)' : 'var(--neutral-bar)' }),
+                    : week.hit
+                      ? { background: 'var(--data-done)' }
+                      : { border: '1px solid var(--data-done)' }),
                 }}
               />
             ))}

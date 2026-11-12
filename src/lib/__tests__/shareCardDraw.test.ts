@@ -89,10 +89,10 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the logo mark, the route, the start marker\'s fill and the reps\' result', () => {
+  it('keeps the accent to the logo mark, the route and the start marker\'s fill', () => {
     for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
       const ops = draw({ design: 'route', activity })
-      expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc).map((o) => o.args[0])).toEqual(activity.reps ? ['1 s/km under target'] : [])
+      expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
       expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
     }
     // The mark is three accent strokes; a plain run's trace is a fourth.
@@ -170,11 +170,11 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(texts(draw({ design: 'stats', activity: session }))).toEqual(expect.arrayContaining(['Rep 1', '4:22', 'Rep 3', '4:26']))
   })
 
-  it('puts the reps\' result in the accent under the header on Route and Stats, never on Photo or a plain run', () => {
+  it('puts the reps\' result in the good-status green under the header on Route and Stats, never on Photo or a plain run', () => {
     for (const design of ['route', 'stats'] as const) {
       const ops = draw({ design, activity: session })
       const line = ops.find((o) => o.op === 'fillText' && o.args[0] === '1 s/km under target')!
-      expect(line.fill).toBe(acc)
+      expect(line.fill).toBe(STATUS_HEX.dark.pos)
       expect(line.font).toMatch(/^700 16px/)
       const subtitle = ops.find((o) => o.op === 'fillText' && (o.args[0] as string).endsWith(' · Hoenheim'))!
       expect(line.args[2] as number).toBeGreaterThan(subtitle.args[2] as number)

@@ -9,15 +9,15 @@ import { formBand } from '@/domain/training/formBand'
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
-import { cardClass, insetTileClass, tileLabelClass } from '@/components/ui/Card'
+import { cardClass, tileLabelClass } from '@/components/ui/Card'
 import { CheckInReadiness } from '@/components/wellness/CheckInReadiness'
 import { appTodayIso } from '@/lib/calendarDate'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
+// Status, never the accent: an accent eyebrow read as "good" whatever the tone.
 const STATUS_COLOR: Record<ReadinessTone, string> = {
-  go: 'var(--accent-text)',
-  build: 'var(--accent-text)',
+  go: 'var(--pos)',
+  build: 'var(--muted-foreground)',
   caution: 'var(--warn)',
   hold: 'var(--warn)',
 }
@@ -28,7 +28,7 @@ const TIRED_WORDS = /\b(tired|fatigued|fatiguée?)\b/i
 
 function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub?: ReactNode; testId: string }) {
   return (
-    <div data-testid={testId} className={cn('flex min-w-0 flex-col gap-1', insetTileClass)}>
+    <div data-testid={testId} className="flex min-w-0 flex-col gap-1">
       <span className={tileLabelClass}>{label}</span>
       <span className="text-metric tabular-nums text-foreground">{value}</span>
       <span className="text-xs text-muted-foreground">{sub}</span>
@@ -92,7 +92,8 @@ export function ReadinessCard({
           words={{ tone, color, band: bandWord, line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
         />
 
-        <div className="-mx-1 -mb-1 grid grid-cols-3 gap-1.5">
+        {/* A flat row under a hairline: tiles inside the card read as cards within a card. */}
+        <div className="grid grid-cols-3 gap-3 border-t border-border pt-3">
           <Tile testId="tile-form" label={s.formLabel} value={bandWord ? formatDelta(form) : '–'} sub={bandWord?.toLocaleLowerCase(t.locale)} />
           <Tile
             testId="tile-fitness"

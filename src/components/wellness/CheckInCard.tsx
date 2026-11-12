@@ -207,7 +207,7 @@ export function CheckInForm({
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="checkin-card" aria-label={c.eyebrow}>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-eyebrow uppercase text-accent-text">{c.eyebrow}</span>
+        <span className="text-eyebrow uppercase text-muted-foreground">{c.eyebrow}</span>
         <span className="flex items-center gap-1">
           <span className="text-footnote text-muted-foreground">{c.scaleHint}</span>
           <HideButton onHide={onHide} />

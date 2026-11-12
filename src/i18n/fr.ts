@@ -169,10 +169,10 @@ export const fr = {
     target: (runs: number) => `objectif ${runs}`,
     legend: { onTarget: (runs: number) => `${runs}+ sorties`, under: 'en dessous', planned: 'prévue', streak: 'série' },
     weekLabel: (week: string, runs: number) => `Semaine du ${week} : ${runs} sortie${runs > 1 ? 's' : ''}`,
-    runningWeek: 'Votre semaine de course',
+    runningWeek: 'Ta semaine de course',
     weeksRan: (weeks: number) => `semaines courues, sur ${weeks}`,
     weekdayLabel: (day: string, weeks: number) => `${day} : ${weeks} semaine${weeks > 1 ? 's' : ''}`,
-    anchor: (day: string) => `Le ${day} est votre point d’ancrage`,
+    anchor: (day: string) => `Le ${day} est ton point d’ancrage`,
     anchorWeeks: (weeks: number, of: number) => `, ${weeks} semaine${weeks > 1 ? 's' : ''} sur ${of}.`,
     restDay: (day: string) => `Le ${day} reste un jour de repos.`,
     sheet: {
@@ -635,9 +635,9 @@ export const fr = {
       ofAge: (age: number) => `(${age} ans)`,
       achievableFitnessAge: 'Potentiel',
       fitnessAgeBand: {
-        younger: (years: number) => `−${years} ans`,
+        younger: (years: number) => `−${years} an${years > 1 ? 's' : ''}`,
         onPar: 'identique',
-        older: (years: number) => `+${years} ans`,
+        older: (years: number) => `+${years} an${years > 1 ? 's' : ''}`,
       },
     },
     actions: {
@@ -782,7 +782,6 @@ export const fr = {
     },
     thisWeek: {
       title: 'Cette semaine',
-      load: (acute: number, lo: number, hi: number) => `charge ${acute} · sûr ${lo}–${hi}`,
       runsLeft: (n: number) => `${n} sortie${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''}`,
       missed: 'manquée',
       missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
@@ -827,7 +826,7 @@ export const fr = {
       thisWeek: 'Cette semaine',
       scrubWeek: (date: string) => `Semaine du ${date}`,
       coachRead: {
-        eyebrow: (span: string, tab: string) => `Lecture du coach · ${span} · ${tab}`,
+        eyebrow: 'Lecture du coach',
         why: 'Pourquoi',
         openPlan: 'Voir le plan',
         openPlanButton: 'Voir le plan',
@@ -1081,7 +1080,7 @@ export const fr = {
         easy: 'Facile · Z1–Z2',
         moderate: 'Modéré · Z3',
         hard: 'Dur · Z4–Z5',
-        part: (h: string, pct: number) => `${h} h · ${pct} %`,
+        part: (time: string, pct: number) => `${time} · ${pct} %`,
       },
       zones: {
         title: 'Temps par zone',
@@ -1323,7 +1322,7 @@ export const fr = {
     tabs: {
       groupLabel: 'Sections de la sortie',
       overview: 'Aperçu',
-      intervals: 'Splits',
+      intervals: 'Allures',
       charts: 'Graphiques',
       dynamics: 'Dynamique',
     },
@@ -1333,7 +1332,7 @@ export const fr = {
         '1k': '1 km',
         '5k': '5 km',
         '10k': '10 km',
-        half: 'Semi-marathon',
+        half: 'Semi',
         marathon: 'Marathon',
       } as Record<string, string>,
       prBadge: 'RP',
@@ -1498,8 +1497,8 @@ export const fr = {
     splits: {
       fastest: 'Plus rapide',
       fastestKm: (km: number, pace: string) => `km ${km} · ${pace}`,
-      negativeSplit: (gap: string) => `Split négatif ${gap}`,
-      positiveSplit: (gap: string) => `Split positif ${gap}`,
+      negativeSplit: (gap: string) => `Fin plus rapide ${gap}`,
+      positiveSplit: (gap: string) => `Fin plus lente ${gap}`,
       evenSplit: 'Allure régulière',
       viewLabel: 'Découpage',
       bandLabel: (range: string) => `plage ${range}`,
@@ -1517,8 +1516,8 @@ export const fr = {
       lapTitle: 'Tours',
       wholeRun: 'Sortie entière',
       lapNumber: (n: number) => `Tour ${n}`,
-      noLapsPressed: "Aucun tour n'a été déclenché sur cette sortie. Les splits au km montrent comment ton allure a évolué.",
-      seeKmSplits: 'Voir les splits au km',
+      noLapsPressed: "Aucun tour n'a été déclenché sur cette sortie. Les allures au km montrent comment ton allure a évolué.",
+      seeKmSplits: 'Voir les allures au km',
       cols: {
         km: 'Km',
         step: '#',
@@ -1792,7 +1791,7 @@ export const fr = {
       overAtPace: (km: string) => `${km} km d'avance à ce rythme`,
       noRace: 'Aucune course prévue',
       currentBlock: 'Bloc en cours',
-      blockWeek: (week: number, total: number) => `Semaine ${week} sur ${total}`,
+      blockWeek: (week: number, total: number) => `Bloc · semaine ${week} sur ${total}`,
       blockSessions: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} faite${done > 1 ? 's' : ''} sur ${planned}`,
       thisYear: 'Cette année',
       athleteZones: 'Athlète et zones',
@@ -1855,10 +1854,10 @@ export const fr = {
 
   records: {
     distances: {
-      '1k': '1K',
+      '1k': '1 km',
       '1mile': '1 mile',
-      '5k': '5K',
-      '10k': '10K',
+      '5k': '5 km',
+      '10k': '10 km',
       half: 'Semi',
       marathon: 'Marathon',
       longest: 'Plus longue sortie',
@@ -1893,7 +1892,6 @@ export const fr = {
       nextUp: 'Prochaines étapes',
       toGo: (n: string) => `encore ${n}`,
     },
-    noRecordYet: 'Pas encore de record',
     cols: { distance: 'Distance', best: 'Record', predicted: 'Prédit' },
     gapSeconds: (s: number) => `${s} s`,
     faster: (gap: string) => `${gap} plus rapide`,
@@ -1901,7 +1899,8 @@ export const fr = {
     atPotential: 'à ton potentiel',
     allEfforts: (distance: string) => `Tous les efforts sur ${distance} ›`,
     topEfforts: (n: number, distance: string) => `Les ${n} meilleurs efforts sur ${distance} ›`,
-    findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
+    missing: (distances: string[], link: boolean) =>
+      `Pas encore de record sur ${distances.slice(0, 3).join(', ')}${distances.length > 3 ? '…' : ''}${link ? ' ›' : ''}`,
   },
 
   returnProgress: {
@@ -2050,7 +2049,9 @@ export const fr = {
     split: 'Passage',
     pace: 'Allure',
     finish: 'Arrivée',
-    none: 'Aucune course à venir. Ajoute-en une dans Garmin Connect, elle s’affichera ici après la prochaine synchro.',
+    title: 'Course',
+    noneTitle: 'Aucune course prévue',
+    none: 'Ajoute une course dans Garmin Connect : ta prédiction et ton allure cible apparaîtront ici après la synchro.',
     formTitle: 'Forme le jour de la course',
     formToday: (tsb: string) => `Aujourd’hui ${tsb}.`,
     formCaption: 'Prévue à partir des séances planifiées jusqu’à la course, à la charge que portent tes sorties de chaque type.',
@@ -2073,7 +2074,7 @@ export const fr = {
     cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: '12 dernières semaines',
     against: (current: string, previous: string) => `${current} contre ${previous}`,
-    weekOf: (week: number) => `Semaine ${week} sur 12`,
+    weekOf: (week: number) => `Cycle · semaine ${week} sur 12`,
     complete: (n: number) => `Cycle ${n} terminé`,
     dueIn: (date: string, days: number) =>
       days <= 0 ? 'Bilan aujourd’hui' : days === 1 ? 'Bilan demain' : days < 14 ? `Bilan ${date} · dans ${days} jours` : `Bilan ${date} · dans ${Math.round(days / 7)} semaines`,
@@ -2088,7 +2089,7 @@ export const fr = {
     perWeek: 'par semaine',
     vs: (value: string) => `contre ${value}`,
     notEnough: 'Pas assez de données',
-    nothingBefore: 'Rien avant',
+    nothingBefore: 'Nouveau',
     lastReading: (date: string) => `Dernière mesure ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min en ${sessions} séance${sessions > 1 ? 's' : ''} pour l’instant`,
     noCheck: 'Pas de test ce cycle',
@@ -2133,7 +2134,7 @@ export const fr = {
     },
     units: { runs: 'sorties', perBeat: 'm/batt.' },
     tile: {
-      inProgress: (week: number, date: string) => `Semaine ${week} sur 12 · bilan ${date}`,
+      inProgress: (week: number, date: string) => `Cycle · semaine ${week} sur 12 · bilan ${date}`,
       complete: (n: number) => `Cycle ${n} terminé : place au bilan`,
       rolling: 'Tes 12 dernières semaines face aux 12 d’avant',
     },
@@ -2240,7 +2241,6 @@ export const fr = {
     },
     comingUp: {
       title: 'À venir',
-      hint: 'touche pour ouvrir',
     },
     kinds: { easy: 'Footing', long: 'Sortie longue' },
     typeLetters: {
@@ -2318,7 +2318,7 @@ export const fr = {
         taper: 'Affûtage',
         raceDay: 'Jour de course',
       },
-      weekOfTarget: (done: number, total: number) => `semaine ${done} sur ${total}`,
+      weekOfTarget: (done: number, total: number) => `bloc · semaine ${done} sur ${total}`,
       generalPreparation: 'Préparation générale',
       weekN: (n: number) => `semaine ${n}`,
     },

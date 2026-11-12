@@ -65,21 +65,21 @@ describe('getQualifiedEffortsByActivityId', () => {
   })
 
   it('labels the current record holder as rank 1', () => {
-    const records: RecordEntry[] = [record('5k', '5K', 'a1'), record('10k', '10K', 'a1'), record('half', 'Half', 'a2')]
+    const records: RecordEntry[] = [record('5k', '5 km', 'a1'), record('10k', '10 km', 'a1'), record('half', 'Half', 'a2')]
     const activities = [act('a1', '2026-01-01', { '5k': 1200, '10k': 2500 }), act('a2', '2026-01-05', { half: 6000 })]
 
     const result = getQualifiedEffortsByActivityId(records, activities)
     expect(result.a1).toEqual(
       expect.arrayContaining([
-        { key: '5k', label: '5K', rank: 1 },
-        { key: '10k', label: '10K', rank: 1 },
+        { key: '5k', label: '5 km', rank: 1 },
+        { key: '10k', label: '10 km', rank: 1 },
       ]),
     )
     expect(result.a2).toEqual(expect.arrayContaining([{ key: 'half', label: 'Half', rank: 1 }]))
   })
 
   it('ranks the next-best locally recorded efforts as #2/#3, skipping the record holder', () => {
-    const records: RecordEntry[] = [record('5k', '5K', 'a1')]
+    const records: RecordEntry[] = [record('5k', '5 km', 'a1')]
     const activities = [
       act('a1', '2026-03-01', { '5k': 1000 }),
       act('a2', '2026-02-01', { '5k': 1100 }),
@@ -88,9 +88,9 @@ describe('getQualifiedEffortsByActivityId', () => {
     ]
 
     const result = getQualifiedEffortsByActivityId(records, activities, 3)
-    expect(result.a1).toEqual([{ key: '5k', label: '5K', rank: 1 }])
-    expect(result.a2).toEqual([{ key: '5k', label: '5K', rank: 2 }])
-    expect(result.a3).toEqual([{ key: '5k', label: '5K', rank: 3 }])
+    expect(result.a1).toEqual([{ key: '5k', label: '5 km', rank: 1 }])
+    expect(result.a2).toEqual([{ key: '5k', label: '5 km', rank: 2 }])
+    expect(result.a3).toEqual([{ key: '5k', label: '5 km', rank: 3 }])
     expect(result.a4).toBeUndefined()
   })
 
@@ -100,8 +100,8 @@ describe('getQualifiedEffortsByActivityId', () => {
       act('older', '2026-01-01', { '5k': 1000 }),
     ]
     const result = getQualifiedEffortsByActivityId([], activities, 2)
-    expect(result.newer).toEqual([{ key: '5k', label: '5K', rank: 1 }])
-    expect(result.older).toEqual([{ key: '5k', label: '5K', rank: 2 }])
+    expect(result.newer).toEqual([{ key: '5k', label: '5 km', rank: 1 }])
+    expect(result.older).toEqual([{ key: '5k', label: '5 km', rank: 2 }])
   })
 })
 
@@ -122,7 +122,7 @@ describe('official race results in effort ranking', () => {
   ]
 
   const pbRecord: RecordEntry[] = [
-    { key: '5k', label: '5K', seconds: 1_238, paceSecPerKm: 248, activityId: 'wine-route', date: '2025-09-28', official: true },
+    { key: '5k', label: '5 km', seconds: 1_238, paceSecPerKm: 248, activityId: 'wine-route', date: '2025-09-28', official: true },
   ]
 
   const ranks = (officialResults: typeof escherOfficial[]) =>
@@ -136,7 +136,7 @@ describe('official race results in effort ranking', () => {
   })
 
   it('stops an over-read race from claiming rank 1 over the standing official PB', () => {
-    expect(ranks([escherOfficial]).escher).toEqual([{ key: '5k', label: '5K', rank: 2 }])
+    expect(ranks([escherOfficial]).escher).toEqual([{ key: '5k', label: '5 km', rank: 2 }])
   })
 
   it('leaves the official PB holder without a device badge, since its card carries the record', () => {
@@ -152,8 +152,8 @@ describe('official race results in effort ranking', () => {
     const withTraining = [...activities, act('seuil', '2026-05-06', { '5k': 1241.3 }, 'Seuil')]
     const result = getQualifiedEffortsByActivityId(pbRecord, withTraining, 3, [escherOfficial, remichOfficial])
 
-    expect(result.seuil).toEqual([{ key: '5k', label: '5K', rank: 1 }])
-    expect(result.escher).toEqual([{ key: '5k', label: '5K', rank: 3 }])
+    expect(result.seuil).toEqual([{ key: '5k', label: '5 km', rank: 1 }])
+    expect(result.escher).toEqual([{ key: '5k', label: '5 km', rank: 3 }])
   })
 
   it('only substitutes the distance the race was actually certified over', () => {
@@ -186,7 +186,7 @@ describe('official PB badges never label a device effort', () => {
   ]
 
   const officialRecords: RecordEntry[] = [
-    { key: '5k', label: '5K', seconds: 1_242, paceSecPerKm: 248, activityId: 'remich', date: '2025-09-28', official: true },
+    { key: '5k', label: '5 km', seconds: 1_242, paceSecPerKm: 248, activityId: 'remich', date: '2025-09-28', official: true },
     { key: 'half', label: 'Half', seconds: 5_968, paceSecPerKm: 283, activityId: 'ing', date: '2026-05-16', official: true },
   ]
 
@@ -213,15 +213,15 @@ describe('official PB badges never label a device effort', () => {
   })
 
   it('still badges a device record when no official PB exists for that distance', () => {
-    expect(qualified.ing).toEqual([{ key: '10k', label: '10K', rank: 1 }])
+    expect(qualified.ing).toEqual([{ key: '10k', label: '10 km', rank: 1 }])
   })
 
   it('keeps badging device records when the standing record is not official', () => {
     const derivedRecord: RecordEntry[] = [
-      { key: '5k', label: '5K', seconds: 1_238, paceSecPerKm: 248, activityId: 'remich', date: '2025-09-28', official: false },
+      { key: '5k', label: '5 km', seconds: 1_238, paceSecPerKm: 248, activityId: 'remich', date: '2025-09-28', official: false },
     ]
     const result = getQualifiedEffortsByActivityId(derivedRecord, activities, 3, [])
 
-    expect(result.remich).toEqual([{ key: '5k', label: '5K', rank: 1 }])
+    expect(result.remich).toEqual([{ key: '5k', label: '5 km', rank: 1 }])
   })
 })

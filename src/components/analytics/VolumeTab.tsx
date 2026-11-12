@@ -11,8 +11,9 @@ import { LONG_RUN_SHARE, ON_PLAN_SHARE, longRunView, weeklyDistanceView, type We
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
 /** A week the plan never asked for is a neutral grey, so "below plan" and "unplanned" never share a swatch. */
-const ACCENT = 'var(--accent)'
-const ACCENT_SOFT = 'color-mix(in srgb, var(--accent) 40%, var(--background))'
+const DONE = 'var(--data-done)'
+const CURRENT = 'var(--accent)'
+const BELOW_PLAN_OUTLINE = '1.5px solid var(--data-done)'
 const UNPLANNED = 'var(--neutral-bar)'
 const MISSED_OUTLINE = '1.5px dashed var(--axis-text)'
 
@@ -30,6 +31,13 @@ export function weekLabels(weeks: string[], live: boolean): string[] {
 }
 
 export const onPlan = (r: WeekRow) => r.planKm !== null && r.planKm > 0 && r.km >= r.planKm * ON_PLAN_SHARE
+
+/** Null is a week below its plan: an outline only, since a dark fill disappears on the dark card. */
+export function weekBarFill(r: WeekRow, current: boolean, hasPlan: boolean): string | null {
+  if (current) return CURRENT
+  if (!hasPlan || onPlan(r)) return DONE
+  return unplanned(r, hasPlan) ? UNPLANNED : null
+}
 
 function VolumeStat({ value, of, label, testId }: { value: string | number; of?: string | number; label: string; testId?: string }) {
   return (
@@ -83,6 +91,7 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
           {rows.map((r) => {
             const current = r.current && live
             const planH = r.planKm !== null ? Math.min(H, (r.planKm / view.yMax) * H) : 0
+            const fill = weekBarFill(r, current, hasPlan)
             return (
               <div key={r.week} className="relative flex flex-col justify-end" style={{ height: H }}>
                 {marks && r.planKm !== null && (
@@ -96,7 +105,8 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
                     style={{
                       borderRadius: radius,
                       height: Math.max(3, (r.km / view.yMax) * H),
-                      background: onPlan(r) ? ACCENT : unplanned(r, hasPlan) ? UNPLANNED : ACCENT_SOFT,
+                      background: fill ?? undefined,
+                      border: fill ? undefined : BELOW_PLAN_OUTLINE,
                       outline: current ? THIS_WEEK_BORDER : undefined,
                       outlineOffset: current ? 1 : undefined,
                     }}
@@ -116,8 +126,8 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
       <div className="flex flex-col gap-2.5">
         <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} className="text-[11px] text-[var(--axis-text)]" />
         <Legend className="gap-x-3.5 gap-y-2 text-[var(--text-2)]">
-          {hasPlan && <LegendItem swatch="square" size={9} color={ACCENT}>{s.onOrAbove}</LegendItem>}
-          <LegendItem swatch="square" size={9} color={ACCENT_SOFT}>{hasPlan ? s.belowPlan : s.done}</LegendItem>
+          {hasPlan && <LegendItem swatch="square" size={9} color={DONE}>{s.onOrAbove}</LegendItem>}
+          {hasPlan ? <LegendItem swatch="outline" color={DONE}>{s.belowPlan}</LegendItem> : <LegendItem swatch="square" size={9} color={DONE}>{s.done}</LegendItem>}
           {hasUnplanned && <LegendItem swatch="square" size={9} color={UNPLANNED}>{s.unplanned}</LegendItem>}
           {hasMissed && <LegendItem swatch="dashRing" size={9} color="var(--muted-foreground)">{s.missed}</LegendItem>}
           {hasPlanned && <LegendItem swatch="dashRing" size={9} color="var(--accent)">{s.planned}</LegendItem>}
@@ -207,7 +217,7 @@ function LongRunCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; 
                 style={{
                   borderRadius: wide ? 2 : 4,
                   height: Math.max(3, (shares[i]! / top) * H),
-                  background: bar.over ? 'var(--warn)' : ACCENT_SOFT,
+                  background: bar.over ? 'var(--warn)' : current ? CURRENT : DONE,
                   outline: current ? THIS_WEEK_BORDER : undefined,
                   outlineOffset: current ? 1 : undefined,
                 }}

@@ -40,7 +40,7 @@ describe('RecordsLeaderboard', () => {
       t.records.atPotential,
       t.records.faster(t.records.gapSeconds(20)),
     ])
-    expect(gaps[0]!.className).toContain('text-accent-text')
+    expect(gaps[0]!.className).toContain('text-[var(--pos)]')
     expect(gaps[1]!.className).toContain('text-muted-foreground')
     expect(screen.getByText(t.records.raceTag)).toBeInTheDocument()
   })
@@ -64,5 +64,13 @@ describe('RecordsLeaderboard', () => {
 
     fireEvent.click(within(list).getByRole('button', { name: t.records.allEfforts('1K') }))
     expect(within(list).getAllByRole('link')).toHaveLength(7)
+  })
+
+  it('names the distances without a record on one line', () => {
+    const records = [record('1k', '1 km', 300), { ...record('5k', '5 km', 0), seconds: null }, { ...record('10k', '10 km', 0), seconds: null }]
+    render(<RecordsLeaderboard records={records} topEfforts={{}} predictions={[prediction('5k', 1500)]} />)
+
+    expect(screen.getByTestId('records-missing')).toHaveTextContent(t.records.missing(['5 km', '10 km'], true))
+    expect(screen.getAllByText(/5 km/)).toHaveLength(1)
   })
 })

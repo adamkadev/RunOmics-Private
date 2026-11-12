@@ -85,7 +85,7 @@ describe('MonthlyVolumeChart (3.1)', () => {
     expect(screen.getByTestId('running-legend').textContent).toBe(s.running(monthName(THIS_MONTH), '40', s.pace.behind))
   })
 
-  it('draws a short month in the accent at 40%, never a status colour', () => {
+  it('draws a short month as an outline in the done ink, never the accent or a status colour', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind', progress: null }]}
@@ -94,12 +94,13 @@ describe('MonthlyVolumeChart (3.1)', () => {
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
-    expect(bar.style.background).toBe('color-mix(in srgb, var(--accent) 40%, transparent)')
+    expect(bar.style.background).toBe('')
+    expect(bar.style.border).toBe('1.5px solid var(--data-done)')
     expect(bar.dataset.status).toBe('short')
     expect(screen.queryByTestId('running-month')).toBeNull()
   })
 
-  it('draws a hit month in the full accent', () => {
+  it('draws a hit month in the done ink', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 220, status: 'ahead', progress: null }]}
@@ -108,6 +109,6 @@ describe('MonthlyVolumeChart (3.1)', () => {
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
-    expect(bar.style.background).toBe('var(--accent)')
+    expect(bar.style.background).toBe('var(--data-done)')
   })
 })

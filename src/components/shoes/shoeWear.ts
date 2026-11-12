@@ -27,7 +27,7 @@ export function shoeWearCopy(shoe: { totalKm: number; maxKm: number }): {
 
 /** Replace is a warning, not the app's red for something gone wrong; the tag's words say how far along it is. */
 export const WEAR_COLOR: Record<WearStatus, string> = {
-  ok: 'var(--accent)',
+  ok: 'var(--data-done)',
   watch: 'var(--warn)',
   replace: 'var(--warn)',
 }

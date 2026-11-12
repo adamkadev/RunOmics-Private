@@ -87,7 +87,7 @@ export function shareRepResult(activity: ShareActivity): string | null {
   if (!reps?.target) return null
   const off = repOffset(reps.paceSecPerKm, reps.target)
   if (off === 0) return s.onTarget.charAt(0).toLocaleUpperCase(t.locale) + s.onTarget.slice(1)
-  // A card is posted: a slower set gets no line rather than "5 s/km over target" in the accent.
+  // A card is posted: a slower set gets no line rather than "5 s/km over target" under the header.
   return off < 0 ? `${s.secPerKm(-off)} ${s.underTarget}` : null
 }
 

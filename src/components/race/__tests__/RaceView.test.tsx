@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { RacePageData } from '@/application/usecases/GetRacePage'
 import type { FormForecast } from '@/domain/training/formForecast'
 import { t } from '@/i18n'
-import { RaceView } from '../RaceView'
+import { NoRace, RaceView } from '../RaceView'
 
 const data = (form: FormForecast): RacePageData => ({
   race: { date: '2026-11-15', name: 'Winter 10K', distance: '10K' },
@@ -44,5 +44,14 @@ describe('RaceView race-day form', () => {
     render(<RaceView data={data({ kind: 'planShort', plannedThrough: null })} />)
 
     expect(screen.getByTestId('race-form-unavailable')).toHaveTextContent(t.race.formNoPlan)
+  })
+})
+
+describe('NoRace', () => {
+  it('titles the page and says what is missing and how to add it', () => {
+    render(<NoRace />)
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(t.race.title)
+    expect(screen.getByTestId('race-none')).toHaveTextContent(t.race.noneTitle + t.race.none)
   })
 })

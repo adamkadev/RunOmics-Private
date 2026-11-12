@@ -24,6 +24,7 @@ const activity = {
   paceSecPerKm: 294,
   avgHeartRate: 148,
   rpe: 4,
+  aerTrainingEffect: 3.1,
   hrZones: [{ zone: 2, seconds: 1800, percent: 60, minBpm: 120, maxBpm: 140 }],
   route: [[6.1, 49.6], [6.2, 49.7]],
   paceSamples: [300, 295],
@@ -50,6 +51,11 @@ describe('toActivitySummary', () => {
       routeThumb: expect.any(String),
       zones: [0, 1800],
     })
+  })
+
+  it('gives no zones from a run without Training Effect, unless the athlete has an LTHR', () => {
+    expect(toActivitySummary({ ...activity, aerTrainingEffect: null }).zones).toEqual([])
+    expect(toActivitySummary({ ...activity, aerTrainingEffect: null }, true).zones).not.toEqual([])
   })
 
   it.each(HEAVY_FIELDS)('drops %s, which must never cross to the client', (field) => {

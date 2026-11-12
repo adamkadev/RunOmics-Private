@@ -275,7 +275,7 @@ describe('per-km splits', () => {
 
     const fastest = screen.getByTestId('fastest-km')
     expect(fastest.textContent).toBe(`${t.activity.splits.fastest} ${t.activity.splits.fastestKm(1, '4:00')}`)
-    expect(fastest.querySelector('b')!.className).toContain('text-accent-text')
+    expect(fastest.querySelector('b')!.className).toContain('text-foreground')
     expect(screen.getByTestId('split-verdict').textContent).toBe(t.activity.splits.positiveSplit('+0:30'))
   })
 
@@ -317,10 +317,10 @@ describe('per-km splits', () => {
 
     const rows = screen.getAllByTestId('km-split')
     expect(rows.map((row) => row.hasAttribute('data-fastest'))).toEqual([true, false, false])
-    expect(rows[0]!.children[1]!.className).toContain('text-accent-text')
-    expect(rows[1]!.children[1]!.className).not.toContain('text-accent-text')
+    expect(rows[0]!.children[1]!.className).toContain('font-semibold')
+    expect(rows[1]!.children[1]!.className).not.toContain('font-semibold')
     const bars = screen.getAllByTestId('km-bar')
-    expect(bars[0]!.style.background).toBe('var(--accent)')
+    expect(bars[0]!.style.background).toBe('var(--data-done)')
     expect(bars[1]!.style.background).not.toContain('accent')
     // The stream smoothed as the Charts tab draws it: up on km 1, down later.
     const climbs = screen.getAllByTestId('km-elev').map((el) => el.textContent!)

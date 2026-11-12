@@ -38,10 +38,11 @@ function QuietRow({ label, pace, hr }: { label: string; pace: number | null; hr:
 
 type RepStanding = 'faster' | 'inBand' | 'slower'
 
+/** A slower rep is an outline only: a dark fill disappears on the dark card. */
 const TICK_CLASS: Record<RepStanding, string> = {
-  faster: 'bg-accent',
-  inBand: 'bg-accent',
-  slower: 'bg-muted-foreground',
+  faster: 'bg-[var(--data-done)]',
+  inBand: 'bg-[var(--data-done)]',
+  slower: 'box-border border border-[var(--data-done)] bg-card',
 }
 
 function standingOf(pace: number | null, band: RepSet['band']): RepStanding {

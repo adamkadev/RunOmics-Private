@@ -32,9 +32,22 @@ Violet and pink are gone: they read as the Z4 and Z5 session colours. Mono is go
 reads as its nearest palette (`LEGACY_ACCENTS`), and `NEXT_PUBLIC_DEFAULT_ACCENT` picks the one a
 deployment starts on.
 
-**What follows the accent picker and what does not.** Form (TSB), weekly volume and the long-run
-bar are drawn in `var(--accent)` — they are the "this is your headline number" marks. Everything
-in `CHART_COLORS` is categorical or semantic and stays put. Readiness tone, pace-route, heat-route
+**What follows the accent picker and what does not.** Three tiers, because an accent that fills data
+clashes: teal reads as "good", cyan as Z2, heather in dark as Z5.
+
+1. **Chrome takes the accent**: the background glow, the selected tab or segment, the today marker,
+   links, the primary button, and the current period (this week, this month, this year).
+2. **Your footprint keeps it**: a single series that only shows presence, with no target and no
+   judgement — the heat map, route lines, the streak dots, Home runs, explored ground, "Your running week".
+3. **Anything measured against a target or carrying a status never takes it**: volume against plan,
+   monthly km, goal and milestone progress, the usual-range band, rep ticks, zones, session types,
+   deltas. Done is the neutral ink `--data-done` (`--data-done-soft` for a band), planned a dashed
+   outline, below plan or short an outline only, a good or bad reading `--pos`, `--warn` or `--neg`.
+
+An eyebrow's dot and text follow status the same way: grey by default, `--pos`, `--warn` or `--neg`
+only when it carries one, never the accent.
+
+Everything in `CHART_COLORS` is categorical or semantic and stays put. Readiness tone, pace-route, heat-route
 and temperature ramps are all deliberately accent-independent: how often a stretch was run, or how
 hot it was, is a property of the data, not a theme choice, so the map must not repaint when the
 accent changes. Brand tints (the season headline) stay emerald so they remain the brand's
@@ -57,7 +70,7 @@ voice rather than the athlete's chosen tint.
   draws white text, unreadable on the light Aura, and the style can't be split per theme: its meta
   takes no media query and iOS reads it once, at install.
 - `statusColors` is for statuses with universal meaning (success, in-progress, pending, warning,
-  danger). Accent-coloured elements — nav, CTAs, progress bars — stay in accent.
+  danger). Nav and CTAs stay in accent; a progress bar toward a goal is `--data-done`.
 - Elevation uses `roRust` rather than stone-500, which read as grey in the categorical set.
 - **Chart data colours (3.0.1).** A run's chart lines are fixed hues in `RUN_CHART_LINE`, never
   the accent: heart rate `#ff6b6b`, pace cyan `#4cc9f0`, cadence the quality purple, elevation the

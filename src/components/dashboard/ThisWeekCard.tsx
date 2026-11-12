@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
-import type { LoadReading } from '@/application/usecases/GetRecentLoad'
 import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { formatRanKm } from '@/lib/formatters'
@@ -94,12 +93,10 @@ export function ThisWeekCard({
   target,
   today: serverToday,
   sessionKinds = {},
-  load,
 }: {
   target: WeekTarget
   today: string
   sessionKinds?: Record<string, string>
-  load: LoadReading | null
 }) {
   const s = t.dashboard.thisWeek
   const today = useToday(serverToday)
@@ -119,15 +116,6 @@ export function ThisWeekCard({
         <p className="text-[13px] tabular-nums text-text-2">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
           {targetKm !== null ? ` / ${formatWeekKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
-          {load && (
-            <>
-              {' · '}
-              {/* The load stays a number, not a band on km bars. */}
-              <span data-testid="load-reading" data-state={load.state} style={{ color: load.state === 'in' ? undefined : 'var(--warn)' }}>
-                {s.load(load.acute, load.lo, load.hi)}
-              </span>
-            </>
-          )}
         </p>
       </div>
 

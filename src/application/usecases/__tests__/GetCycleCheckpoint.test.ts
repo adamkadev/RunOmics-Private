@@ -61,6 +61,13 @@ describe('buildCycleCheckpoint', () => {
     expect(checkpoint.volume).toEqual({ kmPerWeek: { previous: 10, current: 15 }, runsPerWeek: { previous: 1, current: 1.5 } })
   })
 
+  it('has nothing to compare with when the cycle before had no run', () => {
+    const checkpoint = buildCycleCheckpoint(inputs({ activities: [run('2026-03-02'), run('2026-10-13'), run('2026-10-20')] }), '2026-10-28')
+
+    expect(checkpoint.volume?.kmPerWeek.previous).toBeNull()
+    expect(checkpoint.ctl?.previous).toBeNull()
+  })
+
   it('reads controlled threshold time from the laps, with the guide each length was run to', () => {
     const plans: CoachingPlan[] = [{ ...GENERAL, weeks: [{ ...plan().weeks[0]!, workouts: [controlled('2026-10-14', 4), controlled('2026-10-21', 5)] }] }]
     const checkpoint = buildCycleCheckpoint(inputs({ plans, activities: [run('2026-09-30'), controlledRun('2026-10-14', 4), controlledRun('2026-10-21', 5)] }), '2026-10-22')
