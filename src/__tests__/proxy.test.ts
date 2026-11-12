@@ -78,6 +78,8 @@ describe('the proxy', () => {
         '/manifest.json',
         '/sw.js',
         '/robots.txt',
+        '/privacy.html',
+        '/terms.html',
       ]) {
         expect(runsOn(url), url).toBe(false)
       }
@@ -86,6 +88,7 @@ describe('the proxy', () => {
     it('is not fooled by a page named like a skipped file', () => {
       expect(runsOn('/manifest.json.bak')).toBe(true)
       expect(runsOn('/iconsx')).toBe(true)
+      expect(runsOn('/privacy.html.bak')).toBe(true)
     })
   })
 })

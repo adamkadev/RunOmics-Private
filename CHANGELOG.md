@@ -142,7 +142,8 @@ All notable changes to this project are documented in this file.
   the sync writes `health_history.json`, Recovery and the 12-week checkpoint read the tracker's resting HR alone
   from its first day (Garmin's run-day value is a warm-up's), the Form card on Analytics → Load adds last night's
   sleep and HRV, and the coach gets the last 28 nights. The second athlete's deployment is unchanged. The site
-  serves the privacy policy and terms Google needs at `/privacy.html` and `/terms.html`. **Needs**
+  serves the privacy policy and terms Google needs at `/privacy.html` and `/terms.html`, outside the private site's
+  sign-in. **Needs**
   `scripts/google_health_setup.sh` once for the owner (it sets three secrets in the `adam` Environment); the
   checkpoint's resting-HR row stays empty until the tracker has a previous cycle of its own.
 - The activity list is retried like every other Garmin read: one 503 or timeout on a page no longer stops the night
