@@ -138,6 +138,9 @@ All notable changes to this project are documented in this file.
 
 ### Data & sync
 
+- A quick sync at 07:45 UTC brings in the night the tracker just recorded: the nightly sync runs at 04:00, before
+  the athlete wakes, so last night's sleep, HRV and resting HR waited a day. Only a deployment with tracker data
+  runs it.
 - The owner's sleep, HRV, resting HR and steps come from the tracker worn to sleep, through the Google Health API:
   the sync writes `health_history.json`, Recovery and the 12-week checkpoint read the tracker's resting HR alone
   from its first day (Garmin's run-day value is a warm-up's), the Form card on Analytics → Load adds last night's

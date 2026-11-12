@@ -640,6 +640,7 @@ be set on each project, or every call is refused.
 | Route | When (UTC) | What it does |
 |-------|------------|--------------|
 | `/api/internal/nightly-sync` | 04:00 daily | Dispatches this deployment's full `sync.yml` run (`nightly`), unless one is already running |
+| `/api/internal/morning-sync` | 07:45 daily | A quick sync where the athlete sleeps with a tracker, so last night's sleep, HRV and resting HR are in before the app is opened; skipped otherwise |
 | `/api/internal/daily-session` | 06:00 and 07:00 daily | The morning session push; only the call in the 08:xx Paris hour sends, so it arrives between 08:00 and 09:00 summer and winter, once a day |
 | `/api/internal/stale-sync-check` | 06:00 daily | Pushes once when no sync has landed for 72 hours |
 | `/api/internal/weekly-digest` | 06:00 Monday | Last week's km and quality sessions against the plan, other training, resting heart rate and this week's focus |
