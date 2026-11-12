@@ -552,6 +552,63 @@ caveat worth knowing:
   restated, so it is not a split either. Lap splits are execution data for display only; they
   never feed activity-type inference, session-execution analysis, or an official race distance.
 
+## Google Health (the owner's tracker)
+
+The owner sleeps with a tracker, and wears the Garmin only to run: on a run day Garmin's resting HR is the lowest half
+hour of a watch put on to warm up, and it records no sleep and no HRV. The tracker answers through the
+[Google Health API](https://developers.google.com/health), the replacement for both the Google Fit REST API (closed
+to new sign-ups since May 2024, supported until the end of 2026) and the legacy Fitbit Web API (turned off on
+2 November 2026). The second athlete wears her watch all day and takes it off to sleep, so she has none of this.
+
+**Access.** `scripts/google_health_setup.sh` walks through it once: a Google Cloud project with the API enabled, a
+Web-application OAuth client whose redirect URI is `https://www.google.com`, the three read scopes (sleep, health
+metrics and measurements, activity and fitness), branding, publishing, consent, and the token exchange. It writes
+`GOOGLE_HEALTH_CLIENT_ID`, `GOOGLE_HEALTH_CLIENT_SECRET` and `GOOGLE_HEALTH_REFRESH_TOKEN` to `.env.adam.local` and to
+the `adam` GitHub Environment. Three things Google enforces shape it:
+
+- **The app must be published.** A project left in Testing issues refresh tokens that expire after 7 days. Published,
+  a token lasts until it is revoked or goes six months unused.
+- **Publishing needs a homepage, a privacy policy and terms**, all on an authorised domain. They are
+  `public/privacy.html` and `public/terms.html`, plain files so Google reads them with no session. The policy carries
+  the Limited Use statement the API Services User Data Policy asks of restricted scopes.
+- **Every `googlehealth` scope is restricted**, so the app stays unverified: under 100 users Google lets the consent
+  screen's "unverified app" warning be clicked through, and no security review is needed. Uploading a logo would
+  force verification, so the branding has none.
+
+**The sync step** (`scripts/google_health/`) runs when the three secrets are set, after the runs, including on a
+dry run, which fetches and writes nothing: that is how a new token is tried in CI. It writes `health_history.json`,
+one entry per local date:
+
+```json
+{"days": {"2026-03-02": {"restingHr": 47, "hrvMs": 61.2, "steps": 8123,
+                         "sleep": {"start": "…", "end": "…", "asleepMinutes": 401, "awakeMinutes": 22,
+                                   "deepMinutes": 70, "remMinutes": 95, "lightMinutes": 236}}}}
+```
+
+- The first night reads a year back; after that each night re-reads from a week before the newest stored day, as a
+  night's figures settle once the phone syncs the next morning.
+- Only the tracker's records count. The account also holds what the phone reports, whose "resting" heart rate is
+  often a workout's, well over twice the tracker's on the same day. Daily types and the steps roll-up ask
+  for `dataSourceFamilies/google-wearables`; every point must also carry `platform: FITBIT`, which sleep relies on
+  alone as its listing takes no source family.
+- A night is filed under the local day it ended, and of two sessions ending the same day the longer is the night.
+- Counts arrive as JSON strings and are parsed; a reading outside what a body can have is dropped.
+- Each type is fetched on its own: one refused leaves the others written and fails the step, which makes the night
+  partial and sends the sync-failure push. A refused refresh token says to run the wizard again.
+- The log carries counts and dates, never a reading: the Actions log is world-readable.
+
+**One resting HR, never two.** From the tracker's first resting HR the app reads the tracker alone, with no Garmin
+day before it (`getRecoveryHistory`). Read asleep, it sat well under Garmin's on every day both had one, by about ten beats a
+minute at the median, so a baseline or the 12-week checkpoint spanning both would read the change of device as a
+fitness gain. The Recovery baseline needs 7 days of its own and the checkpoint's resting-HR row a previous cycle of
+them, so each comes back once the tracker has that much history; until then the row says there is nothing before.
+`restingDays()`, which guessed from run days when the watch was worn only to run, now serves the second athlete
+alone. `recovery_history.json` keeps syncing Garmin's values, so nothing is lost should the tracker stop.
+
+**What reads it.** The Form card on Analytics → Load adds the last night asleep with its seven-night mean, and the
+night's HRV against its own 60-day baseline, flagged only when low. The coach gets `context.overnight`, the last 28
+nights newest first, read as the check-ins are and never over them.
+
 ## Official race results
 
 **A certified result and a Garmin activity are two different measurements of the same

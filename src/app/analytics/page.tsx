@@ -16,7 +16,7 @@ import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 import { analyticsYtd } from '../_data/analyticsYtd'
-import { getLoadSeries, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
+import { getHealthHistory, getLoadSeries, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 import { loadData } from '@/application/usecases/LoadData'
 import { getPaceBests } from '@/application/usecases/GetPaceCurve'
 
@@ -43,6 +43,11 @@ export default async function AnalyticsPage() {
     loads: loads.pairs,
     estimated: { loads: loads.source === 'local', status: status?.source === 'local' },
     recovery: getRecoveryHistory(),
+    nights: getHealthHistory().map(({ date, hrvMs, sleep }) => ({
+      date,
+      ...(hrvMs !== undefined ? { hrvMs } : {}),
+      ...(sleep ? { asleepMinutes: sleep.asleepMinutes } : {}),
+    })),
     weeks: data.weeklyTrends,
     plan: plan.weeks,
     missed: plan.missed,

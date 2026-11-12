@@ -9,6 +9,7 @@ import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import type { RunBests } from '@/domain/activity/paceCurve'
 import type { LoadPair } from '@/domain/training/loadTrend'
 import type { RecoveryDay } from '@/domain/training/recovery'
+import type { NightReading } from './loadRecoveryView'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
@@ -68,6 +69,8 @@ export interface AnalyticsBoardData {
   estimated: { loads: boolean; status: boolean }
   /** Daily resting HR; empty until the recovery sync has run. */
   recovery: RecoveryDay[]
+  /** The overnight tracker's sleep and HRV; empty for a deployment without one. */
+  nights: NightReading[]
   weeks: WeeklyTrendPoint[]
   plan: PlanWeekInput[]
   /** Days whose planned session was missed, by Plan's own day states. */

@@ -44,6 +44,7 @@ const data: AnalyticsBoardData = {
   loads: Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: 412, chronic: 365 })),
   estimated: { loads: false, status: false },
   recovery: [],
+  nights: [],
   risk: { acwr: 1.13, acute: 412, chronic: 365, acwrZone: 'safe', acwrSource: 'garmin', monotony: 1.5, monotonyZone: 'safe', strain: null, strainZone: null, rampRate: 2.4, rampRateZone: 'safe', daysOfHistory: 400 },
   weeks,
   plan: weeks.slice(-12).map((w) => ({ week: w.date, planKm: 44, planQuality: 2 })),
@@ -818,6 +819,21 @@ describe('Load trend and Recovery (v5.4)', () => {
   it('leaves the resting HR row out without enough days', async () => {
     await renderWith({ recovery: steady.slice(-6) })
     expect(screen.queryByTestId('form-rhr')).toBeNull()
+  })
+
+  it("reads last night's sleep and HRV from the tracker in the Form card", async () => {
+    const nights = Array.from({ length: 30 }, (_, i) => ({ date: day(29 - i), asleepMinutes: 425, hrvMs: 60 + (i % 5) * 2 }))
+    await renderWith({ recovery: steady, nights })
+    const c = t.analytics.cards.loadCompact
+    expect(screen.getByTestId('form-sleep').textContent).toContain(c.duration(425))
+    expect(screen.getByTestId('form-sleep').textContent).toContain(c.sleepWeek(c.duration(425)))
+    expect(screen.getByTestId('form-hrv').textContent).toContain(`68 ${t.units.ms}`)
+    expect(screen.getByTestId('form-night').textContent).toContain(c.ok)
+  })
+
+  it('leaves the sleep row out without a tracker', async () => {
+    await renderWith({ recovery: steady })
+    expect(screen.queryByTestId('form-night')).toBeNull()
   })
 
   it('lets the coach read take resting HR above its baseline into account', async () => {

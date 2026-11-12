@@ -10,7 +10,7 @@ import { deltaTone, DELTA_TONE_COLOR } from '@/lib/deltaTone'
 import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 import { Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, windowLabels } from './AnalyticsKit'
-import { loadTrendView, loadTrendYMax, recoveryView } from './loadRecoveryView'
+import { loadTrendView, loadTrendYMax, overnightView, recoveryView } from './loadRecoveryView'
 import { LoadFocusCard } from './LoadFocusCard'
 import type { AnalyticsBoardData } from './AnalyticsClient'
 import { formView, statusView, type DayWindow, type LoadDay, type LoadPeriod, type StatusDay } from './analyticsView'
@@ -205,11 +205,13 @@ function LoadCard({
   )
 }
 
-function FormCard({ load, nights, window, period }: { load: LoadDay[]; nights: AnalyticsBoardData['recovery']; window: DayWindow; period: LoadPeriod }) {
+function FormCard({ load, nights, tracker, window, period }: { load: LoadDay[]; nights: AnalyticsBoardData['recovery']; tracker: AnalyticsBoardData['nights']; window: DayWindow; period: LoadPeriod }) {
   const s = t.analytics.cards.form
   const view = formView(load, window)
   if (!view) return null
   const rhr = recoveryView(nights, window)?.restingHr ?? null
+  const night = overnightView(tracker, window)
+  const c = t.analytics.cards.loadCompact
   const bars = view.bars
   const scale = Math.max(10, ...bars.map((b) => Math.abs(b.form)))
   void period
@@ -250,6 +252,24 @@ function FormCard({ load, nights, window, period }: { load: LoadDay[]; nights: A
           <span style={{ color: rhr.side ? WARN : DELTA_TONE_COLOR.good }}>{rhr.side ? t.analytics.cards.loadCompact.check : t.analytics.cards.loadCompact.ok}</span>
         </div>
       )}
+      {night && (
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-2 text-[12.5px]" data-testid="form-night">
+          <span className="text-[var(--text-2)]">
+            {night.sleep && (
+              <span data-testid="form-sleep">
+                {c.sleep} <b className="font-semibold text-foreground">{c.duration(night.sleep.last)}</b> · {c.sleepWeek(c.duration(night.sleep.week))}
+              </span>
+            )}
+            {night.sleep && night.hrv && ' · '}
+            {night.hrv && (
+              <span data-testid="form-hrv">
+                {c.hrv} <b className="font-semibold text-foreground">{night.hrv.now} {t.units.ms}</b> · {c.baseline(night.hrv.side, night.hrv.lo, night.hrv.hi)}
+              </span>
+            )}
+          </span>
+          {night.hrv && <span style={{ color: night.out ? WARN : DELTA_TONE_COLOR.good }}>{night.out ? c.check : c.ok}</span>}
+        </div>
+      )}
     </Card>
   )
 }
@@ -259,7 +279,7 @@ export function LoadTab({ window, period, onShift, today, data }: LoadTabProps) 
   return (
     <div className="flex flex-col gap-3.5">
       <LoadCard pairs={data.loads} load={data.load} window={window} yMax={yMax} estimated={data.estimated.loads} />
-      <FormCard load={data.load} nights={data.recovery} window={window} period={period} />
+      <FormCard load={data.load} nights={data.recovery} tracker={data.nights} window={window} period={period} />
       {/* The watch's own status as its chart, not a sentence in the coach card. */}
       <StatusCard days={data.status} window={window} period={period} onShift={onShift} estimated={data.estimated.status} />
       {/* The sync keeps only the latest balance, so a window back in time has none. */}

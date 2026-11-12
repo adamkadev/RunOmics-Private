@@ -138,6 +138,13 @@ All notable changes to this project are documented in this file.
 
 ### Data & sync
 
+- The owner's sleep, HRV, resting HR and steps come from the tracker worn to sleep, through the Google Health API:
+  the sync writes `health_history.json`, Recovery and the 12-week checkpoint read the tracker's resting HR alone
+  from its first day (Garmin's run-day value is a warm-up's), the Form card on Analytics → Load adds last night's
+  sleep and HRV, and the coach gets the last 28 nights. The second athlete's deployment is unchanged. The site
+  serves the privacy policy and terms Google needs at `/privacy.html` and `/terms.html`. **Needs**
+  `scripts/google_health_setup.sh` once for the owner (it sets three secrets in the `adam` Environment); the
+  checkpoint's resting-HR row stays empty until the tracker has a previous cycle of its own.
 - The activity list is retried like every other Garmin read: one 503 or timeout on a page no longer stops the night
   before anything is committed.
 - A 429 or 5xx carrying `Retry-After` waits what Garmin asked for, up to 5 minutes, instead of a fixed 60 s.

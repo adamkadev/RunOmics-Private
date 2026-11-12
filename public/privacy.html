@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RunOmics · Privacy Policy</title>
+<style>
+  :root { color-scheme: light dark; --fg: #18181b; --muted: #52525b; --bg: #ffffff; --rule: #e4e4e7; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #fafafa; --muted: #a1a1aa; --bg: #09090b; --rule: #27272a; } }
+  body { margin: 0 auto; padding: 3rem 1rem 5rem; max-width: 42rem; background: var(--bg); color: var(--fg);
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  h1 { font-size: 1.75rem; margin: 0 0 .25rem; letter-spacing: -0.02em; }
+  h2 { font-size: 1.05rem; margin: 2.25rem 0 .5rem; letter-spacing: -0.01em; }
+  p, li { color: var(--fg); } ul { padding-left: 1.25rem; }
+  .meta { color: var(--muted); font-size: .9rem; margin: 0 0 2rem; }
+  footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: .9rem; }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<h1>Privacy Policy</h1>
+<p class="meta">RunOmics · last updated 11 November 2026</p>
+
+<p>RunOmics is a personal, single-user running dashboard. It is run by one individual for their own training data
+and is not offered as a service to the public. There are no other users, no customers and no analytics on visitors.</p>
+
+<h2>What data is read</h2>
+<p>With the owner's explicit consent, RunOmics reads the owner's own health and fitness data from two sources:</p>
+<ul>
+  <li><strong>Garmin Connect</strong> — running activities, their GPS tracks, heart rate and derived training metrics.</li>
+  <li><strong>Google Health API</strong> — sleep sessions and stages, daily resting heart rate, heart rate variability,
+      and daily step counts, recorded by the owner's own wearable.</li>
+</ul>
+<p>Only the account holder's own records are requested. No data about any other person is read.</p>
+
+<h2>How it is used</h2>
+<p>The data is used for one purpose: to display the owner's training and recovery history back to them, and to
+inform the training plan the application produces. It is not used for advertising, profiling, credit assessment,
+employment decisions, or any purpose unrelated to the owner's own training.</p>
+
+<h2>Limited use</h2>
+<p>RunOmics' use of information received from Google APIs adheres to the
+<a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
+including the Limited Use requirements. Data obtained through the Google Health API is never sold, never transferred
+to third parties except as required by law, and never used for serving advertisements. It is not read by humans other
+than the account holder.</p>
+
+<h2>Where it is stored</h2>
+<p>Fetched data is stored in a private repository and rendered by a private deployment that only the owner can sign
+in to. Access credentials are held as encrypted secrets and are never committed alongside the data. Nothing is shared
+with a third-party analytics, advertising or data-broker service.</p>
+
+<h2>Retention and deletion</h2>
+<p>Data is retained while the owner continues to use the application. The owner can revoke this application's access
+at any time from their <a href="https://myaccount.google.com/permissions">Google Account permissions page</a>, which
+stops all further reads. On request, stored data is deleted by removing the private repository and its deployment.</p>
+
+<h2>Contact</h2>
+<p>Questions about this policy can be sent to the support email address shown on the Google consent screen for
+this application.</p>
+
+<footer>RunOmics is a personal project. It is not affiliated with, endorsed by, or operated on behalf of Google,
+Fitbit or Garmin.</footer>
+</body>
+</html>

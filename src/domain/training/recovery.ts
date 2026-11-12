@@ -30,3 +30,31 @@ export function restingDays(days: readonly RecoveryDay[], runDays: ReadonlySet<s
     runFree.filter((d) => Math.abs(d - dayNumber(date)) <= WORN_NEAR_DAYS).length >= WORN_RUN_FREE_DAYS
   return days.filter((d) => !runDays.has(d.date) || wornAllDay(d.date))
 }
+
+/** One local day from the overnight tracker, any reading left out; a night is filed under the day it ended. */
+export interface HealthDay {
+  date: string
+  restingHr?: number
+  hrvMs?: number
+  steps?: number
+  sleep?: HealthNight
+}
+
+export interface HealthNight {
+  start: string
+  end: string
+  asleepMinutes: number
+  awakeMinutes: number
+  deepMinutes?: number
+  remMinutes?: number
+  lightMinutes?: number
+}
+
+/**
+ * The tracker's resting HR in place of the watch's, from the tracker's first day and with nothing before it:
+ * read asleep, it sits well under the watch's, so a baseline or a 12-week comparison spanning both would read
+ * the change of device as a fitness gain.
+ */
+export function trackerRestingDays(days: readonly HealthDay[]): RecoveryDay[] {
+  return days.flatMap((d) => (d.restingHr === undefined ? [] : [{ date: d.date, restingHr: d.restingHr }]))
+}

@@ -1,9 +1,10 @@
 import { getTrainingStatusDays } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { getRecoveryDays } from '@/infrastructure/repositories/JsonRecoveryRepository'
+import { getHealthDays } from '@/infrastructure/repositories/JsonHealthRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { loadPairs, localLoadPairs, type LoadPair } from '@/domain/training/loadTrend'
 import { ownLoadDays } from './GetTrainingLoad'
-import { restingDays, type RecoveryDay } from '@/domain/training/recovery'
+import { restingDays, trackerRestingDays, type HealthDay, type RecoveryDay } from '@/domain/training/recovery'
 
 export type LoadSource = 'garmin' | 'local'
 
@@ -14,9 +15,15 @@ export function getLoadSeries(): { pairs: LoadPair[]; source: LoadSource } {
 }
 
 /**
- * Resting HR for the Recovery card, only where it was one: the run days say
- * when the watch was worn only to run.
+ * Resting HR for the Recovery card, only where it was one: the overnight tracker's where there is one, else the
+ * watch's, with the run days saying when the watch was worn only to run.
  */
 export function getRecoveryHistory(): RecoveryDay[] {
-  return restingDays(getRecoveryDays(), new Set(getAllActivities().map((a) => a.date)))
+  const tracker = trackerRestingDays(getHealthDays())
+  return tracker.length ? tracker : restingDays(getRecoveryDays(), new Set(getAllActivities().map((a) => a.date)))
+}
+
+/** The overnight tracker's days; empty for a deployment without one. */
+export function getHealthHistory(): HealthDay[] {
+  return getHealthDays()
 }

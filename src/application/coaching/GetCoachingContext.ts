@@ -14,6 +14,7 @@ import { getCrossTrainingSessions } from '@/infrastructure/repositories/JsonCros
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
+import { getHealthHistory } from '@/application/usecases/GetLoadRecovery'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getActivityNotes, type ActivityNote } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
@@ -156,5 +157,6 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
     upcomingRaces: getUpcomingRaceYears().flatMap((year) => year.races),
     officialResults: getOfficialRaceResults(),
     crossTraining: getCrossTrainingSessions(),
+    health: getHealthHistory(),
   }, referenceDate)
 }

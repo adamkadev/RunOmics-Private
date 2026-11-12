@@ -35,6 +35,8 @@ from garmin.threshold_history import sync_threshold_history
 from garmin.training_status import sync_load_balance, sync_training_status
 from garmin.vo2max_history import newest_carried_vo2max, sync_vo2max_from_runs, sync_vo2max_history
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
+from google_health.client import GoogleHealthClient
+from google_health.health_history import sync_health_history
 from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, planned_description, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
@@ -248,6 +250,12 @@ def main() -> int:
             failed_steps += _run_isolated(
                 _post_save_steps(connect, personal, store, cross_since=removal.retyped_since())
             )
+
+        # A dry run reads it too, writing nothing: it is how a new refresh token is tried in CI.
+        health = GoogleHealthClient.from_env()
+        if health and not args.id:
+            stack.enter_context(health)
+            failed_steps += _run_isolated([("Google Health", lambda: sync_health_history(health, dry_run=args.dry_run))])
 
         if not args.dry_run:
             # A quick or single-run sync reads none of Connect's series: the last full night's warnings stand.

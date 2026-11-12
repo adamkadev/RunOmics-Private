@@ -23,6 +23,7 @@ import { sessionForRun, sessionsAcrossPlans, type RunSession } from '@/domain/co
 import { intendedType } from '@/lib/activityTitle'
 import type { AthleteProfile, InjuryHistory, TrainingBreak } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { niggleEpisodes, shiftDate, type CheckIn, type NiggleEpisode } from '@/domain/wellness/checkIn'
+import type { HealthDay } from '@/domain/training/recovery'
 import type { Trajectories } from '@/domain/training/trajectories'
 import type { GoalYear, PbYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -113,6 +114,8 @@ export interface CoachingContext {
     checkIns: ({ date: string } & CheckIn)[]
     niggles: NiggleEpisode[]
   }
+  /** The overnight tracker's nights of the last 28 days, newest first; absent for an athlete who sleeps without one. */
+  overnight?: OvernightNight[]
   trajectories: Trajectories | null
   goals: GoalYear[]
   personalBests: PbYear[]
@@ -146,6 +149,7 @@ export interface CoachingContextInput {
   archivedPlans?: CoachingPlan[]
   /** Keyed by local date; absent when neither Firestore nor its backup could be read. */
   wellness?: ReadonlyMap<string, CheckIn>
+  health?: readonly HealthDay[]
   crossTraining?: CrossTrainingSession[]
 }
 
@@ -239,6 +243,28 @@ function wellnessFacts(entries: ReadonlyMap<string, CheckIn> | undefined, refere
       niggles: niggleEpisodes(new Map(within(NIGGLE_DAYS))),
     },
   }
+}
+
+export interface OvernightNight {
+  date: string
+  sleepMinutes?: number
+  hrvMs?: number
+  restingHrBpm?: number
+}
+
+/** Ends on the reference date, as the check-ins do. */
+function overnightFacts(days: readonly HealthDay[] | undefined, referenceDate: string): Pick<CoachingContext, 'overnight'> {
+  const nights = (days ?? [])
+    .filter((day) => day.date <= referenceDate && day.date > shiftDate(referenceDate, -RECENT_DAYS))
+    .map((day): OvernightNight => ({
+      date: day.date,
+      ...(day.sleep ? { sleepMinutes: day.sleep.asleepMinutes } : {}),
+      ...(day.hrvMs !== undefined ? { hrvMs: day.hrvMs } : {}),
+      ...(day.restingHr !== undefined ? { restingHrBpm: day.restingHr } : {}),
+    }))
+    .filter((night) => Object.keys(night).length > 1)
+    .sort((a, b) => b.date.localeCompare(a.date))
+  return nights.length ? { overnight: nights } : {}
 }
 
 function raceFacts(activity: Activity, official: OfficialRaceResult | undefined): Partial<CompactActivity> {
@@ -342,6 +368,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
     },
     ...(returning ? { returnToRunning: returning } : {}),
     ...wellness,
+    ...overnightFacts(input.health, referenceDate),
     trajectories: input.trajectories,
     goals: input.goals,
     personalBests: input.personalBests,

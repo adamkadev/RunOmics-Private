@@ -175,11 +175,15 @@ function quantile(sorted: number[], q: number): number {
  * last one, so the last day is judged against what came before it rather
  * than against itself.
  */
-function baseline(days: RecoveryDay[], lastDate: string): { lo: number; hi: number } | null {
+function band(samples: { date: string; value: number }[], lastDate: string): { lo: number; hi: number } | null {
   const from = isoDate(addDays(day(lastDate), -BASELINE_DAYS))
-  const sample = days.filter((d) => d.date >= from && d.date < lastDate).map((d) => d.restingHr).sort((a, b) => a - b)
+  const sample = samples.filter((d) => d.date >= from && d.date < lastDate).map((d) => d.value).sort((a, b) => a - b)
   if (sample.length < RECOVERY_MIN_DAYS) return null
   return { lo: Math.round(quantile(sample, 0.1)), hi: Math.round(quantile(sample, 0.9)) }
+}
+
+function baseline(days: RecoveryDay[], lastDate: string): { lo: number; hi: number } | null {
+  return band(days.map((d) => ({ date: d.date, value: d.restingHr })), lastDate)
 }
 
 export function recoveryView(days: RecoveryDay[], window: DayWindow): RecoveryView | null {
@@ -258,4 +262,39 @@ export function loadFocusView(balance: LoadBalanceData | null, today: string): L
   const below = balance.buckets.find((b) => b.verdict === 'below')
   const ours: LoadFocusPhrase = balance.buckets.every((b) => b.verdict === 'onTarget') ? 'BALANCED' : below ? SHORTAGE[below.id] : 'ABOVE_TARGETS'
   return { phrase: isPhrase(balance.feedback) ? balance.feedback : ours, buckets: balance.buckets }
+}
+
+/** One night from the overnight tracker, as the Form card reads it. */
+export interface NightReading {
+  date: string
+  hrvMs?: number
+  asleepMinutes?: number
+}
+
+export interface OvernightView {
+  /** The window's last night asleep, and the mean of the seven nights to it, in minutes. */
+  sleep: { last: number; week: number } | null
+  hrv: RestingHrReading | null
+  /** Only a low HRV is a flag: a high one is a rested athlete. */
+  out: boolean
+}
+
+export function overnightView(nights: NightReading[], window: DayWindow): OvernightView | null {
+  const inWindow = nights.filter((n) => n.date >= window.start && n.date <= window.end)
+
+  const slept = inWindow.flatMap((n) => (n.asleepMinutes === undefined ? [] : [{ date: n.date, minutes: n.asleepMinutes }]))
+  const lastNight = slept.at(-1)
+  const sleep = lastNight
+    ? { last: lastNight.minutes, week: Math.round(mean(slept.filter((n) => daysBetween(n.date, lastNight.date) < 7).map((n) => n.minutes))) }
+    : null
+
+  const hrvDays = nights.flatMap((n) => (n.hrvMs === undefined ? [] : [{ date: n.date, value: n.hrvMs }]))
+  const lastHrv = hrvDays.filter((d) => d.date >= window.start && d.date <= window.end).at(-1)
+  const hrvBand = lastHrv ? band(hrvDays, lastHrv.date) : null
+  const hrv = lastHrv && hrvBand
+    ? { now: Math.round(lastHrv.value), ...hrvBand, side: lastHrv.value < hrvBand.lo ? ('low' as const) : lastHrv.value > hrvBand.hi ? ('high' as const) : null }
+    : null
+
+  if (!sleep && !hrv) return null
+  return { sleep, hrv, out: hrv?.side === 'low' }
 }

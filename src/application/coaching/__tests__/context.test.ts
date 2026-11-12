@@ -355,3 +355,28 @@ describe('morning check-ins and training breaks', () => {
     expect(context.athlete.trainingBreaks).toEqual([{ start: '2026-08-10', end: '2026-08-24', reason: 'heat' }])
   })
 })
+
+describe('overnight readings', () => {
+  it('carries the last 28 nights newest first, never a later one', () => {
+    const night = { start: 'a', end: 'b', asleepMinutes: 400, awakeMinutes: 20 }
+    const context = buildCoachingContext({
+      ...input([]),
+      health: [
+        { date: '2026-09-27', restingHr: 48 },
+        { date: '2026-09-28', restingHr: 47, hrvMs: 61.2, sleep: night },
+        { date: '2026-10-24', steps: 9000 },
+        { date: '2026-10-25', restingHr: 49, sleep: night },
+        { date: '2026-10-26', restingHr: 50 },
+      ],
+    }, '2026-10-25')
+
+    expect(context.overnight).toEqual([
+      { date: '2026-10-25', sleepMinutes: 400, restingHrBpm: 49 },
+      { date: '2026-09-28', sleepMinutes: 400, hrvMs: 61.2, restingHrBpm: 47 },
+    ])
+  })
+
+  it('is absent for an athlete who sleeps without a tracker', () => {
+    expect(buildCoachingContext(input([]), '2026-10-25')).not.toHaveProperty('overnight')
+  })
+})

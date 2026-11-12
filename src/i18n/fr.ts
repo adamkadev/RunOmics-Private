@@ -918,6 +918,10 @@ export const fr = {
         safe: (lo: number, hi: number) => `sûr ${lo}–${hi}`,
         fitnessWeek: 'condition / semaine',
         restingHr: 'FC repos',
+        sleep: 'Sommeil',
+        duration: (minutes: number) => `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`,
+        sleepWeek: (average: string) => `moy. 7 nuits ${average}`,
+        hrv: 'VFC',
         baseline: (side: 'low' | 'high' | null, lo: number, hi: number) =>
           side === 'high' ? `au-dessus de la base ${lo}–${hi}` : side === 'low' ? `sous la base ${lo}–${hi}` : `dans la base ${lo}–${hi}`,
         ok: 'OK',
