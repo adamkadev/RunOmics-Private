@@ -13,7 +13,7 @@ describe('the exported card (design review, Oct 2026)', () => {
     expect(W / H).toBe(4 / 5)
     for (const design of ['route', 'stats', 'photo'] as const) {
       const canvas = { width: 0, height: 0, getContext: () => null } as unknown as HTMLCanvasElement
-      renderShareCard(canvas, { activity: RUN, design, accent: 'violet', theme: 'dark' }, 1080 / W)
+      renderShareCard(canvas, { activity: RUN, design, accent: 'heather', theme: 'dark' }, 1080 / W)
       expect([canvas.width, canvas.height]).toEqual([1080, 1350])
     }
   })

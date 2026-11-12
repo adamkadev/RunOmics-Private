@@ -640,9 +640,7 @@ export const en = {
       options: {
         teal:     { label: 'Teal' },
         cyan: { label: 'Cyan' },
-        violet:     { label: 'Violet' },
-        pink:     { label: 'Pink' },
-        mono:     { label: 'Mono' },
+        heather:  { label: 'Heather' },
       },
     },
     auth: {

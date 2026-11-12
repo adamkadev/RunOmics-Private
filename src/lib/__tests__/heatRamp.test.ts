@@ -16,12 +16,6 @@ describe('rampLight (App Fixes 4d)', () => {
     near(rampLight(mint, 0.75), [26, 114, 90])
     near(rampLight(mint, 1), [13, 51, 41])
   })
-
-  it('ramps the white accent in graphite on a light map', () => {
-    const mono = heatAccent('mono')
-    near(rampLight(mono, 0), [195, 201, 199])
-    near(rampLight(mono, 1), [11, 12, 12])
-  })
 })
 
 describe('rampDark (App Fixes 4d)', () => {
@@ -29,7 +23,6 @@ describe('rampDark (App Fixes 4d)', () => {
     near(rampDark('#2dd4a7', 0.75), [45, 212, 167])
     near(rampDark('#2dd4a7', 1), [98, 223, 189])
     near(rampDark('#5fd4f0', 1), [135, 223, 244])
-    near(rampDark(heatAccent('mono'), 1), [233, 236, 234])
   })
 
   it('starts dim', () => {

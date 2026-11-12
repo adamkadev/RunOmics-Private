@@ -61,11 +61,10 @@ export interface RouteColors {
   avoid: string
 }
 
-/** Mono's accent is the foreground colour, so its known streets step back to the secondary text colour. */
 export function routeColors(mode: RouteMode, accent: AccentId): RouteColors {
   const acc = accentColor(accent, mode)
   const s = SURFACES[mode]
-  const known = accent === 'mono' ? s.text2 : s.text
+  const known = s.text
   const avoid = STATUS_HEX[mode].neg
   return mode === 'dark'
     ? { connector: withAlpha(s.text, 0.5), casing: ink(0.6), new: acc, known, startFill: s.text, startStroke: acc, avoid }

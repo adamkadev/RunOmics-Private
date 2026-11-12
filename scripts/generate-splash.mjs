@@ -8,9 +8,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = join(root, 'public/icons/splash')
 
 const { SURFACES } = await loadLibModules('themeTokens', ['palette', 'accentScale', 'themeTokens'])
-const { CURATED_ACCENTS, DEFAULT_ACCENT } = await loadLibModules('accent', ['accentScale', 'accent'])
+const { CURATED_ACCENTS, BASE_ACCENT } = await loadLibModules('accent', ['accentScale', 'accent'])
 const BG = SURFACES.dark.background
-const LOGO_COLOR = CURATED_ACCENTS.find((a) => a.id === DEFAULT_ACCENT).dark.acc
+const LOGO_COLOR = CURATED_ACCENTS.find((a) => a.id === BASE_ACCENT).dark.acc
 
 const DEVICES = [
   { name: 'iphone-16-pro-max', w: 440, h: 956, r: 3 },

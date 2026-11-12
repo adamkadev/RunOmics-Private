@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { RecurringRoutes } from '../RecurringRoutes'
 import { routeKey } from '@/lib/routeNames'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
@@ -33,21 +33,6 @@ afterEach(() => {
 })
 
 describe('RecurringRoutes row', () => {
-  it('outlines the latest bar under the white accent, and fills it under every other', () => {
-    const latest = () => [...screen.getByTestId('pace-trail').children].find((bar) => bar.getAttribute('data-tone') === 'latest')!
-
-    render(<RecurringRoutes routes={[route(6)]} thisYear={2026} />)
-    expect(latest().className).toContain('bg-foreground')
-
-    act(() => {
-      localStorage.setItem('runomics-accent', 'mono')
-      window.dispatchEvent(new Event('runomics:accent-change'))
-    })
-    expect(latest().className).toContain('bg-transparent')
-    expect(latest().className).toContain('border-foreground')
-    localStorage.removeItem('runomics-accent')
-  })
-
   it('writes every distance to one decimal, beside the run count', () => {
     render(
       <RecurringRoutes

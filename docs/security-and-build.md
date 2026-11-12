@@ -300,7 +300,7 @@ accent key and stamps `data-accent`, which the palette CSS keys off), the colour
 emulated as a backup for `prefers-color-scheme` and the pre-hydration paint, and every
 transition and animation is frozen with an injected stylesheet — otherwise the aurora
 background, tab underline and page transitions make two runs of the same screen differ. The
-default accent is the bare stylesheet, so the wait for it is on the *absence* of the
+base accent (teal) is the bare stylesheet, so the wait for it is on the *absence* of the
 attribute.
 
 Each screen is shot begin/middle/end (what a phone actually shows) plus one stitched

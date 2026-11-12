@@ -10,9 +10,19 @@ import {
 } from '@/lib/accent'
 
 describe('the v4.17 accents', () => {
-  it('offers five palettes, teal first and by default', () => {
-    expect(ACCENT_IDS).toEqual(['teal', 'cyan', 'violet', 'pink', 'mono'])
+  it('offers three palettes, teal first and by default', () => {
+    expect(ACCENT_IDS).toEqual(['teal', 'cyan', 'heather'])
     expect(DEFAULT_ACCENT).toBe('teal')
+  })
+
+  it('starts a deployment on its own accent, and ignores one it does not know', async () => {
+    vi.stubEnv('NEXT_PUBLIC_DEFAULT_ACCENT', 'heather')
+    vi.resetModules()
+    expect((await import('@/lib/accent')).parseAccent(null)).toBe('heather')
+    vi.stubEnv('NEXT_PUBLIC_DEFAULT_ACCENT', 'pink')
+    vi.resetModules()
+    expect((await import('@/lib/accent')).DEFAULT_ACCENT).toBe('teal')
+    vi.unstubAllEnvs()
   })
 
   it('knows its own ids only', () => {
@@ -25,7 +35,7 @@ describe('the v4.17 accents', () => {
 
 describe('reading a stored preference', () => {
   it('reads a palette id as itself', () => {
-    expect(parseAccent('pink')).toBe('pink')
+    expect(parseAccent('heather')).toBe('heather')
   })
 
   it('reads the retired lime as the default', () => {
@@ -34,15 +44,18 @@ describe('reading a stored preference', () => {
 
   it('reads a pre-v4.3 accent as its nearest palette', () => {
     expect(parseAccent('nature')).toBe('teal')
-    expect(parseAccent('performance')).toBe('violet')
-    expect(parseAccent('endurance')).toBe('violet')
-    expect(parseAccent('silver')).toBe('mono')
+    expect(parseAccent('performance')).toBe('heather')
+    expect(parseAccent('endurance')).toBe('heather')
+    expect(parseAccent('silver')).toBe('teal')
   })
 
-  it('reads v4.3\'s indigo and lavender, and v4.17\'s periwinkle, as cyan and violet', () => {
+  it('reads the retired indigo, periwinkle, lavender, violet, pink and mono as their nearest palette', () => {
     expect(parseAccent('indigo')).toBe('cyan')
     expect(parseAccent('periwinkle')).toBe('cyan')
-    expect(parseAccent('lavender')).toBe('violet')
+    expect(parseAccent('lavender')).toBe('heather')
+    expect(parseAccent('violet')).toBe('heather')
+    expect(parseAccent('pink')).toBe('heather')
+    expect(parseAccent('mono')).toBe('teal')
   })
 
   it('falls back to the default for a custom hue, nothing, or noise', () => {

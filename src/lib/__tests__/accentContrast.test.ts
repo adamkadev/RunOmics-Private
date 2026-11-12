@@ -171,10 +171,10 @@ describe('light theme text on its surfaces', () => {
 
   it('darkens only an accent that needs it, and only the text', () => {
     const teal = CURATED_ACCENTS.find((accent) => accent.id === 'teal')!
-    const violet = CURATED_ACCENTS.find((accent) => accent.id === 'violet')!
+    const heather = CURATED_ACCENTS.find((accent) => accent.id === 'heather')!
     expect(accentTokens(teal, 'light')['--accent-text']).not.toBe(teal.light.acc)
     expect(accentTokens(teal, 'light')['--accent']).toBe(teal.light.acc)
-    expect(accentTokens(violet, 'light')['--accent-text']).toBe(violet.light.acc)
+    expect(accentTokens(heather, 'light')['--accent-text']).toBe(heather.light.acc)
     expect(readableOn('#1a1c1b', s.seg)).toBe('#1a1c1b')
   })
 })

@@ -46,7 +46,7 @@ const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, paces: [262, 264, 2
 
 function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>, mode: 'dark' | 'light' = 'dark') {
   const { ctx, ops } = recorder()
-  drawShareCard(ctx, { activity: RUN, palette: sharePalette('violet', mode), fonts: FALLBACK_FONTS, place: 'Hoenheim', ...partial })
+  drawShareCard(ctx, { activity: RUN, palette: sharePalette('heather', mode), fonts: FALLBACK_FONTS, place: 'Hoenheim', ...partial })
   return ops
 }
 
@@ -55,8 +55,8 @@ function layout(activity: ShareActivity = RUN, design: ShareCardScene['design'] 
 }
 
 const texts = (ops: Op[]) => ops.filter((o) => o.op === 'fillText').map((o) => o.args[0] as string)
-const palette = sharePalette('violet', 'dark')
-const acc = curatedAccent('violet').dark.acc
+const palette = sharePalette('heather', 'dark')
+const acc = curatedAccent('heather').dark.acc
 
 describe('drawShareCard', () => {
   it('glows on the dark Stats card only, in the run\'s own colour', () => {
@@ -207,7 +207,7 @@ describe('the route (redesign, Oct 2026)', () => {
 
   it('draws one trace in the accent, with no legend', () => {
     for (const mode of ['dark', 'light'] as const) {
-      const colours = sharePalette('violet', mode)
+      const colours = sharePalette('heather', mode)
       const ops = draw({ design: 'route' }, mode)
       const lines = strokes(ops).map((o) => o.stroke)
       expect(lines).toContain(colours.acc)
@@ -234,11 +234,11 @@ describe('the route (redesign, Oct 2026)', () => {
   // The rest of the route is a muted grey, so the reps are what the eye finds:
   // on dark it sits under the ink the names take, never beside it.
   it('keeps the non-rep route muted, a step under the names, on both themes', () => {
-    expect(sharePalette('violet', 'dark').trace).toBe('#6b7270')
-    expect(sharePalette('violet', 'light').trace).toBe('#8a8a8a')
+    expect(sharePalette('heather', 'dark').trace).toBe('#6b7270')
+    expect(sharePalette('heather', 'light').trace).toBe('#8a8a8a')
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
     for (const mode of ['dark', 'light'] as const) {
-      const colours = sharePalette('violet', mode)
+      const colours = sharePalette('heather', mode)
       expect(strokes(draw({ design: 'route', activity: run }, mode)).map((o) => o.stroke)).toContain(colours.trace)
     }
   })
@@ -327,9 +327,9 @@ describe('the route (redesign, Oct 2026)', () => {
       return { ops, fills: ops.slice(at).filter((o) => o.op === 'fill').map((o) => o.fill) }
     }
     const light = startFills('light')
-    expect(light.fills).toEqual(['#ffffff', curatedAccent('violet').light.acc])
+    expect(light.fills).toEqual(['#ffffff', curatedAccent('heather').light.acc])
     expect(light.ops.some((o) => o.op === 'arc' && o.args[2] === START_OUTLINE)).toBe(false)
-    expect(startFills('dark').fills).toEqual(['#0c0d0d', '#f2f4f3', curatedAccent('violet').dark.acc])
+    expect(startFills('dark').fills).toEqual(['#0c0d0d', '#f2f4f3', curatedAccent('heather').dark.acc])
     expect(SHARE_MARKER_HEX.light.outline).toBeNull()
   })
 
@@ -526,7 +526,7 @@ describe('the place names on the Route card', () => {
     const name = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'Devant-les-Ponts')
     const lastTrace = ops.map((o) => o.op).lastIndexOf('lineTo')
     expect(name).toBeGreaterThan(lastTrace)
-    expect(ops.find((o) => o.op === 'strokeText' && o.args[0] === 'Devant-les-Ponts')?.stroke).toBe(sharePalette('violet', 'dark').bg)
+    expect(ops.find((o) => o.op === 'strokeText' && o.args[0] === 'Devant-les-Ponts')?.stroke).toBe(sharePalette('heather', 'dark').bg)
     expect(texts(ops)).not.toContain('Under the header')
   })
 

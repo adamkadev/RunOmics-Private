@@ -15,7 +15,7 @@ npm run screenshots
 ```
 
 That builds the app once (`next build`), starts it (`next start`), walks every
-route in both themes on the default (nature) accent, and writes PNGs to
+route in both themes on the default (teal) accent, and writes PNGs to
 `screenshots/output/` (git-ignored).
 
 Already have a server running (or want to point at a deployed URL)? Skip the
@@ -39,14 +39,14 @@ fails loudly on an unknown value:
 | Var                  | Values                                                                 | Default          |
 | -------------------- | ---------------------------------------------------------------------- | ---------------- |
 | `SCREENSHOT_THEMES`  | `light`, `dark`                                                         | both             |
-| `SCREENSHOT_ACCENTS` | `nature`, `teal`, `performance`, `endurance`, `silver`                  | `nature`         |
+| `SCREENSHOT_ACCENTS` | `teal`, `cyan`, `heather`                                               | `teal`           |
 
 ```bash
-# The whole matrix: 5 accents x 2 themes x every route
+# The whole matrix: 3 accents x 2 themes x every route
 SCREENSHOT_ACCENTS=all npm run screenshots
 
 # Just what you're working on
-SCREENSHOT_ACCENTS=teal,silver SCREENSHOT_THEMES=dark npm run screenshots
+SCREENSHOT_ACCENTS=heather SCREENSHOT_THEMES=dark npm run screenshots
 ```
 
 The accent list is imported from `src/lib/accent.ts`, so a newly shipped palette

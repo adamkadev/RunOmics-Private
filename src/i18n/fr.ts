@@ -610,9 +610,7 @@ export const fr = {
       options: {
         teal:     { label: 'Sarcelle' },
         cyan: { label: 'Cyan' },
-        violet:     { label: 'Violet' },
-        pink:     { label: 'Rose' },
-        mono:     { label: 'Mono' },
+        heather:  { label: 'Bruyère' },
       },
     },
     auth: {

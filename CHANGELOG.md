@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Three accents instead of five: teal, cyan and a new Heather, a muted blush. Violet and pink read as the
+  threshold and strides colours and Mono is retired; a device that had one moves to its nearest (violet and pink
+  to Heather, Mono to teal). Each deployment can start on its own accent. **Needs** `NEXT_PUBLIC_DEFAULT_ACCENT=heather`
+  in the second athlete's Vercel project, then a redeploy.
 - The share card's Stats design no longer leads with 0%: a session that never reached its zone (a threshold run
   held in Z3) now leads with the hardest zone it did reach, "45% in Z3" rather than "0% in Z4".
 - Progress has a Home runs card: it opens a replay of every run from the usual start, all leaving together at

@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { test, type Page } from '@playwright/test'
 import {
-  DEFAULT_ACCENT_ID,
   ROUTES,
   selectedAccents,
   selectedThemes,
@@ -10,7 +9,7 @@ import {
   type RouteSpec,
   type Theme,
 } from './routes'
-import { ACCENT_STORAGE_KEY } from '@/lib/accent'
+import { ACCENT_STORAGE_KEY, BASE_ACCENT } from '@/lib/accent'
 import { signInAsOwner } from '../e2e/owner'
 
 const OUTPUT_DIR = path.join(__dirname, 'output')
@@ -122,11 +121,11 @@ async function gotoAndSettle(page: Page, url: string, route: RouteSpec, theme: T
 
   await page
     .waitForFunction(
-      (a) => {
+      ({ a, base }) => {
         const attr = document.documentElement.getAttribute('data-accent')
-        return a === DEFAULT_ACCENT_ID ? attr === null || attr === a : attr === a
+        return a === base ? attr === null || attr === a : attr === a
       },
-      accent,
+      { a: accent, base: BASE_ACCENT },
       { timeout: 5_000 }
     )
     .catch(() => {})
