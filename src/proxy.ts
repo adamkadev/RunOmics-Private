@@ -19,7 +19,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything but what a signed-out browser must fetch to sign in or to
-  // install the app, none of which holds the athlete's data.
-  matcher: ['/((?!_next/|icons/|maplibre/|manifest\\.json$|sw\\.js$|robots\\.txt$|favicon\\.ico$).*)'],
+  // Skips what a signed-out browser needs to sign in, install the app or read the consent screen's policies: no data.
+  matcher: ['/((?!_next/|icons/|maplibre/|manifest\\.json$|sw\\.js$|robots\\.txt$|favicon\\.ico$|privacy\\.html$|terms\\.html$).*)'],
 }
