@@ -22,9 +22,8 @@ All notable changes to this project are documented in this file.
   Heather like the strides pink.
 - The title bar's scroll edge is solid page ground down to the bar in dark too, as in light: rows no longer read
   through it.
-- Today leads with the session, the readiness card under it as the reason. Form, Fitness and Fatigue sit in a flat
-  row under a hairline rather than tiles inside the card; the eyebrow is green when ready, amber for caution and grey
-  otherwise, never the accent. This week drops the load figure, which the readiness line already gives.
+- Today's readiness card sets Form, Fitness and Fatigue in a flat row under a hairline rather than tiles inside the
+  card; its eyebrow is green when ready, amber for caution and grey otherwise, never the accent. This week drops the load figure, which the readiness line already gives.
 - Week counters say which they count: "Block week 4 of 4", "Cycle week 5 of 12".
 - An activity's map is 70 pt shorter and its tabs sit right under the numbers, so each tab starts in the first
   screen; the session card with its chips moves to the top of Overview. Its eyebrow says the verdict once

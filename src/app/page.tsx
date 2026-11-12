@@ -80,9 +80,8 @@ export default async function DashboardPage() {
       <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} today={today} />
       <StaleSyncBanner lastSyncedAt={lastSyncedAt} />
 
-      {/* The session first: the morning's question is what to run, and the readiness under it says why. */}
-      <TodayBoard session={card && { ...card, heat }} />
       <ReadinessCard status={trainingStatus} verdict={aiVerdict} load={recentLoad?.reading ?? null} today={today} />
+      <TodayBoard session={card && { ...card, heat }} />
       <CheckInCard today={today}>
         <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
