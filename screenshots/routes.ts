@@ -10,25 +10,35 @@ export interface RouteSpec {
   asOwner?: boolean
   /** Waited for, not required, before shooting: a mark set once something slow is done. */
   settledWhen?: string
+  /** Also opens the share sheet and shoots each card design. */
+  hasShareCard?: boolean
 }
 
 export const ROUTES: RouteSpec[] = [
   { path: '/', name: 'dashboard' },
   { path: '/activities', name: 'activities' },
-  { path: '/activities', name: 'activity-detail', firstLinkTo: '/activities/', hasTabs: true, settledWhen: '[data-route-drawn]' },
+  { path: '/activities', name: 'activity-detail', firstLinkTo: '/activities/', hasTabs: true, settledWhen: '[data-route-drawn]', hasShareCard: true },
+  // Straight to the view: /map's redirect drops the query and races the capture.
+  { path: '/activities?view=map', name: 'map' },
+  { path: '/activities?view=map&layer=districts', name: 'map-districts', settledWhen: '[data-testid="next-quartier-card"]' },
+  { path: '/activities?view=map&explore=route', name: 'map-route', settledWhen: '[data-testid="route-stats"]' },
   { path: '/plan', name: 'plan', hasTabs: true },
+  { path: '/plan/checkpoint', name: 'plan-checkpoint' },
   { path: '/analytics', name: 'analytics', hasTabs: true },
-  { path: '/map', name: 'map' },
+  { path: '/profile', name: 'progress' },
   { path: '/goals', name: 'goals' },
+  { path: '/race', name: 'race' },
   { path: '/records', name: 'records', hasTabs: true },
+  { path: '/home-runs', name: 'home-runs' },
   { path: '/shoes', name: 'shoes' },
   { path: '/shoes', name: 'shoe-detail', firstLinkTo: '/shoes/' },
-  { path: '/profile', name: 'profile' },
   { path: '/athlete', name: 'athlete' },
+  { path: '/athlete/vo2max', name: 'athlete-vo2max' },
   { path: '/consistency', name: 'consistency' },
   { path: '/all-time', name: 'all-time' },
   { path: '/settings', name: 'settings' },
   { path: '/settings', name: 'settings-owner', asOwner: true },
+  { path: '/sign-in', name: 'sign-in' },
   { path: '/no-such-page', name: 'not-found' },
 ]
 

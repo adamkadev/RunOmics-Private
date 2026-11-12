@@ -62,35 +62,41 @@ For **each accent × each theme × each route**:
 | `full`                   | Whole page stitched into one tall image                        |
 
 Pages with in-page tabs (**Plan**, **Analytics**, **Records**, an **activity**) additionally
-get the same set for each tab other than the one they open on, prefixed
-`tab-<n>-<label>-…`.
+get the same set for each tab other than the one they open on, named `<page>-<tab>`.
+The activity also opens its share sheet and shoots each card design but Photo,
+which needs a picked photo: `activity-detail-share-<design>-<theme>-screen-1`
+for the sheet and `-card` for the card alone.
 
 ### Output layout
 
+One flat folder per accent, every file named `<page>-<theme>-<frame>.png`, so a
+file says what it is wherever it is copied and each page's light and dark sit
+side by side:
+
 ```
 screenshots/output/
-└── nature/                      (one folder per captured accent)
-    ├── light/
-    │   ├── dashboard/           screen-1.png  screen-2.png  full.png
-    │   ├── analytics/           screen-1.png … + tab-2-…-screen-1.png, …
-    │   ├── plan/                screen-1.png … + tab-2-month-screen-1.png, …
-    │   └── … (one folder per route)
-    └── dark/
-        └── … (mirror of light)
+└── teal/
+    ├── dashboard-dark-full.png
+    ├── dashboard-dark-screen-1.png
+    ├── dashboard-light-full.png
+    ├── dashboard-light-screen-1.png
+    ├── plan-month-dark-screen-1.png
+    └── …
 ```
 
 ## Routes covered
 
-Dashboard, Activities (list + an activity), Plan (week + month), Analytics,
-Map, Goals, Records (PRs + Milestones tabs), Shoes (list + a shoe), Profile,
-Athlete, Consistency, All-time, Settings (signed out and as the owner) and the
+Dashboard, Activities (list + an activity), Map (heat, Districts layer and
+route generator), Plan (week + month, checkpoint), Analytics, Progress, Goals,
+Race, Records (every tab), Home runs, Shoes (list + a shoe), Athlete (+ VO2max),
+Consistency, All-time, Settings (signed out and as the owner), Sign-in and the
 not-found page — defined in [`routes.ts`](./routes.ts).
 The activity and the shoe are the first ones their list links to, so they have
 content in whichever dataset is being served.
 
-There is no `/milestones` entry: that screen merged into `/records` behind the
-segmented control, and the leftover route is a redirect — capturing it raced the
-client navigation and tore the page down mid-shot.
+Redirects are never captured: `/milestones` and `/map` lead elsewhere, and
+shooting one raced the client navigation and tore the page down mid-shot. The
+map views open `/activities?view=map` with their query instead.
 
 ## How themes and accents are pinned
 

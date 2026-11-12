@@ -48,9 +48,10 @@ async function scrollTo(page: Page, y: number): Promise<void> {
   await page.waitForTimeout(250)
 }
 
-async function captureScreens(page: Page, dir: string, prefix: string): Promise<void> {
+async function captureScreens(page: Page, dir: string, shot: string, theme: Theme): Promise<void> {
   fs.mkdirSync(dir, { recursive: true })
-  const p = (name: string) => path.join(dir, prefix ? `${prefix}-${name}.png` : `${name}.png`)
+  // One flat folder, named page then theme, so a file says what it is wherever it is copied and light sits beside dark.
+  const p = (frame: string) => path.join(dir, `${shot}-${theme}-${frame}.png`)
 
   const { scrollable, viewport } = await page.evaluate(() => ({
     scrollable: document.documentElement.scrollHeight - window.innerHeight,
@@ -135,6 +136,27 @@ async function gotoAndSettle(page: Page, url: string, route: RouteSpec, theme: T
   await page.waitForTimeout(600)
 }
 
+// The card is a canvas with no drawn mark: long enough for the map snapshot and Geist to land.
+const SHARE_CARD_SETTLE_MS = 2_500
+
+async function captureShareCards(page: Page, dir: string, shot: string, theme: Theme): Promise<void> {
+  await scrollTo(page, 0)
+  await page.locator('button[data-bar-action="share"]').first().click()
+  await page.getByTestId('share-preview').waitFor({ state: 'visible', timeout: 15_000 })
+
+  const designs = page.getByTestId('share-designs').getByRole('radio')
+  for (let i = 0; i < (await designs.count()); i++) {
+    const design = designs.nth(i)
+    const label = slugify((await design.textContent())?.trim() ?? `design-${i}`)
+    // An empty frame until a photo is picked, which a headless run cannot do.
+    if (label === 'photo') continue
+    await design.click()
+    await page.waitForTimeout(SHARE_CARD_SETTLE_MS)
+    await page.screenshot({ path: path.join(dir, `${shot}-share-${label}-${theme}-screen-1.png`) })
+    await page.getByTestId('share-preview').screenshot({ path: path.join(dir, `${shot}-share-${label}-${theme}-card.png`) })
+  }
+}
+
 for (const accent of selectedAccents()) {
   for (const theme of selectedThemes()) {
     test.describe(`${accent} / ${theme} mode`, () => {
@@ -142,14 +164,14 @@ for (const accent of selectedAccents()) {
 
       for (const route of ROUTES) {
         test(`${route.name}`, async ({ page }) => {
-          const dir = path.join(OUTPUT_DIR, accent, theme, route.name)
+          const dir = path.join(OUTPUT_DIR, accent)
           await preparePage(page, theme, accent)
           if (route.asOwner) {
             test.skip(!!process.env.SCREENSHOT_BASE_URL, 'the owner capture needs the local Auth emulator')
             await signInAsOwner(page)
           }
           await gotoAndSettle(page, await resolvePath(page, route), route, theme, accent)
-          await captureScreens(page, dir, '')
+          await captureScreens(page, dir, route.name, theme)
 
           if (route.hasTabs) {
             const tabs = page.getByRole('tab')
@@ -162,9 +184,11 @@ for (const accent of selectedAccents()) {
               const label = slugify((await tab.textContent())?.trim() ?? `tab-${i}`)
               await tab.click()
               await page.waitForTimeout(400)
-              await captureScreens(page, dir, `tab-${i + 1}-${label}`)
+              await captureScreens(page, dir, `${route.name}-${label}`, theme)
             }
           }
+
+          if (route.hasShareCard) await captureShareCards(page, dir, route.name, theme)
         })
       }
     })
