@@ -110,13 +110,13 @@ describe('the phases down the side', () => {
 })
 
 describe('the km column', () => {
-  it('reads each week as run over planned, a week to come as its plan', () => {
+  it('reads each week as run over planned, and leaves a week with no plan yet blank', () => {
     renderMonth()
 
     const totals = screen.getAllByTestId('month-week-total').map((c) => c.textContent)
     expect(totals[2]).toBe('18/ 24')
     expect(totals[3]).toBe('0/ 29')
-    expect(totals[4]).toBe('–')
+    expect(totals[4]).toBe('')
   })
 })
 
@@ -175,7 +175,7 @@ describe('the legend and the summary', () => {
     expect(km).toContain(
       t.plan.month.planCovers(formatDate('2026-10-13', { style: 'bare', year: 'never' }), formatDate('2026-10-25', { style: 'bare', year: 'never' })),
     )
-    expect(km).toContain(t.plan.month.monthTotal('18'))
+    expect(km).not.toContain(t.plan.month.monthTotal('18'))
   })
 
   it('counts a run between the plan’s first and last day though no session was set for it', () => {

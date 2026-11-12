@@ -91,7 +91,7 @@ describe('ActivityDetailClient', () => {
     expect(stats.textContent).toBe(
       `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.units.min}${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
     )
-    expect(stats.className).toContain('grid-cols-[repeat(4,minmax(0,1fr))]')
+    expect(stats.className).toContain('grid-cols-[repeat(4,auto)]')
     expect(stats.className).toContain('gap-x-2')
     expect(screen.queryByTestId('run-summary')).toBeNull()
     expect(screen.getAllByText(t.activity.stats.distance)).toHaveLength(1)

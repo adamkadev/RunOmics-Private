@@ -7,7 +7,9 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'btn-prominent rounded-full px-3.5 bg-accent text-accent-foreground hover:brightness-105',
+  // Disabled goes grey rather than a faded accent, which still read as tappable on a dark sheet.
+  primary:
+    'btn-prominent rounded-full px-3.5 bg-accent text-accent-foreground hover:brightness-105 disabled:bg-[var(--fill-3)] disabled:bg-none disabled:text-muted-foreground disabled:shadow-none disabled:opacity-100',
   secondary: 'rounded-full px-3.5 bg-[var(--fill-3)] text-foreground',
   ghost: 'rounded-full px-3.5 bg-transparent text-foreground/80 hover:text-foreground active:opacity-60',
   link: 'font-medium! text-accent-text hover:opacity-80',

@@ -111,8 +111,9 @@ function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; test
   return (
     // A fixed 44 pt value row, so a unit's taller inline box cannot lift its
     // neighbours; column flow keeps each value before its label for VoiceOver.
+    // Columns as wide as their stat, spread: equal quarters let "58:03 min" run into the pace.
     <div
-      className="grid grid-flow-col grid-cols-[repeat(4,minmax(0,1fr))] grid-rows-[44px_auto] gap-x-2 gap-y-0.5 [container-type:inline-size]"
+      className="grid grid-flow-col grid-cols-[repeat(4,auto)] grid-rows-[44px_auto] justify-between gap-x-2 gap-y-0.5 [container-type:inline-size]"
       data-testid={testId}
     >
       {stats.map((stat) => (
@@ -120,7 +121,7 @@ function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; test
           <span
             data-stat-value
             className={cn(
-              'block h-8 min-w-0 self-end whitespace-nowrap font-bold tracking-[-0.02em] text-foreground',
+              'block h-8 min-w-0 self-end whitespace-nowrap font-bold tracking-[-0.02em] tabular-nums text-foreground',
               STAT_VALUE_SIZE,
               'leading-8',
             )}

@@ -17,7 +17,7 @@ describe('activeNavHref', () => {
   })
 
   it('folds the Progress sub-pages into Progress in both navs', () => {
-    for (const path of ['/shoes', '/records', '/goals', '/athlete']) {
+    for (const path of ['/shoes', '/records', '/goals', '/athlete', '/home-runs']) {
       expect(activeNavHref(path, SIDEBAR)).toBe('/profile')
       expect(activeNavHref(path, TAB_BAR)).toBe('/profile')
     }

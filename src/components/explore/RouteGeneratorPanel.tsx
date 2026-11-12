@@ -388,10 +388,15 @@ export function RouteGeneratorPanel({
             </p>
           ) : (
             // Fixed shares sized for the widest each takes ("30.0 km", "+148 m", "100%"), so nothing shifts as loops come and go.
+            // Held but unseen before a start is tapped: a row of dashes there read as broken.
             <dl
               data-testid="route-stats"
               aria-busy={status === 'generating'}
-              className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,0.85fr)] gap-2 max-[359px]:gap-1.5"
+              aria-hidden={start.waiting || undefined}
+              className={cn(
+                'grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,0.85fr)] gap-2 max-[359px]:gap-1.5',
+                start.waiting && 'invisible',
+              )}
             >
               {statCells.map((cell) => (
                 // The label first for a screen reader; CSS order draws the value over it.

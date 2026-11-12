@@ -290,8 +290,9 @@ export function Consistency({ views, today }: { views: Record<ConsistencyRange, 
 
   return (
     <>
-      <header className="mb-1.5 flex items-center justify-between gap-3">
-        <h1 className="min-w-0 text-display text-foreground">{t.pages.consistency.title}</h1>
+      {/* Wraps: at display size "Consistency" and the pill do not fit one line on a phone, and the pill ran over the title. */}
+      <header className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h1 className="text-display text-foreground">{t.pages.consistency.title}</h1>
         <SegmentedTabs
           tabs={tabs}
           label={c.rangeLabel}

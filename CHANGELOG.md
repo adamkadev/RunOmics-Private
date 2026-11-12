@@ -6,6 +6,14 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Fixes from a design review of every screen: Home runs keeps Progress lit in the tab bar; All time's monthly
+  chart gives its axis labels a gutter, so the first bar no longer covers "100"; Plan's month drops the month total
+  when it equals the plan's own figure and leaves a week with no plan blank; the route generator hides its empty
+  stats until a start is tapped; a disabled main button goes grey instead of a faded accent; zone names wrap
+  instead of cutting to "Recov…"; the streak milestone says since when; Consistency's title no longer runs under
+  its range switch; an activity's stat row sizes each column to its number, so "58:03 min" stops running into the
+  pace; the copy writes "VO₂max" one way and a dash rather than a hyphen.
+- A run/walk session's runs are drawn in the easy blue, no longer in the strides pink.
 - Three accents instead of five: teal, cyan and a new Heather, a muted blush. Violet and pink read as the
   threshold and strides colours and Mono is retired; a device that had one moves to its nearest (violet and pink
   to Heather, Mono to teal). Each deployment can start on its own accent. **Needs** `NEXT_PUBLIC_DEFAULT_ACCENT=heather`

@@ -15,7 +15,7 @@ export interface WorkoutSummary {
 
 // A block this many times the others' average is the easy body, not a work interval.
 const BODY_RATIO = 3
-const STRIDE_MAX_SECONDS = 60
+export const STRIDE_MAX_SECONDS = 60
 
 export function stepSeconds(step: WorkoutStep): number {
   return step.seconds ?? step.minutes * 60

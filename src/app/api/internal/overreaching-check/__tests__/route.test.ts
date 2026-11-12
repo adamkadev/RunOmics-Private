@@ -43,7 +43,7 @@ describe('POST /api/internal/overreaching-check', () => {
     expect(sendPushes).toHaveBeenCalledWith('training', [
       {
         title: 'Overreaching risk detected',
-        body: 'Form (TSB) -34, ACWR 1.6 - high training risk, consider recovery.',
+        body: 'Form (TSB) -34, ACWR 1.6 – high training risk, consider recovery.',
         link: '/analytics',
         tag: 'overreaching',
       },

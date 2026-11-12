@@ -174,7 +174,8 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
               <div key={zone} className={`${ROW_GRID} min-h-[38px] border-t border-border py-1.5`} data-testid={`zone-row-${zone}`}>
                 <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
                   <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
-                  <span className="min-w-0 truncate whitespace-nowrap">
+                  {/* Wraps, not truncates: "Recovery" and "Threshold" lost their ends in the name column. */}
+                  <span className="min-w-0 leading-tight">
                     <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
                   </span>
                 </span>
