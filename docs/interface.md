@@ -27,6 +27,11 @@ stylesheet can reach, so it stays accent- and theme-aware; `lib/colors` holds th
 CSS cannot reach — inline SVG attributes that need real strings, MapLibre paint properties, and the
 share-card canvas.
 
+**The three accents.** Teal (the base, painted with no `data-accent`), cyan and heather, a muted blush.
+Violet and pink are gone: they read as the Z4 and Z5 session colours. Mono is gone too. A saved retired accent
+reads as its nearest palette (`LEGACY_ACCENTS`), and `NEXT_PUBLIC_DEFAULT_ACCENT` picks the one a
+deployment starts on.
+
 **What follows the accent picker and what does not.** Form (TSB), weekly volume and the long-run
 bar are drawn in `var(--accent)` — they are the "this is your headline number" marks. Everything
 in `CHART_COLORS` is categorical or semantic and stays put. Readiness tone, pace-route, heat-route
@@ -311,8 +316,7 @@ behaves as before until a token is added as a secret.
 - Route thinning always keeps the last point so the finish marker stays put, and is deterministic so
   every caller thins alike.
 - The light-mode accent needs a deeper tone to survive the pale backdrops, but not the same deepening
-  `ACCENT_SWATCHES_LIGHT` applies: nature and silver sit one step brighter so the route line does not
-  go muddy against the map design.
+  `ACCENT_SWATCHES_LIGHT` applies, so the route line does not go muddy against the map design.
 - Export is a 1080px-wide story frame — the resolution Instagram, Strava and Garmin expect.
 - Clipboard copy must construct the `ClipboardItem` synchronously with a pending promise to keep
   Safari's user-gesture check.

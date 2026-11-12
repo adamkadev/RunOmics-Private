@@ -6,9 +6,8 @@ const SWATCH = {
   fog: 'border border-dashed bg-[color-mix(in_srgb,var(--foreground)_35%,transparent)] border-[color:color-mix(in_srgb,var(--foreground)_40%,transparent)] dark:bg-[color-mix(in_srgb,var(--background)_80%,transparent)]',
   partly:
     'border bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] border-[color:color-mix(in_srgb,var(--foreground)_30%,transparent)] dark:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] dark:border-[color:color-mix(in_srgb,var(--foreground)_40%,transparent)]',
-  // Light mono's accent is near-black and a wash of it reads as the fog's grey, so the swatch lifts to the capsule's paper, as on the map.
   complete:
-    'border-[1.5px] border-accent bg-[color-mix(in_srgb,var(--accent)_30%,transparent)] dark:bg-[color-mix(in_srgb,var(--accent)_25%,transparent)] [:root[data-accent=mono]:not(.dark)_&]:bg-[var(--raised)]',
+    'border-[1.5px] border-accent bg-[color-mix(in_srgb,var(--accent)_30%,transparent)] dark:bg-[color-mix(in_srgb,var(--accent)_25%,transparent)]',
 } as const
 
 /** Solid, not glass, for the blur budget; in dark the drop is lost on the map, so it takes the solid glass's hairline rim. */

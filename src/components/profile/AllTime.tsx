@@ -153,7 +153,8 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
               <span className="absolute bottom-0.5 left-0 text-[11px] leading-none tabular-nums text-[var(--axis-text)]">{km}</span>
             </span>
           ))}
-          <div className="relative grid h-full items-end gap-[3px]" style={{ ...grid, gridTemplateRows: `${MONTHLY_H}px` }}>
+          {/* The labels get their own gutter: drawn inside the plot, a tall first bar covered them. */}
+          <div className="relative ml-7 grid h-full items-end gap-[3px]" style={{ ...grid, gridTemplateRows: `${MONTHLY_H}px` }}>
             {shown.map((m, i) => {
               const isBest = m === best && m.km > 0
               return (
@@ -194,12 +195,12 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
             })}
           </div>
         </div>
-        <div className="mt-1.5 grid gap-[3px] text-center text-caption leading-[14px] text-subtle" style={grid}>
+        <div className="ml-7 mt-1.5 grid gap-[3px] text-center text-caption leading-[14px] text-subtle" style={grid}>
           {shown.map((m) => (
             <span key={m.key} className={cn('min-w-0', m.partial && 'font-semibold text-accent-text')}>{initial(m.key)}</span>
           ))}
         </div>
-        <div className="mt-2.5 grid gap-[3px] border-t border-border pt-2.5 text-caption leading-[14px] text-muted-foreground" style={grid} data-testid="monthly-years">
+        <div className="ml-7 mt-2.5 grid gap-[3px] border-t border-border pt-2.5 text-caption leading-[14px] text-muted-foreground" style={grid} data-testid="monthly-years">
           {years.map((y) => (
             <span key={y.year} className="min-w-0 whitespace-nowrap" style={{ gridColumn: `span ${y.months}` }} data-testid="monthly-year">
               {y.year}

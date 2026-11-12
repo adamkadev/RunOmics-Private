@@ -46,7 +46,7 @@ const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, paces: [262, 264, 2
 
 function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>, mode: 'dark' | 'light' = 'dark') {
   const { ctx, ops } = recorder()
-  drawShareCard(ctx, { activity: RUN, palette: sharePalette('violet', mode), fonts: FALLBACK_FONTS, place: 'Hoenheim', ...partial })
+  drawShareCard(ctx, { activity: RUN, palette: sharePalette('heather', mode), fonts: FALLBACK_FONTS, place: 'Hoenheim', ...partial })
   return ops
 }
 
@@ -55,8 +55,8 @@ function layout(activity: ShareActivity = RUN, design: ShareCardScene['design'] 
 }
 
 const texts = (ops: Op[]) => ops.filter((o) => o.op === 'fillText').map((o) => o.args[0] as string)
-const palette = sharePalette('violet', 'dark')
-const acc = curatedAccent('violet').dark.acc
+const palette = sharePalette('heather', 'dark')
+const acc = curatedAccent('heather').dark.acc
 
 describe('drawShareCard', () => {
   it('glows on the dark Stats card only, in the run\'s own colour', () => {
@@ -89,10 +89,10 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the logo mark, the route and the start marker\'s fill: off every word', () => {
+  it('keeps the accent to the logo mark, the route, the start marker\'s fill and the reps\' result', () => {
     for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
       const ops = draw({ design: 'route', activity })
-      expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
+      expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc).map((o) => o.args[0])).toEqual(activity.reps ? ['1 s/km under target'] : [])
       expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
     }
     // The mark is three accent strokes; a plain run's trace is a fourth.
@@ -147,19 +147,42 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all).not.toContain('REP PACE · 3 × 8′')
   })
 
-  it('keeps the rep-pace hero on the Stats card', () => {
+  it('leads the Stats card with the rep pace, the zones dropped to a thin bar', () => {
     const ops = draw({ design: 'stats', activity: session })
-    expect(texts(ops)).toEqual(expect.arrayContaining(['REP PACE · 3 × 8′', '4:24', '/km', 'target 4:25 · −0:01']))
-    expect(texts(ops).slice(-9)).toEqual(['10.0', ' km', 'Distance', '57:33', ' min', 'Time', '153', ' bpm', 'Avg HR'])
+    const all = texts(ops)
+    const pace = ops.find((o) => o.op === 'fillText' && o.args[0] === '4:24')!
+    expect(pace.font).toMatch(/^700 64px/)
+    expect(all).toEqual(expect.arrayContaining(['/km', 'Reps · target 4:25', 'Z1–Z2 80%', 'Z3 20%']))
+    expect(all).not.toContain('80%')
+    expect(all.some((text) => text.startsWith('in Z'))).toBe(false)
+    expect(all).not.toContain('REP PACE · 3 × 8′')
+    expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
+    expect(all.slice(-9)).toEqual(['10.0', ' km', 'Distance', '57:33', ' min', 'Time', '153', ' bpm', 'Avg HR'])
+    expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z2']))
   })
 
-  it('titles the card by type, with the structure under it, and the rep chips on the Stats card only', () => {
+  it('titles the card by its set, the type leading the line under it, and the rep chips on the Stats card only', () => {
     const route = texts(draw({ design: 'route', activity: session }))
-    expect(route).toContain('Threshold')
-    expect(route).toContain('3 × 8′ @ 4:25')
+    expect(route).toContain('3 × 8′')
+    expect(route.find((text) => text.endsWith(' · Hoenheim'))).toMatch(/^Threshold · /)
+    expect(route).not.toContain('Threshold')
     expect(route).not.toContain('Rep 1')
-    expect(route.some((text) => text.includes('× 8′ @') && text.startsWith('Threshold'))).toBe(false)
     expect(texts(draw({ design: 'stats', activity: session }))).toEqual(expect.arrayContaining(['Rep 1', '4:22', 'Rep 3', '4:26']))
+  })
+
+  it('puts the reps\' result in the accent under the header on Route and Stats, never on Photo or a plain run', () => {
+    for (const design of ['route', 'stats'] as const) {
+      const ops = draw({ design, activity: session })
+      const line = ops.find((o) => o.op === 'fillText' && o.args[0] === '1 s/km under target')!
+      expect(line.fill).toBe(acc)
+      expect(line.font).toMatch(/^700 16px/)
+      const subtitle = ops.find((o) => o.op === 'fillText' && (o.args[0] as string).endsWith(' · Hoenheim'))!
+      expect(line.args[2] as number).toBeGreaterThan(subtitle.args[2] as number)
+      expect(line.args[2] as number).toBeLessThan(layout(session, design).textTop)
+    }
+    expect(texts(draw({ design: 'route', activity: { ...session, reps: { ...REPS, target: { min: 260, max: 270 } } } }))).toContain('On target')
+    expect(texts(draw({ design: 'photo', activity: session }))).not.toContain('1 s/km under target')
+    expect(draw({ design: 'stats' }).filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
   })
 
   // A tempo session is Z3's violet, not the threshold magenta.
@@ -176,7 +199,7 @@ describe('an interval session (design review, Oct 2026)', () => {
 
   it('keeps the Reps legend at the map\'s top right, on the card\'s own margin', () => {
     const ops = draw({ design: 'route', activity: session })
-    const legend = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Reps · ')!
+    const legend = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Reps')!
     expect(legend.args[2] as number).toBeLessThan(layout(session).textTop + 40)
     // Its pill ends where the words do, 16 px off the card's edge.
     const at = ops.indexOf(legend)
@@ -185,18 +208,16 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(x + width).toBeCloseTo(W - 16, 6)
   })
 
-  it('reads "Reps · 1 s/km under target", the offset bold in the text colour', () => {
-    const ops = draw({ design: 'route', activity: session })
-    const at = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'Reps · ')
-    expect(ops.slice(at, at + 3).map((o) => [o.args[0], o.fill, o.font.split(' ')[0]])).toEqual([
-      ['Reps · ', palette.mu, '400'], ['1 s/km', palette.tx, '600'], [' under target', palette.mu, '400'],
-    ])
+  it('keys the reps\' colour in the legend, the result left to the line under the header', () => {
+    const all = texts(draw({ design: 'route', activity: session }))
+    expect(all.filter((text) => text.includes('target'))).toEqual(['1 s/km under target'])
   })
 
-  it('keeps the map\'s full height on the Route card; the Stats card gives the rep pace its room', () => {
-    expect(layout(session).middleH).toBe(layout().middleH)
-    expect(layout(session, 'stats').middleH).toBeLessThan(layout(RUN, 'stats').middleH)
+  it('keeps the Route card\'s stat row in place, and the Photo card\'s rep-pace hero', () => {
+    expect(layout(session).routeFrame.bottom).toBe(layout().routeFrame.bottom)
     expect(layout(session).ruleY).toBe(H - 16 - 32 - 12)
+    expect(layout(session, 'stats').hero).toBeNull()
+    expect(layout(session, 'photo').hero?.pace).toBe('4:24')
   })
 })
 
@@ -207,7 +228,7 @@ describe('the route (redesign, Oct 2026)', () => {
 
   it('draws one trace in the accent, with no legend', () => {
     for (const mode of ['dark', 'light'] as const) {
-      const colours = sharePalette('violet', mode)
+      const colours = sharePalette('heather', mode)
       const ops = draw({ design: 'route' }, mode)
       const lines = strokes(ops).map((o) => o.stroke)
       expect(lines).toContain(colours.acc)
@@ -228,17 +249,17 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(reps).toHaveLength(3)
     // Grey first, so a rep down the warm-up's road stays on top.
     expect(lines.indexOf(reps[0]!)).toBeGreaterThan(grey)
-    expect(texts(ops)).toContain('Reps · ')
+    expect(texts(ops)).toContain('Reps')
   })
 
   // The rest of the route is a muted grey, so the reps are what the eye finds:
   // on dark it sits under the ink the names take, never beside it.
   it('keeps the non-rep route muted, a step under the names, on both themes', () => {
-    expect(sharePalette('violet', 'dark').trace).toBe('#6b7270')
-    expect(sharePalette('violet', 'light').trace).toBe('#8a8a8a')
+    expect(sharePalette('heather', 'dark').trace).toBe('#6b7270')
+    expect(sharePalette('heather', 'light').trace).toBe('#8a8a8a')
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
     for (const mode of ['dark', 'light'] as const) {
-      const colours = sharePalette('violet', mode)
+      const colours = sharePalette('heather', mode)
       expect(strokes(draw({ design: 'route', activity: run }, mode)).map((o) => o.stroke)).toContain(colours.trace)
     }
   })
@@ -327,9 +348,9 @@ describe('the route (redesign, Oct 2026)', () => {
       return { ops, fills: ops.slice(at).filter((o) => o.op === 'fill').map((o) => o.fill) }
     }
     const light = startFills('light')
-    expect(light.fills).toEqual(['#ffffff', curatedAccent('violet').light.acc])
+    expect(light.fills).toEqual(['#ffffff', curatedAccent('heather').light.acc])
     expect(light.ops.some((o) => o.op === 'arc' && o.args[2] === START_OUTLINE)).toBe(false)
-    expect(startFills('dark').fills).toEqual(['#0c0d0d', '#f2f4f3', curatedAccent('violet').dark.acc])
+    expect(startFills('dark').fills).toEqual(['#0c0d0d', '#f2f4f3', curatedAccent('heather').dark.acc])
     expect(SHARE_MARKER_HEX.light.outline).toBeNull()
   })
 
@@ -363,7 +384,7 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
 
   it('leads with the eyebrow in the status colour, then the verdict as a 27 px hero', () => {
     const ops = draw({ design: 'stats', activity: led })
-    const eyebrow = ops.find((o) => o.op === 'fillText' && o.args[0] === 'STRONG SESSION')
+    const eyebrow = ops.find((o) => o.op === 'fillText' && o.args[0] === 'SOLID BASE')
     expect(eyebrow?.fill).toBe(STATUS_HEX.dark.pos)
     const hero = ops.filter((o) => o.op === 'fillText' && o.font.startsWith('700 27px'))
     expect(hero.map((o) => o.args[0]).join(' ')).toBe(VERDICT.headline)
@@ -373,9 +394,9 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
 
   it('colours a tough session warn and a logged one muted', () => {
     const caution = draw({ design: 'stats', activity: { ...led, verdict: { ...VERDICT, tone: 'caution' } } }, 'light')
-    expect(caution.find((o) => o.op === 'fillText' && o.args[0] === 'TOUGH SESSION')?.fill).toBe(STATUS_HEX.light.warn)
+    expect(caution.find((o) => o.op === 'fillText' && o.args[0] === 'TOUGH BASE')?.fill).toBe(STATUS_HEX.light.warn)
     const neutral = draw({ design: 'stats', activity: { ...led, verdict: { ...VERDICT, tone: 'neutral' } } })
-    expect(neutral.find((o) => o.op === 'fillText' && o.args[0] === 'SESSION LOGGED')?.fill).toBe(palette.mu)
+    expect(neutral.find((o) => o.op === 'fillText' && o.args[0] === 'BASE LOGGED')?.fill).toBe(palette.mu)
   })
 
   it('replaces the zones headline with a 6 px bar and its percents', () => {
@@ -394,7 +415,7 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
 
   it('draws no bar for a run without heart rate, the verdict still leading', () => {
     const all = texts(draw({ design: 'stats', activity: { ...led, hrZones: [] } }))
-    expect(all).toContain('STRONG SESSION')
+    expect(all).toContain('SOLID BASE')
     expect(all).not.toContain('No heart-rate zones for this run')
   })
 
@@ -422,7 +443,7 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
 describe('the Stats design without a written verdict (design review, Oct 2026)', () => {
   it('heads with the share the run is judged on, then a row for each zone it used', () => {
     const all = texts(draw({ design: 'stats', activity: { ...RUN, type: 'Base' } }))
-    expect(all).toEqual(expect.arrayContaining(['80%', 'easy · Z1–Z2', 'Z1–Z2 Easy', 'Z3 Aerobic', '20%']))
+    expect(all).toEqual(expect.arrayContaining(['80%', 'easy · Z1–Z2', 'Z1–Z2 Easy', 'Z3 Moderate', '20%']))
     expect(all).not.toContain('Z1 Recovery')
     expect(all).not.toContain('Z5 Max')
   })
@@ -481,6 +502,22 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
   })
 })
 
+describe('the 9:16 story', () => {
+  it('keeps the header and the stat row, the extra height going to the middle and the map', () => {
+    for (const design of ['route', 'stats', 'photo'] as const) {
+      const portrait = layout(RUN, design)
+      const story = shareCardLayout(recorder().ctx, RUN, FALLBACK_FONTS, design, 'story')
+      expect(story.height).toBeCloseTo(W * 16 / 9, 6)
+      expect(story.textTop).toBe(portrait.textTop)
+      expect(story.height - story.statsTop).toBe(H - portrait.statsTop)
+      expect(story.middleH - portrait.middleH).toBeCloseTo(story.height - H, 6)
+      expect(story.routeFrame).toEqual(portrait.routeFrame)
+    }
+    const ops = draw({ design: 'route', size: 'story', mapImage: {} as HTMLCanvasElement, mapPoints: [[40, 100], [200, 400], [260, 120]] })
+    expect(ops.find((o) => o.op === 'drawImage')?.args.slice(1)).toEqual([0, 0, W, W * 16 / 9])
+  })
+})
+
 describe('the Photo design (design review, Oct 2026)', () => {
   it('asks for a photo until there is one', () => {
     expect(texts(draw({ design: 'photo' }))).toEqual(expect.arrayContaining(['Choose photo', 'This frame is the exact crop']))
@@ -526,7 +563,7 @@ describe('the place names on the Route card', () => {
     const name = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'Devant-les-Ponts')
     const lastTrace = ops.map((o) => o.op).lastIndexOf('lineTo')
     expect(name).toBeGreaterThan(lastTrace)
-    expect(ops.find((o) => o.op === 'strokeText' && o.args[0] === 'Devant-les-Ponts')?.stroke).toBe(sharePalette('violet', 'dark').bg)
+    expect(ops.find((o) => o.op === 'strokeText' && o.args[0] === 'Devant-les-Ponts')?.stroke).toBe(sharePalette('heather', 'dark').bg)
     expect(texts(ops)).not.toContain('Under the header')
   })
 
@@ -611,7 +648,7 @@ describe('the route video\'s frames', () => {
     expect(chip(0.45)).toEqual(['Rep 2 of 3', palette.tx, '600', rep])
     expect(chip(0.85)).toEqual(['Rep 3 of 3', palette.tx, '600', rep])
     expect(chip(0.86)).toEqual(['Cool-down', palette.mu, '400', grey])
-    expect(chip(1)).toEqual([' under target', palette.mu, '400', rep])
+    expect(chip(1)).toEqual(['Reps', palette.mu, '400', rep])
   })
 
   it('draws the pending pace as one U+2013 en dash in the value\'s font, muted, the unit kept', () => {

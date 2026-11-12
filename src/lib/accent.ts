@@ -7,8 +7,13 @@ export const ACCENT_STORAGE_KEY = 'runomics-accent'
 
 export const ACCENT_CHANGE_EVENT = 'runomics:accent-change'
 
-/** Nothing stored: the base `:root` block already paints this one, so no attribute is needed. */
-export const DEFAULT_ACCENT: AccentId = 'teal'
+/** The base `:root` block already paints this one, so it needs no attribute. */
+export const BASE_ACCENT: AccentId = 'teal'
+
+/** Nothing stored: each deployment starts on its own accent. */
+export const DEFAULT_ACCENT: AccentId = isAccentId(process.env.NEXT_PUBLIC_DEFAULT_ACCENT ?? null)
+  ? (process.env.NEXT_PUBLIC_DEFAULT_ACCENT as AccentId)
+  : BASE_ACCENT
 
 export function isAccentId(value: string | null): value is AccentId {
   return value !== null && (ACCENT_IDS as readonly string[]).includes(value)

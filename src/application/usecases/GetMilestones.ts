@@ -4,7 +4,7 @@ import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlanned
 import { getRecords } from './GetRecords'
 import { computeWeekActivityDays } from './GetDashboardData'
 import { DAY_MS, isoWeekNumber, startOfWeek, addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
-import { formatDistance, formatDuration, formatKm } from '@/lib/formatters'
+import { formatDate, formatDistance, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 
@@ -285,7 +285,7 @@ export async function getMilestones(today: string = appTodayIso()): Promise<Mile
       type: 'streak',
       date: streak.startDate,
       label: t.profile.milestones.streak(streak.weeks),
-      detail: t.profile.milestones.streakDetail,
+      detail: t.profile.milestones.streakDetail(formatDate(streak.startDate, { style: 'bare', year: 'never' })),
     })
   }
 

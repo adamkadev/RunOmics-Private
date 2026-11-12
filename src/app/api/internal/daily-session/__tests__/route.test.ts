@@ -67,7 +67,7 @@ describe('POST /api/internal/daily-session', () => {
     expect(await (await POST(request())).json()).toEqual({ sent: true, restDay: true, source: null })
     expect(sendPush).toHaveBeenCalledWith('training', {
       title: 'Rest day',
-      body: 'No session scheduled today - recovery day.',
+      body: 'No session scheduled today – recovery day.',
       link: '/plan',
       tag: 'daily-session',
     })

@@ -87,10 +87,8 @@ export function districtsColors(mode: DistrictsMode, accent: AccentId): District
   const s = SURFACES[mode]
   if (mode === 'light') {
     const accText = accentTokens(curatedAccent(accent), 'light')['--accent-text-glass'] ?? acc
-    // Light mono's accent is near-black and a 14% wash of it reads as a lighter fog, so complete lifts the map to paper.
-    const complete = accent === 'mono' ? paper(0.55) : withAlpha(acc, 0.14)
     return {
-      fill: { complete, partly: withAlpha(acc, 0.04), fog: withAlpha(s.text, 0.26) },
+      fill: { complete: withAlpha(acc, 0.14), partly: withAlpha(acc, 0.04), fog: withAlpha(s.text, 0.26) },
       line: { complete: acc, partly: ink(0.28), fog: ink(0.32) },
       selected: { fill: ink(0.06), line: s.text },
       label: { name: s.text, pct: s.body, pctComplete: accText, halo: withAlpha(HEAT_BASEMAP.light.land, 0.85) },

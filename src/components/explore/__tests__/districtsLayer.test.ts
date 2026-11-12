@@ -77,7 +77,7 @@ describe('districtsColors', () => {
     expect(districtsColors('light', 'teal').line.complete).toBe(accentColor('teal', 'light'))
     expect(districtsColors('dark', 'teal').line.complete).toBe(accentColor('teal', 'dark'))
     expect(districtsColors('light', 'teal').line.complete).not.toBe(heatAccent('teal'))
-    expect(districtsColors('light', 'violet').line.complete).toBe(accentColor('violet', 'light'))
+    expect(districtsColors('light', 'heather').line.complete).toBe(accentColor('heather', 'light'))
   })
 
   it('takes the design spec alphas: a faint complete fill, a fainter partly one, a veil for fog', () => {
@@ -90,16 +90,6 @@ describe('districtsColors', () => {
     expect(dark.fill.complete).toMatch(/, 0\.1\)$/)
     expect(dark.fill.fog).toMatch(/, 0\.6\)$/)
     expect(dark.line.fog).toBe('rgba(255, 255, 255, 0.24)')
-  })
-
-  it('in light mono, lifts a complete unit to paper rather than veiling it like the fog', () => {
-    const mono = districtsColors('light', 'mono')
-    // The mono accent is near-black: at 14% it read as a lighter fog.
-    expect(mono.fill.complete).toBe('rgba(255, 255, 255, 0.55)')
-    expect(mono.line.complete).toBe(accentColor('mono', 'light'))
-    // Every other accent, and dark mono, keep the accent's own wash.
-    expect(districtsColors('light', 'teal').fill.complete).toBe(`rgba(14, 132, 104, 0.14)`)
-    expect(districtsColors('dark', 'mono').fill.complete).toMatch(/^rgba\(237, 239, 238, 0\.1\)$/)
   })
 })
 
@@ -199,10 +189,10 @@ describe('addDistrictsLayers', () => {
   it('replaces itself when called again, for a new mode or accent', () => {
     const map = heatMap()
     addDistrictsLayers(asMap(map), { mode: 'light', accent: 'teal' })
-    addDistrictsLayers(asMap(map), { mode: 'dark', accent: 'violet' })
+    addDistrictsLayers(asMap(map), { mode: 'dark', accent: 'heather' })
     expect(map.ids().filter((id) => id.startsWith('runomics-districts'))).toHaveLength(DISTRICTS_LAYERS.length)
     const line = map.getLayer(DISTRICTS_LINE_LAYER)!.paint!['line-color'] as unknown[]
-    expect(line).toContain(accentColor('violet', 'dark'))
+    expect(line).toContain(accentColor('heather', 'dark'))
   })
 
   it('labels a complete unit with its percentage in the accent and the check', () => {

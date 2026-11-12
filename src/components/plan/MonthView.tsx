@@ -339,7 +339,7 @@ export function MonthView({
                 })}
                 <span data-testid="month-week-total" className="flex min-w-0 flex-col items-end pr-1 leading-tight tabular-nums">
                   <span className={cn('text-sm font-semibold', row.future ? 'text-muted-foreground' : row.current ? 'text-accent-text' : 'text-foreground')}>
-                    {row.future ? '–' : formatRanKm(row.ranKm)}
+                    {row.future ? (row.plannedKm > 0 ? '–' : '') : formatRanKm(row.ranKm)}
                   </span>
                   {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatWeekKm(row.plannedKm)}</span>}
                 </span>
@@ -380,8 +380,8 @@ export function MonthView({
             <>
               {' · '}
               {m.planCovers(formatDate(planSpan.from, { style: 'bare', year: 'never' }), formatDate(planSpan.to, { style: 'bare', year: 'never' }))}
-              {' · '}
-              {m.monthTotal(formatRanKm(ranKm))}
+              {/* Only when it adds something: "93.4 of 120 km · … · 93.4 km this month" said the same number twice. */}
+              {ranKm !== againstPlanKm && ` · ${m.monthTotal(formatRanKm(ranKm))}`}
             </>
           )}
         </p>

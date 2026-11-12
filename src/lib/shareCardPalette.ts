@@ -15,6 +15,14 @@ export const SHARE_DESIGNS: readonly ShareDesign[] = ['route', 'stats', 'photo']
 export const W = 300
 export const H = 375
 
+/** `story` is 9:16, exported at 1080 x 1920: the same width, the extra height for the map, hero or photo. */
+export type ShareSize = 'portrait' | 'story'
+export const SHARE_SIZES: readonly ShareSize[] = ['portrait', 'story']
+
+export function shareCardHeight(size: ShareSize = 'portrait'): number {
+  return size === 'story' ? (W * 16) / 9 : H
+}
+
 export interface SharePalette {
   mode: ThemeMode
   /** --background */

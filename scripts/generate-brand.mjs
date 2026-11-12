@@ -6,9 +6,9 @@ import { loadLibModules, ROOT } from './loadPalette.mjs'
 
 const { MARK_PATHS, MARK_SMALL_PATHS, MARK_STROKE, MARK_SMALL_STROKE } = await loadLibModules('brandMark', ['brandMark'])
 const { SURFACES } = await loadLibModules('themeTokens', ['palette', 'accentScale', 'themeTokens'])
-const { CURATED_ACCENTS, DEFAULT_ACCENT } = await loadLibModules('accent', ['accentScale', 'accent'])
+const { CURATED_ACCENTS, BASE_ACCENT } = await loadLibModules('accent', ['accentScale', 'accent'])
 
-const teal = CURATED_ACCENTS.find((a) => a.id === DEFAULT_ACCENT)
+const teal = CURATED_ACCENTS.find((a) => a.id === BASE_ACCENT)
 const ACCENT = teal.dark.acc
 const INK = teal.dark.onAcc
 const BG = SURFACES.dark.background
@@ -61,4 +61,4 @@ manifest.icons = [
 ]
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 
-console.log('Brand assets written to public/icons', { accent: `CURATED_ACCENTS.${DEFAULT_ACCENT}.dark.acc ${ACCENT}`, ink: INK, bg: BG })
+console.log('Brand assets written to public/icons', { accent: `CURATED_ACCENTS.${BASE_ACCENT}.dark.acc ${ACCENT}`, ink: INK, bg: BG })

@@ -452,76 +452,28 @@
   --ring:               color-mix(in oklab, #5fd4f0 70%, transparent);
 }
 
-[data-accent="violet"] {
-  --accent:             #7a4fd1;
+[data-accent="heather"] {
+  --accent:             #8e5470;
   --accent-foreground:  #ffffff;
-  --accent-text:        #7a4fd1;
-  --accent-text-glass:  #6d40c2;
-  --accent-hover:       color-mix(in oklab, #7a4fd1 88%, black);
-  --accent-soft:        #7a4fd11f;
-  --acc-soft:           #7a4fd11f;
-  --acc-line:           color-mix(in oklab, #7a4fd1 55%, transparent);
-  --ring:               color-mix(in oklab, #7a4fd1 35%, transparent);
+  --accent-text:        #8e5470;
+  --accent-text-glass:  #834a66;
+  --accent-hover:       color-mix(in oklab, #8e5470 88%, black);
+  --accent-soft:        #8e54701f;
+  --acc-soft:           #8e54701f;
+  --acc-line:           color-mix(in oklab, #8e5470 55%, transparent);
+  --ring:               color-mix(in oklab, #8e5470 35%, transparent);
 }
 
-.dark[data-accent="violet"] {
-  --accent:             #b794f6;
+.dark[data-accent="heather"] {
+  --accent:             #d8a6c0;
   --accent-foreground:  #07261d;
-  --accent-text:        #b794f6;
-  --accent-text-glass:  #b794f6;
-  --accent-hover:       color-mix(in oklab, #b794f6 88%, white);
-  --accent-soft:        #b794f61f;
-  --acc-soft:           #b794f61f;
-  --acc-line:           color-mix(in oklab, #b794f6 55%, transparent);
-  --ring:               color-mix(in oklab, #b794f6 70%, transparent);
-}
-
-[data-accent="pink"] {
-  --accent:             #c23a83;
-  --accent-foreground:  #ffffff;
-  --accent-text:        #bf3780;
-  --accent-text-glass:  #aa206e;
-  --accent-hover:       color-mix(in oklab, #c23a83 88%, black);
-  --accent-soft:        #c23a831f;
-  --acc-soft:           #c23a831f;
-  --acc-line:           color-mix(in oklab, #c23a83 55%, transparent);
-  --ring:               color-mix(in oklab, #c23a83 35%, transparent);
-}
-
-.dark[data-accent="pink"] {
-  --accent:             #f58ac0;
-  --accent-foreground:  #07261d;
-  --accent-text:        #f58ac0;
-  --accent-text-glass:  #f58ac0;
-  --accent-hover:       color-mix(in oklab, #f58ac0 88%, white);
-  --accent-soft:        #f58ac01f;
-  --acc-soft:           #f58ac01f;
-  --acc-line:           color-mix(in oklab, #f58ac0 55%, transparent);
-  --ring:               color-mix(in oklab, #f58ac0 70%, transparent);
-}
-
-[data-accent="mono"] {
-  --accent:             #1a1c1b;
-  --accent-foreground:  #ffffff;
-  --accent-text:        #1a1c1b;
-  --accent-text-glass:  #1a1c1b;
-  --accent-hover:       color-mix(in oklab, #1a1c1b 88%, black);
-  --accent-soft:        #1a1c1b1f;
-  --acc-soft:           #1a1c1b1f;
-  --acc-line:           color-mix(in oklab, #1a1c1b 55%, transparent);
-  --ring:               color-mix(in oklab, #1a1c1b 35%, transparent);
-}
-
-.dark[data-accent="mono"] {
-  --accent:             #edefee;
-  --accent-foreground:  #0c0d0d;
-  --accent-text:        #edefee;
-  --accent-text-glass:  #edefee;
-  --accent-hover:       color-mix(in oklab, #edefee 88%, white);
-  --accent-soft:        #edefee1f;
-  --acc-soft:           #edefee1f;
-  --acc-line:           color-mix(in oklab, #edefee 55%, transparent);
-  --ring:               color-mix(in oklab, #edefee 70%, transparent);
+  --accent-text:        #d8a6c0;
+  --accent-text-glass:  #d8a6c0;
+  --accent-hover:       color-mix(in oklab, #d8a6c0 88%, white);
+  --accent-soft:        #d8a6c01f;
+  --acc-soft:           #d8a6c01f;
+  --acc-line:           color-mix(in oklab, #d8a6c0 55%, transparent);
+  --ring:               color-mix(in oklab, #d8a6c0 70%, transparent);
 }
 
 /* ─── END GENERATED ─── */

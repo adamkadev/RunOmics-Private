@@ -111,8 +111,9 @@ function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; test
   return (
     // A fixed 44 pt value row, so a unit's taller inline box cannot lift its
     // neighbours; column flow keeps each value before its label for VoiceOver.
+    // Columns as wide as their stat, spread: equal quarters let "58:03 min" run into the pace.
     <div
-      className="grid grid-flow-col grid-cols-[repeat(4,minmax(0,1fr))] grid-rows-[44px_auto] gap-x-2 gap-y-0.5 [container-type:inline-size]"
+      className="grid grid-flow-col grid-cols-[repeat(4,auto)] grid-rows-[44px_auto] justify-between gap-x-2 gap-y-0.5 [container-type:inline-size]"
       data-testid={testId}
     >
       {stats.map((stat) => (
@@ -120,7 +121,7 @@ function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; test
           <span
             data-stat-value
             className={cn(
-              'block h-8 min-w-0 self-end whitespace-nowrap font-bold tracking-[-0.02em] text-foreground',
+              'block h-8 min-w-0 self-end whitespace-nowrap font-bold tracking-[-0.02em] tabular-nums text-foreground',
               STAT_VALUE_SIZE,
               'leading-8',
             )}
@@ -249,34 +250,6 @@ export function ActivityDetailClient({
 
       <StatStrip stats={stats} />
 
-      <RunVerdict activity={activity} type={type} tone={verdictTone} aiVerdict={aiVerdict}>
-        {activity.hrUntrusted ? (
-          <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')} data-testid="run-hr-untrusted">
-            {t.activity.dataQuality.hrUntrusted[activity.hrUntrusted]}
-          </span>
-        ) : (
-          !activity.avgHeartRate && (
-            <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
-          )
-        )}
-        <span className={RUN_CHIP_CLASS} data-testid="run-effort">
-          {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
-        </span>
-        {activity.weather &&
-          conditionsChips(activity.weather).map((text) => (
-            <span key={text} className={RUN_CHIP_CLASS} data-testid="run-conditions">
-              {text}
-            </span>
-          ))}
-        <RunShoe
-          activityId={activity.id}
-          shoe={shoe}
-          options={shoeOptions}
-          garminUrl={isWatchId(activity.id) && !activity.gearPending ? garminActivityUrl(activity.id) : null}
-        />
-        <ActivityNotes activityId={activity.id} />
-      </RunVerdict>
-
       {tabs.length > 1 && (
         <StickyBar ref={stripRef} top="var(--sticky-top, var(--top-scrim))" className="-mb-2">
           <SegmentedTabs
@@ -301,6 +274,34 @@ export function ActivityDetailClient({
       >
         {tab === 'overview' && (
           <>
+            {/* Under the tabs, not over them: the strip then sits in the first screen and each tab starts there. */}
+            <RunVerdict activity={activity} type={type} tone={verdictTone} aiVerdict={aiVerdict}>
+              {activity.hrUntrusted ? (
+                <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')} data-testid="run-hr-untrusted">
+                  {t.activity.dataQuality.hrUntrusted[activity.hrUntrusted]}
+                </span>
+              ) : (
+                !activity.avgHeartRate && (
+                  <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
+                )
+              )}
+              <span className={RUN_CHIP_CLASS} data-testid="run-effort">
+                {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
+              </span>
+              {activity.weather &&
+                conditionsChips(activity.weather).map((text) => (
+                  <span key={text} className={RUN_CHIP_CLASS} data-testid="run-conditions">
+                    {text}
+                  </span>
+                ))}
+              <RunShoe
+                activityId={activity.id}
+                shoe={shoe}
+                options={shoeOptions}
+                garminUrl={isWatchId(activity.id) && !activity.gearPending ? garminActivityUrl(activity.id) : null}
+              />
+              <ActivityNotes activityId={activity.id} />
+            </RunVerdict>
             {recordsFirst && bestEfforts}
             {extras}
             <PaceHrPreview

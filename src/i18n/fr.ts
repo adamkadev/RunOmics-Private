@@ -67,10 +67,10 @@ export const fr = {
       settings: 'Réglages',
     },
     backTo: (page: string) => `Retour à ${page}`,
-    showTabs: (page: string) => `${page} - afficher les onglets`,
+    showTabs: (page: string) => `${page} – afficher les onglets`,
   },
   meta: {
-    description: 'Ton tableau de bord personnel de course à pied - stats, cartes, tendances.',
+    description: 'Ton tableau de bord personnel de course à pied – stats, cartes, tendances.',
   },
 
   theme: {
@@ -90,10 +90,9 @@ export const fr = {
   },
 
   zoneLabels: {
-    // « Récupération » overflows the zone table's name column, which never wraps.
     1: 'Récup',
     2: 'Facile',
-    3: 'Aérobie',
+    3: 'Modéré',
     4: 'Seuil',
     5: 'Max',
   } as Record<number, string>,
@@ -102,7 +101,7 @@ export const fr = {
     title: 'Note VO₂max',
     band: (sex: 'male' | 'female', bracket: string) => `${sex === 'male' ? 'Hommes' : 'Femmes'} ${bracket.replace('-', '–')}`,
     source: 'percentiles ACSM',
-    valueLabel: 'VO₂ max',
+    valueLabel: 'VO₂max',
     topInBand: (n: number, sex: 'male' | 'female', bracket: string) => `Top ${n} % · ${sex === 'male' ? 'hommes' : 'femmes'} ${bracket.replace('-', '–')}`,
     in30d: 'en 30 jours',
     newGrade: 'Nouvelle note',
@@ -299,7 +298,7 @@ export const fr = {
       tracksFailed: 'Tes sorties n’ont pas pu se charger.',
       noRoutes: 'Aucun parcours pour ce filtre',
       loadFailed: 'La carte n’a pas pu se charger.',
-      mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
+      mapUnavailable: 'Carte indisponible – aucune clé de carte configurée',
       attribution: '© MapTiler · © les contributeurs d’OpenStreetMap',
       credits: 'Crédits de la carte',
       territory: {
@@ -610,16 +609,14 @@ export const fr = {
       options: {
         teal:     { label: 'Sarcelle' },
         cyan: { label: 'Cyan' },
-        violet:     { label: 'Violet' },
-        pink:     { label: 'Rose' },
-        mono:     { label: 'Mono' },
+        heather:  { label: 'Bruyère' },
       },
     },
     auth: {
       signIn: 'Se connecter avec Google',
       signOut: 'Se déconnecter',
       switchAccount: 'Se déconnecter et essayer un autre compte',
-      accessDenied: 'Accès refusé - cette page est réservée au propriétaire du site.',
+      accessDenied: 'Accès refusé – cette page est réservée au propriétaire du site.',
       signingIn: 'Connexion…',
       error: 'Connexion impossible, réessaie.',
       notConfigured: "La connexion n’est pas disponible pour le moment.",
@@ -723,7 +720,7 @@ export const fr = {
         in: 'Charge dans la zone',
         above: 'Charge au-dessus de la zone',
       },
-      buildingBack: 'Reprise - pas encore de lecture',
+      buildingBack: 'Reprise – pas encore de lecture',
       loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimée` : state),
       ctl: 'Condition',
       atl: 'Fatigue',
@@ -987,7 +984,7 @@ export const fr = {
       paceTrend: {
         title: 'Tendance d’allure',
         caption: 'moyenne hebdo · plus haut = plus rapide',
-        about: "L’allure moyenne de la semaine en footing, et celle des répétitions dures de tes séances - l’échauffement, les récups et le retour au calme sont exclus. Plus rapide en haut.",
+        about: "L’allure moyenne de la semaine en footing, et celle des répétitions dures de tes séances – l’échauffement, les récups et le retour au calme sont exclus. Plus rapide en haut.",
         easyFaster: (s: string) => ['Les footings ont gagné ', `${s}/km`, '.'] as [string, string, string],
         easySlower: (s: string) => ['Les footings ont perdu ', `${s}/km`, '.'] as [string, string, string],
         easyHeld: ['L’allure facile est ', 'stable', '.'] as [string, string, string],
@@ -1138,8 +1135,8 @@ export const fr = {
         footnote: 'FC moyenne pondérée par la durée, sorties faciles vs séances de qualité. Les barres sous les courbes sont la température ressentie des sorties faciles : la chaleur seule fait monter la FC.',
         felt: (range: string) => `Ressenti ${range}`,
         reading: {
-          down: (bpm: number) => `La FC en sortie facile baisse - environ ${bpm} bpm de moins pour le même effort, signe d’une forme qui progresse.`,
-          up: (bpm: number) => `La FC en sortie facile augmente - environ ${bpm} bpm de plus pour le même effort, à surveiller.`,
+          down: (bpm: number) => `La FC en sortie facile baisse – environ ${bpm} bpm de moins pour le même effort, signe d’une forme qui progresse.`,
+          up: (bpm: number) => `La FC en sortie facile augmente – environ ${bpm} bpm de plus pour le même effort, à surveiller.`,
           flat: 'La FC en sortie facile et en séance de qualité reste stable.',
         },
       },
@@ -1266,7 +1263,6 @@ export const fr = {
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
       target: (pace: string) => `cible ${pace}`,
-      structure: (set: string, pace: string) => `${set} @ ${pace}`,
       rep: (n: number) => `Fraction ${n}`,
       repRange: (fastest: string, slowest: string) => `Plus rapide ${fastest} · Plus lente ${slowest}`,
       // La légende du parcours d’une séance de fractionné : elle marque les fractions.
@@ -1275,15 +1271,20 @@ export const fr = {
       showReps: 'Allure des fractions',
       // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
       repPaceStat: 'Allure fractions',
-      // La partie en gras de la légende : « Fractions · 9 s/km sous la cible ».
+      // La ligne d’accent sous l’en-tête d’une séance de fractionné : « 9 s/km sous la cible ».
       secPerKm: (n: number) => `${n} s/km`,
       underTarget: 'sous la cible',
-      overTarget: 'au-dessus de la cible',
       onTarget: 'dans la cible',
       formatTitle: 'Format',
       formatLabels: {
         image: 'Image',
         video: 'Vidéo',
+      },
+      // Le cadre de la carte : une publication ou une story plein écran.
+      sizeTitle: 'Taille',
+      sizeLabels: {
+        portrait: '4:5',
+        story: '9:16',
       },
       shareVideo: 'Partager la vidéo',
       preparingVideo: (percent: number) => `Préparation de la vidéo… ${percent} %`,
@@ -1308,11 +1309,6 @@ export const fr = {
         positive: (type: string) => `Sortie ${type} réussie`,
         neutral: (type: string) => `Sortie ${type} enregistrée`,
         caution: (type: string) => `Sortie ${type} exigeante`,
-      },
-      eyebrow: {
-        positive: 'Belle séance',
-        neutral: 'Séance enregistrée',
-        caution: 'Séance exigeante',
       },
     },
     effort: {
@@ -1422,9 +1418,9 @@ export const fr = {
     },
     shoe: {
       add: 'Ajouter la chaussure',
-      changeInGarmin: (name: string) => `${name} - modifier dans l’app de ta montre`,
+      changeInGarmin: (name: string) => `${name} – modifier dans l’app de ta montre`,
       addInGarmin: 'Choisir la chaussure dans l’app de ta montre',
-      change: (name: string) => `${name} - changer de chaussure`,
+      change: (name: string) => `${name} – changer de chaussure`,
       sheetTitle: 'Chaussure de cette sortie',
       clearPick: 'Reprendre la chaussure de Garmin',
       countsAfterSync: 'Le kilométrage de la chaussure en tient compte après la prochaine synchro.',
@@ -1711,7 +1707,7 @@ export const fr = {
       delta: 'Δ',
       same: 'pareil',
       beyondNoise: (metrics: string) => `L’écart sur ${metrics} dépasse le bruit de mesure ; pour le reste, c’est le même coureur.`,
-      noneBeyondNoise: "Rien ici ne sort du bruit de mesure - c’est le même coureur partout.",
+      noneBeyondNoise: "Rien ici ne sort du bruit de mesure – c’est le même coureur partout.",
       tooFewRunsShoe: (name: string, count: number) => `${name} a ${count} sortie${count > 1 ? 's' : ''}`,
       tooFewRuns: (shoes: string, minRuns: number) => `${shoes} – il en faut environ ${minRuns} pour des moyennes fiables.`,
       groups: {
@@ -1800,10 +1796,10 @@ export const fr = {
       blockSessions: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} faite${done > 1 ? 's' : ''} sur ${planned}`,
       thisYear: 'Cette année',
       athleteZones: 'Athlète et zones',
-      athleteZonesDetail: 'Zones de fréquence cardiaque et d’allure, VO₂ max',
+      athleteZonesDetail: 'Zones de fréquence cardiaque et d’allure, VO₂max',
       noRecords: 'Pas encore de record',
       onPace: 'Dans les temps pour l’objectif.',
-      vo2max: 'VO₂ max',
+      vo2max: 'VO₂max',
       vo2Delta: (delta: string) => `${delta} en 12 sem.`,
       allPairs: 'Toutes les paires',
       since: (date: string) => `depuis ${date}`,
@@ -1825,7 +1821,7 @@ export const fr = {
       distanceTier: (km: string) => `${km} km cette année`,
       streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
       // Reads before the milestone's date; a longer phrase is cut beside it.
-      streakDetail: 'En cours · chaque semaine depuis',
+      streakDetail: (since: string) => `En cours · chaque semaine depuis le ${since}`,
       record: (label: string) => `Record ${label}`,
       firstActivity: 'Premier pas',
       firstActivityDetail: (km: string) => `Le début de l’aventure · ${km} km`,
@@ -2160,11 +2156,11 @@ export const fr = {
       },
       threshold: {
         label: 'Seuil',
-        shortDesc: 'Soutenu mais contrôlé - allure seuil',
+        shortDesc: 'Soutenu mais contrôlé – allure seuil',
       },
       vo2max: {
         label: 'VO2max',
-        shortDesc: 'Effort course 5 km - allure I',
+        shortDesc: 'Effort course 5 km – allure I',
       },
     },
   },

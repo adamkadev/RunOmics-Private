@@ -63,10 +63,10 @@ export const en = {
     // The compact bar's back chevron, named for the page it goes to.
     backTo: (page: string) => `Back to ${page}`,
     // The tab bar shrunk to its active tab: the button that brings it back.
-    showTabs: (page: string) => `${page} - show tabs`,
+    showTabs: (page: string) => `${page} – show tabs`,
   },
   meta: {
-    description: 'Your personal running training dashboard - stats, maps, trends.',
+    description: 'Your personal running training dashboard – stats, maps, trends.',
   },
 
   theme: {
@@ -87,17 +87,17 @@ export const en = {
   zoneLabels: {
     1: 'Recovery',
     2: 'Easy',
-    3: 'Aerobic',
+    3: 'Moderate',
     4: 'Threshold',
     5: 'Max',
   } as Record<number, string>,
 
   vo2Grade: {
-    title: 'VO₂ max grade',
+    title: 'VO₂max grade',
     band: (sex: 'male' | 'female', bracket: string) => `${sex === 'male' ? 'Men' : 'Women'} ${bracket.replace('-', '–')}`,
     source: 'ACSM percentiles',
-    // The card's value, "57.0 VO₂ max", and its percentile in its band.
-    valueLabel: 'VO₂ max',
+    // The card's value, "57.0 VO₂max", and its percentile in its band.
+    valueLabel: 'VO₂max',
     topInBand: (n: number, sex: 'male' | 'female', bracket: string) => `Top ${n}% · ${sex === 'male' ? 'men' : 'women'} ${bracket.replace('-', '–')}`,
     in30d: 'in 30 days',
     newGrade: 'New grade',
@@ -300,7 +300,7 @@ export const en = {
       tracksFailed: 'Your runs couldn’t load.',
       noRoutes: 'No routes for this filter',
       loadFailed: 'The map couldn’t load.',
-      mapUnavailable: 'Map unavailable - no map token configured',
+      mapUnavailable: 'Map unavailable – no map token configured',
       attribution: '© MapTiler · © OpenStreetMap contributors',
       // The ⓘ that opens the credits on every map.
       credits: 'Map credits',
@@ -640,16 +640,14 @@ export const en = {
       options: {
         teal:     { label: 'Teal' },
         cyan: { label: 'Cyan' },
-        violet:     { label: 'Violet' },
-        pink:     { label: 'Pink' },
-        mono:     { label: 'Mono' },
+        heather:  { label: 'Heather' },
       },
     },
     auth: {
       signIn: 'Sign in with Google',
       signOut: 'Sign out',
       switchAccount: 'Sign out and try another account',
-      accessDenied: 'Access denied - this page is restricted to the site owner.',
+      accessDenied: 'Access denied – this page is restricted to the site owner.',
       signingIn: 'Signing in...',
       error: 'Could not sign in, please retry.',
       notConfigured: 'Sign-in is not available right now.',
@@ -705,7 +703,7 @@ export const en = {
     profile: {
       // Under the read-only height and weight. No brand in the words: the data is
       // imported JSON, and the brand can change.
-      readOnly: 'From your watch - edit in your watch app.',
+      readOnly: 'From your watch – edit in your watch app.',
       // The Athlete & zones row's value: "LTHR 179 · Max 200".
       lthr: (bpm: number) => `LTHR ${bpm}`,
       maxHr: (bpm: number) => `Max ${bpm}`,
@@ -764,7 +762,7 @@ export const en = {
         above: 'Load above range',
       },
       // Said in place of the load line while a break has left nothing to read it against.
-      buildingBack: 'Building back - no reading yet',
+      buildingBack: 'Building back – no reading yet',
       // "Estimated" where the watch rates no load and the app did the arithmetic itself.
       loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimated` : state),
       ctl: 'Fitness',
@@ -823,7 +821,7 @@ export const en = {
         long_run: 'Long run',
         tempo: 'Tempo',
         threshold: 'Threshold',
-        vo2max: 'VO₂ max',
+        vo2max: 'VO₂max',
         anaerobic: 'Anaerobic',
         sprint: 'Sprint',
         race: 'Race',
@@ -1050,7 +1048,7 @@ export const en = {
       paceTrend: {
         title: 'Pace trend',
         caption: 'weekly average · higher is faster',
-        about: 'The weekly average pace of your easy runs, and of the hard reps inside your workouts - the warm-up, the recoveries and the cool-down are left out. Faster is up.',
+        about: 'The weekly average pace of your easy runs, and of the hard reps inside your workouts – the warm-up, the recoveries and the cool-down are left out. Faster is up.',
         easyFaster: (s: string) => ['Easy runs got ', `${s}/km faster`, '.'] as [string, string, string],
         easySlower: (s: string) => ['Easy runs got ', `${s}/km slower`, '.'] as [string, string, string],
         easyHeld: ['Easy pace ', 'held', '.'] as [string, string, string],
@@ -1216,8 +1214,8 @@ export const en = {
         footnote: 'Duration-weighted average HR, easy vs workout runs. The bars under the lines are the felt temperature of the easy runs: heat alone raises heart rate.',
         felt: (range: string) => `Felt ${range}`,
         reading: {
-          down: (bpm: number) => `Easy-run heart rate is dropping - down ~${bpm} bpm, same effort for less strain, a sign of improving fitness.`,
-          up: (bpm: number) => `Easy-run heart rate is rising - up ~${bpm} bpm for the same effort, worth watching.`,
+          down: (bpm: number) => `Easy-run heart rate is dropping – down ~${bpm} bpm, same effort for less strain, a sign of improving fitness.`,
+          up: (bpm: number) => `Easy-run heart rate is rising – up ~${bpm} bpm for the same effort, worth watching.`,
           flat: 'Easy and workout heart rate are holding steady.',
         },
       },
@@ -1350,7 +1348,6 @@ export const en = {
       // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
       repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
       target: (pace: string) => `target ${pace}`,
-      structure: (set: string, pace: string) => `${set} @ ${pace}`,
       rep: (n: number) => `Rep ${n}`,
       repRange: (fastest: string, slowest: string) => `Fastest ${fastest} · Slowest ${slowest}`,
       // The route's legend on an interval session: the reps are what it marks.
@@ -1359,15 +1356,20 @@ export const en = {
       showReps: 'Rep pace',
       // The stat row's first cell on an interval session's Route card.
       repPaceStat: 'Rep pace',
-      // The Reps legend's bold part: "Reps · 9 s/km under target".
+      // The accent line under the header of an interval session: "9 s/km under target".
       secPerKm: (n: number) => `${n} s/km`,
       underTarget: 'under target',
-      overTarget: 'over target',
       onTarget: 'on target',
       formatTitle: 'Format',
       formatLabels: {
         image: 'Image',
         video: 'Video',
+      },
+      // The card's frame: a feed post or a full-screen story.
+      sizeTitle: 'Size',
+      sizeLabels: {
+        portrait: '4:5',
+        story: '9:16',
       },
       shareVideo: 'Share video',
       preparingVideo: (percent: number) => `Preparing video… ${percent} %`,
@@ -1392,12 +1394,6 @@ export const en = {
         positive: (type: string) => `Solid ${type}`,
         neutral: (type: string) => `${type} logged`,
         caution: (type: string) => `Tough ${type}`,
-      },
-      // The insight's eyebrow, in the verdict's status colour.
-      eyebrow: {
-        positive: 'Strong session',
-        neutral: 'Session logged',
-        caution: 'Tough session',
       },
     },
     // Read-only: RPE comes from the watch, and the note is the one thing on an
@@ -1516,9 +1512,9 @@ export const en = {
     shoe: {
       add: 'Add shoe',
       // One way out to the watch's own app; the brand lives in the URL alone.
-      changeInGarmin: (name: string) => `${name} - edit in your watch app`,
+      changeInGarmin: (name: string) => `${name} – edit in your watch app`,
       addInGarmin: 'Set the shoe in your watch app',
-      change: (name: string) => `${name} - change shoe`,
+      change: (name: string) => `${name} – change shoe`,
       sheetTitle: 'Shoe for this run',
       clearPick: 'Use the shoe from Garmin',
       countsAfterSync: 'The shoe’s mileage counts the change after the next sync.',
@@ -1837,7 +1833,7 @@ export const en = {
       delta: 'Δ',
       same: 'same',
       beyondNoise: (metrics: string) => `${metrics} differ beyond measurement noise; the rest is the same runner.`,
-      noneBeyondNoise: 'Nothing here differs beyond measurement noise - the rest is the same runner.',
+      noneBeyondNoise: 'Nothing here differs beyond measurement noise – the rest is the same runner.',
       // Names which pair falls short: "too few runs" alone leaves the reader guessing which column.
       tooFewRunsShoe: (name: string, count: number) => `${name} has ${count} run${count === 1 ? '' : 's'}`,
       tooFewRuns: (shoes: string, minRuns: number) => `${shoes} – form averages need about ${minRuns}.`,
@@ -1943,11 +1939,11 @@ export const en = {
       // The year card without a goal: it opens the years, not an empty Goals.
       thisYear: 'This year',
       athleteZones: 'Athlete & zones',
-      athleteZonesDetail: 'Heart-rate and pace zones, VO₂ max',
+      athleteZonesDetail: 'Heart-rate and pace zones, VO₂max',
       noRecords: 'No records yet',
       onPace: 'On pace for the goal.',
       // The tiles under the records.
-      vo2max: 'VO₂ max',
+      vo2max: 'VO₂max',
       vo2Delta: (delta: string) => `${delta} in 12 wk`,
       allPairs: 'All pairs',
       since: (date: string) => `since ${date}`,
@@ -1969,7 +1965,7 @@ export const en = {
     milestones: {
       distanceTier: (km: string) => `${km} km this year`,
       streak: (weeks: number) => `${weeks}-week active streak`,
-      streakDetail: 'Still going · a run logged every week since',
+      streakDetail: (since: string) => `Still going · a run logged every week since ${since}`,
       record: (label: string) => `${label} record`,
       firstActivity: 'First step',
       firstActivityDetail: (km: string) => `Where it all began · ${km} km`,
@@ -2097,26 +2093,26 @@ export const en = {
   // The pushes the phone shows outside the app. Numbers arrive formatted, so the
   // decimal follows the locale.
   notifications: {
-    restDay: { title: 'Rest day', body: 'No session scheduled today - recovery day.' },
+    restDay: { title: 'Rest day', body: 'No session scheduled today – recovery day.' },
     todaySession: {
       title: "Today's session",
       body: (name: string, detail: string | null) => (detail ? `${name} (${detail})` : name),
     },
     newPr: {
       title: (label: string) => `New PR: ${label}`,
-      body: (time: string) => `${time} - new personal best!`,
+      body: (time: string) => `${time} – new personal best!`,
     },
     shoeWear: {
       title: (name: string) => `Shoe wear alert: ${name}`,
-      body: (km: string, threshold: string) => `${km} km - past its ${threshold} km alert threshold`,
+      body: (km: string, threshold: string) => `${km} km – past its ${threshold} km alert threshold`,
     },
     overreaching: {
       title: 'Overreaching risk detected',
-      body: (tsb: string, acwr: string | null) => `Form (TSB) ${tsb}${acwr ? `, ACWR ${acwr}` : ''} - high training risk, consider recovery.`,
+      body: (tsb: string, acwr: string | null) => `Form (TSB) ${tsb}${acwr ? `, ACWR ${acwr}` : ''} – high training risk, consider recovery.`,
     },
     staleSync: {
       title: 'No data synced in a while',
-      body: (hours: number) => `Your last sync was ${hours}h ago - check that sync is still running.`,
+      body: (hours: number) => `Your last sync was ${hours}h ago – check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
     // The focus is never cut: iOS truncates the unexpanded notification, and expanding it must show the whole sentence.
@@ -2323,11 +2319,11 @@ export const en = {
       },
       threshold: {
         label: 'Threshold',
-        shortDesc: 'Comfortably hard - T pace',
+        shortDesc: 'Comfortably hard – T pace',
       },
       vo2max: {
         label: 'VO2max',
-        shortDesc: '5K race effort - I pace',
+        shortDesc: '5K race effort – I pace',
       },
     },
   },
@@ -2656,7 +2652,7 @@ export const en = {
       Athlete: 'Current athlete profile and physiological reference values.',
       Context: 'What the numbers cannot say: the training goal, available days, the current block and the focus of each week, upcoming races, injury history, and the reasons behind breaks in training.',
       Activities: 'One row per session with conditions, intensity, what was planned and how it was executed, official race results, records, gear, and your notes and tags. The CSV export is this sheet alone.',
-      Intervals: 'One row per segment of a workout with reps or strides - warm-up, each rep or stride, each recovery, cool-down - with its own pace and heart rate.',
+      Intervals: 'One row per segment of a workout with reps or strides – warm-up, each rep or stride, each recovery, cool-down – with its own pace and heart rate.',
       'Daily Status': 'One row per calendar day, including rest days, with load, status, plan, and any training break.',
       Records: 'Official yearly personal bests plus locally derived records when no official record exists.',
       Races: 'Completed races with their official result next to the watch\'s, and calendar races. predicted_time_seconds is Garmin\'s prediction on the race day.',

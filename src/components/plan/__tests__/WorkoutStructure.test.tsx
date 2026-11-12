@@ -30,6 +30,14 @@ describe('tileSegments', () => {
     ])
   })
 
+  it('draws a run/walk\'s runs in the easy zone, not as strides', () => {
+    const runWalk: WorkoutStep[] = Array.from({ length: 4 }, (_, i) => [
+      { kind: 'effort' as const, minutes: 6, seconds: 360, rep: i + 1 },
+      { kind: 'recovery' as const, minutes: 2, seconds: 120, rep: i + 1 },
+    ]).flat()
+    expect(tileSegments(runWalk, 2).filter((segment) => segment.weight === 360).map((segment) => segment.fill)).toEqual(Array(4).fill('var(--zone-2)'))
+  })
+
   it('draws reps in the session zone with their recoveries, and none that ends the session', () => {
     const segments = tileSegments(THRESHOLD, 4)
 

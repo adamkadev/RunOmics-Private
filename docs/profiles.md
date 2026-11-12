@@ -11,6 +11,7 @@ their values: secrets stay in Vercel, the GitHub Environments and the gitignored
 |---|---|---|
 | Language | English (`NEXT_PUBLIC_LOCALE=en`) | French (`NEXT_PUBLIC_LOCALE=fr`) |
 | Time zone | `NEXT_PUBLIC_TIME_ZONE`, the athlete's own, in the Vercel project | The same, in her Vercel project |
+| Accent | Teal, the base palette (`NEXT_PUBLIC_DEFAULT_ACCENT` unset) | Heather (`NEXT_PUBLIC_DEFAULT_ACCENT=heather`) |
 | Watch | Rich data: Training Effect, training status, LTHR, running dynamics | Forerunner 55: none of those |
 | Races, goals, PBs | Yes | None |
 | Training | Structured blocks with controlled threshold work | A run/walk return to running after a long break |
@@ -36,7 +37,7 @@ goes into this repository.
 
 | Place | Holds | Read by |
 |---|---|---|
-| Vercel project (per profile) | The app's variables: Firebase client and Admin, `NEXT_PUBLIC_LOCALE`, `NEXT_PUBLIC_TIME_ZONE`, `RUNOMICS_PRIVATE`, `SESSION_SECRET`, `RUNOMICS_VIEWERS`, `CRON_SECRET`, `INTERNAL_NOTIFY_SECRET`, `GITHUB_SYNC_*`, the data repository's read-only token, `RUNOMICS_DATA_SOURCE`, the Gemini, MapTiler and ORS keys, `OPS_PUSH_URL` / `OPS_PUSH_SECRET` | The deployed app and its crons |
+| Vercel project (per profile) | The app's variables: Firebase client and Admin, `NEXT_PUBLIC_LOCALE`, `NEXT_PUBLIC_TIME_ZONE`, `NEXT_PUBLIC_DEFAULT_ACCENT`, `RUNOMICS_PRIVATE`, `SESSION_SECRET`, `RUNOMICS_VIEWERS`, `CRON_SECRET`, `INTERNAL_NOTIFY_SECRET`, `GITHUB_SYNC_*`, the data repository's read-only token, `RUNOMICS_DATA_SOURCE`, the Gemini, MapTiler and ORS keys, `OPS_PUSH_URL` / `OPS_PUSH_SECRET` | The deployed app and its crons |
 | GitHub Environment (per profile) | `GARMIN_PERSONAL_API_KEY`, optional `GARMIN_SECRET`, `RUNOMICS_DATA_REPO_URL`, a read-write `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL`, `INTERNAL_NOTIFY_SECRET`; variables `PROFILE` (the Environment's own name) and `GARMIN_PERSONAL_API_KEY_EXPIRES` | `sync.yml`, the health watchdog, the capability audit |
 | `.env.local` | A local dev server: the same keys as Vercel, usually against the demo data | `npm run dev`, `prepare:data`, `set-owner-claim` |
 | `.env.adam.local`, `.env.lamiaa.local` | Everything one athlete's coach reads: the data repository and its token, the production Firebase Admin trio (for notes and check-ins), the time zone, `GARMIN_SECRET` (with `GARMIN_SECRET_WRITEBACK`) or `INTERVALS_API_KEY` for pushing a block to the watch, and `GEMINI_COACH_API_KEY` only for `--advisor gemini` | The coach commands, loaded alone with `dotenv -o` |

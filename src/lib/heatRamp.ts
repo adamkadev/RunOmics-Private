@@ -1,4 +1,3 @@
-import { hexToOklch } from './oklch'
 import { curatedAccent, type AccentId } from './accentScale'
 
 export type Rgb = readonly [number, number, number]
@@ -10,20 +9,6 @@ export interface RampStop {
 const WHITE: Rgb = [255, 255, 255]
 /** The dark page ground. */
 const GROUND_DARK: Rgb = [11, 12, 12]
-
-/** Under this chroma (the white accent) there is no hue to ramp, and white lines vanish on a white map. */
-const NEUTRAL_CHROMA = 0.02
-const GRAPHITE_LIGHT: readonly RampStop[] = [
-  { at: 0, rgb: [195, 201, 199] },
-  { at: 0.4, rgb: [122, 130, 128] },
-  { at: 0.75, rgb: [42, 48, 46] },
-  { at: 1, rgb: [11, 12, 12] },
-]
-const GRAPHITE_DARK: readonly RampStop[] = [
-  { at: 0, rgb: [91, 94, 93] },
-  { at: 0.5, rgb: [167, 171, 169] },
-  { at: 1, rgb: [233, 236, 234] },
-]
 
 export function hexToRgb(hex: string): Rgb {
   const n = parseInt(hex.replace('#', '').slice(0, 6), 16)
@@ -44,12 +29,7 @@ export function scale(a: Rgb, k: number): Rgb {
   return [a[0] * k, a[1] * k, a[2] * k]
 }
 
-function isNeutral(accent: string): boolean {
-  return hexToOklch(accent).c < NEUTRAL_CHROMA
-}
-
 export function heatStops(mode: 'light' | 'dark', accent: string): readonly RampStop[] {
-  if (isNeutral(accent)) return mode === 'light' ? GRAPHITE_LIGHT : GRAPHITE_DARK
   const A = hexToRgb(accent)
   return mode === 'light'
     ? [

@@ -7,12 +7,11 @@ import { cn } from '@/lib/utils'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { formatClock, formatDate, formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
-import { useAccent } from '@/lib/useAccent'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { readRouteNames, routeKey, writeRouteName, ROUTE_NAME_MAX_LENGTH } from '@/lib/routeNames'
 import { t } from '@/i18n'
 import { cardClass } from '@/components/ui/Card'
-import { formatGap, routeLatest, trailBars, type TrailTone } from './recordsView'
+import { formatGap, routeLatest, trailBars } from './recordsView'
 
 interface Props {
   routes: RecurringRoute[]
@@ -38,20 +37,14 @@ const BAR_TONE = {
   other: 'bg-[var(--rest-bar)]',
 } as const
 
-/** Under the white accent the best and latest bars are both near-white, so the latest becomes an outline. */
-function barTone(tone: TrailTone, monoAccent: boolean): string {
-  if (tone === 'latest' && monoAccent) return 'border border-foreground bg-transparent'
-  return BAR_TONE[tone]
-}
-
-function PaceTrail({ route, monoAccent }: { route: RecurringRoute; monoAccent: boolean }) {
+function PaceTrail({ route }: { route: RecurringRoute }) {
   return (
     <div data-testid="pace-trail" className="flex h-9 w-[74px] items-end justify-end gap-0.5" aria-hidden="true">
       {trailBars(route).map((bar) => (
         <span
           key={bar.activityId}
           data-tone={bar.tone}
-          className={cn('box-border min-w-1 max-w-2 flex-1', barTone(bar.tone, monoAccent))}
+          className={cn('box-border min-w-1 max-w-2 flex-1', BAR_TONE[bar.tone])}
           style={{ height: `${bar.heightPct}%` }}
         />
       ))}
@@ -59,7 +52,7 @@ function PaceTrail({ route, monoAccent }: { route: RecurringRoute; monoAccent: b
   )
 }
 
-function TrailKey({ monoAccent }: { monoAccent: boolean }) {
+function TrailKey() {
   const r = t.records.recurring
   return (
     <div className="flex items-center justify-between gap-3 px-0.5 text-xs text-muted-foreground">
@@ -70,7 +63,7 @@ function TrailKey({ monoAccent }: { monoAccent: boolean }) {
           <span>{r.legendBest}</span>
         </span>
         <span className="flex items-center gap-1">
-          <span className={cn('box-border h-2.5 w-1 rounded-[2px]', barTone('latest', monoAccent))} />
+          <span className={cn('box-border h-2.5 w-1 rounded-[2px]', BAR_TONE.latest)} />
           <span>{r.legendLatest}</span>
         </span>
       </p>
@@ -220,7 +213,6 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
   const places = usePlaceNames(routes)
   const { names, save } = useRouteNames()
   const { isOwner } = useOwnerAuth()
-  const monoAccent = useAccent() === 'mono'
   const [all, setAll] = useState(false)
 
   if (routes.length === 0) return null
@@ -228,7 +220,7 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
 
   return (
     <section className="space-y-3">
-      <TrailKey monoAccent={monoAccent} />
+      <TrailKey />
 
       <ul className={cardClass({ padding: 'none', className: 'px-4 py-0.5' })}>
         {shown.map((route, i) => {
@@ -247,7 +239,7 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
                 <BestAndLast route={route} thisYear={thisYear} />
               </div>
 
-              <PaceTrail route={route} monoAccent={monoAccent} />
+              <PaceTrail route={route} />
             </li>
           )
         })}

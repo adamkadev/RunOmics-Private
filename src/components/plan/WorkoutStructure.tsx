@@ -1,6 +1,6 @@
 import type { WorkoutStep } from '@/domain/activity/types'
 import { WORKOUT_SEGMENT_COLORS } from '@/lib/colors'
-import { sessionParts, stepSeconds } from './workoutSummary'
+import { STRIDE_MAX_SECONDS, sessionParts, stepSeconds } from './workoutSummary'
 
 const RECOVERY_FILL = WORKOUT_SEGMENT_COLORS.recovery
 const EASE_FILL = WORKOUT_SEGMENT_COLORS.warmup
@@ -28,8 +28,9 @@ export function tileSegments(steps: WorkoutStep[], zone: number | null): TileSeg
   if (steps.length <= 1) return [{ weight: 1, fill: zoneFill(zone) }]
   const { body, strides } = sessionParts(steps)
   const main = mainStep(steps, body)
-  // Short reps inside an easy run take Z5.
-  const workFill = zone !== null && zone >= 3 ? zoneFill(zone) : zoneFill(5)
+  // Short reps inside an easy run take Z5; a run/walk's minutes-long runs are the easy running itself.
+  const workFill = (step: WorkoutStep) =>
+    zone !== null && zone >= 3 ? zoneFill(zone) : stepSeconds(step) <= STRIDE_MAX_SECONDS ? zoneFill(5) : zoneFill(zone)
   const segments: TileSegment[] = []
   steps.forEach((step, i) => {
     const seconds = stepSeconds(step)
@@ -40,7 +41,7 @@ export function tileSegments(steps: WorkoutStep[], zone: number | null): TileSeg
       return
     }
     const easy = step.kind === 'warmup' || step.kind === 'cooldown'
-    segments.push({ weight: seconds, fill: easy ? EASE_FILL : step === main ? zoneFill(zone) : workFill })
+    segments.push({ weight: seconds, fill: easy ? EASE_FILL : step === main ? zoneFill(zone) : workFill(step) })
   })
   return segments
 }

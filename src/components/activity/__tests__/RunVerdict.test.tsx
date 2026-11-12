@@ -41,7 +41,7 @@ describe('RunVerdict', () => {
   it('shows the tone it is given, the one the written verdict was judged with, not one of its own', () => {
     render(<RunVerdict activity={{ ...activity, rpe: 7 }} tone="caution" aiVerdict={null} />)
 
-    expect(screen.getByTestId('run-verdict').textContent).toContain(t.activity.verdict.eyebrow.caution)
+    expect(screen.getByTestId('run-verdict').textContent).toContain(t.activity.verdict.headline.caution(t.activityTypes[activity.type]))
   })
 
   it('carries no coach evaluation, outcome or planned-versus-actual comparison', () => {
