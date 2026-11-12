@@ -243,6 +243,10 @@ its own athlete:
 - `nightly-sync` at 04:00 UTC dispatches `sync.yml` with `nightly` (and the deployment's
   `GITHUB_SYNC_PROFILE`), unless the sync gate says a run is already going. `nightly` is what
   turns on the token-expiry warning, which a dispatch from the Sync button leaves off.
+- `morning-sync` at 07:45 UTC dispatches a quick sync, but only where the data holds tracker nights
+  (`health_history.json`): the nightly sync runs before the athlete wakes, so the night's sleep, HRV and resting HR
+  would otherwise wait a day. It reads every run of the morning too. A refused dispatch answers 502 without an
+  operator push; the nightly one already pushes for that.
 - `daily-session` runs at 06:00 and 07:00 UTC. Paris is UTC+2 in summer and UTC+1 in winter,
   so exactly one of the two falls in the 08:xx Paris hour (`isDailySessionHour`), and only that
   one sends.
@@ -608,6 +612,9 @@ alone. `recovery_history.json` keeps syncing Garmin's values, so nothing is lost
 **What reads it.** The Form card on Analytics → Load adds the last night asleep with its seven-night mean, and the
 night's HRV against its own 60-day baseline, flagged only when low. The coach gets `context.overnight`, the last 28
 nights newest first, read as the check-ins are and never over them.
+
+The nightly sync at 04:00 UTC runs before the night ends, so `morning-sync` (07:45 UTC) brings the night in; the
+Sync button does too, and each run re-reads the last week.
 
 ## Official race results
 
