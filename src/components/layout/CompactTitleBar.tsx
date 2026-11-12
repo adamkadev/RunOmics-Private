@@ -124,6 +124,7 @@ export function CompactTitleBar() {
   const backRef = useRef<HTMLElement | null>(null)
   const actionsRef = useRef<HTMLElement[]>([])
   const segmentsRef = useRef<HTMLElement[]>([])
+  const scheduleRef = useRef<() => void>(() => {})
   const [segments, setSegments] = useState<BarSegments | null>(null)
   const [title, setTitle] = useState<string | null>(null)
   const [shown, setShown] = useState(false)
@@ -311,6 +312,7 @@ export function CompactTitleBar() {
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure)
     }
+    scheduleRef.current = schedule
     const restale = () => {
       stale = true
       schedule()
@@ -368,6 +370,8 @@ export function CompactTitleBar() {
     if (visible) {
       root.style.setProperty(STICKY_TOP_VAR, `calc(var(--safe-top) + ${BAR_HEIGHT}px)`)
       root.setAttribute('data-bar-shown', '')
+      // The strips only now move under the bar: after a jump (a restored scroll) no scroll event follows to measure them there.
+      scheduleRef.current()
     } else {
       root.style.removeProperty(STICKY_TOP_VAR)
       scrollEdge()?.style.removeProperty(STICKY_H_VAR)

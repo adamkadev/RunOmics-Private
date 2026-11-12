@@ -1,15 +1,17 @@
 import type { ShareActivity } from '@/lib/shareCardStats'
 import type { AccentId } from '@/lib/accentScale'
-import { W, H, sharePalette, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
+import { W, shareCardHeight, sharePalette, type ShareDesign, type ShareSize, type ThemeMode } from '@/lib/shareCardPalette'
 import { drawShareCard, FALLBACK_FONTS, shareCardLayout, type ShareFonts, type ShareMapLabel } from '@/lib/shareCardDraw'
 import { ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 
-export { SHARE_DESIGNS, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
+export { SHARE_DESIGNS, SHARE_SIZES, W, H, shareCardHeight, type ShareDesign, type ShareSize, type ThemeMode } from '@/lib/shareCardPalette'
 export { loadImage } from '@/lib/shareCardDraw'
 
 export interface RenderOptions {
   activity: ShareActivity
   design: ShareDesign
+  /** 4:5 by default. */
+  size?: ShareSize
   accent: AccentId
   theme: ThemeMode
   photoImage?: HTMLImageElement | null
@@ -44,9 +46,9 @@ export interface ShareCardMapFrame {
 }
 
 /** The basemap is drawn for the whole card; the route is fitted into this frame, between the header and the stats. */
-export function shareCardMapFrame(activity: ShareActivity, fonts: ShareFonts): ShareCardMapFrame {
+export function shareCardMapFrame(activity: ShareActivity, fonts: ShareFonts, size: ShareSize = 'portrait'): ShareCardMapFrame {
   const ctx = (typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')) ?? UNMEASURED
-  const { routeFrame, textTop, textBottom } = shareCardLayout(ctx, activity, fonts, 'route')
+  const { routeFrame, textTop, textBottom } = shareCardLayout(ctx, activity, fonts, 'route', size)
   const half = ROUTE_TEXT_GAP / 2
   return { frame: routeFrame, bands: [textTop + half, textBottom - half] }
 }
@@ -54,7 +56,7 @@ export function shareCardMapFrame(activity: ShareActivity, fonts: ShareFonts): S
 /** A frame of the video redraws the same canvas: resizing it each time would reallocate it 366 times. */
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
   const width = Math.round(W * scale)
-  const height = Math.round(H * scale)
+  const height = Math.round(shareCardHeight(options.size) * scale)
   if (canvas.width !== width) canvas.width = width
   if (canvas.height !== height) canvas.height = height
   const ctx = canvas.getContext('2d')
@@ -64,6 +66,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
   drawShareCard(ctx, {
     activity: options.activity,
     design: options.design,
+    size: options.size,
     palette: sharePalette(options.accent, options.theme),
     fonts,
     place: options.locationName,

@@ -87,7 +87,7 @@ export const en = {
   zoneLabels: {
     1: 'Recovery',
     2: 'Easy',
-    3: 'Aerobic',
+    3: 'Moderate',
     4: 'Threshold',
     5: 'Max',
   } as Record<number, string>,
@@ -1348,7 +1348,6 @@ export const en = {
       // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
       repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
       target: (pace: string) => `target ${pace}`,
-      structure: (set: string, pace: string) => `${set} @ ${pace}`,
       rep: (n: number) => `Rep ${n}`,
       repRange: (fastest: string, slowest: string) => `Fastest ${fastest} · Slowest ${slowest}`,
       // The route's legend on an interval session: the reps are what it marks.
@@ -1357,15 +1356,20 @@ export const en = {
       showReps: 'Rep pace',
       // The stat row's first cell on an interval session's Route card.
       repPaceStat: 'Rep pace',
-      // The Reps legend's bold part: "Reps · 9 s/km under target".
+      // The accent line under the header of an interval session: "9 s/km under target".
       secPerKm: (n: number) => `${n} s/km`,
       underTarget: 'under target',
-      overTarget: 'over target',
       onTarget: 'on target',
       formatTitle: 'Format',
       formatLabels: {
         image: 'Image',
         video: 'Video',
+      },
+      // The card's frame: a feed post or a full-screen story.
+      sizeTitle: 'Size',
+      sizeLabels: {
+        portrait: '4:5',
+        story: '9:16',
       },
       shareVideo: 'Share video',
       preparingVideo: (percent: number) => `Preparing video… ${percent} %`,
@@ -1390,12 +1394,6 @@ export const en = {
         positive: (type: string) => `Solid ${type}`,
         neutral: (type: string) => `${type} logged`,
         caution: (type: string) => `Tough ${type}`,
-      },
-      // The insight's eyebrow, in the verdict's status colour.
-      eyebrow: {
-        positive: 'Strong session',
-        neutral: 'Session logged',
-        caution: 'Tough session',
       },
     },
     // Read-only: RPE comes from the watch, and the note is the one thing on an

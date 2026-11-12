@@ -1,9 +1,9 @@
 import {
-  shareCardSubtitle, shareCardTitle, shareDuration, shareRepDetail, shareRepHero, shareRepsLegend, shareStats, shareStructure,
+  shareCardSubtitle, shareCardTitle, shareDuration, shareRepDetail, shareRepHeadline, shareRepHero, shareRepResult, shareStats,
   shareZones, zoneName,
-  type ShareActivity, type ShareRepDetail, type ShareRepHero, type ShareVerdict, type ShareZoneRow,
+  type ShareActivity, type ShareRepDetail, type ShareRepHeadline, type ShareRepHero, type ShareVerdict, type ShareZoneRow, type ShareZones,
 } from '@/lib/shareCardStats'
-import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
+import { W, H, shareCardHeight, type ShareDesign, type SharePalette, type ShareSize } from '@/lib/shareCardPalette'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
 import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
@@ -33,6 +33,8 @@ export interface ShareCardScene {
   design: ShareDesign
   palette: SharePalette
   fonts: ShareFonts
+  /** 4:5 by default. */
+  size?: ShareSize
   place?: string | null
   photo?: HTMLImageElement | null
   /** Drawn for the layout's route frame; mapPoints is the route projected onto it. */
@@ -88,6 +90,10 @@ const TITLE_BASELINE = 50
 /** The header's height when the title takes one line. */
 const HEADER_BASE = 79
 const TITLE_SIZES = [19, 18, 17, 16] as const
+/** The reps' result, in the accent, under the date line: the header grows by its height. Under the title's size, so the workout stays the headline. */
+const RESULT_SIZES = [16, 15, 14] as const
+const RESULT_GAP = 22
+const RESULT_H = 24
 const STATS_BLOCK = 32
 const STATS_PAD_TOP = 12
 const STATS_PAD_BOTTOM = 16
@@ -164,8 +170,13 @@ function titleLines(ctx: Ctx, text: string, fonts: ShareFonts): ShareTitle {
 }
 
 export interface ShareCardLayout {
+  height: number
   title: ShareTitle
+  /** The reps' result under the header, on the Route and Stats cards. */
+  result: string | null
   hero: ShareRepHero | null
+  /** The Stats card's rep pace, in the middle where a plain run has its zones. */
+  repHeadline: ShareRepHeadline | null
   repDetail: ShareRepDetail | null
   repDetailTop: number
   middleTop: number
@@ -182,19 +193,27 @@ export interface ShareCardLayout {
 }
 
 /** The Route card carries the rep pace in its stat row, so the map keeps its full height. */
-export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareFonts, design: ShareDesign = 'route'): ShareCardLayout {
+export function shareCardLayout(
+  ctx: Ctx, activity: ShareActivity, fonts: ShareFonts, design: ShareDesign = 'route', size: ShareSize = 'portrait',
+): ShareCardLayout {
+  const height = shareCardHeight(size)
   const title = titleLines(ctx, shareCardTitle(activity), fonts)
-  const middleTop = HEADER_BASE + (title.lines.length - 1) * title.lineHeight
-  const hero = design === 'route' ? null : shareRepHero(activity)
+  const result = design === 'photo' ? null : shareRepResult(activity)
+  const middleTop = HEADER_BASE + (title.lines.length - 1) * title.lineHeight + (result ? RESULT_H : 0)
+  const repHeadline = design === 'stats' ? shareRepHeadline(activity) : null
+  const hero = design === 'route' || repHeadline ? null : shareRepHero(activity)
   const repDetail = hero ? shareRepDetail(activity) : null
   const detailH = repDetail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[repDetail.kind] : 0
-  const statsTop = H - STATS_PAD_BOTTOM - STATS_BLOCK
+  const statsTop = height - STATS_PAD_BOTTOM - STATS_BLOCK
   const stripTop = statsTop - (hero ? STATS_PAD_TOP_AFTER_HERO : STATS_PAD_TOP)
   const footerTop = stripTop - (hero ? HERO_PAD_TOP + HERO_BLOCK + detailH : 0)
-  const textTop = headerFoot({ title })
+  const textTop = headerFoot({ title, result })
   return {
+    height,
     title,
+    result,
     hero,
+    repHeadline,
     repDetail,
     repDetailTop: footerTop + HERO_PAD_TOP + HERO_BLOCK + REP_DETAIL_PAD_TOP,
     middleTop,
@@ -205,7 +224,7 @@ export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareF
     ruleY: design === 'photo' ? null : stripTop + (hero ? 7 : 0),
     textTop,
     textBottom: footerTop,
-    routeFrame: { top: textTop + ROUTE_TEXT_GAP, right: ROUTE_INSET, bottom: H - footerTop + ROUTE_TEXT_GAP, left: ROUTE_INSET },
+    routeFrame: { top: textTop + ROUTE_TEXT_GAP, right: ROUTE_INSET, bottom: height - footerTop + ROUTE_TEXT_GAP, left: ROUTE_INSET },
   }
 }
 
@@ -237,7 +256,7 @@ interface Ink {
 
 const PHOTO_INK: Ink = { tx: '#ffffff', mu: 'rgba(255, 255, 255, 0.85)', mark: '#ffffff' }
 
-function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { title }: ShareCardLayout, ink: Ink) {
+function drawHeader(ctx: Ctx, { activity, fonts, place, palette }: ShareCardScene, { title, result }: ShareCardLayout, ink: Ink) {
   ctx.textAlign = 'left'
   ctx.save()
   ctx.globalAlpha = LOCKUP_ALPHA
@@ -258,19 +277,21 @@ function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { titl
   setSpacing(ctx, 0)
 
   const last = TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight
-  const rest = shareCardSubtitle(activity, place)
-  const structure = shareStructure(activity)
-  let x = PAD_X
-  if (structure) {
-    ctx.font = `600 10px ${fonts.text}`
-    ctx.fillStyle = ink.tx
-    ctx.fillText(structure, x, last + 18)
-    x += ctx.measureText(`${structure} · `).width
-  }
   ctx.font = `400 10px ${fonts.text}`
   ctx.fillStyle = ink.mu
-  if (structure) ctx.fillText(' · ', x - ctx.measureText(' · ').width, last + 18)
-  ctx.fillText(fit(ctx, rest, RIGHT - x), x, last + 18)
+  ctx.fillText(fit(ctx, shareCardSubtitle(activity, place), RIGHT - PAD_X), PAD_X, last + 18)
+  if (!result) return
+
+  const max = RIGHT - PAD_X
+  let size: number = RESULT_SIZES[0]
+  for (size of RESULT_SIZES) {
+    ctx.font = `700 ${size}px ${fonts.display}`
+    setSpacing(ctx, -0.02 * size)
+    if (ctx.measureText(result).width <= max) break
+  }
+  ctx.fillStyle = palette.acc
+  ctx.fillText(fit(ctx, result, max), PAD_X, last + 18 + RESULT_GAP)
+  setSpacing(ctx, 0)
 }
 
 function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: ShareRepHero, top: number, ink: Ink) {
@@ -400,11 +421,7 @@ function legendParts(scene: ShareCardScene, palette: SharePalette): { parts: Chi
         return { parts: [muted(s.coolDown)], bar: palette.trace }
     }
   }
-  const legend = shareRepsLegend(activity)
-  const parts = [muted(legend.lead)]
-  if (legend.strong) parts.push({ text: legend.strong, color: palette.tx, weight: 600 })
-  if (legend.rest) parts.push(muted(legend.rest))
-  return { parts, bar: rep }
+  return { parts: [muted(s.repsLegend)], bar: rep }
 }
 
 function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, top: number) {
@@ -451,7 +468,7 @@ function routePoints(scene: ShareCardScene, layout: ShareCardLayout): [number, n
   const route = scene.activity.route
   if (!route || route.length < 2) return null
   if (scene.mapImage && scene.mapPoints && scene.mapPoints.length > 1) return scene.mapPoints
-  return projectRoute(route, W, H, layout.routeFrame)
+  return projectRoute(route, W, layout.height, layout.routeFrame)
 }
 
 function sceneMotion(scene: ShareCardScene): VideoMotion {
@@ -463,9 +480,9 @@ function sceneMotion(scene: ShareCardScene): VideoMotion {
  * An interval session draws the run in grey and its reps over it, wider, so a
  * rep run down the warm-up's road still shows.
  */
-function drawRoute(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], motion: VideoMotion) {
+function drawRoute(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], motion: VideoMotion, height: number) {
   const { activity, palette, mapImage, mapPoints } = scene
-  if (mapImage && mapPoints && mapPoints.length > 1) ctx.drawImage(mapImage, 0, 0, W, H)
+  if (mapImage && mapPoints && mapPoints.length > 1) ctx.drawImage(mapImage, 0, 0, W, height)
   const progress = scene.progress ?? 1
   if (progress <= 0) return
   const drawn = progress >= 1 ? pts : slicePolyline(pts, 0, progress)
@@ -692,13 +709,13 @@ function drawMapLayer(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, 
   const pts = routePoints(scene, layout)
   ctx.save()
   if (motion.intro < 1) {
-    const [x, y] = pts?.[0] ?? [W / 2, H / 2]
+    const [x, y] = pts?.[0] ?? [W / 2, layout.height / 2]
     const zoom = 1.06 - 0.06 * motion.intro
     ctx.translate(x, y)
     ctx.scale(zoom, zoom)
     ctx.translate(-x, -y)
   }
-  if (pts) drawRoute(ctx, scene, pts, motion)
+  if (pts) drawRoute(ctx, scene, pts, motion, layout.height)
   drawPlaceLabels(ctx, scene, layout, pts && markerObstacles(pts, scene.palette), pts)
   if (pts) drawMarkers(ctx, scene, pts, motion)
   ctx.restore()
@@ -727,7 +744,7 @@ function grainTile(): HTMLCanvasElement | null {
 }
 
 /** The app's glow, in the run's own colour, so the dark card reads as RunOmics; on white a tint only looks washed out. */
-function drawGlow(ctx: Ctx, { activity, palette }: ShareCardScene) {
+function drawGlow(ctx: Ctx, { activity, palette }: ShareCardScene, height: number) {
   if (palette.mode !== 'dark' || typeof ctx.createRadialGradient !== 'function') return
   const colour = repColor(activity, palette)
   const glow = ctx.createRadialGradient(W * 0.12, 0, 0, W * 0.12, 0, W * 1.05)
@@ -735,7 +752,7 @@ function drawGlow(ctx: Ctx, { activity, palette }: ShareCardScene) {
   glow.addColorStop(0.5, withAlpha(colour, 0.09))
   glow.addColorStop(1, withAlpha(colour, 0))
   ctx.fillStyle = glow
-  ctx.fillRect(0, 0, W, H)
+  ctx.fillRect(0, 0, W, height)
   const tile = typeof ctx.createPattern === 'function' ? grainTile() : null
   const pattern = tile ? ctx.createPattern(tile, 'repeat') : null
   if (!pattern) return
@@ -753,7 +770,7 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 /** The fade spans only the gap the route keeps clear of the words, so it never dims the line. */
-function drawBands(ctx: Ctx, { palette }: ShareCardScene, { textTop, textBottom }: ShareCardLayout) {
+function drawBands(ctx: Ctx, { palette }: ShareCardScene, { textTop, textBottom, height }: ShareCardLayout) {
   const solid = palette.bg
   const clear = withAlpha(palette.bg, 0)
   ctx.fillStyle = solid
@@ -770,7 +787,7 @@ function drawBands(ctx: Ctx, { palette }: ShareCardScene, { textTop, textBottom 
   ctx.fillStyle = bottom
   ctx.fillRect(0, textBottom - ROUTE_TEXT_GAP, W, ROUTE_TEXT_GAP)
   ctx.fillStyle = solid
-  ctx.fillRect(0, textBottom, W, H - textBottom)
+  ctx.fillRect(0, textBottom, W, height - textBottom)
 }
 
 const HEADLINE_SIZE = 64
@@ -984,7 +1001,9 @@ function drawVerdict(ctx: Ctx, scene: ShareCardScene, verdict: ShareVerdict, { m
   ctx.fill()
   ctx.font = `700 ${VERDICT_EYEBROW}px ${fonts.text}`
   setSpacing(ctx, 0.1 * VERDICT_EYEBROW)
-  ctx.fillText(t.activity.verdict.eyebrow[verdict.tone].toLocaleUpperCase(t.locale), PAD_X + 10, y + VERDICT_EYEBROW / 2)
+  // As the activity page's verdict; a run with no type reads as Base, the plain run's.
+  const eyebrow = t.activity.verdict.headline[verdict.tone](t.activityTypes[activity.type ?? 'Base'])
+  ctx.fillText(eyebrow.toLocaleUpperCase(t.locale), PAD_X + 10, y + VERDICT_EYEBROW / 2)
   setSpacing(ctx, 0)
   y += VERDICT_EYEBROW + VERDICT_EYEBROW_GAP
 
@@ -996,34 +1015,84 @@ function drawVerdict(ctx: Ctx, scene: ShareCardScene, verdict: ShareVerdict, { m
   hero.lines.forEach((line, i) => ctx.fillText(line, PAD_X, y + i * hero.lineHeight + Math.round(hero.size * 0.86)))
   setSpacing(ctx, 0)
   y += heroH
-  if (!zones) return
+  if (zones) drawZoneStrip(ctx, scene, zones, y + VERDICT_BAR_GAP)
+}
 
-  y += VERDICT_BAR_GAP
+const ZONE_STRIP_H = VERDICT_BAR_H + VERDICT_LABEL_GAP + VERDICT_LABEL
+
+/** The 6 px bar of the run's zones and their percents, under a verdict or a rep pace. */
+function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: ShareZones, top: number) {
   const barW = RIGHT - PAD_X
   let at = PAD_X
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
     const last = row === zones.rows[zones.rows.length - 1]
     ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
-    roundRect(ctx, at, y, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
+    roundRect(ctx, at, top, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
     ctx.fill()
     at += w
   }
-  y += VERDICT_BAR_H + VERDICT_LABEL_GAP
 
   ctx.font = `500 ${VERDICT_LABEL}px ${fonts.text}`
   ctx.fillStyle = palette.mu
   ctx.textBaseline = 'top'
   for (const label of zoneBarLabels(zones.rows, PAD_X, barW, (text) => ctx.measureText(text).width)) {
     ctx.textAlign = label.align
-    ctx.fillText(label.text, label.x, y)
+    ctx.fillText(label.text, label.x, top + VERDICT_BAR_H + VERDICT_LABEL_GAP)
   }
   ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+}
+
+const REP_CAPTION = 12
+const REP_CAPTION_GAP = 10
+const ZONE_STRIP_PAD_BOTTOM = 14
+
+/** The rep pace leads; the zones drop to the strip at the middle's foot. */
+function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadline, { middleH }: ShareCardLayout) {
+  const { activity, palette, fonts } = scene
+  const zones = shareZones(activity)
+  const detail = shareRepDetail(activity)
+  const stripTop = zones ? middleH - ZONE_STRIP_PAD_BOTTOM - ZONE_STRIP_H : middleH
+  const detailH = detail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[detail.kind] : 0
+  const top = Math.max(0, (stripTop - (HEADLINE_SIZE + REP_CAPTION_GAP + REP_CAPTION + detailH)) / 2)
+
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+  ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
+  const unitW = ctx.measureText(headline.unit).width
+  let size = HEADLINE_SIZE
+  const paceFont = () => {
+    ctx.font = `700 ${size}px ${fonts.display}`
+    setSpacing(ctx, -0.04 * size)
+  }
+  paceFont()
+  while (size > 40 && ctx.measureText(headline.pace).width + HEADLINE_GAP + unitW > RIGHT - PAD_X) {
+    size -= 4
+    paceFont()
+  }
+  const baseline = top + Math.round(HEADLINE_SIZE * 0.8)
+  ctx.fillStyle = palette.tx
+  ctx.fillText(headline.pace, PAD_X, baseline)
+  const paceW = ctx.measureText(headline.pace).width
+  setSpacing(ctx, 0)
+  ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
+  ctx.fillText(headline.unit, PAD_X + paceW + HEADLINE_GAP, baseline)
+
+  const captionTop = top + HEADLINE_SIZE + REP_CAPTION_GAP
+  ctx.font = `600 ${REP_CAPTION}px ${fonts.text}`
+  ctx.fillStyle = repColor(activity, palette)
+  ctx.fillText(fit(ctx, headline.caption, RIGHT - PAD_X), PAD_X, captionTop + Math.round(REP_CAPTION * 0.8))
+
+  const ink = { tx: palette.tx, mu: palette.mu, mark: palette.acc }
+  if (detail) drawRepDetail(ctx, scene, detail, captionTop + REP_CAPTION + REP_DETAIL_PAD_TOP, ink)
+  if (zones) drawZoneStrip(ctx, scene, zones, stripTop)
 }
 
 function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const verdict = scene.activity.verdict
-  if (verdict) drawVerdict(ctx, scene, verdict, layout)
+  if (layout.repHeadline) drawRepMiddle(ctx, scene, layout.repHeadline, layout)
+  else if (verdict) drawVerdict(ctx, scene, verdict, layout)
   else drawZones(ctx, scene, layout)
 }
 
@@ -1066,26 +1135,27 @@ function drawPhotoEmpty(ctx: Ctx, { palette, fonts }: ShareCardScene, { middleH 
   ctx.fillText(s.photoHint, W / 2, middleH / 2 + 27)
 }
 
-/** The foot of the date and place line. */
-export function headerFoot({ title }: Pick<ShareCardLayout, 'title'>): number {
-  return TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight + 18 + 3
+/** The foot of the date and place line, or of the reps' result under it. */
+export function headerFoot({ title, result }: Pick<ShareCardLayout, 'title'> & { result?: string | null }): number {
+  return TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight + 18 + 3 + (result ? RESULT_H : 0)
 }
 
 /**
  * [offset, black's alpha] stops. It holds .62 to the foot of the header's
  * words, 5:1 there on white: clearing sooner left the date line 2.5:1 on a white sky.
  */
-export function photoScrim(headerBottom: number): [number, number][] {
-  const words = headerBottom / H
+export function photoScrim(headerBottom: number, height = H): [number, number][] {
+  const words = headerBottom / height
   return [[0, 0.72], [words, 0.62], [Math.min(0.52, Math.max(0.38, words + 0.14)), 0], [0.52, 0], [1, 0.78]]
 }
 
 function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
-  drawCover(ctx, photo, W, H)
-  const scrim = ctx.createLinearGradient(0, 0, 0, H)
-  for (const [offset, alpha] of photoScrim(headerFoot(layout))) scrim.addColorStop(offset, `rgba(0, 0, 0, ${alpha})`)
+  const { height } = layout
+  drawCover(ctx, photo, W, height)
+  const scrim = ctx.createLinearGradient(0, 0, 0, height)
+  for (const [offset, alpha] of photoScrim(headerFoot(layout), height)) scrim.addColorStop(offset, `rgba(0, 0, 0, ${alpha})`)
   ctx.fillStyle = scrim
-  ctx.fillRect(0, 0, W, H)
+  ctx.fillRect(0, 0, W, height)
 }
 
 /** Two stats spread edge to edge read as unrelated: they sit side by side instead. */
@@ -1154,11 +1224,12 @@ const MIDDLES: Record<Exclude<ShareDesign, 'route'>, (ctx: Ctx, scene: ShareCard
 }
 
 export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
-  const layout = shareCardLayout(ctx, scene.activity, scene.fonts, scene.design)
+  const layout = shareCardLayout(ctx, scene.activity, scene.fonts, scene.design, scene.size)
   const motion = sceneMotion(scene)
   const { palette } = scene
+  const { height } = layout
   ctx.fillStyle = palette.bg
-  ctx.fillRect(0, 0, W, H)
+  ctx.fillRect(0, 0, W, height)
 
   const photo = scene.design === 'photo' ? scene.photo : null
   if (photo) {
@@ -1169,7 +1240,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
     // Over the bands, so the stats' fade does not cover it.
     if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop)
   } else {
-    if (scene.design === 'stats') drawGlow(ctx, scene)
+    if (scene.design === 'stats') drawGlow(ctx, scene, height)
     ctx.save()
     ctx.translate(0, layout.middleTop)
     ctx.beginPath()
@@ -1182,7 +1253,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const ink = photo ? PHOTO_INK : { tx: palette.tx, mu: palette.mu, mark: palette.acc }
   if (layout.ruleY !== null) {
     ctx.fillStyle = palette.card
-    ctx.fillRect(0, layout.ruleY, W, H - layout.ruleY)
+    ctx.fillRect(0, layout.ruleY, W, height - layout.ruleY)
     ctx.fillStyle = palette.line
     ctx.fillRect(0, layout.ruleY, W, 1)
   }

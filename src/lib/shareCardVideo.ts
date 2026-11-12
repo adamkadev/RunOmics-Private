@@ -1,4 +1,4 @@
-import { renderShareCard, W, H, type RenderOptions } from '@/lib/shareCard'
+import { renderShareCard, shareCardHeight, W, type RenderOptions, type ShareSize } from '@/lib/shareCard'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import { EXPORT_FRAMES as FRAMES, exportFrameAt, VIDEO_FPS } from '@/lib/shareCardTimeline'
 import { canvasVideoEncoder, encodeCanvasClip, videoExtension, type CanvasClip, type VideoEncoderKind } from '@/lib/canvasVideo'
@@ -11,8 +11,8 @@ const EXPORT_SCALE = EXPORT_WIDTH / W
 const BITRATE = 6_000_000
 
 /** Null hides the Video option: neither WebCodecs nor MediaRecorder is there. */
-export function shareVideoEncoder(): Promise<VideoEncoderKind | null> {
-  return canvasVideoEncoder(EXPORT_WIDTH, Math.round(H * EXPORT_SCALE), BITRATE)
+export function shareVideoEncoder(size: ShareSize = 'portrait'): Promise<VideoEncoderKind | null> {
+  return canvasVideoEncoder(EXPORT_WIDTH, Math.round(shareCardHeight(size) * EXPORT_SCALE), BITRATE)
 }
 
 export function shareVideoFileName(activity: ShareActivity, type: string): string {
@@ -25,7 +25,7 @@ export async function renderShareVideo(
 ): Promise<File> {
   const clip: CanvasClip = {
     width: EXPORT_WIDTH,
-    height: Math.round(H * EXPORT_SCALE),
+    height: Math.round(shareCardHeight(options.size) * EXPORT_SCALE),
     frames: FRAMES,
     fps: VIDEO_FPS,
     bitrate: BITRATE,

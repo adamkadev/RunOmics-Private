@@ -90,10 +90,9 @@ export const fr = {
   },
 
   zoneLabels: {
-    // « Récupération » overflows the zone table's name column, which never wraps.
     1: 'Récup',
     2: 'Facile',
-    3: 'Aérobie',
+    3: 'Modéré',
     4: 'Seuil',
     5: 'Max',
   } as Record<number, string>,
@@ -1264,7 +1263,6 @@ export const fr = {
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
       target: (pace: string) => `cible ${pace}`,
-      structure: (set: string, pace: string) => `${set} @ ${pace}`,
       rep: (n: number) => `Fraction ${n}`,
       repRange: (fastest: string, slowest: string) => `Plus rapide ${fastest} · Plus lente ${slowest}`,
       // La légende du parcours d’une séance de fractionné : elle marque les fractions.
@@ -1273,15 +1271,20 @@ export const fr = {
       showReps: 'Allure des fractions',
       // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
       repPaceStat: 'Allure fractions',
-      // La partie en gras de la légende : « Fractions · 9 s/km sous la cible ».
+      // La ligne d’accent sous l’en-tête d’une séance de fractionné : « 9 s/km sous la cible ».
       secPerKm: (n: number) => `${n} s/km`,
       underTarget: 'sous la cible',
-      overTarget: 'au-dessus de la cible',
       onTarget: 'dans la cible',
       formatTitle: 'Format',
       formatLabels: {
         image: 'Image',
         video: 'Vidéo',
+      },
+      // Le cadre de la carte : une publication ou une story plein écran.
+      sizeTitle: 'Taille',
+      sizeLabels: {
+        portrait: '4:5',
+        story: '9:16',
       },
       shareVideo: 'Partager la vidéo',
       preparingVideo: (percent: number) => `Préparation de la vidéo… ${percent} %`,
@@ -1306,11 +1309,6 @@ export const fr = {
         positive: (type: string) => `Sortie ${type} réussie`,
         neutral: (type: string) => `Sortie ${type} enregistrée`,
         caution: (type: string) => `Sortie ${type} exigeante`,
-      },
-      eyebrow: {
-        positive: 'Belle séance',
-        neutral: 'Séance enregistrée',
-        caution: 'Séance exigeante',
       },
     },
     effort: {

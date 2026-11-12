@@ -14,9 +14,9 @@ describe('StickyBar', () => {
     expect(bar.className).toContain('max-lg:bg-transparent')
   })
 
-  it('does not grow the scroll edge by its height', () => {
+  it('grows the scroll edge by its height, so rows dissolve under its labels', () => {
     render(<StickyBar top="12px">tabs</StickyBar>)
-    expect(screen.getByTestId('sticky-bar').hasAttribute('data-sticky-strip')).toBe(false)
+    expect(screen.getByTestId('sticky-bar').hasAttribute('data-sticky-strip')).toBe(true)
   })
 })
 

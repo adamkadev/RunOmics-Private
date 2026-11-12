@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  percentsTo100, repLength, zoneName, shareCardSubtitle, shareCardTitle, shareRepHero, shareRepsLegend, shareStats, shareZones, type ShareActivity, shareRepDetail, shareStructure,
+  percentsTo100, repLength, zoneName, shareCardSubtitle, shareCardTitle, shareRepHeadline, shareRepHero, shareRepResult, shareStats, shareZones, type ShareActivity, shareRepDetail,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
 
@@ -142,11 +142,17 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(shareRepDetail(RUN)).toBeNull()
   })
 
-  it('titles a rep session by its type, its structure in the subtitle', () => {
+  it('titles a rep session by its set, its type leading the subtitle', () => {
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' }
-    expect(shareCardTitle(run)).toBe('Threshold')
-    expect(shareStructure(run)).toBe('3 × 8′ @ 4:25')
-    expect(shareStructure(RUN)).toBeNull()
+    expect(shareCardTitle(run)).toBe('3 × 8′')
+    expect(shareCardSubtitle(run, 'Metz')).toBe(`Threshold · ${formatDate('2026-09-26')} · Metz`)
+    expect(shareCardSubtitle({ ...RUN, type: 'Threshold' }, 'Metz')).toBe(`${formatDate('2026-09-26')} · Metz`)
+  })
+
+  it('leads the Stats card with the rep pace, captioned with the target', () => {
+    expect(shareRepHeadline({ ...RUN, reps: REPS })).toEqual({ pace: '4:24', unit: '/km', caption: 'Reps · target 4:25' })
+    expect(shareRepHeadline({ ...RUN, reps: { ...REPS, target: null } })!.caption).toBe('Reps')
+    expect(shareRepHeadline(RUN)).toBeNull()
   })
 
   it('drops the average pace, which describes neither the reps nor the recoveries', () => {
@@ -161,11 +167,11 @@ describe('an interval session (design review, Oct 2026)', () => {
   })
 
   it('says how far off the target the reps ran, in seconds per km, or that they were on it', () => {
-    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, paceSecPerKm: 256 } })).toEqual({ lead: 'Reps · ', strong: '9 s/km', rest: ' under target' })
-    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } }))
-      .toEqual({ lead: 'Reps · ', strong: '5 s/km', rest: ' over target' })
-    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })).toEqual({ lead: 'Reps · ', strong: 'on target', rest: '' })
-    expect(shareRepsLegend({ ...RUN, reps: { ...REPS, target: null } })).toEqual({ lead: 'Reps', strong: null, rest: '' })
+    expect(shareRepResult({ ...RUN, reps: { ...REPS, paceSecPerKm: 256 } })).toBe('9 s/km under target')
+    expect(shareRepResult({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } })).toBeNull()
+    expect(shareRepResult({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })).toBe('On target')
+    expect(shareRepResult({ ...RUN, reps: { ...REPS, target: null } })).toBeNull()
+    expect(shareRepResult(RUN)).toBeNull()
   })
 
   it('writes a rep in minutes, or seconds under one', () => {

@@ -6,8 +6,8 @@ import { useTheme } from 'next-themes'
 import { Camera, X } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import {
-  renderShareCard, loadImage, pageFonts, shareCardMapFrame, SHARE_DESIGNS, W, H,
-  type RenderOptions, type ShareDesign, type ThemeMode,
+  renderShareCard, loadImage, pageFonts, shareCardHeight, shareCardMapFrame, SHARE_DESIGNS, SHARE_SIZES, W,
+  type RenderOptions, type ShareDesign, type ShareSize, type ThemeMode,
 } from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng, shareOrSaveFile } from '@/lib/shareCardExport'
 import { renderShareVideo, shareVideoEncoder, type VideoEncoderKind } from '@/lib/shareCardVideo'
@@ -35,10 +35,13 @@ interface Props {
 }
 
 /**
- * One 4:5 box on every tab, so the controls under it never move; 68 px is the
+ * One box per size on every tab, so the controls under it never move; 68 px is the
  * sheet's 20 px margins and 14 px more on each side.
  */
 const CARD_BOX_W = `min(${W}px, calc(100vw - 68px))`
+/** A story narrows to keep the sheet's controls in reach on a phone; 180 px is the floor on a short window. */
+const STORY_BOX_W = `min(${W}px, calc(100vw - 68px), max(180px, calc((100dvh - 380px) * 9 / 16)))`
+const ASPECT: Record<ShareSize, string> = { portrait: '4 / 5', story: '9 / 16' }
 const SWIPE_PX = 40
 
 /** Both pickers stay radiogroups: a choice, not a tab. */
@@ -59,6 +62,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const designs = hasRoute ? SHARE_DESIGNS : SHARE_DESIGNS.filter((d) => d !== 'route')
 
   const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps } = useShareCardPrefs(appTheme, hasRoute)
+  const [size, setSize] = useState<ShareSize>('portrait')
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   // Without its reps the card is an easy run's: one colour on the route, the
   // average pace back in the stats.
@@ -67,13 +71,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [fontsReady, setFontsReady] = useState(0)
   // Measured again once Geist has loaded: the title's lines set the stats'
   // height, and the card is drawn in Geist.
-  const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(card, pageFonts()))
+  const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(card, pageFonts(), size))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints, labels: mapLabels, place: mapPlace, failed: mapFailed } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
-    height: H,
+    height: shareCardHeight(size),
     frame: mapFrame.frame,
     bands: mapFrame.bands,
     enabled: hasRoute,
@@ -110,9 +114,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   useEffect(() => {
     let alive = true
-    shareVideoEncoder().then((kind) => { if (alive) setVideoEncoder(kind) }).catch(() => {})
+    shareVideoEncoder(size).then((kind) => { if (alive) setVideoEncoder(kind) }).catch(() => {})
     return () => { alive = false }
-  }, [])
+  }, [size])
 
   useEffect(() => () => {
     if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current)
@@ -124,14 +128,15 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     document.fonts?.ready.then(() => {
       if (!alive) return
       setFontsReady((n) => n + 1)
-      setMapFrame(shareCardMapFrame(card, pageFonts()))
+      setMapFrame(shareCardMapFrame(card, pageFonts(), size))
     }).catch(() => {})
     return () => { alive = false }
-  }, [card])
+  }, [card, size])
 
   const renderOptions = useCallback((): RenderOptions => ({
     activity: card,
     design,
+    size,
     accent,
     theme,
     photoImage,
@@ -140,9 +145,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     mapPoints,
     mapLabels,
     fonts: pageFonts(),
-  }), [card, design, accent, theme, photoImage, locationName, mapImage, mapPoints, mapLabels])
+  }), [card, design, size, accent, theme, photoImage, locationName, mapImage, mapPoints, mapLabels])
 
-  const videoKey = [card.id, theme, accent, showReps, locationName ?? '', mapImage ? 'map' : 'plain', fontsReady].join('|')
+  const videoKey = [card.id, size, theme, accent, showReps, locationName ?? '', mapImage ? 'map' : 'plain', fontsReady].join('|')
   const videoReady = !!videoFiles[videoKey]
 
   // The key names what changes the clip; renderOptions follows the same inputs, so a change cancels and restarts.
@@ -280,7 +285,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             data-testid="share-preview"
             className="relative shrink-0 self-center overflow-hidden"
             style={{
-              width: CARD_BOX_W, aspectRatio: '4 / 5', marginTop: 14, borderRadius: 24, touchAction: 'pan-y',
+              width: size === 'story' ? STORY_BOX_W : CARD_BOX_W, aspectRatio: ASPECT[size], marginTop: 14, borderRadius: 24, touchAction: 'pan-y',
               boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)',
             }}
             onPointerDown={(e) => { swipeX.current = e.clientX }}
@@ -334,8 +339,26 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             ))}
           </div>
 
+          <div data-testid="share-size" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
+            <span className="text-foreground" style={{ fontSize: 17 }}>{s.sizeTitle}</span>
+            <div role="radiogroup" aria-label={s.sizeTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+              {SHARE_SIZES.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={size === option}
+                  onClick={() => setSize(option)}
+                  className={cn(segmentClass(size === option), 'h-[26px] px-3.5 text-[13px]')}
+                >
+                  {s.sizeLabels[option]}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {showFormat && (
-            <div data-testid="share-format" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
+            <div data-testid="share-format" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
               <span className="text-foreground" style={{ fontSize: 17 }}>{s.formatTitle}</span>
               <div role="radiogroup" aria-label={s.formatTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
                 {(['image', 'video'] as const).map((f) => (
@@ -355,7 +378,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             </div>
           )}
 
-          <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: showFormat ? 0 : 4 }}>
+          <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
             {design === 'photo' ? (
               <>
                 <span className="text-foreground" style={{ fontSize: 17 }}>{s.photo}</span>

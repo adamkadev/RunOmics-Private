@@ -8,7 +8,7 @@ export const StickyStuckContext = createContext<boolean | null>(null)
 
 /**
  * Opaque from lg up rather than glass: content would read through the tab labels, and blur can't be relied on.
- * No data-sticky-strip: a scroll edge grown by its height would paint the ground behind the pinned glass.
+ * A strip on a phone grows the scroll edge by its height (data-sticky-strip): rows read through the pinned tab labels.
  */
 export const StickyBar = forwardRef<HTMLDivElement, { top: string; className?: string; children: ReactNode }>(
   function StickyBar({ top, className, children }, ref) {
@@ -26,6 +26,7 @@ export const StickyBar = forwardRef<HTMLDivElement, { top: string; className?: s
       <div
         ref={setRef}
         data-stuck={stuck ? '' : undefined}
+        data-sticky-strip
         data-testid="sticky-bar"
         style={{ top }}
         className={cn(

@@ -28,8 +28,8 @@ const STATUS_TONE: Record<RunTone, VerdictTone> = {
 
 export function RunVerdict({ activity, type = activity.type, tone, aiVerdict, children }: Props) {
   const v = t.activity.verdict
-  const session = v.headline[tone](t.activityTypes[type])
-  const eyebrow = `${v.eyebrow[tone]} · ${session}`
+  // The type's own verdict alone: "Session logged · Threshold logged" said it twice.
+  const eyebrow = v.headline[tone](t.activityTypes[type])
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="run-verdict">

@@ -33,26 +33,16 @@ export interface ShareReps {
   windows: [number, number][]
 }
 
-/** A rep session is titled by its type alone; its structure goes to the subtitle. */
+/** A rep session is titled by its set, "3 × 8′"; its type leads the subtitle. */
 export function shareCardTitle(activity: ShareActivity): string {
-  if (activity.reps && activity.type) return t.activityTypes[activity.type]
+  const reps = activity.reps
+  if (reps) return `${reps.count} × ${repLength(reps.repSeconds)}`
   return activity.sessionTitle?.trim() || activityTitle(activity)
 }
 
-export function shareStructure(activity: ShareActivity): string | null {
-  const reps = activity.reps
-  if (!reps) return null
-  const set = `${reps.count} × ${repLength(reps.repSeconds)}`
-  const target = reps.target
-  if (!target) return set
-  // The band's centre, as the session's own name writes it; the hero carries the band in full.
-  const pace = formatClock(Math.round((target.min + target.max) / 2))
-  return t.activity.shareCard.structure(set, pace)
-}
-
 export function shareCardSubtitle(activity: ShareActivity, place: string | null | undefined): string {
-  const date = formatDate(activity.date.slice(0, 10))
-  return place ? `${date} · ${place}` : date
+  const type = activity.reps && activity.type ? t.activityTypes[activity.type] : null
+  return [type, formatDate(activity.date.slice(0, 10)), place].filter(Boolean).join(' · ')
 }
 
 export type ShareStatKey = 'repPace' | 'distance' | 'time' | 'pace' | 'hr'
@@ -90,20 +80,15 @@ export function shareStats(activity: ShareActivity, { repPace = false }: { repPa
   return stats
 }
 
-/** "Reps · **9 s/km** under target": the strong part is drawn bold. */
-export interface ShareRepsLegend {
-  lead: string
-  strong: string | null
-  rest: string
-}
-
-export function shareRepsLegend(activity: ShareActivity): ShareRepsLegend {
+/** "9 s/km under target", the line under the header; null when the reps had no target. */
+export function shareRepResult(activity: ShareActivity): string | null {
   const s = t.activity.shareCard
   const reps = activity.reps
-  if (!reps?.target) return { lead: s.repsLegend, strong: null, rest: '' }
+  if (!reps?.target) return null
   const off = repOffset(reps.paceSecPerKm, reps.target)
-  if (off === 0) return { lead: `${s.repsLegend} · `, strong: s.onTarget, rest: '' }
-  return { lead: `${s.repsLegend} · `, strong: s.secPerKm(Math.abs(off)), rest: ` ${off < 0 ? s.underTarget : s.overTarget}` }
+  if (off === 0) return s.onTarget.charAt(0).toLocaleUpperCase(t.locale) + s.onTarget.slice(1)
+  // A card is posted: a slower set gets no line rather than "5 s/km over target" in the accent.
+  return off < 0 ? `${s.secPerKm(-off)} ${s.underTarget}` : null
 }
 
 export function repLength(seconds: number): string {
@@ -117,21 +102,41 @@ export interface ShareRepHero {
   target: string | null
 }
 
+function targetBand(target: { min: number; max: number } | null): string | null {
+  if (!target) return null
+  return target.min === target.max ? formatClock(target.min) : `${formatClock(target.min)}–${formatClock(target.max)}`
+}
+
 export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
   const reps = activity.reps
   if (!reps) return null
   const s = t.activity.shareCard
-  const target = reps.target
-    ? reps.target.min === reps.target.max
-      ? formatClock(reps.target.min)
-      : `${formatClock(reps.target.min)}–${formatClock(reps.target.max)}`
-    : null
+  const target = targetBand(reps.target)
   const off = reps.target ? repDelta(reps.paceSecPerKm, reps.target) : null
   return {
     eyebrow: s.repPace(reps.count, repLength(reps.repSeconds)),
     pace: formatClock(reps.paceSecPerKm),
     unit: t.units.perKm,
     target: target ? [s.target(target), off].filter(Boolean).join(' · ') : null,
+  }
+}
+
+export interface ShareRepHeadline {
+  pace: string
+  unit: string
+  caption: string
+}
+
+/** The Stats card's hero on a rep session; the result is the line under the header, so the caption gives the target. */
+export function shareRepHeadline(activity: ShareActivity): ShareRepHeadline | null {
+  const reps = activity.reps
+  if (!reps || !(reps.paceSecPerKm > 0)) return null
+  const s = t.activity.shareCard
+  const target = targetBand(reps.target)
+  return {
+    pace: formatClock(reps.paceSecPerKm),
+    unit: t.units.perKm,
+    caption: target ? `${s.repsLegend} · ${s.target(target)}` : s.repsLegend,
   }
 }
 
