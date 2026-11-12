@@ -30,7 +30,7 @@ export function GradeBandLabel({ band }: { band: { sex: 'male' | 'female'; brack
 function GradeTile({ children, testId }: { children: string; testId?: string }) {
   return (
     <span
-      className="flex size-16 shrink-0 items-center justify-center rounded-[14px] bg-[var(--accent-soft)] text-[34px] font-bold leading-none text-accent-text"
+      className="flex size-16 shrink-0 items-center justify-center rounded-[14px] bg-[var(--track)] text-[34px] font-bold leading-none text-foreground"
       data-testid={testId}
       aria-hidden={testId ? undefined : true}
     >
@@ -59,7 +59,7 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
                 <span
                   key={i}
                   className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: i < view.runs ? 'var(--accent)' : 'var(--line-2)' }}
+                  style={{ background: i < view.runs ? 'var(--data-done)' : 'var(--line-2)' }}
                 />
               ))}
             </div>

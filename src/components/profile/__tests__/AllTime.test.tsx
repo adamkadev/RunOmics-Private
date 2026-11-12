@@ -46,11 +46,12 @@ describe('AllTime monthly km', () => {
     expect(bars[0]!.dataset.month).toBe('2025-05')
     const best = bars.find((bar) => bar.dataset.best)!
     expect(best.dataset.month).toBe('2026-04')
-    expect(best.style.background).toBe('var(--accent)')
+    expect(best.style.background).toBe('var(--data-done)')
     expect(screen.getByTestId('best-value').textContent).toBe('236')
     expect(bars.at(-1)!.className).toContain('border-dashed')
     expect(bars[0]!.style.background).toBe('var(--band)')
-    expect(bars.find((bar) => bar.dataset.month === '2026-03')!.style.background).toBe('var(--accent)')
+    expect(bars.find((bar) => bar.dataset.month === '2026-03')!.style.background).toBe('var(--data-done)')
+    expect(screen.getByTestId('month-so-far').className).toContain('bg-accent')
     // 2025 spans May–Dec (8 months), 2026 Jan–Oct (10).
     expect(screen.getAllByTestId('january-divider')).toHaveLength(1)
     expect(screen.getAllByTestId('monthly-year').map((y) => [y.textContent, y.style.gridColumn])).toEqual([

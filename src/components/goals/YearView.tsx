@@ -63,7 +63,7 @@ export function YearView({ yearData, today, block = null }: Props) {
             {reachedByKm !== null && <OutcomePill tone="pos" className="self-center">{t.goals.reached(formatKm(reachedByKm))}</OutcomePill>}
           </p>
           <div className="relative h-2 rounded-full bg-[var(--surface-2)]">
-            <div className="h-full rounded-full bg-accent" data-testid="goal-fill" style={{ width: `${annualProgress}%` }} />
+            <div className="h-full rounded-full bg-[var(--data-done)]" data-testid="goal-fill" style={{ width: `${annualProgress}%` }} />
             {projectedPercent !== null && projection && (
               <span
                 role="img"

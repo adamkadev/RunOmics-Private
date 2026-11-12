@@ -81,7 +81,7 @@ function Legend({ weeks }: { weeks: number }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-border py-3 text-xs text-muted-foreground" data-testid="dynamics-legend">
       <span className="flex min-w-0 items-center gap-2">
-        <span aria-hidden="true" className="h-2.5 w-4 shrink-0 rounded-full border border-accent" style={{ background: USUAL_PILL_FILL }} />
+        <span aria-hidden="true" className="h-2.5 w-4 shrink-0 rounded-full border border-[var(--data-done)]" style={{ background: USUAL_PILL_FILL }} />
         <span className="truncate">{d.usualRange(weeks)}</span>
       </span>
       <span className="flex shrink-0 items-center gap-2">

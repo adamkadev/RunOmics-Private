@@ -37,7 +37,7 @@ function TrendLine({ points, target }: { points: PredictionPoint[]; target: numb
     <div className="flex flex-col gap-1">
       <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block" aria-hidden>
         {target !== null && (
-          <line x1={0} x2={W} y1={y(target)} y2={y(target)} stroke="var(--accent)" strokeWidth="1" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+          <line x1={0} x2={W} y1={y(target)} y2={y(target)} stroke="var(--muted-foreground)" strokeWidth="1" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
         )}
         <path d={linePath(byDay, -(hi + pad), -(lo - pad), W, H)} fill="none" stroke="var(--foreground)" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />
       </svg>
@@ -110,6 +110,18 @@ function RaceDayForm({ form }: { form: FormForecast }) {
   )
 }
 
+export function NoRace() {
+  return (
+    <div className="flex flex-col gap-3.5">
+      <h1 className="text-display text-foreground">{t.race.title}</h1>
+      <section className={cardClass({ className: 'flex flex-col gap-1.5' })} data-testid="race-none">
+        <CardTitle as="h2">{t.race.noneTitle}</CardTitle>
+        <p className="text-sm text-muted-foreground text-pretty">{t.race.none}</p>
+      </section>
+    </div>
+  )
+}
+
 export function RaceView({ data }: { data: RacePageData }) {
   const r = t.race
   const { race, distanceKm, daysUntil, predictedSeconds, targetSeconds, pb, trend, estimate, form } = data
@@ -127,7 +139,7 @@ export function RaceView({ data }: { data: RacePageData }) {
   return (
     <div className="flex flex-col gap-3.5">
       <header className="flex flex-col gap-1">
-        <span className={cn(EYEBROW_CLASS, 'text-accent-text')} data-testid="race-eyebrow">
+        <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="race-eyebrow">
           {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare' })} · {t.profile.hub.inDays(daysUntil)}
         </span>
         <h1 className="break-words text-display text-foreground text-pretty">{race.name}</h1>

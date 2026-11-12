@@ -6,6 +6,7 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 import { AnalyticsClient, type AnalyticsBoardData } from '../AnalyticsClient'
+import { weekBarFill } from '../VolumeTab'
 
 const TODAY = '2026-09-26'
 const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
@@ -154,11 +155,10 @@ describe('Analytics (v4.5)', () => {
   it('reads each tab over its own period, and says which', async () => {
     await renderBoard()
     const s = t.analytics.cards.coachRead
-    const words = t.analytics.cards.period.words
     const coach = () => screen.getByTestId('coach-read')
     const headline = () => screen.getByTestId('coach-read-headline').textContent
     // Load, at its 4 weeks: steady load inside its range, so the card's own sentence.
-    expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.fitness))
+    expect(coach().textContent).toContain(s.eyebrow)
     expect(coach().getAttribute('data-tone')).toBe('muted')
     expect(headline()).toBe(t.analytics.cards.loadTrend.steady(t.analytics.cards.loadTrend.today).join(''))
     // Outside the tab panel: it stays put across a switch.
@@ -167,7 +167,7 @@ describe('Analytics (v4.5)', () => {
     // Performance, at its 12 weeks: easy pace faster, threshold and the predictions slower; Garmin's two estimates
     // share a vote, so it reads mixed and names each side.
     await openTab(t.analytics.tabs.performance, 'predictions-card')
-    expect(coach().textContent).toContain(s.eyebrow(words['12w']!, t.analytics.tabs.performance))
+    expect(coach().textContent).toContain(s.eyebrow)
     expect(headline()).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
     fireEvent.click(screen.getByTestId('coach-read-why'))
     const sheet = screen.getByRole('dialog')
@@ -183,13 +183,13 @@ describe('Analytics (v4.5)', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     // The period control is the read's period too.
     fireEvent.click(screen.getByRole('radio', { name: '4 weeks' }))
-    expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.performance))
+    expect(coach().textContent).toContain(s.eyebrow)
 
     // Volume: its own claim, the plan first. Every week made its 44 km plan,
     // this one already; the 16 km long run, over 35% of 40-42 km in every
     // finished week, leads the case.
     await openTab(t.analytics.tabs.volume, 'weekly-card')
-    expect(coach().textContent).toContain(s.eyebrow(words['12w']!, t.analytics.tabs.volume))
+    expect(coach().textContent).toContain(s.eyebrow)
     expect(headline()).toBe(s.volumeTab.onPlan(12, 12))
     expect(coach().getAttribute('data-tone')).toBe('pos')
     fireEvent.click(screen.getByTestId('coach-read-why'))
@@ -202,10 +202,8 @@ describe('Analytics (v4.5)', () => {
     expect(coach().getAttribute('data-tone')).toBe('pos')
   })
 
-  it('dates the header range by the period chosen, as the coach eyebrow names it', async () => {
+  it('dates the header range by the period chosen', async () => {
     await renderBoard()
-    const s = t.analytics.cards.coachRead
-    const words = t.analytics.cards.period.words
     const cases = [
       { tab: 'fitness', card: 'form-card', ranges: ['Aug 30 – Sep 26, 2026', 'Jul 5 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
       { tab: 'volume', card: 'weekly-card', ranges: ['Aug 31 – Sep 26, 2026', 'Jul 6 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
@@ -216,7 +214,6 @@ describe('Analytics (v4.5)', () => {
         fireEvent.click(screen.getByRole('radio', { name: t.analytics.cards.period.words[period] }))
         expect(screen.getByRole('radio', { checked: true }).textContent).toBe(t.analytics.cards.period.short[period])
         expect(screen.getByTestId('analytics-range').textContent).toBe(ranges[i])
-        expect(screen.getByTestId('coach-read').textContent).toContain(s.eyebrow(words[period]!, t.analytics.tabs[tab]))
       }
     }
   })
@@ -314,7 +311,7 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'predictions-card')
     const card = screen.getByTestId('predictions-card')
-    expect(screen.getByTestId('predictions-race').textContent).toBe('10K race: Nov 29 · 64 days')
+    expect(screen.getByTestId('predictions-race').textContent).toBe('10 km race: Nov 29 · 64 days')
     expect(card.textContent).not.toMatch(/\d\.\d{3}/)
     expect(screen.getByTestId('predictions-sentence').textContent).toContain('off your 40:00 target')
     // The gap itself in bold, a caution off the target, as Goals colours it.
@@ -408,12 +405,11 @@ describe('Analytics (v4.5)', () => {
     expect(bars.children).toHaveLength(12)
     expect(screen.getAllByTestId('plan-tick')).toHaveLength(12)
     expect(bars.querySelectorAll('[data-current]')).toHaveLength(1)
-    // The athlete's own weeks in the accent: full at or above plan (90%), 40% under it.
     const done = [...bars.querySelectorAll<HTMLElement>('[data-on-plan]:not([data-current])')]
     expect(done.length).toBeGreaterThan(0)
-    for (const bar of done) expect(bar.style.background).toBe('var(--accent)')
+    for (const bar of done) expect(bar.style.background).toBe('var(--data-done)')
     const current = bars.querySelector<HTMLElement>('[data-current]')!
-    expect(current.style.background).toMatch(/var\(--accent\)/)
+    expect(current.style.background).toBe('var(--accent)')
     expect(current.style.outline).toBe('1.5px dashed var(--accent)')
     // The one weekly average, as a stat with its unit.
     expect(screen.getByTestId('weekly-card').textContent).toContain(`26${t.analytics.cards.weekly.underAvg(12)}`)
@@ -537,6 +533,14 @@ describe('the v4.5 colour rules', () => {
     for (const [file, src] of sources) expect(src, file).not.toMatch(/var\(--good\)/)
   })
 
+  it('fills a week against its plan in the done ink, below it an outline, this week in the accent', () => {
+    const row = (km: number, planKm: number | null) => ({ week: '2026-09-07', km, planKm, current: false, point: null })
+    expect(weekBarFill(row(30, 30), false, true)).toBe('var(--data-done)')
+    expect(weekBarFill(row(10, 30), false, true)).toBeNull()
+    expect(weekBarFill(row(10, null), false, false)).toBe('var(--data-done)')
+    expect(weekBarFill(row(10, 30), true, true)).toBe('var(--accent)')
+  })
+
   it('gives no card its own period pills or date arrows', () => {
     for (const [file, src] of sources) {
       expect(src, file).not.toMatch(/ChartWindowNav|PeriodNav|ChevronLeft/)
@@ -568,10 +572,9 @@ describe('a week with nothing run (v4.6)', () => {
       </>,
     )
     expect(within(screen.getByTestId('weekly-bars')).getAllByTestId('empty-week')).toHaveLength(1)
-    // Without a plan every week is the dark accent: nothing to be on.
     const done = [...screen.getByTestId('weekly-bars').querySelectorAll<HTMLElement>('[style*="background"]:not([data-current])')]
     expect(done.length).toBeGreaterThan(0)
-    for (const bar of done) expect(bar.style.background).toBe('color-mix(in srgb, var(--accent) 40%, var(--background))')
+    for (const bar of done) expect(bar.style.background).toBe('var(--data-done)')
     expect(within(screen.getByTestId('long-run-bars')).getAllByTestId('empty-week')).toHaveLength(1)
     expect(within(screen.getByTestId('zone-bars')).getAllByTestId('empty-week')).toHaveLength(1)
   })

@@ -18,13 +18,15 @@ function dayStyle(day: SheetDay): CSSProperties {
   return {}
 }
 
+const HIT_TINT = 'color-mix(in srgb, var(--pos) 18%, transparent)'
+
 function RunsChip({ row, target }: { row: SheetRow; target: number }) {
   if (row.status === 'future') return <span className="justify-self-center text-[11px] text-subtle">–</span>
   const chip = 'justify-self-center whitespace-nowrap rounded-[7px] px-1.5 py-[3px] text-[11px] font-semibold tabular-nums'
   if (row.status === 'hit') {
     return (
-      <span className={chip} style={{ background: 'color-mix(in srgb, var(--accent) 18%, transparent)' }} data-status="hit">
-        <span className="inline-flex items-center gap-0.5 text-accent-text">
+      <span className={chip} style={{ background: HIT_TINT }} data-status="hit">
+        <span className="inline-flex items-center gap-0.5 text-[var(--pos)]">
           {row.runs}
           <Check size={10} strokeWidth={3} aria-hidden className="shrink-0" />
         </span>
@@ -162,8 +164,8 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
             </p>
           </div>
           <span
-            className={cn('shrink-0 rounded-full px-3 py-1 text-[13px] font-semibold', hit ? 'text-accent-text' : 'bg-[var(--fill-3)] text-muted-foreground')}
-            style={hit ? { background: 'color-mix(in srgb, var(--accent) 18%, transparent)' } : undefined}
+            className={cn('shrink-0 rounded-full px-3 py-1 text-[13px] font-semibold', hit ? 'text-[var(--pos)]' : 'bg-[var(--fill-3)] text-muted-foreground')}
+            style={hit ? { background: HIT_TINT } : undefined}
             data-testid="week-status"
           >
             {hit ? s.hit : sheet.status === 'under' ? s.under : s.current}

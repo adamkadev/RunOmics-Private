@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { AthleteStats } from '@/components/profile/ProfileAthleteStats'
 import { FitnessAgeCard } from '@/components/profile/FitnessAgeCard'
 import { ProfileHrZones, windowTotalLabel, zoneSegments } from '@/components/profile/ProfileHrZones'
+import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { t } from '@/i18n'
 
 const z = t.profile.trainingZones
@@ -110,11 +111,19 @@ describe('ProfileHrZones table', () => {
   const recent = [{ zone: 2, seconds: 125 * 60, percent: 0 }]
 
   it('labels Zone, Pace, HR and Time as their own columns', () => {
-    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
+    const paceZones = { thresholdPaceSecPerKm: 270, zones: [{ hrZone: 2, paceMinSecPerKm: 330, paceMaxSecPerKm: 360 }] } as TrainingZonesData
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} paceZones={paceZones} />)
     const header = screen.getByTestId('zone-columns')
     for (const column of [z.columnZone, z.columnPace, z.columnHr, z.columnTime]) {
       expect(within(header).getByText(column)).toBeInTheDocument()
     }
+  })
+
+  it('leaves out the pace column when no zone has a pace', () => {
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
+
+    expect(within(screen.getByTestId('zone-columns')).queryByText(z.columnPace)).toBeNull()
+    expect(screen.getByTestId('zone-row-3').textContent).not.toContain('-')
   })
 
   it('reads each zone\'s share after its time, not under the bar', () => {

@@ -7,8 +7,9 @@ import { paceAxis } from '@/lib/chartAxis'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatClock, formatPace } from '@/lib/formatters'
 
-/** The athlete's own runs, so the line is the accent; the record line stays neutral. */
-const ROUTE_LINE = 'var(--accent)'
+/** Measured against the record line, so a neutral ink; only this run's dot takes the accent. */
+const ROUTE_LINE = 'var(--data-done)'
+const THIS_RUN = 'var(--accent)'
 
 export interface SimilarRunPoint {
   id: string
@@ -27,7 +28,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !p) return null
   return (
     <TooltipCard label={p.label}>
-      <p className="text-sm text-accent-text">
+      <p className="text-sm text-foreground">
         {formatPace(p.pace)}
       </p>
     </TooltipCard>
@@ -49,8 +50,8 @@ function RunDot({ cx, cy, payload, onSelect }: DotProps) {
       cx={cx}
       cy={cy}
       r={isCurrent ? 5.5 : 3.5}
-      fill={isCurrent ? ROUTE_LINE : 'var(--card)'}
-      stroke={ROUTE_LINE}
+      fill={isCurrent ? THIS_RUN : 'var(--card)'}
+      stroke={isCurrent ? THIS_RUN : ROUTE_LINE}
       strokeWidth={2}
       onClick={isCurrent ? undefined : () => onSelect?.(id)}
       style={isCurrent ? undefined : { cursor: 'pointer' }}

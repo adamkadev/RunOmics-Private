@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CycleCheckpoint } from '@/application/usecases/GetCycleCheckpoint'
 import { checkpointCycle } from '@/domain/training/cycleCheckpoint'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatDateRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { checkpointView } from '../checkpointView'
 
@@ -35,5 +35,12 @@ describe('checkpointView', () => {
     expect(rows.lthr).toMatchObject({ delta: '−4 bpm', scored: false })
     expect(rows.fiveK).toMatchObject({ current: null, previous: '21:00', missing: t.checkpoint.noCheck })
     expect(rows.restingHr!.missing).toBe(t.checkpoint.nothingBefore)
+  })
+
+  it('says the cycle is new and dates it alone when there is nothing before it', () => {
+    const first = checkpointView({ ...DATA, volume: { kmPerWeek: { previous: null, current: 9 }, runsPerWeek: { previous: null, current: 3 } }, efficiency: null, easyHr: null, fiveK: null, thresholdPace: null, lthr: null, restingHr: null }, '2026-11-04')
+
+    expect(first.sections[0]!.rows[0]).toMatchObject({ previous: null, delta: null, missing: t.checkpoint.nothingBefore })
+    expect(first.range).toBe(formatDateRange(DATA.cycle.current.start, DATA.cycle.current.end))
   })
 })

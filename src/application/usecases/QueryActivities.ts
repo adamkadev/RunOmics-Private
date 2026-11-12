@@ -1,3 +1,4 @@
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getActivities } from './GetActivities'
 import { toActivitySummary } from '@/domain/activity/summary'
 import { queryRuns, type RunQuery } from '@/domain/activity/activityQuery'
@@ -21,5 +22,6 @@ export function queryActivities({ offset = 0, limit = 20, ...query }: ActivityQu
   const page = sorted.slice(offset, offset + limit)
   const nextOffset = offset + limit < sorted.length ? offset + limit : null
 
-  return { items: page.map(toActivitySummary), total: sorted.length, nextOffset }
+  const hasLthr = !!getAthleteProfile().lthrBpm
+  return { items: page.map((a) => toActivitySummary(a, hasLthr)), total: sorted.length, nextOffset }
 }

@@ -19,6 +19,7 @@ function activity(overrides: Partial<Activity> = {}): Activity {
     paceSecPerKm: 300,
     avgHeartRate: 150,
     rpe: 4,
+    aerTrainingEffect: 3.1,
     hrZones: [{ zone: 2, seconds: 3000 }],
     week: 202630,
     elevationGain: 40,

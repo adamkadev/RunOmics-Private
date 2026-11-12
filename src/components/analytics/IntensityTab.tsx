@@ -14,6 +14,8 @@ import { weekLabels } from './VolumeTab'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 const hours = (sec: number) => formatKm(sec / 3600, 1)
+const partTime = (sec: number) => (sec < 3600 ? `${Math.round(sec / 60)} ${t.units.min}` : t.analytics.cards.period.hours(hours(sec)))
+const PART_COLUMNS = ['grid-cols-1', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3']
 
 /** Heart-rate zones are categories: the one zone scale, Z1 to Z5. */
 const ZONE_COLOR = ([1, 2, 3, 4, 5] as SessionZone[]).map(zoneColor)
@@ -31,6 +33,8 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
     { label: s.hard, sec: view.hardSec, pct: view.hardPct, color: ZONE_COLOR[3]! },
   ]
   const shown = parts.filter((p) => p.sec > 0)
+  // A part under half a minute would read "0 min": it stays in the bar and leaves the figures.
+  const listed = parts.filter((p) => Math.round(p.sec / 60) > 0)
   return (
     <Card className="gap-3.5" testId="easy-hard-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
@@ -41,14 +45,14 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
         ))}
         <div className="absolute -inset-y-[5px] w-0.5 -translate-x-1/2 rounded-[1px] bg-foreground" style={{ left: `${EASY_TARGET_PCT}%` }} aria-hidden data-testid="easy-target" />
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        {parts.map((p) => (
+      <div className={cn('grid gap-4', PART_COLUMNS[listed.length])}>
+        {listed.map((p) => (
           <span key={p.label} className="flex min-w-0 flex-col gap-0.5">
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span aria-hidden className="size-[7px] shrink-0 rounded-[2px]" style={{ background: p.color }} />
               {p.label}
             </span>
-            <b className="text-[15px] font-semibold text-foreground">{s.part(hours(p.sec), p.pct)}</b>
+            <b className="text-[15px] font-semibold text-foreground">{s.part(partTime(p.sec), p.pct)}</b>
           </span>
         ))}
       </div>
@@ -252,7 +256,7 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
   if (!view || view.avg === null) return null
   const { totals } = view
   // "of 10 planned · 1 extra", beside the done count.
-  const note = [totals.planned !== null ? s.ofPlanned(totals.planned) : null, totals.extra > 0 && totals.planned !== null ? s.extra(totals.extra) : null]
+  const note = [totals.planned ? s.ofPlanned(totals.planned) : null, totals.extra > 0 && totals.planned ? s.extra(totals.extra) : null]
     .filter(Boolean)
     .join(' · ')
   const squares = view.weeks.map(weekSquare)
@@ -284,7 +288,7 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
             <span
               key={rows[i]!.week}
               data-state={sq.state}
-              className={cn('box-border flex h-[22px] items-center justify-center text-[11px] font-semibold text-accent-foreground', rows.length > 20 ? 'rounded-[3px]' : 'rounded-[6px]')}
+              className={cn('box-border flex h-[22px] items-center justify-center text-[11px] font-semibold text-[var(--zone-ink)]', rows.length > 20 ? 'rounded-[3px]' : 'rounded-[6px]')}
               style={sq.style}
             >
               {sq.count > 1 && rows.length <= 20 ? sq.count : null}

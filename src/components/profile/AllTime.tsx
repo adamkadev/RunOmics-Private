@@ -187,7 +187,7 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
                       data-month={m.key}
                       data-best={isBest || undefined}
                       className="block w-full rounded-[3px]"
-                      style={{ height: px(m.km), background: m.year !== view.currentYear ? 'var(--band)' : 'var(--accent)' }}
+                      style={{ height: px(m.km), background: m.year !== view.currentYear ? 'var(--band)' : 'var(--data-done)' }}
                     />
                   )}
                 </div>

@@ -13,6 +13,7 @@ import {
   longRunView,
   MISSED_CLUSTER,
   missedClusters,
+  openingPeriod,
   paceShift,
   predictionRows,
   predictionTone,
@@ -262,6 +263,13 @@ describe('D3 Volume', () => {
   })
 })
 
+describe('openingPeriod', () => {
+  it('opens a 12-week tab on 4 weeks while fewer than 4 of them have runs', () => {
+    expect(openingPeriod('12w', mondays(3).map((d) => week(d, { distanceKm: 5 })), TODAY)).toBe('4w')
+    expect(openingPeriod('12w', mondays(4).map((d) => week(d, { distanceKm: 5 })), TODAY)).toBe('12w')
+  })
+})
+
 describe('D4 Intensity', () => {
   const window = weekWindow(TODAY, '4w')
   const zones = (easy: number, mod: number, hard: number) => ({ 1: 0, 2: easy * 3600, 3: mod * 3600, 4: hard * 3600, 5: 0 })
@@ -278,6 +286,11 @@ describe('D4 Intensity', () => {
     const view = zonesView(rows)!
     expect(view.hard).toEqual({ lo: 25, hi: 25 })
     expect(view.total).toBe('grew')
+  })
+
+  it('has no quality card when nothing was run or planned', () => {
+    const plan = window.weeks.map((d) => ({ week: d, planKm: null, planQuality: 0 }))
+    expect(qualityView(weekRows(window.weeks.map((d) => week(d)), plan, window, TODAY), plan)).toBeNull()
   })
 
   it("marks the plan's quality sessions not run as missed, never in the week under way", () => {

@@ -8,7 +8,7 @@ import type { CoachNotes } from './coachNotes'
 function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-1.5 border-t border-border py-3 first:border-t-0 first:pt-1">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-text">{label}</h3>
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{label}</h3>
       {children}
     </section>
   )

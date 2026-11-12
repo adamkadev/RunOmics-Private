@@ -28,7 +28,7 @@ function StreakCard({ view }: { view: ConsistencyView }) {
     <section className={cardClass({ className: 'flex flex-col gap-3.5' })} data-testid="consistency-streak">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className={cn(EYEBROW_CLASS, 'text-accent-text')}>{c.streakEyebrow}</span>
+          <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{c.streakEyebrow}</span>
           <p className="flex items-baseline gap-1.5">
             <span className="text-[44px] font-bold leading-[1.05] tracking-[-0.03em] tabular-nums text-foreground" data-testid="streak-weeks">
               {view.streakWeeks}
@@ -87,6 +87,12 @@ export function dotGeometry(columns: number): { dot: number; step: number; pitch
   return { dot, step, pitch: dot + dot / 3 }
 }
 
+/** Null is a week under target: an outline only, since a dark fill disappears on the dark card. */
+export function runDotFill(week: Pick<ConsistencyWeek, 'onTarget' | 'current'>): string | null {
+  if (week.current) return 'var(--accent)'
+  return week.onTarget ? 'var(--data-done)' : null
+}
+
 function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; selected: string | null; onSelect: (week: string) => void }) {
   const c = t.consistency
   const { weeks, target } = view
@@ -124,7 +130,7 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
           data-testid="target-line"
         />
         {weeks.map((week, i) => {
-          const fill = week.onTarget || week.current ? 'var(--accent)' : 'var(--band)'
+          const fill = runDotFill(week)
           const open = () => onSelect(week.start)
           return (
             <g
@@ -157,7 +163,22 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
                 data-testid={selected === week.start ? 'week-selected' : undefined}
               />
               {Array.from({ length: week.runs }, (_, k) => (
-                <rect key={`r${k}`} x={x(i)} y={y(k)} width={dot} height={dot} rx={dot / 3} fill={fill} data-testid="run-dot" />
+                fill ? (
+                  <rect key={`r${k}`} x={x(i)} y={y(k)} width={dot} height={dot} rx={dot / 3} fill={fill} data-testid="run-dot" />
+                ) : (
+                  <rect
+                    key={`r${k}`}
+                    x={x(i) + 0.5}
+                    y={y(k) + 0.5}
+                    width={dot - 1}
+                    height={dot - 1}
+                    rx={dot / 3}
+                    fill="none"
+                    stroke="var(--data-done)"
+                    vectorEffect="non-scaling-stroke"
+                    data-testid="run-dot"
+                  />
+                )
               ))}
               {Array.from({ length: week.planned }, (_, k) => (
                 <rect
@@ -206,11 +227,11 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11.5px] text-muted-foreground" data-testid="consistency-legend">
         <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <span className="flex items-center gap-1">
-            <span aria-hidden className="size-2 rounded-[2px] bg-accent" />
+            <span aria-hidden className="size-2 rounded-[2px] bg-[var(--data-done)]" />
             {c.legend.onTarget(target)}
           </span>
           <span className="flex items-center gap-1">
-            <span aria-hidden className="size-2 rounded-[2px] bg-[var(--band)]" />
+            <span aria-hidden className="box-border size-2 rounded-[2px] border border-[var(--data-done)]" />
             {c.legend.under}
           </span>
           <span className="flex items-center gap-1">

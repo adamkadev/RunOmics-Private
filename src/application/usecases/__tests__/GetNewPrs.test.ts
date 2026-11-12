@@ -52,7 +52,7 @@ describe('getNewPrs', () => {
       '5k': { seconds: 1200, activityId: 'old' },
     })
 
-    expect(prs).toEqual([{ key: '5k', label: '5K', seconds: 1150, activityId: 'new', date: '2026-07-20' }])
+    expect(prs).toEqual([{ key: '5k', label: '5 km', seconds: 1150, activityId: 'new', date: '2026-07-20' }])
   })
 
   it('says nothing when the distance was matched but not beaten', async () => {
@@ -98,7 +98,7 @@ describe('getNewPrs', () => {
       { '5k': { seconds: 1200, activityId: 'old' } }
     )
 
-    expect(prs).toEqual([{ key: '5k', label: '5K', seconds: 1140, activityId: 'best', date: '2026-03-01' }])
+    expect(prs).toEqual([{ key: '5k', label: '5 km', seconds: 1140, activityId: 'best', date: '2026-03-01' }])
   })
 
   it('leaves a never-run distance out of the stored state entirely', async () => {

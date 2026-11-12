@@ -16,7 +16,7 @@ describe('WearBar', () => {
       unmount()
       return bg
     }
-    expect(fill(530)).toBe('var(--accent)')
+    expect(fill(530)).toBe('var(--data-done)')
     expect(fill(699)).toBe('var(--warn)')
     expect(fill(1200)).toBe('var(--warn)')
   })

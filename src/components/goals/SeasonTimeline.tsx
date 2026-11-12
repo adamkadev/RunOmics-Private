@@ -207,7 +207,7 @@ export function SeasonTimeline({ yearData, today, block }: { yearData: YearData;
       <div className="flex items-baseline justify-between gap-3">
         <h2 className={TITLE}>{s.season.title}</h2>
         {tally && (
-          <span className={cn('text-xs', tally.hit > 0 ? 'text-accent-text' : 'text-muted-foreground')} data-testid="season-tally">
+          <span className={cn('text-xs', tally.hit > 0 ? 'text-[var(--pos)]' : 'text-muted-foreground')} data-testid="season-tally">
             {s.season.targetsHit(tally.hit, tally.total)}
           </span>
         )}

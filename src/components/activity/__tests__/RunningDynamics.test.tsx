@@ -39,8 +39,8 @@ describe('RunningDynamics', () => {
     // The pill runs 1.00-1.08 on a 0.96-1.14 track.
     const band = bar.children[1] as HTMLElement
     expect(parseFloat(band.style.left)).toBeCloseTo(22.22, 1)
-    expect(band.className).toContain('border-accent')
-    expect(band.style.background).toContain('var(--accent)')
+    expect(band.className).toContain('border-[var(--data-done)]')
+    expect(band.style.background).toBe('var(--data-done-soft)')
     expect(card.textContent).toContain('0.96')
     expect(card.textContent).toContain('1.14')
     // A shorter stride than usual is the amber way.

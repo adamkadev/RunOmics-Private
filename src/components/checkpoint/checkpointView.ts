@@ -215,6 +215,8 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
         }
 
   const built = sections(data)
+  const compared = built.some((section) => section.rows.some((r) => r.previous !== null))
+  const current = formatDateRange(cycle.current.start, cycle.current.end)
   const scored = built.flatMap((section) => section.rows).filter((r) => r.scored && r.delta !== null)
   const summary = scored.length > 0
     ? { good: scored.filter((r) => r.tone === 'good').length, worse: scored.filter((r) => r.tone === 'worse').length, flat: scored.filter((r) => r.tone === 'flat').length }
@@ -222,7 +224,7 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
 
   return {
     eyebrow,
-    range: s().against(formatDateRange(cycle.current.start, cycle.current.end), formatDateRange(cycle.previous.start, cycle.previous.end)),
+    range: compared ? s().against(current, formatDateRange(cycle.previous.start, cycle.previous.end)) : current,
     status,
     summary,
     sections: built,

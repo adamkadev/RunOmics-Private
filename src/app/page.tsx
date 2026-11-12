@@ -85,7 +85,7 @@ export default async function DashboardPage() {
       <CheckInCard today={today}>
         <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
-        <ThisWeekCard target={weekTarget} today={today} sessionKinds={sessionKinds} load={recentLoad?.reading ?? null} />
+        <ThisWeekCard target={weekTarget} today={today} sessionKinds={sessionKinds} />
       </CheckInCard>
     </div>
   )

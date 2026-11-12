@@ -6,6 +6,25 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Sparse data never shows a zero as a result: the checkpoint says "New" where the previous cycle had no run, a
+  quality-sessions card with nothing done and nothing planned is hidden, easy vs hard reads short times in minutes
+  and hides a part that rounds to nothing, and the run list only counts zone time with an LTHR or a Training Effect
+  (a max-HR-only watch read easy runs as Z3). The Race page without a race keeps its title and says how to add one;
+  the zones table drops an empty pace column; Records folds the distances without a record into one line, with one
+  set of distance labels. Analytics opens a 12-week tab on 4 weeks when fewer than 4 of them have runs.
+- French: "Allures" for the splits tab and card, "tu" throughout Consistency, "+1 an", a capitalised month title, no
+  "touche pour ouvrir" hint, and the coach eyebrow reads "Lecture du coach" alone.
+- The accent colours the interface and your footprint, no longer data judged against a target. Selected tabs,
+  buttons, today and the current week or month stay in the accent, and so do the heat map, routes, streak dots and
+  Home runs. What compares with a plan or a target (volume bars, monthly km, goal bars, the usual-range band, rep
+  ticks, the fastest split) is drawn in a neutral ink, below plan as an outline, and eyebrows follow status: green,
+  amber, red or grey. Each accent stops looking like a data colour: teal like "good" green, cyan like easy blue,
+  Heather like the strides pink.
+- The title bar's scroll edge is solid page ground down to the bar in dark too, as in light: rows no longer read
+  through it.
+- Today's readiness card sets Form, Fitness and Fatigue in a flat row under a hairline rather than tiles inside the
+  card; its eyebrow is green when ready, amber for caution and grey otherwise, never the accent. This week drops the load figure, which the readiness line already gives.
+- Week counters say which they count: "Block week 4 of 4", "Cycle week 5 of 12".
 - An activity's map is 70 pt shorter and its tabs sit right under the numbers, so each tab starts in the first
   screen; the session card with its chips moves to the top of Overview. Its eyebrow says the verdict once
   ("Solid threshold"), not "Strong session · Solid threshold".

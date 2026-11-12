@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-export const USUAL_PILL_FILL = 'color-mix(in srgb, var(--accent) 35%, transparent)'
+export const USUAL_PILL_FILL = 'var(--data-done-soft)'
 
 /** Band and marker are positions from 0 to 1 along the track. */
 export function RangeBar({
@@ -31,7 +31,7 @@ export function RangeBar({
         />
         {band && (
           <div
-            className={scale ? 'absolute top-[3px] h-2.5 rounded-full border border-accent' : 'absolute top-1 h-2 rounded-full'}
+            className={scale ? 'absolute top-[3px] h-2.5 rounded-full border border-[var(--data-done)]' : 'absolute top-1 h-2 rounded-full'}
             data-testid="range-band"
             style={{
               left: `${clamp(band[0]) * 100}%`,

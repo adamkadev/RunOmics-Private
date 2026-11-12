@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { activeDaysInYear, dayLevel } from '@/components/consistency/consistencyRamp'
 import { consistencyView, parseRange, sheetMonths, shiftMonth, weekSheet, type ConsistencyInput, type ConsistencyRange, type ConsistencyView } from '@/components/consistency/consistencyView'
-import { Consistency, dotGeometry } from '@/components/consistency/Consistency'
+import { Consistency, dotGeometry, runDotFill } from '@/components/consistency/Consistency'
 import { t } from '@/i18n'
 
 const run = (date: string, km = 8, seconds = 2400) => ({ date, distanceKm: km, durationSeconds: seconds })
@@ -135,6 +135,7 @@ describe('Consistency', () => {
   it('states the streak, this week against three and the window', () => {
     render(<Consistency views={views} today={TODAY} />)
     expect(screen.getByTestId('streak-weeks').textContent).toBe('9')
+    expect(screen.getByText(t.consistency.streakEyebrow).className).toContain('text-muted-foreground')
     expect(screen.getByText(t.consistency.streakRule(3, 9))).toBeTruthy()
     const thisWeek = screen.getByTestId('consistency-this-week')
     expect(thisWeek.querySelectorAll('[data-filled]')).toHaveLength(0)
@@ -142,14 +143,16 @@ describe('Consistency', () => {
     expect(screen.getByTestId('consistency-stats').textContent).toContain('12/13')
   })
 
-  it('draws a dot a run, on target in the accent, under it grey, the sessions to come dashed', () => {
+  it('draws a dot a run, on target in the done ink, under it an outline, the sessions to come dashed', () => {
     render(<Consistency views={views} today={TODAY} />)
     expect(screen.getAllByTestId('week-column')).toHaveLength(14)
     expect(screen.getAllByTestId('run-dot')).toHaveLength(RUNS.length)
     expect(screen.getAllByTestId('planned-dot')).toHaveLength(2)
     const under = screen.getAllByTestId('week-column')[3]!
-    expect(under.querySelector('[data-testid="run-dot"]')!.getAttribute('fill')).toBe('var(--band)')
-    expect(screen.getAllByTestId('week-column')[0]!.querySelector('[data-testid="run-dot"]')!.getAttribute('fill')).toBe('var(--accent)')
+    expect(under.querySelector('[data-testid="run-dot"]')!.getAttribute('fill')).toBe('none')
+    expect(under.querySelector('[data-testid="run-dot"]')!.getAttribute('stroke')).toBe('var(--data-done)')
+    expect(screen.getAllByTestId('week-column')[0]!.querySelector('[data-testid="run-dot"]')!.getAttribute('fill')).toBe('var(--data-done)')
+    expect(runDotFill({ onTarget: true, current: true })).toBe('var(--accent)')
     expect(screen.getByTestId('target-line')).toBeTruthy()
     expect(screen.getByTestId('streak-underline')).toBeTruthy()
   })

@@ -221,12 +221,12 @@ describe('ProgressHub (3.0)', () => {
     expect(screen.getByTestId('projection-tick').getAttribute('style')).toContain('var(--warn)')
   })
 
-  it('tags the newest record NEW in the accent, its time in text ink', () => {
+  it('tags the newest record NEW in the good-status green, its time in text ink', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const labels = screen.getAllByTestId('latest-record')
     expect(labels).toHaveLength(1)
     expect(labels[0]!.textContent).toBe(t.profile.hub.newRecord)
-    expect(labels[0]!.className).toContain('text-accent-text')
+    expect(labels[0]!.className).toContain('text-[var(--pos)]')
     expect(screen.getByTestId('records').textContent).toContain(t.profile.hub.recordLabels.half)
   })
 

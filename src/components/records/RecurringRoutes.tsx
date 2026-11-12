@@ -32,7 +32,7 @@ function compactDate(isoDate: string, thisYear: number): string {
 }
 
 const BAR_TONE = {
-  best: 'bg-accent',
+  best: 'bg-[var(--pos)]',
   latest: 'bg-foreground',
   other: 'bg-[var(--rest-bar)]',
 } as const
@@ -82,7 +82,7 @@ function BestAndLast({ route, thisYear }: { route: RecurringRoute; thisYear: num
       {latest?.kind === 'new-best' && (
         <>
           {' · '}
-          {r.newBest} <span className="text-accent-text">{compactDate(latest.date, thisYear)}</span>
+          {r.newBest} <span className="text-[var(--pos)]">{compactDate(latest.date, thisYear)}</span>
         </>
       )}
       {latest?.kind === 'behind' && (

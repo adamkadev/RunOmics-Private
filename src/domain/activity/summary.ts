@@ -7,7 +7,8 @@ export function zoneSeconds(hrZones: readonly Pick<HrZone, 'zone' | 'seconds'>[]
   return Array.from(seconds, (s) => Math.round(s ?? 0))
 }
 
-export function toActivitySummary(a: Activity): ActivitySummary {
+/** `athleteHasLthr`: zones count with an LTHR or a run's Training Effect, as docs/profiles.md sets out. */
+export function toActivitySummary(a: Activity, athleteHasLthr = false): ActivitySummary {
   return {
     id: a.id,
     date: a.date,
@@ -19,7 +20,8 @@ export function toActivitySummary(a: Activity): ActivitySummary {
     durationSeconds: a.durationSeconds,
     paceSecPerKm: a.paceSecPerKm,
     avgHeartRate: a.avgHeartRate,
-    zones: zoneSeconds(a.hrZones),
+    // Without either, the watch zones by max HR alone, which reads easy runs as Z3: no easy share from them.
+    zones: athleteHasLthr || a.aerTrainingEffect != null ? zoneSeconds(a.hrZones) : [],
     gearId: a.gearId,
     routeThumb: activityRouteThumb(a),
   }

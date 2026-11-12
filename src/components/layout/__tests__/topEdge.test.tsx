@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest'
  */
 const SRC = path.resolve(__dirname, '../../..')
 
-const LIGHT_OR_STUCK = ':is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck]))'
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -55,50 +54,26 @@ describe('the top edge (v4.8)', () => {
     expect(css).not.toMatch(/\[data-bar-shown\][^{]*\.edge-sampler/)
   })
 
-  it("grows the scroll edge by a stuck strip, its fade still the last 30 pt", () => {
-    const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
-    const start = css.indexOf('.scroll-edge {')
-    const rule = css.slice(start, css.indexOf('}', start))
-    expect(rule).toContain('--edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-fade))')
-    expect(rule).toContain('--edge-shift: var(--sticky-h, 0px)')
-    expect(rule).toContain('height: calc(var(--edge-base) + var(--edge-shift))')
-    expect(css).toMatch(/--bar-h:\s+68px/)
-    expect(css).toMatch(/--edge-fade:\s+30px/)
-    for (const n of [1, 2, 3, 4]) {
-      const at = css.indexOf(`.scroll-edge > i:nth-child(${n}) {`)
-      const layer = css.slice(at, css.indexOf('}', at))
-      // A bare percentage of the whole edge would start the fade under the bar.
-      expect(layer).toContain('calc(var(--edge-shift) + var(--edge-base) *')
-      expect(layer).not.toMatch(/(#000|transparent\)?) \d+%/)
-    }
-  })
-
-  it("draws light's edge solid to the bar's foot, blurred only in its 24 pt fade", () => {
+  it("draws the edge solid to the bar's foot in both themes, a stuck strip's height lower, blurred only in its 24 pt band", () => {
     const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
     const rule = (selector: string) => {
-      selector = selector.replaceAll('LIGHT_OR_STUCK', LIGHT_OR_STUCK)
       const at = css.indexOf(`${selector} {`)
       expect(at, selector).toBeGreaterThan(-1)
       return css.slice(at, css.indexOf('}', at))
     }
+    expect(css).toMatch(/--bar-h:\s+68px/)
     expect(css).toMatch(/--edge-band:\s+24px/)
-    const edge = rule('LIGHT_OR_STUCK .scroll-edge')
+    const edge = rule('.scroll-edge')
     expect(edge).toContain('--edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-band))')
+    expect(edge).toContain('--edge-shift: var(--sticky-h, 0px)')
     expect(edge).toContain('--edge-solid: calc(var(--edge-shift) + var(--safe-top) + var(--bar-h))')
-    const blur = rule('LIGHT_OR_STUCK .scroll-edge > i:nth-child(1)')
+    expect(edge).toContain('height: calc(var(--edge-base) + var(--edge-shift))')
+    const blur = rule('.scroll-edge > i:nth-child(1)')
     expect(blur).toContain('backdrop-filter: blur(6px)')
     expect(blur).toContain('mask-image: linear-gradient(transparent var(--edge-solid), #000 var(--edge-solid), transparent)')
-    expect(rule('LIGHT_OR_STUCK .scroll-edge > i:nth-child(2),\n  LIGHT_OR_STUCK .scroll-edge > i:nth-child(3)')).toContain('display: none')
-    expect(rule('LIGHT_OR_STUCK .scroll-edge > i:nth-child(4)')).toContain('background: linear-gradient(var(--background) var(--edge-solid), transparent)')
-  })
-
-  it("gives dark light's edge while a glass strip is stuck", () => {
-    const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
-    expect(css).toContain(`${LIGHT_OR_STUCK} .scroll-edge {`)
-    expect(LIGHT_OR_STUCK).toContain('[data-stuck]')
-    const bar = readFileSync(path.join(SRC, 'components/ui/StickyBar.tsx'), 'utf8')
-    expect(bar).toContain("data-stuck={stuck ? '' : undefined}")
-    expect(bar).toContain('data-testid="sticky-bar"')
+    expect(rule('.scroll-edge > i:nth-child(2),\n  .scroll-edge > i:nth-child(3)')).toContain('display: none')
+    expect(rule('.scroll-edge > i:nth-child(4)')).toContain('background: linear-gradient(var(--background) var(--edge-solid), transparent)')
+    expect(css).not.toMatch(/html:not\(\.dark\)[^{]*\.scroll-edge/)
   })
 
   it('starts the compact title bar under the strip', () => {

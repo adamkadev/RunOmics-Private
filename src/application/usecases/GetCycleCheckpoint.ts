@@ -171,7 +171,10 @@ export function buildCycleCheckpoint(inputs: CheckpointInputs, today: string): C
   const past = activities.filter((activity) => day(activity) <= today)
 
   const firstRun = past.reduce<string | null>((first, activity) => (first === null || day(activity) < first ? day(activity) : first), null)
-  const counted = pairOf(countedWeeks(cycle.previous, firstRun), countedWeeks(ratedWindow(cycle.current, cycle.completeWeeks), firstRun))
+  const windows = pairOf(countedWeeks(cycle.previous, firstRun), countedWeeks(ratedWindow(cycle.current, cycle.completeWeeks), firstRun))
+  // A cycle without a run is a break, not a result to compare with.
+  const ranBefore = past.some((activity) => windows.previous !== null && inWindow(activity.date, windows.previous.window))
+  const counted = ranBefore ? windows : pairOf(null, windows.current)
   const previousRates = perWeek(past, counted.previous)
   const currentRates = perWeek(past, counted.current)
 
@@ -220,7 +223,7 @@ export function buildCycleCheckpoint(inputs: CheckpointInputs, today: string): C
     thresholdPace: datedPair(thresholdPaces, cycle),
     lthr: datedPair(lthrs, cycle),
     restingHr: inputs.restingHr.length > 0 ? pairOf(meanRestingHr(inputs.restingHr, cycle.previous), meanRestingHr(inputs.restingHr, read)) : null,
-    ctl: past.length > 0 ? pairOf(ctlOn(cycle.previous.end), ctlOn(cycle.asOf)) : null,
+    ctl: past.length > 0 ? pairOf(ranBefore ? ctlOn(cycle.previous.end) : null, ctlOn(cycle.asOf)) : null,
   }
 }
 

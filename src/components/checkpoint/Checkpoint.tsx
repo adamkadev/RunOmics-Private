@@ -76,7 +76,7 @@ export function Checkpoint({ view }: { view: CheckpointPageView }) {
   return (
     <div className="flex flex-col gap-3.5">
       <header className="flex flex-col gap-1">
-        <span className={cn(EYEBROW_CLASS, 'text-accent-text')} data-testid="checkpoint-eyebrow">{view.eyebrow}</span>
+        <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="checkpoint-eyebrow">{view.eyebrow}</span>
         <h1 className="text-display text-foreground text-pretty">{t.checkpoint.title}</h1>
         <p className="text-sm text-muted-foreground text-pretty" data-testid="checkpoint-range">{view.range}</p>
       </header>

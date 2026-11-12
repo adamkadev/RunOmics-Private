@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import type { MonthGoal } from '@/application/usecases/GetGoalsData'
 import { cardClass } from '@/components/ui/Card'
 import { Legend, LegendItem } from '@/components/ui/Legend'
@@ -8,10 +9,11 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { monthInitials } from './monthInitials'
 
-/** The Analytics weekly bars' rule. */
-const MONTH_BAR: Record<'hit' | 'short', string> = {
-  hit: 'var(--accent)',
-  short: 'color-mix(in srgb, var(--accent) 40%, transparent)',
+/** The Analytics weekly bars' rule: a short month is an outline only, since a dark fill disappears on the dark card. */
+const DONE = 'var(--data-done)'
+const MONTH_BAR: Record<'hit' | 'short', CSSProperties> = {
+  hit: { background: DONE },
+  short: { border: `1.5px solid ${DONE}` },
 }
 
 /** Neutral ink, so the rule reads over both the card ground and a bar. */
@@ -96,10 +98,10 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
                 />
               )}
               <div
-                className="absolute inset-x-0 bottom-0 rounded-[4px]"
+                className="absolute inset-x-0 bottom-0 box-border rounded-[4px]"
                 title={title}
                 data-status={hit ? 'hit' : 'short'}
-                style={{ height: pct(mg.actualKm, scaleMax), minHeight: mg.actualKm > 0 ? 2 : 0, background: MONTH_BAR[hit ? 'hit' : 'short'] }}
+                style={{ height: pct(mg.actualKm, scaleMax), minHeight: mg.actualKm > 0 ? 3 : 0, ...MONTH_BAR[hit ? 'hit' : 'short'] }}
               />
             </div>
           )
@@ -118,8 +120,8 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
       </div>
 
       <Legend>
-        <LegendItem swatch="square" color={MONTH_BAR.hit}>{m.hit}</LegendItem>
-        <LegendItem swatch="square" color={MONTH_BAR.short}>{m.short}</LegendItem>
+        <LegendItem swatch="square" color={DONE}>{m.hit}</LegendItem>
+        <LegendItem swatch="outline" color={DONE}>{m.short}</LegendItem>
         {current && current.status !== 'pending' && (
           <LegendItem swatch="dashRing" color="var(--accent)">
             <span data-testid="running-legend">{m.running(monthName(current.month), formatKm(current.actualKm), m.pace[current.status])}</span>

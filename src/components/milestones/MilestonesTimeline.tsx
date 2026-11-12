@@ -37,7 +37,7 @@ export function NextUpCard({ next }: { next: NextMilestone[] }) {
   if (next.length === 0) return null
   return (
     <section className={cardClass({ className: 'space-y-3 py-3.5' })} data-testid="milestones-next-up">
-      <h2 className={cn(EYEBROW_CLASS, 'text-accent-text')}>{t.records.milestones.nextUp}</h2>
+      <h2 className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{t.records.milestones.nextUp}</h2>
       {next.map((m) => (
         <div key={m.kind} className="space-y-1.5">
           <div className="flex items-baseline justify-between gap-3">
@@ -52,7 +52,7 @@ export function NextUpCard({ next }: { next: NextMilestone[] }) {
             aria-valuenow={Math.round(m.progress * 100)}
             className="h-1.5 overflow-hidden rounded-full bg-[var(--track)]"
           >
-            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, m.progress * 100)}%` }} />
+            <div className="h-full rounded-full bg-[var(--data-done)]" style={{ width: `${Math.min(100, m.progress * 100)}%` }} />
           </div>
         </div>
       ))}

@@ -18,7 +18,7 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
   return (
     <section className={cardClass({ className: 'space-y-3 py-3.5' })} data-testid="return-progress-card">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className={cn(EYEBROW_CLASS, 'text-accent-text')}>{r.cardTitle}</h2>
+        <h2 className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{r.cardTitle}</h2>
         <span className="text-xs text-muted-foreground">{r.since(formatDate(progress.firstDayBack, { now }))}</span>
       </div>
 
@@ -48,7 +48,7 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
                   <li key={week.weekStart} className="flex max-w-9 flex-1 flex-col items-stretch gap-1" title={label} aria-label={label} data-testid="return-week">
                     <span className="flex items-end" style={{ height: BAR_AREA_PX }} aria-hidden>
                       <span
-                        className={cn('block w-full rounded-t-[4px]', minutes === 0 ? 'bg-[var(--track)]' : i === weeks.length - 1 ? 'bg-accent' : 'bg-accent/45')}
+                        className={cn('block w-full rounded-t-[4px]', minutes === 0 ? 'bg-[var(--track)]' : i === weeks.length - 1 ? 'bg-accent' : 'bg-[var(--data-done)]')}
                         style={{ height: minutes > 0 ? Math.max(4, (week.runningSec / peak) * BAR_AREA_PX) : 2 }}
                       />
                     </span>

@@ -90,7 +90,7 @@ const TITLE_BASELINE = 50
 /** The header's height when the title takes one line. */
 const HEADER_BASE = 79
 const TITLE_SIZES = [19, 18, 17, 16] as const
-/** The reps' result, in the accent, under the date line: the header grows by its height. Under the title's size, so the workout stays the headline. */
+/** Under the title's size, so the workout stays the headline; the header grows by its height. */
 const RESULT_SIZES = [16, 15, 14] as const
 const RESULT_GAP = 22
 const RESULT_H = 24
@@ -289,7 +289,7 @@ function drawHeader(ctx: Ctx, { activity, fonts, place, palette }: ShareCardScen
     setSpacing(ctx, -0.02 * size)
     if (ctx.measureText(result).width <= max) break
   }
-  ctx.fillStyle = palette.acc
+  ctx.fillStyle = palette.pos
   ctx.fillText(fit(ctx, result, max), PAD_X, last + 18 + RESULT_GAP)
   setSpacing(ctx, 0)
 }
