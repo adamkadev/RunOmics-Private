@@ -34,8 +34,8 @@ const f = (over: Partial<HeatFilters> = {}): HeatFilters => ({ years: [], types:
 describe('activeFilterCount', () => {
   it('counts the narrowed filters, not the ticks', () => {
     expect(activeFilterCount(f())).toBe(0)
-    expect(activeFilterCount(f({ types: ['Race', 'Tempo'] }))).toBe(1)
-    expect(activeFilterCount(f({ types: ['Race'], years: ['2026', '2025'] }))).toBe(2)
+    expect(activeFilterCount(f({ types: ['races', 'workouts'] }))).toBe(1)
+    expect(activeFilterCount(f({ types: ['races'], years: ['2026', '2025'] }))).toBe(2)
   })
 })
 
@@ -54,14 +54,17 @@ describe('matchesFilters', () => {
   })
 
   it('takes any of several types or years', () => {
-    expect(matchesFilters(meta({ kind: 'Tempo' }), f({ types: ['Race', 'Tempo'] }))).toBe(true)
-    expect(matchesFilters(meta({ kind: 'Base' }), f({ types: ['Race', 'Tempo'] }))).toBe(false)
+    expect(matchesFilters(meta({ kind: 'Tempo' }), f({ types: ['races', 'workouts'] }))).toBe(true)
+    expect(matchesFilters(meta({ kind: 'Base' }), f({ types: ['races', 'workouts'] }))).toBe(false)
+    // The list's groups: a long run is easy running, a VO2 Max session a workout.
+    expect(matchesFilters(meta({ kind: 'LongRun' }), f({ types: ['easy'] }))).toBe(true)
+    expect(matchesFilters(meta({ kind: 'VO2Max' }), f({ types: ['workouts'] }))).toBe(true)
     expect(matchesFilters(meta({ year: '2025' }), f({ years: ['2026', '2025'] }))).toBe(true)
   })
 
   it('combines year and type (both must match)', () => {
-    expect(matchesFilters(meta({ year: '2026', kind: 'Base' }), f({ years: ['2026'], types: ['Base'] }))).toBe(true)
-    expect(matchesFilters(meta({ year: '2026', kind: 'Base' }), f({ years: ['2026'], types: ['Race'] }))).toBe(false)
+    expect(matchesFilters(meta({ year: '2026', kind: 'Base' }), f({ years: ['2026'], types: ['easy'] }))).toBe(true)
+    expect(matchesFilters(meta({ year: '2026', kind: 'Base' }), f({ years: ['2026'], types: ['races'] }))).toBe(false)
   })
 })
 

@@ -1,4 +1,8 @@
-import type { FilterKind } from "@/domain/activity/listKind";
+import { FILTER_GROUPS, type FilterGroup } from "@/components/activities/activityFilter";
+
+/** The Activities list's chips: Easy, Workouts, Races, "All" being none ticked. */
+export type RunGroup = Exclude<FilterGroup, "all">;
+export const RUN_GROUPS: readonly RunGroup[] = ["easy", "workouts", "races"];
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
@@ -7,7 +11,7 @@ import { formatDecimal } from "@/lib/formatters";
 /** None ticked is "All". */
 export interface HeatFilters {
   years: readonly string[];
-  types: readonly FilterKind[];
+  types: readonly RunGroup[];
 }
 
 export const NO_HEAT_FILTERS: HeatFilters = { years: [], types: [] };
@@ -15,7 +19,7 @@ export const NO_HEAT_FILTERS: HeatFilters = { years: [], types: [] };
 export function matchesFilters(meta: Pick<RouteMeta, 'kind' | 'year'> | undefined, filters: HeatFilters): boolean {
   if (!meta) return false;
   if (filters.years.length > 0 && !filters.years.includes(meta.year)) return false;
-  if (filters.types.length > 0 && !filters.types.includes(meta.kind)) return false;
+  if (filters.types.length > 0 && !filters.types.some((group) => (FILTER_GROUPS[group] as readonly string[]).includes(meta.kind))) return false;
   return true;
 }
 

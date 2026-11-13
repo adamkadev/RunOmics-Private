@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Maximize, Minimize, SlidersHorizontal } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import { kindLabel, SHEET_ORDER } from "@/components/activities/activityFilter";
+import { FILTER_GROUPS } from "@/components/activities/activityFilter";
 import { areaForCluster } from "@/domain/explore/areaForCluster";
 import { medianStart } from "@/domain/explore/home";
 import { circleOf } from "@/domain/explore/avoidSpots";
@@ -52,6 +52,7 @@ import {
   matchesFilters,
   NO_HEAT_FILTERS,
   reachKm,
+  RUN_GROUPS,
   type HeatFilters,
 } from "./mapUtils";
 
@@ -206,7 +207,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.kind));
-    return SHEET_ORDER.filter((kind) => present.has(kind));
+    return RUN_GROUPS.filter((group) => FILTER_GROUPS[group].some((kind) => present.has(kind)));
   }, [routeMeta]);
 
   const rows = useMemo(() => areaRows(clusters, routeMeta, filters), [clusters, routeMeta, filters]);
@@ -328,7 +329,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     const s = t.pages.map.territory;
     if (!territory) return null;
     const { types, years } = filters;
-    const typeLabel = types.length === 1 ? kindLabel(types[0]!) : types.length > 1 ? t.pages.map.filters.types(types.length) : null;
+    const typeLabel = types.length === 1 ? t.activities.groups[types[0]!] : types.length > 1 ? t.pages.map.filters.types(types.length) : null;
     const eyebrow = [
       place ?? s.homeArea,
       ...(typeLabel ? [typeLabel] : []),
