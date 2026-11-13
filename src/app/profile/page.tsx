@@ -11,6 +11,7 @@ import { getCycleCheckpoint } from '@/application/usecases/GetCycleCheckpoint'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
+import { getReprise } from '@/application/usecases/GetReprise'
 import { ProgressHub } from '@/components/profile/ProgressHub'
 import { ExploredCard } from '@/components/explore/ExploredCard'
 import { HomeRunsTile } from '@/components/homeRuns/HomeRunsTile'
@@ -46,6 +47,7 @@ export default async function ProfilePage() {
     streakWeeks: getWeeklyStreakData(new Date(`${today}T12:00:00`))?.currentWeeks ?? 0,
     shoes: data.shoes,
     coaching: getCoachingOverview(today),
+    repriseSince: getReprise(today)?.since ?? null,
   })
 
   // Only the summaries reach the page: no home, no tracks. The area run in last leads.

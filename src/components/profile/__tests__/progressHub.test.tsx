@@ -119,6 +119,14 @@ describe('progressHubView', () => {
     // Without Garmin's value, the latest sample to date.
     expect(progressHubView({ ...INPUT, vo2max: { ...INPUT.vo2max, value: null } }).vo2max!.value).toBe(55)
   })
+
+  it('drops the grade and starts the streak strip at the return during a reprise', () => {
+    const graded = { ...INPUT, vo2Grade: { letter: 'B-', topPercent: 55 } }
+    expect(progressHubView(graded).vo2max!.grade).toEqual({ letter: 'B-', topPercent: 55 })
+    const reprise = progressHubView({ ...graded, repriseSince: '2026-09-10' })
+    expect(reprise.vo2max!.grade).toBeNull()
+    expect(reprise.consistency.strip.map((week) => week.monday)).toEqual(['2026-09-07', '2026-09-14', '2026-09-21'])
+  })
 })
 
 describe('the hub helpers', () => {
