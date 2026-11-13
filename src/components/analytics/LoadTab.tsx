@@ -173,7 +173,7 @@ function LoadCard({
           <span className="text-[22px] font-bold leading-tight tabular-nums" style={{ color: ratioOut ? WARN : undefined }} data-testid="load-ratio">
             {formatDecimal(view.ratio, 2)}
           </span>
-          <span className="text-[11.5px] text-muted-foreground">{t.analytics.cards.loadTrend.ratioSafe(SAFE_RATIO_LO, SAFE_RATIO_HI)}</span>
+          <span className="text-[11.5px] text-muted-foreground">{t.analytics.cards.loadTrend.ratioSafe(formatDecimal(SAFE_RATIO_LO, 1), formatDecimal(SAFE_RATIO_HI, 1))}</span>
         </div>
         {ramp !== null && (
           <div className="flex min-w-0 flex-col gap-0.5">

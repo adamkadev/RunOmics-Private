@@ -7,6 +7,7 @@ import { addDays, isoDate } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 import { AnalyticsClient, type AnalyticsBoardData } from '../AnalyticsClient'
 import { weekBarFill } from '../VolumeTab'
+import { ZoneKey } from '../IntensityTab'
 
 const TODAY = '2026-09-26'
 const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
@@ -479,6 +480,11 @@ describe('Analytics (v4.5)', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'a year' }))
     expect(figures().slice(0, 2)).toEqual([['Z1', '26.0 h'], ['Z2', '156 h']])
   })
+
+  it('leaves out a zone the window never reached', () => {
+    render(<ZoneKey zoneHours={[1, 4, 2, 0, 0]} held={false} windowHours={[1, 4, 2, 0, 0]} />)
+    expect(screen.getAllByTestId('zone-key-item').map((item) => item.firstElementChild!.textContent)).toEqual(['Z1', 'Z2', 'Z3'])
+  })
 })
 
 describe('the trends the watch syncs', () => {
@@ -790,7 +796,7 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({})
     expect(screen.getByTestId('load-trend-value').textContent).toBe('412')
     expect(screen.getByTestId('load-ratio').textContent).toBe('1.13')
-    expect(screen.getByTestId('load-card').textContent).toContain(t.analytics.cards.loadTrend.ratioSafe(0.8, 1.3))
+    expect(screen.getByTestId('load-card').textContent).toContain(t.analytics.cards.loadTrend.ratioSafe('0.8', '1.3'))
   })
 
   it('says the load is in range today in the coach read, and the days above it as earlier ones', async () => {

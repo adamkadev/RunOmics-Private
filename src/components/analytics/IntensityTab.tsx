@@ -61,10 +61,12 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
 }
 
 /** In a stacked week Z3 and Z4 read as one colour, so each zone is named with its hours. */
-function ZoneKey({ zoneHours, held }: { zoneHours: number[]; held: boolean }) {
+/** A zone the window never reached is left out: "Z5 0.0 h" reads as a result. */
+export function ZoneKey({ zoneHours, held, windowHours }: { zoneHours: number[]; held: boolean; windowHours: number[] }) {
+  const shown = windowHours.flatMap((hours, z) => (hours > 0 ? [z] : []))
   return (
     <div className="grid grid-cols-5 gap-2" data-testid="zone-key" data-held={held || undefined}>
-      {ZONE_COLOR.map((color, z) => (
+      {shown.map((z) => ({ z, color: ZONE_COLOR[z]! })).map(({ z, color }) => (
         <span key={z} className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground" data-testid="zone-key-item">
           <LegendItem swatch="square" color={color}>
             {t.trainingZones.zoneNumber(z + 1)}
@@ -134,7 +136,7 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
       </ChartScrub>
       <div className="flex flex-col gap-2.5">
         <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
-        <ZoneKey zoneHours={held !== null && view.weeks[held] ? view.weeks[held]!.hours : view.zoneHours} held={held !== null} />
+        <ZoneKey zoneHours={held !== null && view.weeks[held] ? view.weeks[held]!.hours : view.zoneHours} held={held !== null} windowHours={view.zoneHours} />
       </div>
     </Card>
   )
