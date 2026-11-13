@@ -32,6 +32,7 @@ export interface HomeRunSpot {
 export interface HomeRunsSummary {
   runCount: number
   firstDate: string
+  lastDate: string
   /** An SVG path of the spot's runs in a 100 × 100 box. */
   preview: string
 }
@@ -106,5 +107,5 @@ function previewPath(activities: readonly Activity[]): string {
 export function getHomeRunsSummary(): HomeRunsSummary | null {
   const spot = build().spots[0]
   if (!spot) return null
-  return { runCount: spot.activities.length, firstDate: spot.activities[0]!.date, preview: previewPath(spot.activities) }
+  return { runCount: spot.activities.length, firstDate: spot.activities[0]!.date, lastDate: spot.activities.at(-1)!.date, preview: previewPath(spot.activities) }
 }

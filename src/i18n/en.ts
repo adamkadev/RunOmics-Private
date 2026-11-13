@@ -1954,6 +1954,14 @@ export const en = {
       kmOfGoal: (km: string, goal: string) => `${km} / ${goal} km`,
       onPaceFor: (km: string) => `on pace for ${km} km`,
       better: (n: number) => `${n} better`,
+      // The checkpoint row: the cycle's week, then the checkpoint's date.
+      checkpointWeek: (week: number) => `week ${week} of 12`,
+      checkpointLine: (week: number, date: string) => `week ${week} of 12 · ${date}`,
+      newestRecord: (date: string) => `newest · ${date}`,
+      homeRunsDetail: (runs: string, date: string) => `${runs} · last ${date}`,
+      // The return row: the longest non-stop run since the break, and the next step of 10, 20 or 30 minutes.
+      comebackValue: (minutes: number) => `${minutes} min non-stop`,
+      comebackNext: (minutes: number) => `next: ${minutes} min`,
       streakValue: (weeks: number) => `${weeks}-week streak`,
       noStreakShort: 'no streak yet',
       recordCount: (n: number) => `${n} distance${n === 1 ? '' : 's'}`,
@@ -1966,7 +1974,6 @@ export const en = {
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half' } as Record<string, string>,
       // The record set most recently, tagged while it is new.
       newRecord: 'NEW',
-      newRecordLabel: 'new record',
       shoes: 'Shoes',
       consistency: 'Consistency',
       settings: 'Settings',
@@ -2003,7 +2010,6 @@ export const en = {
       openYears: 'Kilometres by year',
       // The Explored card: how much of the home area has been run, and the next quartier to run.
       explored: 'Explored',
-      exploredComplete: (done: number, total: number) => `${done} of ${total} district${total === 1 ? '' : 's'} complete`,
       // "Next: Borny · 12%", the name in ink. `pct` is formatted ("12%").
       exploredNext: (name: string, pct: string) => ({ lead: 'Next: ', name, tail: ` · ${pct}` }),
       exploredAllComplete: (total: number) => (total === 1 ? 'Your district is complete' : `All ${total} districts complete`),
