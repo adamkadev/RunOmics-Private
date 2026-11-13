@@ -34,7 +34,9 @@ export function PageHeader({
 } & { [data: `data-${string}`]: string | undefined }) {
   const indent = back ? cn(UNDER_TITLE, backOnPhoneOnly && 'lg:pl-0') : undefined
   return (
-    <header className={cn('flex flex-col', className)} {...rest}>
+    // 8 pt over the first line: a 44 pt button on the 41 pt title line, its glass edge included, clears the solid strip
+    // under the status bar (.edge-sampler), which ends where the page begins.
+    <header className={cn('flex flex-col pt-2', className)} {...rest}>
       {eyebrow && <div className={cn('mb-1', indent)}>{eyebrow}</div>}
       <div className="flex items-start gap-3">
         {back && <div className={cn('flex shrink-0 items-center', TITLE_LINE, backOnPhoneOnly && 'lg:hidden')}>{back}</div>}

@@ -159,9 +159,9 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
         },
       ],
     } as unknown as WorkoutPrescription
-    expect(shareActivity({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides).sessionTitle).toBe('Easy 54 min + 6 × 20s strides')
+    expect(shareActivity({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides).sessionTitle).toBe('Easy run 54 min + 6 × 20s strides')
     // The page's header reads the same name, the watch's only without a session.
-    expect(runName({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides)).toBe('Easy 54 min + 6 × 20s strides')
+    expect(runName({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides)).toBe('Easy run 54 min + 6 × 20s strides')
     expect(runName({ ...ACTIVITY, description: 'Strides 6 x 20s' }, null)).toBe('Strides 6 x 20s')
   })
 

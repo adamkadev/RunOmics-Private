@@ -68,9 +68,9 @@ function lowerFirst(words: string): string {
  * A coach-then-Garmin name ("Threshold 2 x 7:00 - 2x7'@4:25") keeps Garmin's half; other words follow the
  * set ("Strides 6 × 20s" reads "6 × 20s strides"); a name with no set stays whole.
  */
-/** "Easy Run", "Easy run · 45 min": the plan's one word for it, as the list and the naming rules write it ("Easy"). */
+/** "Easy", "Easy Run · 45 min": one form for the easy session's name, as Plan names it beside "Long run". */
 export function easyWord(name: string): string {
-  return name.replace(/^easy run(?=$|[\s·:,\-–—])/i, t.plan.kinds.easy)
+  return name.replace(/^easy(?:\s+run)?(?![\p{L}\d])(?!\s+run)/iu, t.plan.kinds.easy)
 }
 
 export function sessionLabel(title: string): string {

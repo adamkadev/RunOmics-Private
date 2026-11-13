@@ -12,7 +12,7 @@ describe('sessionLabel', () => {
   })
 
   it("drops the plan's distance from a name that only adds one, so the row's own km stands alone", () => {
-    expect(sessionLabel('Easy · 8 km')).toBe('Easy')
+    expect(sessionLabel('Easy · 8 km')).toBe('Easy run')
     expect(sessionLabel('Long run · 16.5 km')).toBe('Long run')
   })
 
@@ -74,9 +74,9 @@ describe('isWatchName', () => {
     expect(isWatchName('Easy run')).toBe(false)
   })
 
-  it('says "Easy run" as the plan\'s one word, "Easy"', () => {
-    expect(sessionLabel('Easy Run')).toBe('Easy')
-    expect(sessionLabel('Easy run')).toBe('Easy')
+  it('says the easy session one way, "Easy run"', () => {
+    expect(sessionLabel('Easy Run')).toBe('Easy run')
+    expect(sessionLabel('Easy run')).toBe('Easy run')
     expect(sessionLabel('Easy runner club')).toBe('Easy runner club')
     expect(isWatchName('Footing 4 × 6′')).toBe(false)
     expect(isWatchName('')).toBe(false)

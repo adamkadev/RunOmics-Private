@@ -2439,7 +2439,7 @@ export const en = {
     openPlanner: 'Open the weekly planner',
     // One reading of a session for Today, Plan and the bar (workoutSummary).
     session: {
-      stridesTitle: (bodyMin: number, reps: number, rep: string) => `Easy ${bodyMin} min + ${reps} × ${rep} strides`,
+      stridesTitle: (bodyMin: number, reps: number, rep: string) => `Easy run ${bodyMin} min + ${reps} × ${rep} strides`,
       seconds: (s: number) => `${s}s`,
       withRecovery: (reps: string, recovery: string) => `${reps} · ${recovery} rec`,
       repsOnly: (n: number) => `${n} reps`,
@@ -2482,7 +2482,8 @@ export const en = {
       title: 'Coming up',
     },
     // Plan's week: the phase card, the week row, the selected day.
-    kinds: { easy: 'Easy', long: 'Long run' },
+    // One form for both, as a session's name reads: "Easy run" beside "Long run".
+    kinds: { easy: 'Easy run', long: 'Long run' },
     typeLetters: {
       easy: 'E',
       long: 'L',

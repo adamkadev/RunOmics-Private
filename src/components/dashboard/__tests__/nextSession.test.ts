@@ -53,7 +53,7 @@ describe('sessionCard', () => {
       date: '2026-10-19',
       eyebrow: null,
       rest: null,
-      title: 'Easy',
+      title: 'Easy run',
       km: '10',
       detail: `1 ${t.units.hour} · ${t.dashboard.todayHero.hrCap(158)} ${t.units.bpm}`,
       phase: 'Base',
