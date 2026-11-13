@@ -17,6 +17,8 @@ const ATHLETE_PAGE_FIELDS = [
 
 export type AthletePageView = Pick<AthleteProfile, (typeof ATHLETE_PAGE_FIELDS)[number]>
 
-export function athletePageView(profile: AthleteProfile): AthletePageView {
-  return pickDefined(profile, ATHLETE_PAGE_FIELDS)
+/** The last measured resting HR, as Analytics shows it: the profile's is Garmin's zone setting, not a reading. */
+export function athletePageView(profile: AthleteProfile, measuredRestingHr?: number): AthletePageView {
+  const view = pickDefined(profile, ATHLETE_PAGE_FIELDS)
+  return measuredRestingHr === undefined ? view : { ...view, restingHrBpm: measuredRestingHr }
 }

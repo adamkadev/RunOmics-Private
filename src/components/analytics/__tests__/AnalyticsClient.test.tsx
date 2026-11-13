@@ -322,6 +322,7 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('vo2-link').textContent).toContain('55.0')
     expect(screen.getByTestId('performance-summary').textContent).toContain('−1.0 in 12 weeks')
     expect(screen.getByTestId('performance-summary').textContent).toContain(`4:23${t.units.perKm}`)
+    expect(screen.getByTestId('performance-summary').textContent).toContain(' since Jul 6')
     // Slower is amber, faster --good, by the same helper everywhere.
     for (const delta of screen.getAllByTestId('prediction-delta')) expect(delta.getAttribute('style')).toContain('var(--tone-caution)')
     // VO2max fell by 1 in 12 weeks: warn on the meaning line, the value stays ink.

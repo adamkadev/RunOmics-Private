@@ -155,7 +155,7 @@ export const en = {
     rangeLabel: 'Window',
     streakEyebrow: 'Weekly streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
-    streakRule: (target: number, best: number) => `${target}+ runs a week · best ${best}`,
+    streakRule: (target: number, best: number) => `${target}+ runs a week · best ${best}, all time`,
     thisWeek: 'This week',
     thisWeekRuns: (runs: number, target: number) => `${runs} of ${target}`,
     planned: (sessions: number) => `${sessions} planned`,
@@ -1018,6 +1018,8 @@ export const en = {
         threshold: 'Threshold pace',
         easyPace: 'Easy pace',
         in12w: (delta: string) => `${delta} in 12 weeks`,
+        // A change names its window, so it never reads as the checkpoint's own.
+        since: (note: string, date: string) => `${note} since ${date}`,
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
@@ -1962,7 +1964,8 @@ export const en = {
     },
     milestones: {
       distanceTier: (km: string) => `${km} km this year`,
-      streak: (weeks: number) => `${weeks}-week active streak`,
+      // Not the 3+ runs streak Consistency and the hub count: any run keeps it.
+      streak: (weeks: number) => `${weeks} active weeks in a row`,
       streakDetail: (since: string) => `Still going · a run logged every week since ${since}`,
       record: (label: string) => `${label} record`,
       firstActivity: 'First step',

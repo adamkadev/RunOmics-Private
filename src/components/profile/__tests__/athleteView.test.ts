@@ -48,4 +48,9 @@ describe('athletePageView', () => {
   it('leaves out a field the file does not have, rather than sending it as undefined', () => {
     expect(athletePageView({ lthrBpm: 170 })).toEqual({ lthrBpm: 170 })
   })
+
+  it('shows the last measured resting HR over the profile\'s zone setting', () => {
+    expect(athletePageView(PROFILE, 51).restingHrBpm).toBe(51)
+    expect(athletePageView(PROFILE).restingHrBpm).toBe(50)
+  })
 })

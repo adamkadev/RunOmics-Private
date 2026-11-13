@@ -9,6 +9,7 @@ import { appTodayIso, isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 import { athletePageView } from '@/components/profile/athleteView'
 import { loadData } from '@/application/usecases/LoadData'
+import { getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 
 export const revalidate = 3600
 
@@ -25,7 +26,7 @@ export default async function AthletePage() {
 
   return (
     <AthleteClient
-      athlete={athletePageView(athlete)}
+      athlete={athletePageView(athlete, getRecoveryHistory().at(-1)?.restingHr)}
       vo2Grade={getVo2Grade()}
       fitnessAge={getFitnessAge(today)}
       weeklyZoneTime={weeklyZoneTime}

@@ -157,7 +157,7 @@ export const fr = {
     rangeLabel: 'Période',
     streakEyebrow: 'Série hebdomadaire',
     weeks: (weeks: number) => (weeks > 1 ? 'semaines' : 'semaine'),
-    streakRule: (target: number, best: number) => `${target}+ sorties par semaine · record ${best}`,
+    streakRule: (target: number, best: number) => `${target}+ sorties par semaine · record ${best}, depuis le début`,
     thisWeek: 'Cette semaine',
     thisWeekRuns: (runs: number, target: number) => `${runs} sur ${target}`,
     planned: (sessions: number) => `${sessions} prévue${sessions > 1 ? 's' : ''}`,
@@ -958,6 +958,7 @@ export const fr = {
         threshold: 'Allure seuil',
         easyPace: 'Allure facile',
         in12w: (delta: string) => `${delta} en 12 semaines`,
+        since: (note: string, date: string) => `${note} depuis le ${date}`,
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
@@ -1819,7 +1820,7 @@ export const fr = {
     },
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
-      streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
+      streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} active${weeks > 1 ? 's' : ''} d’affilée`,
       // Reads before the milestone's date; a longer phrase is cut beside it.
       streakDetail: (since: string) => `En cours · chaque semaine depuis le ${since}`,
       record: (label: string) => `Record ${label}`,

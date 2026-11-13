@@ -32,7 +32,7 @@ describe('i18n parity', () => {
 
 describe('French week streaks', () => {
   it('reads one week in the singular', () => {
-    expect(fr.profile.milestones.streak(1)).toBe('1 semaine d’affilée')
+    expect(fr.profile.milestones.streak(1)).toBe('1 semaine active d’affilée')
   })
 
   it('reads the hub streak in the singular up to one week, the plural from two', () => {

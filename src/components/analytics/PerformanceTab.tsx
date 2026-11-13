@@ -97,8 +97,9 @@ export function timeLabels(dates: string[]): string[] {
 /** VO₂max's home is Athlete & zones: its stat here is a summary that opens it. */
 const VO2_HOME = '/athlete'
 
-function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null }) {
+function SummaryStrip({ vo2, threshold, easy, since }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null; since: string }) {
   const s = t.analytics.cards.summary
+  const dated = (note: string | null) => (note === null ? null : s.since(note, since))
   const cells = [
     vo2 && {
       label: s.vo2max,
@@ -123,11 +124,11 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       label: s.threshold,
       value: formatClock(threshold.now),
       unit: t.units.perKm,
-      note: thresholdWords(threshold.delta),
+      note: dated(thresholdWords(threshold.delta)),
       tone: threshold.delta !== null && Math.abs(Math.round(threshold.delta)) < THRESHOLD_FLAT_SEC ? STAT_TONE.flat : STAT_TONE[deltaTone('pace', threshold.delta)],
       href: null,
     },
-    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
+    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: dated(shiftWords(easy.delta, PACE_FLAT_SEC)), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
   ].filter((c) => !!c)
   if (!cells.length) return null
   return (
@@ -586,7 +587,7 @@ export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, 
   const workout = paceShift(inWindow, (w) => w.hardPace)
   return (
     <div className="flex flex-col gap-3.5">
-      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} />
+      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={bare(window.start)} />
       <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} />
       <PaceCurveCard runs={paceBests} window={window} period={period} threshold={threshold} onShift={onShift} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />
