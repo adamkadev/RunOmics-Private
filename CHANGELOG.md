@@ -25,6 +25,14 @@ All notable changes to this project are documented in this file.
   Athlete shows VO2max without grade or percentile, Analytics keeps the 5 km prediction alone, Today says when
   form will show, and Activities says how long the break was. A checkpoint after a cycle with under four weeks of
   running is a starting point, with no comparison.
+- **Follow-up layouts.** Progress is one grouped list under the race or block: a line and a value per page.
+  Plan's header card adds the cycle line that opens the checkpoint. Athlete's zones card gives ranges only, with how
+  they are set, and leaves time in zones to Analytics. Settings asks for the account once, in an Account card, and
+  names its accent swatches; the avatar on Today opens Settings. The share sheet puts its Route / Stats / Photo switch
+  above the preview and keeps one height. The route generator opens on where to tap, its buttons waiting for a route.
+- Smaller: quality sessions add up with "missed"; a run/walk is held to the run/walks on its route; comeback
+  milestones in date order; the retire-from-workouts tick only on a pair that carried a workout; an empty Race page
+  points to Races & goals as Goals does.
 - Copy: districts and vVO2max in English, spaced units ("14 h ago", "43 s", "1 h 40"), curly apostrophes, "Effort
   6/10" and "Compétitions" in French, clock times without "min".
 - Sparse data never shows a zero as a result: the checkpoint says "New" where the previous cycle had no run, a
