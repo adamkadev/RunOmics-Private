@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
+import { t } from '@/i18n'
 import { describe, expect, it, vi } from 'vitest'
 import { RouteGeneratorPanel, type RouteGeneratorPanelProps } from '../RouteGeneratorPanel'
 import type { AvoidSpot } from '@/domain/explore/avoidSpots'
@@ -50,6 +51,14 @@ const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
 })
 
 describe('RouteGeneratorPanel', () => {
+  it('opens on the tap-to-start prompt, with no buttons until there is a route', () => {
+    const base = props(avoidSpots(false))
+    render(<RouteGeneratorPanel {...base} start={{ ...base.start, waiting: true }} />)
+    expect(screen.getByTestId('route-pick-prompt')).toHaveTextContent(t.pages.map.explore.start.pickPrompt)
+    expect(screen.queryByRole('button', { name: 'Download GPX' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Regenerate' })).toBeNull()
+  })
+
   it('shrinks to the prompt and Cancel while a spot is being marked, leaving the map free to tap', () => {
     const { rerender } = render(<RouteGeneratorPanel {...props(avoidSpots(false))} />)
     rerender(<RouteGeneratorPanel {...props(avoidSpots(true))} />)

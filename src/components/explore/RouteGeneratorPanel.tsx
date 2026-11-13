@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useId, useRef, useState, type Ref } from 'react'
-import { ArrowDownToLine, Check, ChevronRight, Minus, Plus, Share2, X } from 'lucide-react'
+import { ArrowDownToLine, Check, ChevronRight, MapPin, Minus, Plus, Share2, X } from 'lucide-react'
 import { t } from '@/i18n'
 import { AVOID_LIMITS, AVOID_RADII_M, AVOID_REASONS, type AvoidReason } from '@/domain/explore/avoidSpots'
 import { climbBudget, type ClimbBudget, type SessionDay } from '@/domain/explore/climbBudget'
@@ -228,7 +228,7 @@ export function RouteGeneratorPanel({
   const onPlan = plan?.km != null && plan.km === distanceKm
   const reachKm = failure === 'tooFar' && minKm != null && minKm <= ROUTE_KM_MAX ? minKm : null
   const errorText = reachKm != null ? e.errors.tooFar(stepperKm(reachKm)) : failure ? failureMessage(failure) : null
-  const footnote = start.waiting ? e.start.pickPrompt : status === 'generating' ? e.generating : e.footnote
+  const footnote = start.waiting ? null : status === 'generating' ? e.generating : e.footnote
   const dash = '—'
   const statCells = [
     { label: e.distanceStat, value: ready ? km(stats.distanceKm) : dash },
@@ -272,6 +272,13 @@ export function RouteGeneratorPanel({
         </div>
 
         <div ref={listRef} className="-mx-[var(--sheet-pad)] mt-3.5 flex min-h-0 flex-col gap-3.5 overflow-y-auto px-[var(--sheet-pad)]" style={{ touchAction: 'pan-y' }}>
+          {/* The one thing to do first is the first line, not a footnote under two disabled buttons. */}
+          {start.waiting && (
+            <p className="flex items-center gap-2.5 text-[16px] font-semibold text-foreground" data-testid="route-pick-prompt">
+              <MapPin size={20} aria-hidden="true" className="shrink-0 text-accent-text" />
+              {e.start.pickPrompt}
+            </p>
+          )}
           {plan && (
             <button
               type="button"
@@ -427,7 +434,7 @@ export function RouteGeneratorPanel({
           )}
 
           {/* 1 : 1.4 shares of the room their labels leave, so a long French label takes what it needs first. */}
-          <div className="flex gap-2.5">
+          {!start.waiting && <div className="flex gap-2.5">
             {status === 'error' && reachKm != null ? (
               <Button
                 size="lg"
@@ -477,7 +484,7 @@ export function RouteGeneratorPanel({
                 <span className="truncate">{e.download}</span>
               </Button>
             )}
-          </div>
+          </div>}
 
           <p aria-live="polite" data-testid="route-footnote" className="text-center text-footnote leading-[18px] text-muted-foreground">
             {footnote}
