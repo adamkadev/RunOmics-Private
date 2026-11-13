@@ -1910,11 +1910,8 @@ export const fr = {
       nextUp: 'Prochaines étapes',
       toGo: (n: string) => `encore ${n}`,
     },
-    cols: { distance: 'Distance', best: 'Record', predicted: 'Prédit' },
+    cols: { distance: 'Distance', best: 'Record', predicted: 'Prédit', gap: 'Écart' },
     gapSeconds: (s: number) => `${s} s`,
-    faster: (gap: string) => `${gap} à portée`,
-    slower: (gap: string) => `${gap} plus lent`,
-    atPotential: 'à ton potentiel',
     allEfforts: (distance: string) => `Tous les efforts sur ${distance} ›`,
     topEfforts: (n: number, distance: string) => `Les ${n} meilleurs efforts sur ${distance} ›`,
     missing: (distances: string[], link: boolean) =>

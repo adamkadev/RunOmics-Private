@@ -43,16 +43,16 @@ describe('formatGap', () => {
 
 describe('predictionGap', () => {
   it('says how much faster the prediction is', () => {
-    expect(predictionGap(211, 206)).toEqual({ kind: 'faster', text: t.records.faster(t.records.gapSeconds(5)) })
-    expect(predictionGap(2650, 2547)).toEqual({ kind: 'faster', text: t.records.faster('1:43') })
+    expect(predictionGap(211, 206)).toEqual({ kind: 'faster', text: '−5 s' })
+    expect(predictionGap(2650, 2547)).toEqual({ kind: 'faster', text: '−1:43' })
   })
 
-  it('calls a prediction equal to the best to the second "at potential"', () => {
-    expect(predictionGap(345, 345.4)).toEqual({ kind: 'at', text: t.records.atPotential })
+  it('reads a prediction equal to the best to the second as no gap', () => {
+    expect(predictionGap(345, 345.4)).toEqual({ kind: 'at', text: '±0 s' })
   })
 
   it('says how much slower when the prediction trails the best', () => {
-    expect(predictionGap(1242, 1250)).toEqual({ kind: 'slower', text: t.records.slower(t.records.gapSeconds(8)) })
+    expect(predictionGap(1242, 1250)).toEqual({ kind: 'slower', text: '+8 s' })
   })
 })
 

@@ -2063,14 +2063,9 @@ export const en = {
       // Runs or km, the unit the milestone's own title already names.
       toGo: (n: string) => `${n} to go`,
     },
-    cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },
+    cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted', gap: 'Gap' },
     // A gap under a minute: "5s".
     gapSeconds: (s: number) => `${s} s`,
-    // A prediction is what could be run, not what was.
-    faster: (gap: string) => `${gap} within reach`,
-    slower: (gap: string) => `${gap} slower`,
-    // The prediction is the best to the second: run already at potential.
-    atPotential: 'at potential',
     allEfforts: (distance: string) => `All ${distance} efforts ›`,
     topEfforts: (n: number, distance: string) => `Top ${n} ${distance} efforts ›`,
     missing: (distances: string[], link: boolean) =>
