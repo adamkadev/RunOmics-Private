@@ -12,6 +12,8 @@ export interface RouteSpec {
   settledWhen?: string
   /** Also opens the share sheet and shoots each card design. */
   hasShareCard?: boolean
+  /** Waits for the network to go quiet: map tiles and the place name load after the page settles. */
+  networkIdle?: boolean
 }
 
 export const ROUTES: RouteSpec[] = [
@@ -19,9 +21,9 @@ export const ROUTES: RouteSpec[] = [
   { path: '/activities', name: 'activities' },
   { path: '/activities', name: 'activity-detail', firstLinkTo: '/activities/', hasTabs: true, settledWhen: '[data-route-drawn]', hasShareCard: true },
   // Straight to the view: /map's redirect drops the query and races the capture.
-  { path: '/activities?view=map', name: 'map' },
-  { path: '/activities?view=map&layer=districts', name: 'map-districts', settledWhen: '[data-testid="next-quartier-card"]' },
-  { path: '/activities?view=map&explore=route', name: 'map-route', settledWhen: '[data-testid="route-stats"]' },
+  { path: '/activities?view=map', name: 'map', networkIdle: true },
+  { path: '/activities?view=map&layer=districts', name: 'map-districts', networkIdle: true, settledWhen: '[data-testid="next-quartier-card"]' },
+  { path: '/activities?view=map&explore=route', name: 'map-route', networkIdle: true, settledWhen: '[data-testid="route-stats"]' },
   { path: '/plan', name: 'plan', hasTabs: true },
   { path: '/plan/checkpoint', name: 'plan-checkpoint' },
   { path: '/analytics', name: 'analytics', hasTabs: true },

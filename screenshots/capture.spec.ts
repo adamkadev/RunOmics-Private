@@ -109,6 +109,10 @@ async function gotoAndSettle(page: Page, url: string, route: RouteSpec, theme: T
       .catch(() => {})
   }
 
+  if (route.networkIdle) {
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
+  }
+
   if (route.settledWhen) {
     await page.locator(route.settledWhen).first().waitFor({ state: 'attached', timeout: 10_000 }).catch(() => {})
   }
