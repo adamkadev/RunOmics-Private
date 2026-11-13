@@ -254,7 +254,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       <div
         ref={trapRef}
         data-testid="share-sheet"
-        className={cn(glassClass('sheet'), 'flex max-h-full w-full max-w-md animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col rounded-t-[var(--radius-sheet-large)] rounded-b-none sm:rounded-[var(--radius-sheet-large)]')}
+        className={cn(glassClass('sheet'), 'flex h-full max-h-full w-full max-w-md animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col rounded-t-[var(--radius-sheet-large)] rounded-b-none sm:rounded-[var(--radius-sheet-large)]')}
         style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -281,6 +281,29 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <span />
           </div>
 
+          {/* The choice that changes the card most comes before it, not under it. */}
+          <div
+            role="radiogroup"
+            aria-label={s.designTitle}
+            // Equal segments come from SEGMENTED_FILL_SEGMENT_CLASS: a grid here loses
+            // to the track's own flex when the classes merge.
+            data-testid="share-designs"
+            className={cn(SEGMENTED_TRACK, 'w-full')}
+            style={{ marginTop: 10 }}
+          >
+            {designs.map((d) => (
+              <button
+                key={d}
+                type="button"
+                role="radio"
+                aria-checked={d === design}
+                onClick={() => setDesign(d)}
+                className={cn(segmentClass(d === design), SEGMENTED_FILL_SEGMENT_CLASS, 'h-[34px] text-[15px]')}
+              >
+                {s.designLabels[d]}
+              </button>
+            ))}
+          </div>
           <div
             data-testid="share-preview"
             className="relative shrink-0 self-center overflow-hidden"
@@ -316,28 +339,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             )}
           </div>
 
-          <div
-            role="radiogroup"
-            aria-label={s.designTitle}
-            // Equal segments come from SEGMENTED_FILL_SEGMENT_CLASS: a grid here loses
-            // to the track's own flex when the classes merge.
-            data-testid="share-designs"
-            className={cn(SEGMENTED_TRACK, 'w-full')}
-            style={{ marginTop: 14 }}
-          >
-            {designs.map((d) => (
-              <button
-                key={d}
-                type="button"
-                role="radio"
-                aria-checked={d === design}
-                onClick={() => setDesign(d)}
-                className={cn(segmentClass(d === design), SEGMENTED_FILL_SEGMENT_CLASS, 'h-[34px] text-[15px]')}
-              >
-                {s.designLabels[d]}
-              </button>
-            ))}
-          </div>
 
           <div data-testid="share-size" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
             <span className="text-foreground" style={{ fontSize: 17 }}>{s.sizeTitle}</span>
