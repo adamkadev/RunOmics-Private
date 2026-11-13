@@ -777,6 +777,23 @@ export const en = {
       // "↘ 2 in 7 days" under a tile: a rolling window, not the calendar week.
       deltaWeek: (n: number, days: number) => `${n} in ${days} days`,
       steady: (days: number) => `steady in ${days} days`,
+      // The headline's reason while load is in range, read from the days around today.
+      reason: {
+        rest: (session: string, weekday: string) => `Rest today, so ${weekday}’s ${session} starts fresh.`,
+        yesterday: (session: string) => `Yesterday’s ${session} load is still in your legs.`,
+        today: (session: string) => `Room for today’s ${session}: run it as planned.`,
+      },
+      sessionNoun: {
+        easy: 'easy run',
+        recovery: 'recovery run',
+        long_run: 'long run',
+        tempo: 'tempo',
+        threshold: 'threshold',
+        vo2max: 'VO₂max session',
+        anaerobic: 'anaerobic session',
+        sprint: 'sprint session',
+        race: 'race',
+      },
       // The card's words when no written verdict is in yet, from the load itself.
       fallback: {
         // The headline follows the form state the status line names: "fresh" only when form is above +5.
@@ -785,8 +802,8 @@ export const en = {
           body: `Load ${acute} has dipped below your ${lo}–${hi} safe range. Run today\u2019s session in full to bring it back up.`,
         }),
         in: (acute: number, lo: number, hi: number) => ({
-          headline: 'Load is right where it should be.',
-          body: `Load ${acute} sits inside your ${lo}–${hi} safe range. Keep to the plan.`,
+          headline: 'Nothing to change: keep to the plan.',
+          body: `Load ${acute}, inside your ${lo}–${hi} safe range.`,
         }),
         above: (acute: number, lo: number, hi: number) => ({
           headline: 'Load is running above your safe range.',
@@ -816,9 +833,16 @@ export const en = {
     },
     todayHero: {
       // The next-workout card: when, then the day.
-      today: 'Today',
       tomorrow: 'Tomorrow',
       hrCap: (bpm: number) => `≤ ${bpm}`,
+      // An easy session of run blocks split by walks, named for what it is: "Run/walk 4 × 6′".
+      runWalk: 'Run/walk',
+      restDay: 'Rest day',
+      // "No run today. Threshold tomorrow."
+      restLine: (session: string, when: string) => `No run today. ${session} ${when}.`,
+      restTomorrow: 'tomorrow',
+      restOn: (weekday: string) => `on ${weekday}`,
+      aRun: 'A run',
     },
     weeklyStreak: {
       // Each day's session by the coach's type, in the day's accessible name.
@@ -838,8 +862,7 @@ export const en = {
     },
     thisWeek: {
       title: 'This week',
-      runsLeft: (n: number) => `${n} run${n !== 1 ? 's' : ''} left`,
-      missed: 'missed',
+      runsLeft: (n: number) => `${n} left`,
       missedCount: (n: number) => `${n} missed`,
     },
     celebration: {

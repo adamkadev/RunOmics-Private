@@ -734,14 +734,31 @@ export const fr = {
       // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
       deltaWeek: (n: number, days: number) => `${n} en ${days} j`,
       steady: (days: number) => `stable en ${days} j`,
+      // Chaque nom porte son article : tous féminins, d’où « de la » dans les phrases.
+      reason: {
+        rest: (session: string, weekday: string) => `Repos aujourd’hui : ${session} de ${weekday} part sur des jambes fraîches.`,
+        yesterday: (session: string) => `La charge de ${session} d’hier est encore dans tes jambes.`,
+        today: (session: string) => `De la marge pour ${session} du jour : fais-la comme prévu.`,
+      },
+      sessionNoun: {
+        easy: 'la sortie facile',
+        recovery: 'la sortie de récup',
+        long_run: 'la sortie longue',
+        tempo: 'la séance tempo',
+        threshold: 'la séance seuil',
+        vo2max: 'la séance VO₂max',
+        anaerobic: 'la séance anaérobie',
+        sprint: 'la séance sprint',
+        race: 'la course',
+      },
       fallback: {
         below: (acute: number, lo: number, hi: number, fresh = false) => ({
           headline: fresh ? 'La fatigue est retombée. Il est temps de reconstruire.' : 'La charge est sous ta zone. Il est temps de reconstruire.',
           body: `La charge ${acute} est passée sous ta zone sûre ${lo}–${hi}. Fais la séance du jour en entier pour la remonter.`,
         }),
         in: (acute: number, lo: number, hi: number) => ({
-          headline: 'La charge est là où elle doit être.',
-          body: `La charge ${acute} est dans ta zone sûre ${lo}–${hi}. Suis le plan.`,
+          headline: 'Rien à changer : suis le plan.',
+          body: `Charge ${acute}, dans ta zone sûre ${lo}–${hi}.`,
         }),
         above: (acute: number, lo: number, hi: number) => ({
           headline: 'La charge dépasse ta zone sûre.',
@@ -769,9 +786,14 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
-      today: 'Aujourd’hui',
       tomorrow: 'Demain',
       hrCap: (bpm: number) => `≤ ${bpm}`,
+      runWalk: 'Course/marche',
+      restDay: 'Repos',
+      restLine: (session: string, when: string) => `Pas de course aujourd’hui. ${session} ${when}.`,
+      restTomorrow: 'demain',
+      restOn: (weekday: string) => weekday,
+      aRun: 'Une sortie',
     },
     weeklyStreak: {
       kinds: {
@@ -790,8 +812,7 @@ export const fr = {
     },
     thisWeek: {
       title: 'Cette semaine',
-      runsLeft: (n: number) => `${n} sortie${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''}`,
-      missed: 'manquée',
+      runsLeft: (n: number) => `${n} restante${n > 1 ? 's' : ''}`,
       missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
     },
     celebration: {

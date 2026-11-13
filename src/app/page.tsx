@@ -24,6 +24,7 @@ import { ThisWeekCard } from '@/components/dashboard/ThisWeekCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { getReturnProgress } from '@/application/usecases/GetReturnProgress'
 import { findNextSession, sessionCard } from '@/components/dashboard/nextSession'
+import { readinessReason } from '@/components/dashboard/readinessReason'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
 import { loadData } from '@/application/usecases/LoadData'
@@ -80,7 +81,13 @@ export default async function DashboardPage() {
       <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} today={today} />
       <StaleSyncBanner lastSyncedAt={lastSyncedAt} />
 
-      <ReadinessCard status={trainingStatus} verdict={aiVerdict} load={recentLoad?.reading ?? null} today={today} />
+      <ReadinessCard
+        status={trainingStatus}
+        verdict={aiVerdict}
+        load={recentLoad?.reading ?? null}
+        reason={readinessReason(today, coachWorkouts, plannedWorkouts, data.recentActivities, nextSession)}
+        today={today}
+      />
       <TodayBoard session={card && { ...card, heat }} />
       <CheckInCard today={today}>
         <Vo2GradeTodayRow view={getVo2Grade(today)} />

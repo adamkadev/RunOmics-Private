@@ -65,13 +65,13 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
 
   const MISSED = weekTarget([day('2026-10-19', { plannedKm: 8, plannedSessions: 1 }), ...DAYS.slice(1)], TODAY, null)
 
-  it('dashes a missed day in amber, keeps its km, keys it and counts it', () => {
+  it('dashes a missed day in amber, keeps its km and counts it beside the key, with no key of its own', () => {
     render(<ThisWeekCard target={MISSED} today={TODAY} />)
     expect(screen.getAllByTestId('week-bar')[0]!.getAttribute('style')).toContain('var(--warn)')
     const link = screen.getByTestId('missed-bar-link')
     expect(link).toHaveAttribute('href', '/plan?date=2026-10-19')
     expect(link.textContent).toBe('8')
-    expect(screen.getByTestId('legend-missed')).toBeInTheDocument()
+    expect(screen.queryByTestId('legend-missed')).toBeNull()
     expect(screen.getByTestId('week-footer-count').textContent).toBe(`${t.dashboard.thisWeek.runsLeft(3)} · ${t.dashboard.thisWeek.missedCount(1)}`)
   })
 
@@ -79,7 +79,7 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     skipped.set('2026-10-19', 'ill')
     render(<ThisWeekCard target={MISSED} today={TODAY} />)
     expect(screen.getAllByTestId('week-bar')[0]!.dataset.state).toBe('rest')
-    expect(screen.queryByTestId('legend-missed')).toBeNull()
+    expect(screen.queryByTestId('week-footer-count')).not.toHaveTextContent(t.dashboard.thisWeek.missedCount(1))
     expect(screen.queryByTestId('missed-bar-link')).toBeNull()
     skipped.clear()
   })
@@ -93,8 +93,11 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(bars.map((b) => [b.day.state, b.label])).toEqual([['done', null], ['done', '9.5']])
   })
 
-  it('hides the missed key when nothing is missed', () => {
-    render(<ThisWeekCard target={WEEK} today={TODAY} />)
-    expect(screen.queryByTestId('legend-missed')).toBeNull()
+  it('dims the letter of a rest day, not of a run or today', () => {
+    const { container } = render(<ThisWeekCard target={WEEK} today={TODAY} />)
+    const letters = [...container.querySelectorAll('[aria-hidden].grid-cols-7 > span')]
+    const states = screen.getAllByTestId('week-bar').map((bar) => bar.dataset.state)
+    letters.forEach((letter, i) => expect(letter.className.includes('opacity-40')).toBe(states[i] === 'rest' && !letter.className.includes('state-today')))
+    expect(states).toContain('rest')
   })
 })
