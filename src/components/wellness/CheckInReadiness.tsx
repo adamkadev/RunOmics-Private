@@ -34,9 +34,7 @@ export function CheckInReadiness({ today, words }: { today: string; words: Readi
     <>
       <p className="flex items-center gap-1.5 text-eyebrow uppercase" style={{ color }} data-testid="readiness-status" data-tone={tone}>
         <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />
-        <span>
-          {words.band ? `${words.band} · ${line}` : line}
-        </span>
+        <span>{words.band ? `${words.band} · ${line}` : line}</span>
       </p>
       {headline && (
         <div className="flex flex-col gap-2.5" data-testid="readiness-verdict" data-source={concern ? 'check-in' : 'load'}>

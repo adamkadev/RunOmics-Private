@@ -249,6 +249,8 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
 
 export interface CheckpointTileView {
   line: string
+  /** The cycle under way: its week and the checkpoint's date. */
+  inProgress: { week: number; end: string } | null
   summary: Record<DeltaTone, number> | null
 }
 
@@ -258,5 +260,6 @@ export function checkpointTileView(data: CycleCheckpoint, today: string): Checkp
   const line = cycle.mode === 'rolling'
     ? tile.rolling
     : cycle.complete ? tile.complete(cycle.number!) : tile.inProgress(cycle.week, formatDate(cycle.current.end, { style: 'bare' }))
-  return { line, summary: checkpointView(data, today).summary }
+  const inProgress = cycle.mode === 'rolling' || cycle.complete ? null : { week: cycle.week, end: cycle.current.end }
+  return { line, inProgress, summary: checkpointView(data, today).summary }
 }

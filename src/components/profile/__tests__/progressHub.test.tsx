@@ -2,8 +2,9 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { t } from '@/i18n'
+import { formatDate } from '@/lib/formatters'
 import { yearOverYear } from '@/lib/yearOverYear'
-import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHubView'
+import { cumulativeYear, heatWeeks, progressHubView, returnStep, type HubInput } from '../progressHubView'
 import { ProgressHub } from '../ProgressHub'
 import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
@@ -86,14 +87,12 @@ describe('progressHubView', () => {
     expect(progressHubView(INPUT).hero.compareSince).toBeNull()
   })
 
-  it('keeps the four hub distances and tags the newest record only while it is new', () => {
-    expect(view.records.map((r) => r.key)).toEqual(['1k', '5k', 'half'])
-    expect(view.records.filter((r) => r.recent).map((r) => r.key)).toEqual(['half'])
-    expect(progressHubView({ ...INPUT, today: '2026-11-20' }).records.some((r) => r.recent)).toBe(false)
+  it('keeps the four hub distances with the day each was set', () => {
+    expect(view.records.map((r) => [r.key, r.date])).toEqual([['1k', '2026-06-16'], ['5k', '2026-05-01'], ['half', '2026-09-14']])
   })
 
   it('reads each shoe\'s wear status, active pairs only, most worn first', () => {
-    expect(view.shoes.map((s) => [s.name, s.status])).toEqual([['Pegasus 41', 'watch'], ['Vomero Plus', 'ok']])
+    expect(view.shoes.map((s) => [s.name, s.status, s.wearPct])).toEqual([['Pegasus 41', 'watch', 88], ['Vomero Plus', 'ok', 52]])
   })
 
   it('names the race by its place when its name only restates the distance', () => {
@@ -192,7 +191,14 @@ describe('the hub without a race, a goal or PBs', () => {
 
 describe('ProgressHub as a list', () => {
   it('leads with the race, then one row per page in three groups, each opening its page', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} checkpoint={{ line: 'Cycle week 5 of 12', better: 6 }} explored={{ name: 'Hoenheim', pct: 20, complete: 1, total: 21 }} homeRuns={{ runCount: 155 }} />)
+    render(
+      <ProgressHub
+        view={progressHubView(INPUT)}
+        checkpoint={{ line: 'Cycle week 5 of 12', better: 6, inProgress: { week: 5, end: '2027-01-03' } }}
+        explored={{ name: 'Hoenheim', pct: 20 }}
+        homeRuns={{ runCount: 155, lastDate: '2026-11-08', preview: 'M0 0L100 100' }}
+      />,
+    )
 
     expect(screen.getByTestId('race-tile').getAttribute('href')).toBe('/race')
     const rows = (group: string) => [...within(screen.getByTestId(group)).getAllByRole('link')].map((row) => row.getAttribute('data-testid'))
@@ -202,6 +208,8 @@ describe('ProgressHub as a list', () => {
     expect(screen.getByTestId('year-row').getAttribute('href')).toBe('/goals')
     expect(screen.getByTestId('checkpoint-row').getAttribute('href')).toBe('/plan/checkpoint')
     expect(screen.getByTestId('checkpoint-row-value').textContent).toBe(t.profile.hub.better(6))
+    expect(screen.getByTestId('checkpoint-row-value').getAttribute('style')).toContain('var(--pos)')
+    expect(screen.getByTestId('checkpoint-row')).toHaveTextContent(t.profile.hub.checkpointLine(5, formatDate('2027-01-03', { style: 'bare' })))
     expect(screen.getByRole('link', { name: t.profile.hub.settings }).getAttribute('href')).toBe('/settings')
   })
 
@@ -222,6 +230,59 @@ describe('ProgressHub as a list', () => {
   it('says there is no streak yet rather than leading with 0', () => {
     render(<ProgressHub view={progressHubView({ ...INPUT, streakWeeks: 0 })} />)
     expect(screen.getByTestId('consistency-row-value').textContent).toBe(t.profile.hub.noStreakShort)
+  })
+})
+
+describe('the hub rows that draw their data', () => {
+  const slots = {
+    explored: { name: 'Hoenheim', pct: 20 },
+    homeRuns: { runCount: 155, lastDate: '2026-11-08', preview: 'M0 0L100 100' },
+  }
+
+  it('draws the goal bar with its tick, ten week dots with this week a ring, the explored and shoe wear bars', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} {...slots} />)
+    expect(screen.getByTestId('goal-bar')).toBeInTheDocument()
+    const dots = [...screen.getByTestId('consistency-dots').children]
+    expect(dots).toHaveLength(10)
+    expect(dots.at(-1)!.className).toContain('border-accent')
+    expect(screen.getByTestId('consistency-row-line')).toHaveTextContent(t.profile.hub.runsThisWeek(0, 3))
+    expect(screen.getByTestId('explored-bar').firstElementChild!.getAttribute('style')).toContain('width: 20%')
+    expect(screen.getByTestId('shoes-bar').firstElementChild!.getAttribute('style')).toContain('width: 88%')
+  })
+
+  it('says news rather than counts: the newest record and its day, the last home run beside its route', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} {...slots} />)
+    expect(screen.getByTestId('records-row')).toHaveTextContent(t.profile.hub.newestRecord(formatDate('2026-09-14', { style: 'bare' })))
+    expect(screen.getByTestId('home-runs-row')).toHaveTextContent(t.profile.hub.homeRunsDetail('155', formatDate('2026-11-08', { style: 'bare' })))
+    expect(screen.getByTestId('home-runs-thumb')).toBeInTheDocument()
+    expect(screen.queryByTestId('home-runs-row-value')).toBeNull()
+    expect(screen.getByTestId('athlete-row').textContent).not.toMatch(/%/)
+  })
+
+  it('shows a pair in good shape as its wear bar, without its km', () => {
+    render(<ProgressHub view={progressHubView({ ...INPUT, shoes: [shoe({ gearId: 's', name: 'Solo', totalKm: 338, wearPercent: 42 })] })} />)
+    expect(screen.queryByTestId('shoes-row-value')).toBeNull()
+    expect(screen.getByTestId('shoes-row').textContent).not.toContain('338')
+    expect(screen.getByTestId('shoes-bar')).toBeInTheDocument()
+  })
+
+  it('puts the return first with its bar, and the cycle week as the checkpoint value without a line under it', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} comeback={{ minutes: 6, goal: 10 }} checkpoint={{ line: 'Cycle week 3 of 12', better: null, inProgress: { week: 3, end: '2027-01-03' } }} />)
+    const rows = [...within(screen.getByTestId('hub-season')).getAllByRole('link')].map((row) => row.getAttribute('data-testid'))
+    expect(rows[0]).toBe('comeback-row')
+    expect(screen.getByTestId('comeback-row-value').textContent).toBe(t.profile.hub.comebackValue(6))
+    expect(screen.getByTestId('comeback-bar').firstElementChild!.getAttribute('style')).toContain('width: 60%')
+    expect(screen.getByTestId('checkpoint-row-value').textContent).toBe(t.profile.hub.checkpointWeek(3))
+    expect(screen.getByTestId('checkpoint-row')).not.toHaveTextContent('Cycle week')
+  })
+
+  it('reads the return against the next step of 10, 20 or 30 minutes, and none before a minute or once it is over', () => {
+    expect(returnStep({ longestSec: 370, ongoing: true })).toEqual({ minutes: 6, goal: 10 })
+    expect(returnStep({ longestSec: 12 * 60, ongoing: true })).toEqual({ minutes: 12, goal: 20 })
+    expect(returnStep({ longestSec: 31 * 60, ongoing: true })).toEqual({ minutes: 31, goal: 30 })
+    expect(returnStep({ longestSec: 30, ongoing: true })).toBeNull()
+    expect(returnStep({ longestSec: 600, ongoing: false })).toBeNull()
+    expect(returnStep(null)).toBeNull()
   })
 })
 

@@ -3,8 +3,10 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { HeatAhead } from '@/application/usecases/GetHeatAhead'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView, type HeroWorkoutView, type PlanWorkoutView } from '@/components/plan/planWorkoutView'
 import { paceLabel, workoutSummary } from '@/components/plan/workoutSummary'
+import { isRunWalkPlan } from '@/domain/activity/runWalk'
+import { sessionLabel } from '@/lib/activityTitle'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatDurationWords, formatPlannedKm, formatWeekday } from '@/lib/formatters'
+import { formatDurationWords, formatPlannedKm, formatWeekday, formatWeekdayLong } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { kindOfType, type SessionKind } from './sessionKind'
 
@@ -70,9 +72,9 @@ export function planDayHref(date: string): string {
 
 export interface SessionCard {
   date: string
-  /** "Tomorrow · Tue 20", "Today · Mon 19", or the day alone further out. */
-  eyebrow: string
-  /** The session's short name: the card's title is 26 pt. */
+  /** "Tomorrow · Sat 14", or the day alone further out; null on today's own session, which the page title names. */
+  eyebrow: string | null
+  /** The session's short name, at display size only on today's run. */
   title: string
   /** Its planned km ("10"), the detail line's lead; null when the plan gives none. */
   km: string | null
@@ -85,6 +87,22 @@ export interface SessionCard {
   href: string
   /** Today's session only, when the forecast at the usual running hour falls in a band that slows the athlete. */
   heat?: HeatAhead | null
+  /** A rest day's line ("No run today. Threshold tomorrow."): the card leads with the rest, the session below it. */
+  rest?: string | null
+}
+
+/** Garmin and the coach call a run/walk an easy run ("Footing 4 × 6′"); its set keeps the run/walk name. */
+export function runWalkName(title: string, workout: HeroWorkoutView | null): string {
+  if (!workout?.structure) return title
+  if (!isRunWalkPlan({ date: '', name: workout.title, type: workout.type, steps: workout.structure })) return title
+  const set = sessionLabel(title)
+  return set === title ? title : `${t.dashboard.todayHero.runWalk} ${set}`
+}
+
+function restLine(date: string, tomorrow: boolean, kind: SessionKind | null, runWalk: boolean): string {
+  const s = t.dashboard.todayHero
+  const name = runWalk ? s.runWalk : kind ? t.dashboard.weeklyStreak.kinds[kind] : s.aRun
+  return s.restLine(name, tomorrow ? s.restTomorrow : s.restOn(formatWeekdayLong(date)))
 }
 
 export function sessionCard(
@@ -100,28 +118,31 @@ export function sessionCard(
   const s = t.dashboard.todayHero
   const pick =
     todayWorkout && !todayActivity
-      ? { date: today, workout: todayWorkout, title: null }
+      ? { date: today, workout: todayWorkout, title: null, kind: null }
       : next
-        ? { date: next.date, workout: next.workout ?? null, title: next.title }
+        ? { date: next.date, workout: next.workout ?? null, title: next.title, kind: next.kind }
         : null
   if (!pick) return null
 
   const { date, workout } = pick
   const summary = workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }) : null
   const tomorrow = isoDate(addDays(new Date(`${today}T00:00:00`), 1))
-  const when = date === today ? s.today : date === tomorrow ? s.tomorrow : null
+  const when = date === tomorrow ? s.tomorrow : null
   const day = formatWeekday(date, true)
   const hrCap = hrCapOf(workout)
   // A ceiling says how to run it; without one, a single pace does; several paces are Plan's to list.
   const limit = hrCap ? `${s.hrCap(hrCap)} ${t.units.bpm}` : summary?.paces.length === 1 ? paceLabel(summary.paces[0]!) : null
+  const title = summary?.shortTitle ?? pick.title ?? ''
+  const name = runWalkName(title, workout)
   return {
     date,
-    eyebrow: when ? `${when} · ${day}` : day,
-    title: summary?.shortTitle ?? pick.title ?? '',
+    eyebrow: date === today ? null : when ? `${when} · ${day}` : day,
+    title: name,
     km: workout?.distanceM ? formatPlannedKm(workout.distanceM / 1000) : null,
     detail: [workout?.duration ? formatDurationWords(workout.duration.seconds) : null, limit].filter(Boolean).join(' · ') || null,
     workout,
     phase: phaseOn(date),
     href: planDayHref(date),
+    rest: !todayWorkout && !todayActivity ? restLine(date, date === tomorrow, pick.kind, name !== title) : null,
   }
 }

@@ -12,9 +12,10 @@ import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { getReprise } from '@/application/usecases/GetReprise'
+import { getReturnProgress } from '@/application/usecases/GetReturnProgress'
 import { ProgressHub } from '@/components/profile/ProgressHub'
 import { checkpointTileView } from '@/components/checkpoint/checkpointView'
-import { progressHubView } from '@/components/profile/progressHubView'
+import { progressHubView, returnStep } from '@/components/profile/progressHubView'
 import { appTodayIso } from '@/lib/calendarDate'
 import { loadData } from '@/application/usecases/LoadData'
 
@@ -49,9 +50,17 @@ export default async function ProfilePage() {
 
   // Only the summaries reach the page: no home, no tracks. The area run in last leads.
   const [latest] = [...getExploredAreas()].sort((a, b) => b.lastRunDate.localeCompare(a.lastRunDate))
-  const explored = latest ? { name: latest.area.name, pct: latest.summary.pct, complete: latest.summary.complete, total: latest.summary.total } : null
+  const explored = latest ? { name: latest.area.name, pct: latest.summary.pct } : null
   const tile = checkpointTileView(getCycleCheckpoint(today), today)
   const homeRuns = getHomeRunsSummary()
 
-  return <ProgressHub view={view} explored={explored} checkpoint={{ line: tile.line, better: tile.summary?.good ?? null }} homeRuns={homeRuns ? { runCount: homeRuns.runCount } : null} />
+  return (
+    <ProgressHub
+      view={view}
+      explored={explored}
+      checkpoint={{ line: tile.line, better: tile.summary?.good ?? null, inProgress: tile.inProgress }}
+      homeRuns={homeRuns ? { runCount: homeRuns.runCount, lastDate: homeRuns.lastDate, preview: homeRuns.preview } : null}
+      comeback={returnStep(getReturnProgress(today))}
+    />
+  )
 }
