@@ -4,7 +4,7 @@ import { getTodayPlannedWorkout } from './GetPlannedWorkouts'
 import { getTodayPrescription } from '@/application/coaching/GetCoachingView'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import { prescriptionAsPlannedWorkout } from '@/domain/coaching/plannedWorkout'
-import { verdictTone } from '@/domain/training/readiness'
+import { readinessEyebrow, verdictTone, type LoadState } from '@/domain/training/readiness'
 import { recentTraining } from '@/domain/training/recentTraining'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash, type TodayContext } from '@/domain/ai/todayInsight'
 import { readStoredInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
@@ -14,13 +14,15 @@ import type { Insight } from '@/lib/gemini'
 export function buildTodayContext(
   status: TrainingStatus,
   plannedWorkout: PlannedWorkout | null,
-  today: string = appTodayIso()
+  today: string = appTodayIso(),
+  loadState: LoadState | null = null
 ): TodayContext {
   return {
     status,
     tone: verdictTone(status),
     plannedWorkout,
     recent: recentTraining(getActivitySummaries(), today),
+    eyebrow: readinessEyebrow(status, loadState),
   }
 }
 

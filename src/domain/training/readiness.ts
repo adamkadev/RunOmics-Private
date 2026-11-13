@@ -1,4 +1,5 @@
 import type { TrainingStatus } from '@/domain/training/status'
+import { t } from '@/i18n'
 
 export type ReadinessTone = 'go' | 'build' | 'caution' | 'hold'
 
@@ -29,6 +30,15 @@ export function verdictTone(status: TrainingStatus): ReadinessTone {
   if (status.tsbNow < FORM_HIGH_RISK || (status.tsbNow < FORM_DEEP && climbing)) return 'hold'
   if (status.tsbNow < FORM_DEEP || climbing || status.risk === 'moderate' || status.status === 'unproductive') return 'caution'
   return status.tsbNow > FORM_FRESH ? 'go' : 'build'
+}
+
+export type LoadState = 'below' | 'in' | 'above'
+
+/** The one status over the Today verdict, picked first: the verdict is written not to contradict it. */
+export function readinessEyebrow(status: TrainingStatus, loadState: LoadState | null): string {
+  const s = t.dashboard.readiness
+  if (status.buildingBack) return s.buildingBack
+  return loadState ? s.loadState[loadState] : s.lineByTone[verdictTone(status)]
 }
 
 const TONE_ORDER: ReadinessTone[] = ['go', 'build', 'caution', 'hold']

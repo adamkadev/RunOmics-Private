@@ -37,6 +37,12 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(line.style.color).toBe('var(--warn)')
   })
 
+  it('keeps one status in the line, a tired form and an estimated load said under the numbers instead', () => {
+    render(<ReadinessCard status={{ ...STATUS, tsbNow: -15 }} load={{ acute: 608, lo: 549, hi: 892, state: 'in', ratio: 0.9, estimated: true }} />)
+    expect(screen.getByTestId('readiness-status').textContent).toBe(t.dashboard.readiness.loadState.in)
+    expect(screen.getByTestId('readiness-estimated').textContent).toBe(t.dashboard.readiness.estimatedNote)
+  })
+
   it('heads a load in range with the reason the days around it give, and says the number once', () => {
     const load = { acute: 608, lo: 549, hi: 892, state: 'in' as const, ratio: 0.9, estimated: false }
     const s = t.dashboard.readiness
@@ -93,7 +99,7 @@ describe('ReadinessCard (App Fixes 1a)', () => {
   it('turns the status line to warn when it is a caution', () => {
     render(<ReadinessCard status={{ ...STATUS, tsbNow: -32, atlDelta: 12, atl: 79 }} />)
     const line = screen.getByTestId('readiness-status')
-    expect(line.textContent).toContain(t.formBand.tired)
+    expect(line.textContent).toBe(t.dashboard.readiness.lineByTone.hold)
     expect(line.getAttribute('style')).toContain('var(--warn)')
     expect(line.querySelector<HTMLElement>('[aria-hidden]')!.style.background).toBe('var(--warn)')
   })

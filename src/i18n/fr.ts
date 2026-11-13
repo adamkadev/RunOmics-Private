@@ -726,7 +726,7 @@ export const fr = {
       },
       buildingBack: 'Reprise',
       formLater: 'Ta forme s’affichera après quelques semaines de sorties régulières.',
-      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimée` : state),
+      estimatedNote: 'Charge estimée',
       ctl: 'Condition',
       atl: 'Fatigue',
       // Short: « 21 cette semaine » overflows its third of the card at 393 pt.

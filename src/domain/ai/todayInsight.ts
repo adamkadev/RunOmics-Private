@@ -18,6 +18,8 @@ export interface TodayContext {
   tone: ReadinessTone
   plannedWorkout: PlannedWorkout | null
   recent: RecentTraining
+  /** The status printed above the verdict, picked before it is written. */
+  eyebrow: string
 }
 
 export type SessionKind = 'rest' | 'easy' | 'quality' | 'race'
@@ -155,7 +157,7 @@ export const TODAY_SYSTEM_INSTRUCTION = [
   'The headline is one claim, never advice: what the last run or the week has left in the legs, or what today is for. The body is the one piece of advice that follows from it, and nothing else: no second claim, no reason tacked on.',
   'Never write a sentence that both worries and reassures, such as "Heavy legs took the brunt of that run, leaving your body ready to absorb the load": the tone says which of the two today is.',
   'The plan is read-only in the app: advise what to do on the run or the day off - keep it easy, shorten it, drop the strides, sleep - and never to move, swap, reschedule or edit a session, or to adjust the plan.',
-  'Never contradict the tone you are given: it is already shown above your headline as a colored badge, whose words are given with the tone. Never reuse that phrase.',
+  'Never contradict the tone you are given, nor the status line already shown above your headline, whose words are given with the tone. Never reuse that phrase.',
   `Never write a status label at all: not the badge's words nor another tone's (${BADGES}), and not the training status from the facts.`,
   'Turn the form, fitness and fatigue numbers into plain language - fresh legs, fatigue letting go, the week still in the body - and never state their values.',
   "The session card under your text already prints today's session - its name, distance, duration and paces, or what was run once it is done - and the weekly card below it prints this week's kilometres and sessions. Never state those numbers: say what they mean instead. The one number worth writing is the days since the last run, when that gap matters.",
@@ -176,10 +178,8 @@ function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {
 
 export function todayInsightPrompt(context: TodayContext, recentHeadlines: string[]): string {
   const f = facts(context)
-  const badge = t.dashboard.readiness.eyebrowByTone[context.tone]
-
   return [
-    `Tone: ${f.tone}, shown in the badge above your headline as "${badge}". ${toneRule(context.tone, f.kind, ranToday(context.recent))}`,
+    `Tone: ${f.tone}. The status line above your headline reads "${context.eyebrow}": it was picked first, so the headline and sentence must never contradict it. ${toneRule(context.tone, f.kind, ranToday(context.recent))}`,
     '',
     'Facts:',
     `- Form (TSB, positive = fresh): ${f.form}`,

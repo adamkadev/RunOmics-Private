@@ -769,8 +769,8 @@ export const en = {
       // Said in place of the load line while a break has left nothing to read it against.
       buildingBack: 'Comeback',
       formLater: 'Your form shows once you have run regularly for a few weeks.',
-      // "Estimated" where the watch rates no load and the app did the arithmetic itself.
-      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimated` : state),
+      // Where the watch rates no load and the app did the arithmetic itself.
+      estimatedNote: 'Estimated load',
       ctl: 'Fitness',
       atl: 'Fatigue',
       // "↘ 2 in 7 days" under a tile: a rolling window, not the calendar week.
