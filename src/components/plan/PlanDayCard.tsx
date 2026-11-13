@@ -209,7 +209,7 @@ function Line({ label, children, testId }: { label: string; children: ReactNode;
   )
 }
 
-/** A skipped day is drawn as rest on Today, Plan and the month, and stops counting as missed. */
+/** A skipped day is drawn as rest on Today, Plan and the month, and stops counting as missed. Missed is a fact, so grey. */
 function MissedLine({ date }: { date: string }) {
   const skipped = useSkippedDays().get(date) ?? null
   const { isOwner } = useOwnerAuth()
@@ -226,7 +226,7 @@ function MissedLine({ date }: { date: string }) {
       {skipped ? (
         <span className="font-semibold text-muted-foreground" data-testid="skipped-mark">{s.skippedFor(s.skipReasons[skipped])}</span>
       ) : (
-        <span className="font-semibold text-[var(--warn)]">{t.sessionState.missed}</span>
+        <span className="font-semibold text-muted-foreground">{t.sessionState.missed}</span>
       )}
       {isOwner && (skipped ? (
         <button type="button" onClick={() => mark(null)} className={action} data-testid="skip-toggle">{s.undoSkip}</button>
@@ -285,9 +285,11 @@ export function DoneDayCard({
   /** The day the session was run instead, a day either side. */
   ranOn?: string | null
 }) {
+  const ran = acts.length > 0 || Boolean(ranOn)
   return (
     <section data-testid={`plan-day-done-${date}`} className={CARD}>
-      <Eyebrow date={date} kind={kind} state={acts.length > 0 || ranOn ? t.sessionState.done : t.sessionState.missed} />
+      {/* A missed day reads as a fact: grey, not the session's colour. */}
+      <Eyebrow date={date} kind={ran ? kind : null} state={ran ? t.sessionState.done : t.sessionState.missed} />
       <Title>{title}</Title>
       <div className="mt-3 border-t border-border pt-1.5">
         <Line label={t.plan.dayCard.planned} testId="planned-line">

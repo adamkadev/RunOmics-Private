@@ -96,7 +96,7 @@ export function DaySelector({
                   data-bar-state={day.state}
                   className={cn(
                     'box-border block w-5 rounded-[7px]',
-                    day.state === 'missed' && 'border-[1.5px] border-dashed border-[var(--warn)]',
+                    day.state === 'missed' && 'border-[1.5px] border-dashed border-muted-foreground',
                     day.state === 'planned' && 'border-[1.5px] border-dashed',
                   )}
                   style={{

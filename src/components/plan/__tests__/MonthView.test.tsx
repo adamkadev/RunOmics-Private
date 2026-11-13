@@ -86,7 +86,7 @@ describe('the month grid', () => {
     renderMonth()
 
     expect(cell('2026-10-16').dataset.cellState).toBe('missed')
-    expect(tile('2026-10-16').style.border).toBe('1px dashed var(--warn)')
+    expect(tile('2026-10-16').style.border).toBe('1px dashed var(--muted-foreground)')
   })
 
   it('fills today’s date in the accent', () => {
