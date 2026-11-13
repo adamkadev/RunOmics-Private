@@ -43,6 +43,7 @@ test('the map sheet switches to Districts, remembers it, and a link opens a dist
   await page.goto('/activities?view=map')
   await page.getByTestId('map-menu').click()
   await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByTestId('map-attribution')).toHaveCount(0)
 
   await page.getByTestId('layer-districts').click()
   await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'true')

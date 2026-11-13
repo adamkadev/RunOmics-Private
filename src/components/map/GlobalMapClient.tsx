@@ -656,7 +656,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
         )}
 
         {/* Off under a sheet or its scrim, where they would only cost blur. */}
-        {sheetOpen || generatorOpen || (filtersOpen && districtsOn) ? null : isFullscreen ? (
+        {sheetOpen || generatorOpen || filtersOpen ? null : isFullscreen ? (
           // One column for both layers, so the layers button and the ⓘ never
           // move under the finger when the layer changes.
           <div className="pointer-events-none absolute inset-x-6 bottom-[max(24px,var(--safe-bottom))] z-10 flex flex-col items-end gap-2">
