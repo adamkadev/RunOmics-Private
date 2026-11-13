@@ -35,7 +35,7 @@ describe('workoutSummary', () => {
   })
 
   it('keeps the easy and the strides pace apart', () => {
-    expect(summary.paces.map(paceLabel)).toEqual([t.plan.session.easyPace('5:30–6:24'), t.plan.session.stridesPace('3:35')])
+    expect(summary.paces.map(paceLabel)).toEqual([t.plan.session.easyPace(`5:30–6:24 ${t.units.perKm}`), t.plan.session.stridesPace(`3:35 ${t.units.perKm}`)])
   })
 
   it('writes the reps to the second, from the same steps the bar draws', () => {

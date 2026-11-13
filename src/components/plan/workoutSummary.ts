@@ -88,8 +88,8 @@ export function workoutSummary(
 
 export function paceLabel({ kind, pace }: WorkoutSummary['paces'][number]): string {
   const s = t.plan.session
-  const range = `${formatClock(pace[0])}–${formatClock(pace[1])}`
-  if (kind === 'strides') return s.stridesPace(formatClock(pace[0]))
+  const range = `${formatClock(pace[0])}–${formatClock(pace[1])} ${t.units.perKm}`
+  if (kind === 'strides') return s.stridesPace(`${formatClock(pace[0])} ${t.units.perKm}`)
   if (kind === 'easy') return s.easyPace(range)
   return s.targetPace(range)
 }
