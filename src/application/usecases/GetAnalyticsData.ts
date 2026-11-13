@@ -4,7 +4,7 @@ import { heatAdjustedEf } from '@/domain/activity/heat'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { sumDistanceKm } from '@/domain/activity/distance'
 import { round } from '@/lib/math'
-import { DAY_MS, isoDate } from '@/lib/calendarDate'
+import { isoDate } from '@/lib/calendarDate'
 import { qualityKind } from '@/domain/training/qualitySession'
 import { DEFAULT_Z4_FLOOR_BPM, repPaceSecPerKm } from '@/domain/training/repPace'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -111,11 +111,6 @@ export function zoneDistribution(activities: Activity[]): ZoneShare[] {
       seconds: secs,
       percent: round((secs / total) * 100, 1),
     }))
-}
-
-export function recentZoneDistribution(activities: Activity[], days: number, now: Date = new Date()): ZoneShare[] {
-  const cutoff = new Date(now.getTime() - days * DAY_MS)
-  return zoneDistribution(activities.filter((a) => new Date(a.date + 'T00:00:00') >= cutoff))
 }
 
 function efSamples(activities: Activity[]): { ef: number; weather: ActivityWeather | null }[] {

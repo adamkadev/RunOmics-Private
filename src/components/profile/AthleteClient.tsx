@@ -1,7 +1,6 @@
 'use client'
 
 import type { AthletePageView } from './athleteView'
-import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { BackButton } from '@/components/ui/BackButton'
 import { AthleteStats } from './ProfileAthleteStats'
@@ -19,14 +18,12 @@ interface Props {
   athlete: AthletePageView
   vo2Grade: Vo2GradeView | null
   fitnessAge: FitnessAgeView | null
-  weeklyZoneTime: ZoneShare[]
-  recentZoneTime: ZoneShare[]
   paceZones: TrainingZonesData | null
   lastSyncedAt?: string | null
   reprise?: boolean
 }
 
-export function AthleteClient({ athlete, vo2Grade, fitnessAge, weeklyZoneTime, recentZoneTime, paceZones, lastSyncedAt = null, reprise = false }: Props) {
+export function AthleteClient({ athlete, vo2Grade, fitnessAge, paceZones, lastSyncedAt = null, reprise = false }: Props) {
   const p = t.pages.athlete
   // Relative time only after mount: on the server it is as old as the cached
   // page, and the mismatch is React error #418.
@@ -46,12 +43,7 @@ export function AthleteClient({ athlete, vo2Grade, fitnessAge, weeklyZoneTime, r
       {vo2Grade && <Vo2GradeCard view={vo2Grade} reprise={reprise} />}
       {fitnessAge && <FitnessAgeCard view={fitnessAge} reprise={reprise} />}
       <AthleteStats athlete={athlete} />
-      <ProfileHrZones
-        athlete={athlete}
-        weeklyZoneTime={weeklyZoneTime}
-        recentZoneTime={recentZoneTime}
-        paceZones={paceZones}
-      />
+      <ProfileHrZones athlete={athlete} paceZones={paceZones} />
       <WellnessHistory />
     </div>
   )
