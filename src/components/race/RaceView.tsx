@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { cardClass } from '@/components/ui/Card'
+import { GOALS_RACES_HREF } from '@/components/goals/goalsHref'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { CardTitle, EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { shortDist } from '@/components/goals/shortDistance'
@@ -117,6 +119,9 @@ export function NoRace() {
       <section className={cardClass({ className: 'flex flex-col gap-1.5' })} data-testid="race-none">
         <CardTitle as="h2">{t.race.noneTitle}</CardTitle>
         <p className="text-sm text-muted-foreground text-pretty">{t.race.none}</p>
+        <Link href={GOALS_RACES_HREF} className="hit-44 self-start text-sm font-medium text-accent-text" data-testid="race-none-action">
+          {t.goals.emptyAction}
+        </Link>
       </section>
     </div>
   )

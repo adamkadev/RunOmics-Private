@@ -2212,7 +2212,7 @@ export const en = {
     finish: 'Finish',
     title: 'Race',
     noneTitle: 'No race planned',
-    none: 'Add a race in Garmin Connect: your prediction and target pace show here after the sync.',
+    none: 'Add it in Garmin Connect or here: your prediction and target pace show after the sync.',
     // Form (fitness minus fatigue) carried to race day by the sessions planned before it.
     formTitle: 'Form on race day',
     formToday: (tsb: string) => `Today ${tsb}.`,

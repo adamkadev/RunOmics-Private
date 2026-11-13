@@ -2052,7 +2052,7 @@ export const fr = {
     finish: 'Arrivée',
     title: 'Prochaine compétition',
     noneTitle: 'Aucune compétition prévue',
-    none: 'Ajoute une course dans Garmin Connect : ta prédiction et ton allure cible apparaîtront ici après la synchro.',
+    none: 'Ajoute-la dans Garmin Connect ou ici : ta prédiction et ton allure cible apparaîtront après la synchro.',
     formTitle: 'Forme le jour de la course',
     formToday: (tsb: string) => `Aujourd’hui ${tsb}.`,
     formCaption: 'Prévue à partir des séances planifiées jusqu’à la course, à la charge que portent tes sorties de chaque type.',

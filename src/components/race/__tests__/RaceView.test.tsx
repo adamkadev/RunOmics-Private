@@ -52,6 +52,7 @@ describe('NoRace', () => {
     render(<NoRace />)
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(t.race.title)
-    expect(screen.getByTestId('race-none')).toHaveTextContent(t.race.noneTitle + t.race.none)
+    expect(screen.getByTestId('race-none')).toHaveTextContent(t.race.noneTitle + t.race.none + t.goals.emptyAction)
+    expect(screen.getByTestId('race-none-action').getAttribute('href')).toBe('/settings#goals-races')
   })
 })
