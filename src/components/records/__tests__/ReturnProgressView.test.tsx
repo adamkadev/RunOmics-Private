@@ -28,8 +28,8 @@ const progress: ReturnProgress = {
 }
 
 describe('ReturnProgressView', () => {
-  it('lists the milestones reached, linked to their run, then those ahead', () => {
-    render(<ReturnProgressView progress={progress} today="2026-10-27" />)
+  it('lists the milestones reached by date, linked to their run, then those ahead', () => {
+    render(<ReturnProgressView progress={{ ...progress, milestones: [...progress.milestones].reverse() }} today="2026-10-27" />)
 
     const reached = screen.getAllByTestId('return-milestone')
     expect(reached.map((row) => row.textContent)).toEqual([expect.stringContaining('First 10 minutes non-stop'), expect.stringContaining('First block completed')])
