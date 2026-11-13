@@ -37,6 +37,7 @@ function withMap(overrides: Partial<MapShellData> = {}) {
     totalCount: 3,
     totalKm: 15,
     years: ['2026'],
+    untracked: [],
     ...overrides,
   } satisfies MapShellData)
 }

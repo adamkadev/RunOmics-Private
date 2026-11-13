@@ -112,18 +112,19 @@ export interface LoadTabProps {
   onShift: (step: 1 | -1) => void
   today: string
   data: AnalyticsBoardData
+  reprise?: boolean
 }
 
 const WARN = 'var(--warn)'
 
 /** A move as an arrow and its size: ↗ 6, ↘ 23, → 0. */
-function Move({ delta, metric, decimals = 0 }: { delta: number; metric: 'fitness' | 'fatigue'; decimals?: number }) {
-  const r = decimals ? Math.round(delta * 10) / 10 : Math.round(delta)
+function Move({ delta, metric, within }: { delta: number; metric: 'fitness' | 'fatigue'; within: string }) {
+  const r = Math.round(delta)
   const Arrow = r > 0 ? ArrowUpRight : r < 0 ? ArrowDownRight : ArrowRight
   return (
     <span className="inline-flex items-center gap-0.5 tabular-nums" style={{ color: DELTA_TONE_COLOR[deltaTone(metric, r)] }}>
       <Arrow size={12} strokeWidth={1.8} aria-hidden />
-      {decimals ? formatDecimal(Math.abs(r), decimals) : Math.abs(r)}
+      {Math.abs(r)} {within}
     </span>
   )
 }
@@ -132,21 +133,23 @@ function LoadCard({
   pairs,
   load,
   window,
+  period,
   yMax,
   estimated,
 }: {
   pairs: AnalyticsBoardData['loads']
   load: LoadDay[]
   window: DayWindow
+  period: LoadPeriod
   yMax: number
   estimated: boolean
 }) {
   const s = t.analytics.cards.loadCompact
   const view = loadTrendView(pairs, window, yMax)
   if (!view) return null
+  // The window's fitness change, the one the Form card names: a weekly slope beside it told another story.
   const form = formView(load, window)
-  const ctl = form?.ctl ?? []
-  const ramp = ctl.length > 7 ? ctl[ctl.length - 1]! - ctl[ctl.length - 8]! : null
+  const ramp = form ? form.fitnessDelta : null
   const out = view.state !== 'in'
   const ratioOut = view.ratio < SAFE_RATIO_LO || view.ratio > SAFE_RATIO_HI
   const W = 320
@@ -177,11 +180,10 @@ function LoadCard({
         </div>
         {ramp !== null && (
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="inline-flex items-center gap-1 text-[22px] font-bold leading-tight tabular-nums" data-testid="fitness-ramp">
-              {ramp > 0 ? <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden /> : ramp < 0 ? <ArrowDownRight size={14} strokeWidth={1.8} aria-hidden /> : null}
-              {formatDecimal(Math.abs(ramp), 1)}
+            <span className="text-[22px] font-bold leading-tight tabular-nums" data-testid="fitness-ramp">
+              {signed(ramp)}
             </span>
-            <span className="text-[11.5px] text-muted-foreground">{s.fitnessWeek}</span>
+            <span className="text-[11.5px] text-muted-foreground">{s.fitnessIn(t.analytics.cards.form.span[period])}</span>
           </div>
         )}
       </div>
@@ -205,7 +207,21 @@ function LoadCard({
   )
 }
 
-function FormCard({ load, nights, tracker, window, period }: { load: LoadDay[]; nights: AnalyticsBoardData['recovery']; tracker: AnalyticsBoardData['nights']; window: DayWindow; period: LoadPeriod }) {
+function FormCard({
+  load,
+  nights,
+  tracker,
+  window,
+  period,
+  reprise,
+}: {
+  load: LoadDay[]
+  nights: AnalyticsBoardData['recovery']
+  tracker: AnalyticsBoardData['nights']
+  window: DayWindow
+  period: LoadPeriod
+  reprise: boolean
+}) {
   const s = t.analytics.cards.form
   const view = formView(load, window)
   if (!view) return null
@@ -214,29 +230,40 @@ function FormCard({ load, nights, tracker, window, period }: { load: LoadDay[]; 
   const c = t.analytics.cards.loadCompact
   const bars = view.bars
   const scale = Math.max(10, ...bars.map((b) => Math.abs(b.form)))
-  void period
+  const within = s.within(s.spanShort[period])
+  // Back from a break, both start near zero and the change would only repeat the value.
+  const delta = (value: number, change: number, metric: 'fitness' | 'fatigue') =>
+    reprise && change === value ? <span className="text-muted-foreground">{s.sinceReturn}</span> : <Move metric={metric} delta={change} within={within} />
   return (
     <Card className={cn('gap-2', FORM_FILL_STRENGTH)} testId="form-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <span className="text-[22px] font-bold tabular-nums" data-testid="form-value" style={{ color: FORM_TONE[view.band] === 'warn' ? WARN : undefined }}>
-          {signed(view.form)} <span className="text-xs font-normal text-muted-foreground">{t.formBand[view.band].toLocaleLowerCase(t.locale)}</span>
+          {signed(view.form)}
         </span>
         <span className="text-xs text-[var(--text-2)]">
-          {s.fitness} {view.fitness} <span data-testid="fitness-delta"><Move metric="fitness" delta={view.fitnessDelta} /></span>
+          {s.fitness} {view.fitness} <span data-testid="fitness-delta">{delta(view.fitness, view.fitnessDelta, 'fitness')}</span>
         </span>
         <span className="text-xs text-[var(--text-2)]">
-          {s.fatigue} {view.fatigue} <span data-testid="fatigue-delta"><Move metric="fatigue" delta={view.fatigueDelta} /></span>
+          {s.fatigue} {view.fatigue} <span data-testid="fatigue-delta">{delta(view.fatigue, view.fatigueDelta, 'fatigue')}</span>
         </span>
       </div>
-      <div className="flex h-[22px] items-center" style={{ gap: bars.length > 30 ? 1 : 2 }} data-testid="form-strip">
+      {/* Above the zero line fresh, below it tired: a tired day no longer reads as a tall good bar. */}
+      <div className="relative flex h-[30px]" style={{ gap: bars.length > 30 ? 1 : 2 }} data-testid="form-strip">
+        <span aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-[var(--line-2)]" />
         {bars.map((bar) => (
-          <span
-            key={bar.date}
-            data-band={bar.band}
-            className="min-w-0 flex-1 rounded-[2px]"
-            style={{ height: `${Math.max(14, (Math.abs(bar.form) / scale) * 100)}%`, background: FORM_FILL[bar.band] }}
-          />
+          <span key={bar.date} className="relative min-w-0 flex-1">
+            <span
+              data-band={bar.band}
+              data-side={bar.form < 0 ? 'below' : 'above'}
+              className="absolute inset-x-0 rounded-[2px]"
+              style={{
+                height: `max(2px, ${(Math.abs(bar.form) / scale) * 50}%)`,
+                ...(bar.form < 0 ? { top: '50%' } : { bottom: '50%' }),
+                background: FORM_FILL[bar.band],
+              }}
+            />
+          </span>
         ))}
       </div>
       <Legend className="gap-x-3">
@@ -274,12 +301,12 @@ function FormCard({ load, nights, tracker, window, period }: { load: LoadDay[]; 
   )
 }
 
-export function LoadTab({ window, period, onShift, today, data }: LoadTabProps) {
+export function LoadTab({ window, period, onShift, today, data, reprise = false }: LoadTabProps) {
   const yMax = loadTrendYMax(data.loads, today)
   return (
     <div className="flex flex-col gap-3.5">
-      <LoadCard pairs={data.loads} load={data.load} window={window} yMax={yMax} estimated={data.estimated.loads} />
-      <FormCard load={data.load} nights={data.recovery} tracker={data.nights} window={window} period={period} />
+      <LoadCard pairs={data.loads} load={data.load} window={window} period={period} yMax={yMax} estimated={data.estimated.loads} />
+      <FormCard load={data.load} nights={data.recovery} tracker={data.nights} window={window} period={period} reprise={reprise} />
       {/* The watch's own status as its chart, not a sentence in the coach card. */}
       <StatusCard days={data.status} window={window} period={period} onShift={onShift} estimated={data.estimated.status} />
       {/* The sync keeps only the latest balance, so a window back in time has none. */}

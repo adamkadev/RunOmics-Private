@@ -12,7 +12,7 @@ export interface HeatFilters {
 
 export const NO_HEAT_FILTERS: HeatFilters = { years: [], types: [] };
 
-export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters): boolean {
+export function matchesFilters(meta: Pick<RouteMeta, 'type' | 'year'> | undefined, filters: HeatFilters): boolean {
   if (!meta) return false;
   if (filters.years.length > 0 && !filters.years.includes(meta.year)) return false;
   if (filters.types.length > 0 && !filters.types.includes(meta.type)) return false;
@@ -35,13 +35,15 @@ export function computeAreaTerritory(
   cluster: RouteCluster,
   routeMeta: RouteMeta[],
   routes: [number, number][][],
-  filters: HeatFilters
+  filters: HeatFilters,
+  untracked: readonly Pick<RouteMeta, 'type' | 'year' | 'distanceKm'>[] = []
 ): AreaTerritory | null {
   const clusterIndices = cluster.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
   if (clusterIndices.length === 0) return null;
 
   const clusterKm = clusterIndices.reduce((sum, i) => sum + (routeMeta[i]?.distanceKm ?? 0), 0);
-  const totalKm = routeMeta.reduce((sum, m) => sum + (matchesFilters(m, filters) ? m.distanceKm : 0), 0);
+  // Of all the running, tracked or not: the page's subtitle counts the treadmill too.
+  const totalKm = [...routeMeta, ...untracked].reduce((sum, m) => sum + (matchesFilters(m, filters) ? m.distanceKm : 0), 0);
   if (totalKm <= 0) return null;
 
   const traces = clusterIndices

@@ -134,30 +134,42 @@ function pauseBlock(newer: string, older: string): ListBlock | null {
   return { kind: 'pause', key: `pause-${first}`, label: t.activities.pause(months === 1 ? name(first) : `${name(first)} – ${name(last)}`, first.slice(0, 4), months) }
 }
 
-/** A month heading totals the weeks under it, this week's included, so its km is the month's. */
+/**
+ * A week sits under the month of its Monday, but a month heading counts runs by their own date, this week's
+ * included: Sun Nov 1 in the week of Oct 26 is November's, as Plan counts it.
+ */
 export function listBlocks(weeks: WeekRow[]): ListBlock[] {
   const blocks: ListBlock[] = []
-  let current: WeekRow | null = null
+  const byMonth = new Map<string, { km: number; runs: number }>()
   for (const week of weeks) {
+    for (const item of week.items) {
+      const month = item.date.slice(0, 7)
+      const total = byMonth.get(month) ?? { km: 0, runs: 0 }
+      total.km += item.distanceKm
+      total.runs += 1
+      byMonth.set(month, total)
+    }
     if (week.isCurrent) {
       blocks.push({ kind: 'current', week })
-      current = week
       continue
     }
     const key = week.key.slice(0, 7)
     const open = blocks[blocks.length - 1]
     if (open?.kind === 'month' && open.key === key) {
       open.weeks.push(week)
-      open.km += week.totalKm
-      open.runs += week.items.length
     } else {
       const previous = [...blocks].reverse().find((block) => block.kind === 'month')
       const gap = previous?.kind === 'month' ? pauseBlock(previous.key, key) : null
       if (gap) blocks.push(gap)
       const label = formatDate(`${key}-01`, { precision: 'month', year: 'always', style: 'full' })
-      const withCurrent = current && current.key.slice(0, 7) === key ? current : null
-      blocks.push({ kind: 'month', key, label, km: week.totalKm + (withCurrent?.totalKm ?? 0), runs: week.items.length + (withCurrent?.items.length ?? 0), weeks: [week] })
+      blocks.push({ kind: 'month', key, label, km: 0, runs: 0, weeks: [week] })
     }
+  }
+  for (const block of blocks) {
+    if (block.kind !== 'month') continue
+    const total = byMonth.get(block.key)
+    block.km = total?.km ?? 0
+    block.runs = total?.runs ?? 0
   }
   return blocks
 }

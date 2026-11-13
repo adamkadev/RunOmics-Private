@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
-import { MINUS, formatDuration, formatClock, formatKm } from '@/lib/formatters'
+import { MINUS, formatDistance, formatDuration, formatClock, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
@@ -215,7 +215,8 @@ function WholeRunLap({
   )
 }
 
-function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: boolean }) {
+/** `total` is the run's own: summed laps each rounded to the second read 58:04 under a 58:03 header. */
+function LapTable({ splits, bare = false, total }: { splits: ActivitySplit[]; bare?: boolean; total?: { durationSec: number; distanceKm: number } }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const showHr = splits.some((s) => s.avgHr !== null)
   const rowCls = showHr ? ROW_HR : ROW_NO_HR
@@ -229,8 +230,8 @@ function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: bo
     })
   }
 
-  const totalDurationSec = splits.reduce((s, sp) => s + sp.durationSec, 0)
-  const totalDistanceM = splits.reduce((s, sp) => s + sp.distanceM, 0)
+  const totalDurationSec = total?.durationSec ?? splits.reduce((s, sp) => s + sp.durationSec, 0)
+  const totalDistanceM = total ? total.distanceKm * 1000 : splits.reduce((s, sp) => s + sp.distanceM, 0)
   const totalAvgSpeedMs = totalDistanceM > 0 ? totalDistanceM / totalDurationSec : 0
   const totalAvgHr = showHr
     ? Math.round(splits.filter((s) => s.avgHr).reduce((s, sp) => s + (sp.avgHr ?? 0) * sp.durationSec, 0) / totalDurationSec)
@@ -318,7 +319,7 @@ function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: bo
           <span className="text-xs text-subtle">--</span>
           <span className="text-xs font-semibold text-foreground">{t.activity.splits.cols.total}</span>
           <span className="text-xs font-semibold tabular-nums">{formatDuration(totalDurationSec)}</span>
-          <span className="text-xs font-semibold tabular-nums">{distStr(totalDistanceM)}</span>
+          <span className="text-xs font-semibold tabular-nums">{total ? formatDistance(total.distanceKm) : distStr(totalDistanceM)}</span>
           <span className="text-xs font-semibold tabular-nums">{paceStr(totalAvgSpeedMs)}</span>
           {showHr && <span className="text-xs font-semibold tabular-nums">{totalAvgHr ?? '-'}</span>}
         </div>
@@ -360,7 +361,7 @@ export function KmSplits({ activity, plannedRepPace = null, repsOnOverview = fal
   ) : wholeRun ? (
     <WholeRunLap split={wholeRun} activityDistanceKm={activity.distanceKm} bare={hasKm} onKmSplits={hasKm ? () => setView('km') : undefined} />
   ) : (
-    <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} />
+    <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} total={activity.distanceKm > 0 && activity.durationSeconds > 0 ? { durationSec: activity.durationSeconds, distanceKm: activity.distanceKm } : undefined} />
   )
 
   if (!hasKm) return lapsView

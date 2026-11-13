@@ -37,6 +37,7 @@ const TOKEN = 'test-token'
 const FRAME = { minLon: 6.1, minLat: 49.1, maxLon: 6.2, maxLat: 49.2 }
 const DATA: MapShellData = {
   routeMeta: [],
+  untracked: [],
   clusters: [{ id: 'metz', routeCount: 1, totalKm: 10, center: [6.15, 49.15], labelPoint: [6.15, 49.15], bounds: FRAME, frame: FRAME, routeIndices: [] }],
   defaultClusterIdx: 0,
   totalCount: 1,

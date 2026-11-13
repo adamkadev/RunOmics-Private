@@ -195,6 +195,14 @@ describe('computeAreaTerritory', () => {
     expect(territory).toMatchObject({ percentVolume: 75, km: 30, routeCount: 1 })
   })
 
+  it('shares of all the running, the runs without a track counted as the page counts them', () => {
+    const routeMeta = [meta({ distanceKm: 30 }), meta({ distanceKm: 10 })]
+    const routes: [number, number][][] = [[[0, 0], [0.001, 0.001]], [[1, 1], [1.001, 1.001]]]
+    const untracked = [{ type: 'Base' as const, year: '2026', distanceKm: 20 }, { type: 'Base' as const, year: '2020', distanceKm: 100 }]
+    expect(computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { years: [], types: [] }, untracked)?.percentVolume).toBe(19)
+    expect(computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { years: ['2026'], types: [] }, untracked)?.percentVolume).toBe(50)
+  })
+
   // Three runs from the same door: 1 km, 2 km and 5 km out, due east.
   const east = (km: number): [number, number][] => [[7.75, 48.58], [7.75 + km / (111.32 * Math.cos((48.58 * Math.PI) / 180)), 48.58], [7.75, 48.58]]
   const routeMeta = [meta(), meta(), meta({ year: '2025' })]

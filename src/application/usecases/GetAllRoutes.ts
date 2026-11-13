@@ -34,6 +34,8 @@ export interface MapShellData {
   totalCount: number
   totalKm: number
   years: string[]
+  /** Runs with no GPS track: the heat share is of all the running, as the page's total is. */
+  untracked: Pick<RouteMeta, 'type' | 'year' | 'distanceKm'>[]
 }
 
 export interface AllRoutesData extends MapShellData {
@@ -159,14 +161,15 @@ export function getAllRoutes(): AllRoutesData {
     totalCount: activities.length,
     totalKm: Math.round(activities.reduce((s, a) => s + a.distanceKm, 0)),
     years: Array.from(new Set(activities.map((a) => a.date.slice(0, 4)))).sort(),
+    untracked: source.filter((a) => !(a.route && a.route.length > 1)).map((a) => ({ type: a.type, year: a.date.slice(0, 4), distanceKm: a.distanceKm })),
   }
   cache = { source, routes }
   return routes
 }
 
 export function getMapShellData(): MapShellData {
-  const { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years } = getAllRoutes()
-  return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years }
+  const { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years, untracked } = getAllRoutes()
+  return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years, untracked }
 }
 
 /** Bump when an answer's shape changes: a browser keeps an answer by its version for good. */

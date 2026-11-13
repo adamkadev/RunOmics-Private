@@ -972,13 +972,19 @@ export const en = {
         fitness: 'Fitness',
         fatigue: 'Fatigue',
         legend: { fresh: 'Fresh', neutral: 'Neutral', tired: 'Tired' },
+        span: { '4w': '4 weeks', '12w': '12 weeks', '1y': '1 year' },
+        spanShort: { '4w': '4 wks', '12w': '12 wks', '1y': '1 yr' },
+        within: (span: string) => `in ${span}`,
+        // A comeback starts from zero: the change would equal the value, so it is dated instead.
+        sinceReturn: 'since your return',
       },
       // The Load tab's compact cards.
       loadCompact: {
         title: 'Load',
         caption: '7-day vs 28-day',
         safe: (lo: number, hi: number) => `safe ${lo}–${hi}`,
-        fitnessWeek: 'fitness / week',
+        // The window's change, the same one the Form card's fitness delta names.
+        fitnessIn: (span: string) => `fitness · ${span}`,
         restingHr: 'Resting HR',
         sleep: 'Sleep',
         duration: (minutes: number) => `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`,
@@ -2460,10 +2466,11 @@ export const en = {
       phaseWeeks: (phase: string, n: number) => `${phase} · ${n} week${n !== 1 ? 's' : ''}`,
       // The legend's one blue entry.
       easyLong: 'Easy / Long',
-      kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      // The plan's km over the days it covers, not a goal for the month.
+      kmOf: (ran: string, plan: string) => `${ran} of ${plan} km planned`,
       // Where the plan starts partway through the month, the comparison is over the
       // days it covers, and the month's own total is said beside it.
-      planCovers: (from: string, to: string) => `plan covers ${from} – ${to}`,
+      planCovers: (from: string, to: string) => `${from} – ${to}`,
       monthTotal: (km: string) => `${km} km this month`,
       nextKey: 'Next key session',
       weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,

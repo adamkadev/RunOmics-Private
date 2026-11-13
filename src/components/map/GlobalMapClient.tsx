@@ -315,8 +315,8 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   const territory = useMemo(() => {
     const cluster = clusters[selectedIdx];
-    return cluster ? computeAreaTerritory(cluster, routeMeta, routes, filters) : null;
-  }, [clusters, selectedIdx, routeMeta, routes, filters]);
+    return cluster ? computeAreaTerritory(cluster, routeMeta, routes, filters, data.untracked) : null;
+  }, [clusters, selectedIdx, routeMeta, routes, filters, data.untracked]);
 
   // At the distance the card's sentence states.
   const ring = useMemo<HomeRing | null>(

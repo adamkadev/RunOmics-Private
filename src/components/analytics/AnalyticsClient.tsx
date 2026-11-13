@@ -109,7 +109,6 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   const tab = parseAnalyticsTab(tabParam)
   const opening = (id: TabId) => openingPeriod(DEFAULT_PERIOD[id], data.weeks, serverToday)
   const period = parseAnalyticsPeriod(periodParam, opening(tab))
-  const [periods, setPeriods] = useState<Partial<Record<TabId, LoadPeriod>>>({})
   const [offsets, setOffsets] = useState<Partial<Record<TabId, number>>>({})
   const offset = offsets[tab] ?? 0
   const tabsRef = useRef<HTMLDivElement>(null)
@@ -121,9 +120,9 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   function selectTab(id: TabId) {
     // Before the new tab paints: a page left even 1-2 pt down sets off iOS's scroll-edge blur over the large title.
     if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
-    setPeriods((all) => ({ ...all, [tab]: period }))
+    // The period carries over: a tab swap that changed it changed the numbers being compared.
     setTabParam(id === 'fitness' ? null : id)
-    writePeriod(id, periods[id] ?? opening(id))
+    writePeriod(id, period)
   }
 
   // A tab swap changes the page under the title without a scroll: have the
@@ -201,7 +200,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
       <div {...analyticsTabs.panelProps} {...swipeHandlers}>
         {tab === 'fitness' && days && (
-          <LoadTab window={days} period={period} onShift={shift} today={today} data={data} />
+          <LoadTab window={days} period={period} onShift={shift} today={today} data={data} reprise={data.reprise} />
         )}
         {tab === 'performance' && days && (
           <PerformanceTab
