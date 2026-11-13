@@ -11,8 +11,8 @@ describe('the race title', () => {
   })
 
   it('names the race by its own distance, without the year', () => {
-    expect(raceShortName('ING Night Marathon', 'Half-Marathon')).toBe('ING Night Half')
-    expect(raceShortName('Semi-Marathon de Metz 2027', 'Half-Marathon')).toBe('Half de Metz')
+    expect(raceShortName('Spring Marathon', 'Half-Marathon')).toBe('Spring Half')
+    expect(raceShortName('Semi-Marathon de la Ville 2027', 'Half-Marathon')).toBe('Half de la Ville')
     expect(raceShortName('Winter 10K', '10K')).toBe('Winter 10K')
   })
 })

@@ -31,7 +31,7 @@ export interface HomeRunSpot {
   firstDate: string
   lastDate: string
   totalKm: number
-  /** The Explore unit the start sits in, "Nouvelle Ville"; null outside every area. */
+  /** The Explore unit the start sits in; null outside every area. */
   place: string | null
 }
 
