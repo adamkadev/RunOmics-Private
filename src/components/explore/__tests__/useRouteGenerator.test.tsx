@@ -15,7 +15,6 @@ vi.mock('@/lib/reportClientError', () => ({ reportClientError: vi.fn() }))
 const AREA: ExploreAreaRef = { id: 'test-area', name: 'Test', version: 'v1', bbox: [-150.05, -0.05, -149.95, 0.05] }
 const M = 1 / 111_320
 const ORIGIN: LonLat = [-150, 0]
-const QUARTIER_START: LonLat = [-149.99, 0.01]
 const DEBOUNCE = 400
 const PREFS: RoutePreferences = { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false }
 const CONTEXT: RouteContext = { day: NO_SESSION, dark: false }
@@ -38,7 +37,6 @@ const spot = (id: string, eastM: number, radiusM = 80): AvoidSpot => ({ id, lon:
 
 function setup(overrides: Partial<RouteGeneratorInput> = {}) {
   const engine = {
-    routeStart: vi.fn(async () => QUARTIER_START),
     routePlan: vi.fn(async (_ref: ExploreAreaRef, { seeds }: { seeds: number[] }) => ({ kind: 'tour' as const, vias: seeds.map(() => []) })),
     scoreRoutes: vi.fn(async (_ref: ExploreAreaRef, { candidates, prefs }: { candidates: RouteCandidate[]; prefs: RoutePreferences }) =>
       candidates.map((c) => scored(c, prefs.avoidBusyRoads ? c.seed : -c.seed)).sort((a, b) => a.score - b.score),
@@ -196,17 +194,6 @@ describe('useRouteGenerator', () => {
     rerender({ km: 9 })
     await wait(DEBOUNCE)
     expect(result.current.failure).toBe('noRoute')
-  })
-
-  it('works out the quartier’s own start clear of the spots before it asks', async () => {
-    const spots = [spot('s', 5000)]
-    const { result, request, engine } = setup({ origin: null, avoidSpots: spots })
-    await settle()
-    await settle()
-    expect(engine.routeStart).toHaveBeenCalledWith(AREA, { unitId: 'test-unit', avoid: [[spots[0]!.lon, 0, 80]] })
-    expect(engine.routePlan).not.toHaveBeenCalled()
-    expect(request.mock.calls[0]![0].start).toEqual(QUARTIER_START)
-    expect(result.current.status).toBe('ready')
   })
 
   it('asks for nothing until the start is tapped', async () => {

@@ -4,7 +4,6 @@ import { useId } from 'react'
 import { t } from '@/i18n'
 import { COMPLETE_PCT, type UnitCoverage } from '@/domain/explore/types'
 import { formatDate, formatDistance, formatPercent } from '@/lib/formatters'
-import { Button } from '@/components/ui/Button'
 import { Sheet } from '@/components/ui/Sheet'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { QUARTIER_SHEET_TEST_ID } from './quartierCamera'
@@ -26,13 +25,11 @@ export function QuartierSheet({
   unit,
   completeSince = null,
   onClose,
-  onPlanRun,
 }: {
   unit: UnitCoverage
   /** The day it passed 90 %; shown only while this view counts it complete too. */
   completeSince?: string | null
   onClose: () => void
-  onPlanRun?: (unitId: string) => void
 }) {
   const titleId = useId()
   const s = t.pages.map.districts.sheet
@@ -50,13 +47,6 @@ export function QuartierSheet({
       subtitle={unit.kind === 'commune' ? s.commune : s.quartierOf(unit.commune)}
       titleId={titleId}
       testId={QUARTIER_SHEET_TEST_ID}
-      footer={
-        onPlanRun ? (
-          <Button size="lg" className="w-full" onClick={() => onPlanRun(unit.id)}>
-            {s.planRunHere}
-          </Button>
-        ) : undefined
-      }
     >
       <div className="flex flex-col gap-4 pt-3">
         <div className="flex flex-col gap-2">

@@ -366,20 +366,21 @@ export const en = {
       // Explore's route generator: a loop in one quartier, sized to today's plan, out as a GPX file.
       explore: {
         back: 'Back',
-        title: (name: string) => `Run in ${name}`,
+        // `street` is the start's, "Rue Émile Michel"; null when the map can't name it.
+        title: (street: string | null) => (street ? `Run from ${street}` : 'Run from the map point'),
+        titleWaiting: 'Choose a start',
         loop: 'Loop',
+        // The bar over the map once a loop is drawn. `km` is "8.5 km".
+        loopOf: (km: string) => `Loop · ${km}`,
         todaysPlan: 'Today’s plan',
         // The row for another day's session, from Plan's "Find a route". `day` is "Sat 24".
         planFor: (day: string) => `Plan for ${day}`,
         // The plan row as a button: back to the plan's distance. `km` is "9.5 km".
         usePlanDistance: (km: string) => `Use the plan’s distance, ${km}`,
         start: {
-          label: 'Start',
-          modes: { pick: 'Map point', quartier: 'District' },
-          modesFull: { pick: 'Start from a point I tap on the map', quartier: 'Start inside the district' },
           pickPrompt: 'Tap the map where you’ll start.',
-          // Under the mode switch. `place` is the district or the street; `distance` "0.9 km", or null without a home.
-          line: (place: string, distance: string | null) => (distance ? `Start: ${place} · ${distance} from home` : `Start: ${place}`),
+          // Under the title. `distance` is "0.9 km", or null without a home.
+          line: (distance: string | null) => (distance ? `${distance} from home · tap the map to move the start` : 'Tap the map to move the start'),
         },
         // The button that takes the shortest distance reaching the quartier. `km` is "12.5 km".
         useDistance: (km: string) => `Use ${km}`,

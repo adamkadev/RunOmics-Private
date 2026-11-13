@@ -92,13 +92,10 @@ describe('useExploreGenerator', () => {
     expect(onReturn).toHaveBeenCalledWith({ expanded: true, unitId: 'test-open' })
   })
 
-  it('sends a map tap to the start, then to a new spot while marking, and to nothing from the quartier', async () => {
+  it('sends a map tap to the start, then to a new spot while marking', async () => {
     const { result } = setup()
     act(() => result.current.planRun('test-unit'))
-    expect(result.current.start).toEqual({ mode: 'quartier', origin: null, waiting: false })
-    expect(result.current.mapPick).toBeNull()
-    act(() => result.current.setStartMode('pick'))
-    expect(result.current.start).toEqual({ mode: 'pick', origin: null, waiting: true })
+    expect(result.current.start).toEqual({ origin: null, waiting: true })
     act(() => result.current.mapPick?.([-150.01, 0.01]))
     expect(result.current.start.origin).toEqual([-150.01, 0.01])
 
@@ -108,9 +105,6 @@ describe('useExploreGenerator', () => {
     expect(result.current.avoid.marking).toBe(false)
     expect(result.current.avoid.spots).toHaveLength(1)
     expect(result.current.start.origin).toEqual([-150.01, 0.01])
-
-    act(() => result.current.setStartMode('quartier'))
-    expect(result.current.mapPick).toBeNull()
   })
 
   it('keeps no spot past its expiry and removes it from Firestore', async () => {

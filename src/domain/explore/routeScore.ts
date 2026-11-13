@@ -1,7 +1,6 @@
-import { nearAvoidCircle, type AvoidCircle } from './avoidSpots'
 import { climbBudget, climbPerKm, NO_SESSION, type SessionDay } from './climbBudget'
 import type { AreaIndex } from './coverage'
-import { MAX_STEP_M, cellIndices, cellCentre, cellOf, cellOfXY, projectX, projectY, sampleLine } from './grid'
+import { MAX_STEP_M, cellOf, cellOfXY, sampleLine } from './grid'
 import type { RouteCandidate, RoutePreferences, ScoredRoute } from './types'
 
 /** The terms are in docs/interface.md; the toggles only move weights, so Regenerate walks one ranking. */
@@ -214,39 +213,4 @@ export function scoreRoutes(
       }
     })
     .sort((a, b) => a.score - b.score || a.candidate.seed - b.candidate.seed)
-}
-
-/**
- * The centre of the runnable cell nearest the unit's label, clear of the spots: a public grid point
- * on a way the provider can route from. Privacy: home is deliberately not a
- * parameter, since starts that lean towards home pin it down across requests;
- * the label says only which quartier the athlete wants to run in.
- */
-export function routeStart(index: AreaIndex, unitId: string, avoid: readonly AvoidCircle[] = []): [number, number] | null {
-  const unit = index.units.find((u) => u.id === unitId)
-  if (!unit || unit.runnable.size === 0) return null
-
-  const { proj } = index
-  const [lon, lat] = unit.label
-  const rx = projectX(proj, lon)
-  const ry = projectY(proj, lat)
-  let nearest = -1
-  let nearestD = Infinity
-  let clear = -1
-  let clearD = Infinity
-  // The cells arrive sorted, so a tie keeps the lowest key.
-  for (const cell of unit.runnable) {
-    const [i, j] = cellIndices(cell)
-    const d = Math.hypot((i + 0.5) * proj.cellM - rx, (j + 0.5) * proj.cellM - ry)
-    if (d < nearestD) {
-      nearestD = d
-      nearest = cell
-    }
-    if (d < clearD && !nearAvoidCircle(cellCentre(proj, cell), avoid)) {
-      clearD = d
-      clear = cell
-    }
-  }
-  // A quartier all under spots still gets its start: the loops that run through them are dropped afterwards.
-  return cellCentre(proj, clear >= 0 ? clear : nearest)
 }

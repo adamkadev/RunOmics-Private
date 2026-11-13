@@ -6,13 +6,11 @@ import {
   ROUTE_W_NEW_ON,
   ROUTE_W_TRAFFIC,
   measureRoute,
-  routeStart,
   scoreRoutes,
 } from '../routeScore'
 import type { SessionDay } from '../climbBudget'
 import type { RouteCandidate, RoutePreferences } from '../types'
-import { projectX, projectY } from '../grid'
-import { PROJ, areaFile, at, cells, rect, testArea, unit } from './areaFixture'
+import { at, cells, testArea } from './areaFixture'
 
 const index = buildAreaIndex(testArea())
 /** Row 0 (y 0–150 m) has been run, from x 0 to 1200 m. */
@@ -236,52 +234,5 @@ describe('scoreRoutes', () => {
     const [scored] = scoreRoutes(index, visited, [box()], 2380, OFF)
 
     expect(scored!.newSteps).toEqual([false, true, true, true])
-  })
-})
-
-describe('routeStart', () => {
-  const area = buildAreaIndex(
-    areaFile([
-      unit('test-r', 'R', rect(0, 0, 600, 600), cells(0, 3, 0, 3, [[1, 0]]), { label: at(500, 500) }),
-      unit('test-empty', 'Empty', rect(600, 0, 900, 300), []),
-    ]),
-  )
-
-  function expectAt(point: [number, number] | null, x: number, y: number) {
-    const [lon, lat] = at(x, y)
-    expect(point![0]).toBeCloseTo(lon, 9)
-    expect(point![1]).toBeCloseTo(lat, 9)
-  }
-
-  it('is the centre of the runnable cell nearest the label', () => {
-    expectAt(routeStart(area, 'test-r'), 525, 525)
-  })
-
-  it('moves off a cell under a spot to the nearest clear one', () => {
-    const start = routeStart(area, 'test-r', [[...at(525, 525), 40]])!
-    const metres = Math.hypot(projectX(PROJ, start[0]) - 525, projectY(PROJ, start[1]) - 525)
-    expect(metres).toBeCloseTo(150, 6)
-  })
-
-  it('keeps the nearest cell when every cell is under a spot', () => {
-    expectAt(routeStart(area, 'test-r', [[...at(300, 300), 250]]), 525, 525)
-  })
-
-  it('skips the cells without a way, even the one holding the label', () => {
-    // The label sits in (1,0), which is not runnable; (0,0) is the nearest that is.
-    const offWay = buildAreaIndex(areaFile([unit('test-r', 'R', rect(0, 0, 600, 600), cells(0, 3, 0, 3, [[1, 0]]), { label: at(200, 60) })]))
-    expectAt(routeStart(offWay, 'test-r'), 75, 75)
-  })
-
-  it('is not home’s cell in the quartier home is in: the provider is never sent home', () => {
-    // Home (60, 60) is in R's runnable corner cell (0,0); the start is the label's cell, across the quartier.
-    const start = routeStart(area, 'test-r')!
-    const metres = Math.hypot(projectX(PROJ, start[0]) - 60, projectY(PROJ, start[1]) - 60)
-    expect(metres).toBeGreaterThan(600)
-  })
-
-  it('is null for an unknown unit or one without runnable cells', () => {
-    expect(routeStart(area, 'nope')).toBeNull()
-    expect(routeStart(area, 'test-empty')).toBeNull()
   })
 })

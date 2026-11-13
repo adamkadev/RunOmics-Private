@@ -27,12 +27,11 @@ const SPOT: AvoidSpot = { id: 's1', lon: -150, lat: 0, radiusM: 80, createdAt: '
 const openOptions = () => fireEvent.click(screen.getByRole('button', { name: /^Route options/ }))
 
 const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
-  unitName: 'Bravo',
+  title: 'Run from Rue de la Paix',
   distanceKm: 8.5,
   onDistanceChange: () => {},
   plan: null,
-  start: { mode: 'pick', waiting: false },
-  onStartModeChange: () => {},
+  start: { waiting: false },
   day: { session: null, beforeQuality: false },
   darkness: null,
   avoid,
@@ -64,13 +63,12 @@ describe('RouteGeneratorPanel', () => {
     render(
       <RouteGeneratorPanel
         {...base}
-        start={{ mode: 'quartier', waiting: false }}
-        startLine="Start: Hoenheim · 0.9 km from home"
+        startLine="0.9 km from home · tap the map to move the start"
         day={{ session: 'easy', beforeQuality: true }}
         nextKind="Threshold"
       />,
     )
-    expect(screen.getByTestId('route-start-line')).toHaveTextContent('Start: Hoenheim · 0.9 km from home')
+    expect(screen.getByTestId('route-start-line')).toHaveTextContent('0.9 km from home · tap the map to move the start')
     expect(screen.getByTestId('route-notes')).toHaveTextContent('Threshold tomorrow, so climb stays under 12 m/km.')
     expect(screen.getByTestId('route-footnote')).toHaveTextContent(t.pages.map.explore.generating)
   })
