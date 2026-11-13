@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { WorkoutPrescription } from '../types'
-import { sessionForRun } from '../sessionForRun'
+import { plannedSessionForRun, sessionForRun } from '../sessionForRun'
 
 const at = (date: string, type: string, extra: object = {}) =>
   ({ prescription: { id: `${date}-${type}`, date, type, status: 'planned', ...extra } as unknown as WorkoutPrescription, activityId: null as string | null })
@@ -37,5 +37,21 @@ describe('sessionForRun', () => {
   it('gives a run RunOmics typed its day\'s only session whatever its kind', () => {
     const easy = at('2026-10-06', 'easy')
     expect(sessionForRun({ ...run, typeSource: 'runomics' }, [easy])).toBe(easy.prescription)
+  })
+})
+
+describe('plannedSessionForRun', () => {
+  const easyRun = { id: 'run-1', date: '2026-11-13T07:00:00', type: 'Base' as const, description: 'Easy · 6 km' }
+  const none = () => false
+
+  it('takes the unrun session of the day before a run on a day with none, as Plan counts a moved session', () => {
+    const thursday = at('2026-11-12', 'easy')
+    expect(plannedSessionForRun(easyRun, [thursday, at('2026-11-14', 'threshold')], none)).toBe(thursday.prescription)
+  })
+
+  it('takes none when that day was run, the run\'s own day has a session, or the kinds differ', () => {
+    expect(plannedSessionForRun(easyRun, [at('2026-11-12', 'easy')], (day) => day === '2026-11-12')).toBeNull()
+    expect(plannedSessionForRun(easyRun, [at('2026-11-12', 'easy'), at('2026-11-13', 'threshold')], none)).toBeNull()
+    expect(plannedSessionForRun(easyRun, [at('2026-11-12', 'threshold')], none)).toBeNull()
   })
 })

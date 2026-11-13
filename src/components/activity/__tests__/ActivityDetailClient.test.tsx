@@ -72,7 +72,7 @@ describe('ActivityDetailClient', () => {
   })
 
   it('leaves the type to its dot when the title is the type alone', () => {
-    renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, name: 'Base', shownType: 'Base' })
+    renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, name: t.activityTypes.Base, shownType: 'Base' })
     const line = screen.getByTestId('activity-subtitle').textContent ?? ''
     expect(line.startsWith('Sun, Oct 18')).toBe(true)
     expect(line).not.toContain(t.activityTypes.Tempo)
@@ -130,7 +130,7 @@ describe('ActivityDetailClient', () => {
     renderDetail({ activity: { ...ACTIVITY, rpe: 1, weather } as ActivityDetailView, shoe: { gearId: 'v1', name: 'Vomero Plus', dotColor: '#fff' } })
     const chips = within(screen.getByTestId('run-chips'))
     expect(chips.getByTestId('run-effort').textContent).toBe(t.activities.row.rpeValue(1))
-    expect(chips.getAllByTestId('run-conditions').map((chip) => chip.textContent)).toEqual(['Clear sky · 18°C', 'wind 2 km/h N'])
+    expect(chips.getAllByTestId('run-conditions').map((chip) => chip.textContent)).toEqual(['Clear sky · 18°C', 'Wind 2 km/h N'])
     expect(chips.getByTestId('run-shoe').textContent).toBe('Vomero Plus')
     expect(chips.getByTestId('run-shoe-icon')).toBeInTheDocument()
     expect(chips.getByTestId('note-row')).toBeInTheDocument()

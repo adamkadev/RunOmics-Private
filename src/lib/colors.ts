@@ -75,6 +75,11 @@ export function zoneColor(zone: SessionZone): string {
   return `var(--zone-${zone})`
 }
 
+/** Time in heart-rate zones draws Z3 in Easy vs hard's grey-blue moderate; a session's own colour keeps the ramp. */
+export function hrZoneColor(zone: SessionZone): string {
+  return zone === 3 ? 'var(--zone-moderate)' : zoneColor(zone)
+}
+
 export function zoneTextColor(zone: SessionZone): string {
   return `var(--zone-${zone}-text)`
 }

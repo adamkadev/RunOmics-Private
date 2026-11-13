@@ -9,6 +9,7 @@ import { runTypeZone } from '@/lib/colors'
 import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
+import { verdictType } from '@/lib/activityTitle'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
 
@@ -876,7 +877,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   let at = PAD_X
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
-    ctx.fillStyle = palette.zones[zoneTint(row) - 1] ?? palette.mu
+    ctx.fillStyle = palette.hrZones[zoneTint(row) - 1] ?? palette.mu
     ctx.fillRect(at, barTop, w, ZONE_BAR_H)
     at += w
   }
@@ -886,7 +887,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
   for (const entry of legendEntries(ctx, zones.rows, fonts, barW)) {
-    ctx.fillStyle = palette.zones[zoneTint(entry.row) - 1] ?? palette.mu
+    ctx.fillStyle = palette.hrZones[zoneTint(entry.row) - 1] ?? palette.mu
     ctx.beginPath()
     ctx.arc(entry.x + SWATCH / 2, mid, SWATCH / 2, 0, Math.PI * 2)
     ctx.fill()
@@ -1046,7 +1047,7 @@ function drawVerdict(ctx: Ctx, scene: ShareCardScene, verdict: ShareVerdict, { m
   ctx.font = `700 ${VERDICT_EYEBROW}px ${fonts.text}`
   setSpacing(ctx, 0.1 * VERDICT_EYEBROW)
   // As the activity page's verdict; a run with no type reads as Base, the plain run's.
-  const eyebrow = t.activity.verdict.headline[verdict.tone](t.activityTypes[activity.type ?? 'Base'])
+  const eyebrow = t.activity.verdict.headline[verdict.tone](verdictType(activity.type ?? 'Base'))
   ctx.fillText(eyebrow.toLocaleUpperCase(t.locale), PAD_X + 10, y + VERDICT_EYEBROW / 2)
   setSpacing(ctx, 0)
   y += VERDICT_EYEBROW + VERDICT_EYEBROW_GAP
@@ -1071,7 +1072,7 @@ function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: Shar
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
     const last = row === zones.rows[zones.rows.length - 1]
-    ctx.fillStyle = palette.zones[zoneTint(row) - 1] ?? palette.mu
+    ctx.fillStyle = palette.hrZones[zoneTint(row) - 1] ?? palette.mu
     roundRect(ctx, at, top, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
     ctx.fill()
     at += w

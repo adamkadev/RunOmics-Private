@@ -6,6 +6,10 @@ export function activityTitle(activity: { description: string; date: string }): 
   return activity.description || t.activity.runTitle(formatWeekdayLong(activity.date))
 }
 
+export function verdictType(type: ActivityType): string {
+  return type === 'Base' ? t.activity.verdict.easyType : t.activityTypes[type]
+}
+
 /** Leading words that only name a session type; null where a word fits several types ("Intervals" is VO₂ max or threshold). */
 const TYPE_WORDS = new Map<string, ActivityType | null>([
   ['threshold', 'Threshold'], ['threshold run', 'Threshold'], ['seuil', 'Threshold'],

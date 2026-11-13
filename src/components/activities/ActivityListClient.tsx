@@ -97,11 +97,16 @@ const ROW_PX = 64
 /** A sorted list has no months: it grows by about a month's runs per block. */
 const ROWS_PER_BLOCK = 12
 
-function InsetRows({ items, efforts, types }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]>; types: Record<string, ActivityType> }) {
+function InsetRows({ items, efforts, types, names }: {
+  items: ActivitySummary[]
+  efforts: Record<string, QualifiedEffort[]>
+  types: Record<string, ActivityType>
+  names: Record<string, string>
+}) {
   return (
     <div className="inset-group flex flex-col">
       {items.map((a) => (
-        <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={efforts[a.id]} type={types[a.id]} variant="inset" />
+        <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={efforts[a.id]} type={types[a.id]} name={names[a.id]} variant="inset" />
       ))}
     </div>
   )
@@ -206,6 +211,8 @@ interface Props {
   exploreCompletedSince?: Record<string, string>
   /** Session types that override the watch's, by activity id. */
   sessionTypes?: Record<string, ActivityType>
+  /** Session names that replace the run's own, by activity id. */
+  sessionNames?: Record<string, string>
 }
 
 export function ActivityListClient({
@@ -219,6 +226,7 @@ export function ActivityListClient({
   explorePlans,
   exploreCompletedSince,
   sessionTypes = {},
+  sessionNames = {},
 }: Props) {
   const today = useToday(serverToday)
   // In the URL so /map can open on the map.
@@ -517,7 +525,7 @@ export function ActivityListClient({
                         </span>
                       </div>
                       <div className={cardClass({ padding: 'none', overflow: true })}>
-                        <InsetRows items={block.week.items} efforts={qualifiedEffortsByActivityId} types={sessionTypes} />
+                        <InsetRows items={block.week.items} efforts={qualifiedEffortsByActivityId} types={sessionTypes} names={sessionNames} />
                       </div>
                     </section>
                   ) : (
@@ -548,7 +556,7 @@ export function ActivityListClient({
                               <h3 className="whitespace-nowrap text-headline text-foreground">{g.label}</h3>
                               <PastWeekLine group={g} showEasy={!hasActiveFilter} weekTotal={hasActiveFilter ? (weekTotals?.get(g.key) ?? null) : null} />
                             </div>
-                            <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} types={sessionTypes} />
+                            <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} types={sessionTypes} names={sessionNames} />
                           </section>
                         ))}
                       </div>
@@ -561,7 +569,7 @@ export function ActivityListClient({
               // Off screen, a row is skipped by style and layout, as a week is under the months.
               <div className={cardClass({ padding: 'none', overflow: true, className: 'inset-group [--row-thumb-inset:78px] *:[content-visibility:auto] *:[contain-intrinsic-size:auto_72px]' })}>
                 {shownRows!.map((a) => (
-                  <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} type={sessionTypes[a.id]} />
+                  <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} type={sessionTypes[a.id]} name={sessionNames[a.id]} />
                 ))}
               </div>
             )}

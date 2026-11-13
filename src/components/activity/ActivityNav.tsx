@@ -5,7 +5,7 @@ import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { activityTitle } from '@/lib/activityTitle'
+import { activityTitle, sessionLabel } from '@/lib/activityTitle'
 
 interface AdjacentActivity {
   id: string
@@ -19,8 +19,9 @@ interface Props {
   next: AdjacentActivity | null
 }
 
+/** As the list writes it: "3 × 8′ @ 4:36", never the watch's "3x8'@4:36". */
 function activityLabel(activity: AdjacentActivity): string {
-  return activityTitle(activity)
+  return sessionLabel(activityTitle(activity))
 }
 
 function NavLink({ activity, direction }: { activity: AdjacentActivity | null; direction: 'prev' | 'next' }) {

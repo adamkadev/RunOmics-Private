@@ -20,10 +20,7 @@ export const ZONE_HEX = {
   dark: ['#8a9bb0', '#5b9cf5', '#8f7cf0', '#c565f8', '#f4438f'],
 } as const
 
-/**
- * Moderate (Z3) where easy, moderate and hard split one bar: a neutral grey-blue, so it never joins the Z4-Z5 purple
- * beside it. The five-zone scale keeps its own Z3, which a grey-blue would confuse with Z1.
- */
+/** Moderate, time in Z3: a neutral grey-blue, so it never joins the Z4-Z5 purple beside it. Sessions keep the ramp's Z3. */
 export const ZONE_MODERATE_HEX = { light: '#7a8aa0', dark: '#94a3b8' } as const
 
 /**

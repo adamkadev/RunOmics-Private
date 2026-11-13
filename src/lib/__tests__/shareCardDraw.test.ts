@@ -78,7 +78,7 @@ describe('drawShareCard', () => {
   })
 
   it('draws the same header and stat row on every design', () => {
-    const header = ['RunOmics', 'Strides 6 × 20s']
+    const header = ['RunOmics', 'Strides 6 × 20s · 10.0 km']
     const stats = ['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR']
     for (const design of ['route', 'stats', 'photo'] as const) {
       const all = texts(draw({ design }))
@@ -165,12 +165,12 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all).not.toContain('REP PACE')
     expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
     expect(all.slice(-8)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
-    expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z2']))
+    expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z1–Z2']))
   })
 
   it('titles the card by its set, the type leading the line under it, and the rep chips on the Stats card only', () => {
     const route = texts(draw({ design: 'route', activity: session }))
-    expect(route).toContain('3 × 8′')
+    expect(route).toContain('3 × 8′ · 10.0 km')
     expect(route.find((text) => text.endsWith(' · Hoenheim'))).toMatch(/^Threshold · /)
     expect(route).not.toContain('Threshold')
     expect(route).not.toContain('Rep 1')
@@ -478,7 +478,7 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
 
   it('draws one bar of edge-to-edge segments and a legend, no bar per zone', () => {
     const ops = draw({ design: 'stats' }).filter((o) => o.ty === layout(RUN, 'stats').middleTop)
-    const segments = ops.filter((o) => o.op === 'fillRect' && (o.fill === palette.zones[1] || o.fill === palette.zones[2]))
+    const segments = ops.filter((o) => o.op === 'fillRect' && (o.fill === palette.hrZones[1] || o.fill === palette.hrZones[2]))
     expect(segments).toHaveLength(2)
     const [z2, z3] = segments.map((o) => o.args as number[])
     expect(z2![0]! + z2![2]!).toBeCloseTo(z3![0]!, 6)
@@ -549,7 +549,7 @@ describe('the Photo design (design review, Oct 2026)', () => {
     const photo = { width: 1000, height: 800 } as HTMLImageElement
     const ops = draw({ design: 'photo', photo })
     expect(ops.find((o) => o.op === 'drawImage')?.args.slice(5)).toEqual([0, 0, W, H])
-    expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'Strides 6 × 20s')?.fill).toBe('#ffffff')
+    expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'Strides 6 × 20s · 10.0 km')?.fill).toBe('#ffffff')
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
   })
 

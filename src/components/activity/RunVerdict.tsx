@@ -6,6 +6,7 @@ import { VerdictBlock, type VerdictTone } from '@/components/ui/Verdict'
 import type { ReactNode } from 'react'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
+import { verdictType } from '@/lib/activityTitle'
 
 interface Props {
   activity: ActivityDetailView
@@ -30,7 +31,7 @@ const STATUS_TONE: Record<RunTone, VerdictTone> = {
 export function RunVerdict({ activity, type = activity.type, tone, aiVerdict, children }: Props) {
   const v = t.activity.verdict
   // The type's own verdict alone: "Session logged · Threshold logged" said it twice.
-  const eyebrow = v.headline[tone](t.activityTypes[type])
+  const eyebrow = v.headline[tone](verdictType(type))
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="run-verdict">

@@ -8,19 +8,19 @@ const weather = (over: Partial<ActivityWeather> = {}): ActivityWeather => ({
 
 describe('conditionsChips', () => {
   it('reads the sky, the temperature, then the wind', () => {
-    expect(conditionsChips(weather())).toEqual(['Clear sky · 18°C', 'wind 2 km/h N'])
-    expect(conditionsChips(weather({ code: 61 }))).toEqual(['Rain · 18°C', 'wind 2 km/h N'])
+    expect(conditionsChips(weather())).toEqual(['Clear sky · 18°C', 'Wind 2 km/h N'])
+    expect(conditionsChips(weather({ code: 61 }))).toEqual(['Rain · 18°C', 'Wind 2 km/h N'])
   })
 
   it('adds feels-like 3° apart, and the humidity once the dew point is muggy', () => {
-    expect(conditionsChips(weather({ apparentTempC: 14.9, code: 3 }))).toEqual(['Overcast · 18°C, feels 15°C', 'wind 2 km/h N'])
+    expect(conditionsChips(weather({ apparentTempC: 14.9, code: 3 }))).toEqual(['Overcast · 18°C, feels 15°C', 'Wind 2 km/h N'])
     expect(conditionsChips(weather({ tempC: 24, apparentTempC: 27, humidityPct: 70 }))).toEqual(['Clear sky · 24°C, feels 27°C', '70% humidity · wind 2 km/h N'])
-    expect(conditionsChips(weather({ tempC: 24, apparentTempC: 24, humidityPct: 50 }))).toEqual(['Clear sky · 24°C', 'wind 2 km/h N'])
+    expect(conditionsChips(weather({ tempC: 24, apparentTempC: 24, humidityPct: 50 }))).toEqual(['Clear sky · 24°C', 'Wind 2 km/h N'])
   })
 
   it('drops what it has no reading for', () => {
     expect(conditionsChips(weather({ windKph: NaN, code: NaN }))).toEqual(['18°C'])
-    expect(conditionsChips(weather({ windDirDeg: NaN, code: 42 }))).toEqual(['18°C', 'wind 2 km/h'])
+    expect(conditionsChips(weather({ windDirDeg: NaN, code: 42 }))).toEqual(['18°C', 'Wind 2 km/h'])
   })
 })
 

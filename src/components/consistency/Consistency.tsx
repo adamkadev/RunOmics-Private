@@ -39,7 +39,12 @@ function StreakCard({ view }: { view: ConsistencyView }) {
             </span>
             <span className="text-[17px] font-medium text-muted-foreground">{c.weeks(view.streakWeeks)}</span>
           </p>
-          <span className="text-[12.5px] text-muted-foreground">{c.streakRule(view.target, view.bestStreakWeeks)}</span>
+          <span className="text-[12.5px] text-muted-foreground">{c.streakRule(view.target)}</span>
+          {/* Label and value on their own lines: one sentence left "weeks" alone on the second. */}
+          <span className="flex flex-col text-[12.5px] text-muted-foreground" data-testid="best-streak">
+            <span>{c.bestStreak}</span>
+            <span className="text-foreground">{`${view.bestStreakWeeks} ${c.weeks(view.bestStreakWeeks)}`}</span>
+          </span>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5" data-testid="consistency-this-week">
           <span className="text-xs text-muted-foreground">{c.thisWeek}</span>
@@ -65,7 +70,7 @@ function StreakCard({ view }: { view: ConsistencyView }) {
         <p className="flex flex-col gap-0.5">
           <span className="text-[17px] font-semibold tabular-nums text-foreground">
             {view.weeksOnTarget}
-            <span className="font-medium text-subtle">/{view.weeksCounted}</span>
+            <span className="font-medium text-subtle">{c.weeksOf(view.weeksCounted)}</span>
           </span>
           <span className="text-[11.5px] text-muted-foreground">{c.weeksOnTarget}</span>
         </p>

@@ -163,13 +163,15 @@ export const en = {
     rangeLabel: 'Window',
     streakEyebrow: 'Weekly streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
-    streakRule: (target: number, best: number) => `${target}+ runs a week · best streak ${best} week${best === 1 ? '' : 's'}`,
+    streakRule: (target: number) => `${target}+ runs a week`,
+    bestStreak: 'Best streak',
     thisWeek: 'This week',
     thisWeekRuns: (runs: number) => `${runs} done`,
     keeps: (runs: number) => `${runs} more keeps it`,
     planned: (sessions: number) => `${sessions} planned`,
     thisWeekLabel: (runs: number, target: number) => `This week: ${runs} of ${target} runs`,
     weeksOnTarget: 'weeks on target',
+    weeksOf: (counted: number) => `/${counted}`,
     runsPerWeek: 'runs / week',
     runs: (runs: number): string => (runs === 1 ? 'run' : 'runs'),
     perWeek: 'Runs per week',
@@ -1120,9 +1122,9 @@ export const en = {
       paceCurve: {
         title: 'Pace curve',
         caption: 'best pace for each duration',
-        about: "Your best pace for every duration from 30 seconds to 2 hours, in these weeks and in the weeks before, read from each run's full recording. Critical speed (CS) is fitted to the 3 to 20 minute bests as distance = CS x time + D': the fastest pace you can hold without tiring towards a stop, roughly what you could race for 30 to 40 minutes, usually a little faster than your threshold pace. D' is the distance you can run above it before you tire. It is only as good as your hardest efforts of 3 to 20 minutes: easy weeks read low.",
+        about: "Your best pace for every duration from 30 seconds to 2 hours, in these weeks and in the weeks before, read from each run's full recording. Critical speed (CS) is fitted to the 3 to 20 minute bests as distance = CS x time + D′: the fastest pace you can hold without tiring towards a stop, roughly what you could race for 30 to 40 minutes, usually a little faster than your threshold pace. D′ is the distance you can run above it before you tire. It is only as good as your hardest efforts of 3 to 20 minutes: easy weeks read low.",
         cs: 'Critical speed',
-        dPrime: (m: number) => `D' ${m} m`,
+        dPrime: (m: number) => `D′ ${m} m`,
         noThreshold: 'Fitted to your 3-20 min bests: roughly the pace you could hold for 30 to 40 minutes.',
         level: (pace: string) => ['Level with your threshold pace of ', pace, '.'] as [string, string, string],
         faster: (s: number, pace: string) => [`${s} s/km faster than your threshold pace of `, pace, ', where critical speed usually sits.'] as [string, string, string],
@@ -1351,7 +1353,7 @@ export const en = {
       fastest: 'Fastest',
     },
     row: {
-      rpeValue: (n: number) => `RPE ${n}`,
+      rpeValue: (n: number) => `Effort ${n}/10`,
     },
   },
 
@@ -1383,7 +1385,7 @@ export const en = {
         dark: 'Dark',
         light: 'Light',
       },
-      inZone: (zone: number) => `in Z${zone}`,
+      inZone: (zone: string) => `in ${zone}`,
       // The headline of an easy run's zones, on a run without a written verdict: "100% easy · Z1–Z2".
       easyZones: (from: number, to: number) => `easy · Z${from}–Z${to}`,
       noZones: 'No heart-rate zones for this run',
@@ -1437,6 +1439,8 @@ export const en = {
         neutral: (type: string) => `${type} logged`,
         caution: (type: string) => `Tough ${type}`,
       },
+      // The easy type's word inside a verdict: "Solid base", not "Solid easy".
+      easyType: 'base',
     },
     // Read-only: RPE comes from the watch, and the note is the one thing on an
     // activity the user writes.
@@ -1838,7 +1842,8 @@ export const en = {
       saved: 'Saved. Mileage updates after the next sync.',
     },
     listCheckedAt: (date: string) => `Shoe list last refreshed from Garmin on ${date}`,
-    tracked: (km: string) => `${km} km tracked`,
+    // The gap is what All time counts beyond the shoes: runs Garmin gave no shoe.
+    tracked: (km: string, without: string | null) => (without ? `${km} km on shoes (${without} km without a shoe)` : `${km} km on shoes`),
     addLabel: 'Add a pair in your watch app',
     edit: 'Edit shoe',
     editLabel: 'Edit in your watch app',
@@ -2745,7 +2750,7 @@ export const en = {
     VO2Max: 'VO₂ Max',
     Threshold: 'Threshold',
     Tempo: 'Tempo',
-    Base: 'Base',
+    Base: 'Easy',
     Race: 'Race',
   } as Record<ActivityType, string>,
 }
