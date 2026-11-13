@@ -531,7 +531,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
         />
       )}
 
-      {openUnit && <QuartierSheet unit={openUnit} completeSince={completedSince?.[openUnit.id] ?? null} onClose={closeQuartier} onPlanRun={onPlanRun} />}
+      {openUnit && <QuartierSheet unit={openUnit} completeSince={completedSince?.[openUnit.id] ?? null} onClose={closeQuartier} />}
 
       <div
         className={
@@ -569,7 +569,6 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             prefs={explore.prefs}
             onPrefsChange={explore.setPrefs}
             start={routeStart}
-            onStartModeChange={explore.setStartMode}
             day={explore.day}
             nextKind={explore.nextKind}
             avoid={avoid}

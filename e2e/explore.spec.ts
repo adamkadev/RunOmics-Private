@@ -95,7 +95,9 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
   const panel = page.getByTestId('route-generator')
   await expect(panel.getByTestId('route-pick-prompt')).toHaveText('Tap the map where you’ll start.')
   expect(request).toBeNull()
-  await panel.getByRole('button', { name: 'Start inside the district' }).click()
+  await tapMap(page, 0.5, 0.3, async () => {
+    await expect(panel.getByTestId('route-pick-prompt')).toHaveCount(0, { timeout: 1_500 })
+  })
   // The labels show while loops load; the mocked climb only once they're in.
   await expect(panel.getByTestId('route-stats')).toContainText('+24 m')
   expect(request).not.toBeNull()

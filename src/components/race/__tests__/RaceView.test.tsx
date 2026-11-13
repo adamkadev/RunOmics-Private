@@ -47,6 +47,17 @@ describe('RaceView race-day form', () => {
   })
 })
 
+describe('RaceView header', () => {
+  it('puts the race facts under the title, with no eyebrow', () => {
+    const base = data({ kind: 'planShort', plannedThrough: null })
+    render(<RaceView data={{ ...base, race: { ...base.race, location: 'Testville' } }} />)
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Winter 10K')
+    expect(screen.getByTestId('race-facts')).toHaveTextContent(/^10K · Nov 15(, 2026)? · in 19 days · Testville$/)
+    expect(screen.queryByTestId('race-eyebrow')).toBeNull()
+  })
+})
+
 describe('NoRace', () => {
   it('titles the page and says what is missing and how to add it', () => {
     render(<NoRace />)

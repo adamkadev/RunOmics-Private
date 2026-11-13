@@ -8,10 +8,8 @@ import {
   type ExploreRequestType,
   type ExploreResponse,
   type ExploreResults,
-  type LonLat,
   type RequestOf,
   type RoutePlanRequest,
-  type RouteStartRequest,
   type ScoreRoutesRequest,
   type TrackBuffers,
 } from './workerProtocol'
@@ -33,7 +31,6 @@ export interface ExploreEngine {
   coverage(ref: ExploreAreaRef, options: CoverageOptions): Promise<AreaCoverage>
   /** Best first; new ground is measured against every run sent, whatever the filters. */
   scoreRoutes(ref: ExploreAreaRef, request: ScoreRoutesRequest): Promise<ScoredRoute[]>
-  routeStart(ref: ExploreAreaRef, request: RouteStartRequest): Promise<LonLat | null>
   routePlan(ref: ExploreAreaRef, request: RoutePlanRequest): Promise<RoutePlan | null>
   /** The ids of `ids` not sent to the worker yet, so a caller can pack only those. */
   unsent(ref: ExploreAreaRef, ids: readonly string[]): string[]
@@ -183,12 +180,6 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
     return call<'scoreRoutes'>({ type: 'scoreRoutes', areaKey: areaKey(ref), candidates, targetM, prefs, ...(context ? { context } : {}) })
   }
 
-  async function routeStart(ref: ExploreAreaRef, request: RouteStartRequest): Promise<LonLat | null> {
-    await loadArea(ref)
-    const { unitId, avoid } = request
-    return call<'routeStart'>({ type: 'routeStart', areaKey: areaKey(ref), unitId, ...(avoid?.length ? { avoid: [...avoid] } : {}) })
-  }
-
   async function routePlan(ref: ExploreAreaRef, request: RoutePlanRequest): Promise<RoutePlan | null> {
     await loadArea(ref)
     const { unitId, origin, home, homeFromTracks, distanceM, seeds, avoid } = request
@@ -215,7 +206,6 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
     addTracks,
     coverage,
     scoreRoutes,
-    routeStart,
     routePlan,
     unsent,
     dispose: () => reset(new Error('The Explore engine was disposed')),

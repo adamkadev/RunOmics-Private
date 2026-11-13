@@ -22,12 +22,10 @@ import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
-import { SEGMENTED_FILL_SEGMENT_CLASS, SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
 import { SHEET_CONTROL } from '@/components/ui/Sheet'
 import { Toggle } from '@/components/ui/Toggle'
 import { ROUTE_KM_MAX } from './exploreHref'
 import { canStepDown, canStepUp, stepRouteKm, type RouteStats } from './routeGenerator'
-import { ROUTE_START_MODES, type RouteStartMode } from './routeStart'
 import type { AvoidSpots } from './useAvoidSpots'
 import type { GeneratorFailure } from './useRouteGenerator'
 
@@ -104,20 +102,21 @@ const stepperKm = (value: number) => `${formatDecimal(value, 1)} ${t.units.km}`
 const GROUPED = 'rounded-[20px] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]'
 /** A label that can't fit is cut short, not wrapped, and a size down on a 320 pt phone, so the row holds in both languages. */
 const ROW_BUTTON = 'min-w-0 whitespace-nowrap px-3 max-[359px]:text-[14px]'
+const OPTIONS_FADE = 'linear-gradient(to right, #000 calc(100% - 28px), transparent)'
 /** 38 pt, a 44 pt hit. */
 const STEP_BUTTON = cn(SHEET_CONTROL, 'size-[38px] h-[38px] text-foreground disabled:opacity-35')
 
 export interface RouteGeneratorPanelProps {
-  unitName: string | null
+  /** "Run from Rue Émile Michel". */
+  title: string
   /** On the stepper's 0.5 km grid. */
   distanceKm: number
   onDistanceChange: (km: number) => void
   /** The session it plans for; its km is what the check compares the distance with. */
   plan: { heading: string; label: string; km: number | null } | null
-  start: { mode: RouteStartMode; waiting: boolean }
-  /** "Start: Hoenheim · 0.9 km from home", once the start is known. */
+  start: { waiting: boolean }
+  /** "0.6 km from home · tap the map to move the start", once the start is tapped. */
   startLine?: string | null
-  onStartModeChange: (mode: RouteStartMode) => void
   day: SessionDay
   /** The kind of the quality session the next day, "Threshold", or null. */
   nextKind?: string | null
@@ -143,13 +142,12 @@ export interface RouteGeneratorPanelProps {
 
 /** Not modal: no scrim and nothing made inert, so the map above it still pans and zooms. */
 export function RouteGeneratorPanel({
-  unitName,
+  title,
   distanceKm,
   onDistanceChange,
   plan,
   start,
   startLine = null,
-  onStartModeChange,
   day,
   nextKind = null,
   darkness,
@@ -272,7 +270,7 @@ export function RouteGeneratorPanel({
             <X size={20} strokeWidth={2.2} aria-hidden="true" />
           </button>
           <h2 id={titleId} className="min-w-0 truncate text-center text-headline text-foreground">
-            {unitName ? e.title(unitName) : ' '}
+            {title}
           </h2>
           <span aria-hidden="true" />
         </div>
@@ -283,6 +281,12 @@ export function RouteGeneratorPanel({
             <p className="flex items-center gap-2.5 text-[16px] font-semibold text-foreground" data-testid="route-pick-prompt">
               <MapPin size={20} aria-hidden="true" className="shrink-0 text-accent-text" />
               {e.start.pickPrompt}
+            </p>
+          )}
+          {startLine && (
+            <p data-testid="route-start-line" className="-mt-1.5 flex items-start gap-1.5 text-[13px] leading-[18px] text-[var(--text-2)]">
+              <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />
+              <span className="min-w-0 text-pretty">{startLine}</span>
             </p>
           )}
           {plan && (
@@ -304,31 +308,6 @@ export function RouteGeneratorPanel({
                 </span>
               )}
             </button>
-          )}
-
-          <div role="group" aria-label={e.start.label} data-testid="route-start" className={cn(SEGMENTED_TRACK_CLASS, 'w-full')}>
-            {ROUTE_START_MODES.map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => onStartModeChange(mode)}
-                aria-pressed={start.mode === mode}
-                aria-label={e.start.modesFull[mode]}
-                className={cn(
-                  SEGMENTED_FILL_SEGMENT_CLASS,
-                  'hit-44 flex h-8 items-center whitespace-nowrap px-2 text-[13px] transition-colors',
-                  start.mode === mode ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS,
-                )}
-              >
-                <span className="truncate">{e.start.modes[mode]}</span>
-              </button>
-            ))}
-          </div>
-          {startLine && (
-            <p data-testid="route-start-line" className="-mt-1.5 flex items-center gap-1.5 truncate text-[13px] leading-[18px] text-[var(--text-2)]">
-              <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-accent" />
-              <span className="truncate">{startLine}</span>
-            </p>
           )}
 
           <div className="flex items-center justify-between gap-3">
@@ -372,8 +351,10 @@ export function RouteGeneratorPanel({
               aria-label={`${e.options}: ${options}`}
               className={cn(GROUPED, 'flex h-[46px] items-center gap-2 pl-4 pr-3.5 text-left')}
             >
-              {/* 14 pt, so the three options fit a 393 pt phone's row. */}
-              <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">{options}</span>
+              {/* 14 pt, so the three options fit a 393 pt phone's row; past that they fade out rather than end in "…". */}
+              <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-[14px] text-foreground" style={{ maskImage: OPTIONS_FADE, WebkitMaskImage: OPTIONS_FADE }}>
+                {options}
+              </span>
               <ChevronRight
                 size={16}
                 aria-hidden="true"
