@@ -1017,14 +1017,14 @@ export const en = {
       // The Load tab's compact cards.
       loadCompact: {
         title: 'Load',
-        caption: '7-day vs 28-day',
+        caption: '7\u2011day vs 28\u2011day',
         safe: (lo: number, hi: number) => `safe ${lo}–${hi}`,
         // The window's change, the same one the Form card's fitness delta names.
         fitnessIn: (span: string) => `fitness · ${span}`,
         restingHr: 'Resting HR',
         sleep: 'Sleep',
         duration: (minutes: number) => `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`,
-        sleepWeek: (average: string) => `7-night avg ${average}`,
+        sleepWeek: (average: string) => `7\u2011night avg ${average}`,
         hrv: 'HRV',
         baseline: (side: 'low' | 'high' | null, lo: number, hi: number) =>
           side === 'high' ? `above ${lo}–${hi} baseline` : side === 'low' ? `below ${lo}–${hi} baseline` : `inside ${lo}–${hi} baseline`,
@@ -1523,7 +1523,7 @@ export const en = {
       // The row that stands in for the card on Overview. Ranked by pace, so it
       // says pace; a run's total time is secondary.
       rowTitle: (rank: number, n: number) =>
-        rank === 1 ? `Same route · best pace of ${n}` : `Same route · ${ordinal(rank)}-best pace of ${n}`,
+        rank === 1 ? `Same route · best pace of ${n}` : `Same route · ${ordinal(rank)}\u2011best pace of ${n}`,
       rowDelta: (seconds: number) => `+${seconds} s/km vs your route best`,
       rowBest: 'Your best pace on this route',
     },
@@ -1976,7 +1976,8 @@ export const en = {
       // The return row: the longest non-stop run since the break, and the next step of 10, 20 or 30 minutes.
       comebackValue: (minutes: number) => `${minutes} min non-stop`,
       comebackNext: (minutes: number) => `next: ${minutes} min`,
-      streakValue: (weeks: number) => `${weeks}-week streak`,
+      // U+2011: a value's tabular figures set an ASCII hyphen a figure wide ("1 - week").
+      streakValue: (weeks: number) => `${weeks}\u2011week streak`,
       noStreakShort: 'no streak yet',
       recordCount: (n: number) => `${n} distance${n === 1 ? '' : 's'}`,
       exploredIn: (place: string) => `Explored · ${place}`,
@@ -2292,7 +2293,7 @@ export const en = {
 
   // The 12-week checkpoint: one cycle set against the 12 weeks before it.
   checkpoint: {
-    title: '12-week checkpoint',
+    title: '12\u2011week checkpoint',
     cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: 'Last 12 weeks',
     againstPrevious: (range: string) => `vs previous cycle · ${range}`,
