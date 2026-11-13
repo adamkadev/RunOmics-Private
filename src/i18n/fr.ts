@@ -1272,9 +1272,8 @@ export const fr = {
       showReps: 'Allure des fractions',
       // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
       repPaceStat: 'Allure fractions',
-      // La ligne d’accent sous l’en-tête d’une séance de fractionné : « 9 s/km sous la cible ».
       secPerKm: (n: number) => `${n} s/km`,
-      underTarget: 'sous la cible',
+      fasterThanTarget: (gap: string) => `Blocs ${gap} plus rapides que la cible`,
       onTarget: 'dans la cible',
       formatTitle: 'Format',
       formatLabels: {

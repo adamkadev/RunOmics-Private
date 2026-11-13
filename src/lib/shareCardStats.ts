@@ -56,7 +56,7 @@ export interface ShareStat {
 
 export function shareDuration(seconds: number): { value: string; unit: string } {
   const { value, unit } = formatDurationRounded(seconds)
-  return { value, unit: ` ${unit}` }
+  return { value, unit: unit ? ` ${unit}` : '' }
 }
 
 /** `repPace` leads an interval session's row with the reps' pace: the Route card has no rep-pace hero over it. */
@@ -80,7 +80,7 @@ export function shareStats(activity: ShareActivity, { repPace = false }: { repPa
   return stats
 }
 
-/** "9 s/km under target", the line under the header; null when the reps had no target. */
+/** "Reps 9 s/km faster than target", the line under the header; null when the reps had no target. */
 export function shareRepResult(activity: ShareActivity): string | null {
   const s = t.activity.shareCard
   const reps = activity.reps
@@ -88,7 +88,7 @@ export function shareRepResult(activity: ShareActivity): string | null {
   const off = repOffset(reps.paceSecPerKm, reps.target)
   if (off === 0) return s.onTarget.charAt(0).toLocaleUpperCase(t.locale) + s.onTarget.slice(1)
   // A card is posted: a slower set gets no line rather than "5 s/km over target" under the header.
-  return off < 0 ? `${s.secPerKm(-off)} ${s.underTarget}` : null
+  return off < 0 ? s.fasterThanTarget(s.secPerKm(-off)) : null
 }
 
 export function repLength(seconds: number): string {

@@ -1358,7 +1358,7 @@ export const en = {
       repPaceStat: 'Rep pace',
       // The accent line under the header of an interval session: "9 s/km under target".
       secPerKm: (n: number) => `${n} s/km`,
-      underTarget: 'under target',
+      fasterThanTarget: (gap: string) => `Reps ${gap} faster than target`,
       onTarget: 'on target',
       formatTitle: 'Format',
       formatLabels: {

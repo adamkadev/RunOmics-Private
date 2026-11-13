@@ -16,7 +16,7 @@ export function formatDuration(seconds: number): string {
 
 /** From an hour, to the minute ("1:07" h); under it the seconds stay, as a 5K's time is read. */
 export function formatDurationRounded(seconds: number): { value: string; unit: string } {
-  if (Math.round(seconds) < 3600) return { value: formatClock(seconds), unit: t.units.min }
+  if (Math.round(seconds) < 3600) return { value: formatClock(seconds), unit: '' }
   const totalMinutes = Math.round(seconds / 60)
   const h = Math.floor(totalMinutes / 60)
   const m = totalMinutes % 60

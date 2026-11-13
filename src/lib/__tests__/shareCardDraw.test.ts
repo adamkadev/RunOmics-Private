@@ -79,7 +79,7 @@ describe('drawShareCard', () => {
 
   it('draws the same header and stat row on every design', () => {
     const header = ['RunOmics', 'Strides 6 × 20s']
-    const stats = ['10.0', ' km', 'Distance', '57:33', ' min', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR']
+    const stats = ['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR']
     for (const design of ['route', 'stats', 'photo'] as const) {
       const all = texts(draw({ design }))
       const at = all.indexOf('RunOmics')
@@ -89,16 +89,15 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the logo mark, the route and the start marker\'s fill', () => {
+  it('keeps the accent to the route and the start marker\'s fill, the logo mark in ink', () => {
     for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
       const ops = draw({ design: 'route', activity })
       expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
       expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
     }
-    // The mark is three accent strokes; a plain run's trace is a fourth.
-    expect(draw({ design: 'route' }).filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(4)
+    expect(draw({ design: 'route' }).filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(1)
     const reps = draw({ design: 'route', activity: { ...RUN, type: 'Threshold' as const, reps: REPS } })
-    expect(reps.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
+    expect(reps.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(0)
   })
 
   it('heads the card with the v5.2 lockup: three arcs of the small mark, then "RunOmics"', () => {
@@ -140,7 +139,7 @@ describe('an interval session (design review, Oct 2026)', () => {
   it('leads the Route card\'s stat row with the rep pace, its label in the session\'s zone, then Distance, Time and Avg HR', () => {
     const ops = draw({ design: 'route', activity: session })
     const all = texts(ops)
-    expect(all.slice(-12)).toEqual(['4:24', ' /km', 'Rep pace', '10.0', ' km', 'Distance', '57:33', ' min', 'Time', '153', ' bpm', 'Avg HR'])
+    expect(all.slice(-11)).toEqual(['4:24', ' /km', 'Rep pace', '10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
     const label = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Rep pace')!
     expect(label.fill).toBe(palette.zones[3])
     expect(label.font).toMatch(/^600 /)
@@ -157,7 +156,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all.some((text) => text.startsWith('in Z'))).toBe(false)
     expect(all).not.toContain('REP PACE · 3 × 8′')
     expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
-    expect(all.slice(-9)).toEqual(['10.0', ' km', 'Distance', '57:33', ' min', 'Time', '153', ' bpm', 'Avg HR'])
+    expect(all.slice(-8)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
     expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z2']))
   })
 
@@ -170,18 +169,18 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(texts(draw({ design: 'stats', activity: session }))).toEqual(expect.arrayContaining(['Rep 1', '4:22', 'Rep 3', '4:26']))
   })
 
-  it('puts the reps\' result in the good-status green under the header on Route and Stats, never on Photo or a plain run', () => {
+  it('puts the reps\' result in ink under the header on Route and Stats, never on Photo or a plain run', () => {
     for (const design of ['route', 'stats'] as const) {
       const ops = draw({ design, activity: session })
-      const line = ops.find((o) => o.op === 'fillText' && o.args[0] === '1 s/km under target')!
-      expect(line.fill).toBe(STATUS_HEX.dark.pos)
-      expect(line.font).toMatch(/^700 16px/)
+      const line = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Reps 1 s/km faster than target')!
+      expect(line.fill).not.toBe(STATUS_HEX.dark.pos)
+      expect(line.font).toMatch(/^600 16px/)
       const subtitle = ops.find((o) => o.op === 'fillText' && (o.args[0] as string).endsWith(' · Hoenheim'))!
       expect(line.args[2] as number).toBeGreaterThan(subtitle.args[2] as number)
       expect(line.args[2] as number).toBeLessThan(layout(session, design).textTop)
     }
     expect(texts(draw({ design: 'route', activity: { ...session, reps: { ...REPS, target: { min: 260, max: 270 } } } }))).toContain('On target')
-    expect(texts(draw({ design: 'photo', activity: session }))).not.toContain('1 s/km under target')
+    expect(texts(draw({ design: 'photo', activity: session }))).not.toContain('Reps 1 s/km faster than target')
     expect(draw({ design: 'stats' }).filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
   })
 
@@ -210,7 +209,7 @@ describe('an interval session (design review, Oct 2026)', () => {
 
   it('keys the reps\' colour in the legend, the result left to the line under the header', () => {
     const all = texts(draw({ design: 'route', activity: session }))
-    expect(all.filter((text) => text.includes('target'))).toEqual(['1 s/km under target'])
+    expect(all.filter((text) => text.includes('target'))).toEqual(['Reps 1 s/km faster than target'])
   })
 
   it('keeps the Route card\'s stat row in place, and the Photo card\'s rep-pace hero', () => {
@@ -410,7 +409,7 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
 
   it('keeps the 4-stat row', () => {
     const all = texts(draw({ design: 'stats', activity: led }))
-    expect(all.slice(-12)).toEqual(['10.0', ' km', 'Distance', '57:33', ' min', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
+    expect(all.slice(-11)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
   })
 
   it('draws no bar for a run without heart rate, the verdict still leading', () => {
@@ -626,7 +625,7 @@ describe('the route video\'s frames', () => {
 
   it('counts distance and time up and holds the pace back', () => {
     const all = texts(draw({ design: 'route', progress: 0.5 }))
-    expect(all.slice(-12)).toEqual(['5.0', ' km', 'Distance', '28:47', ' min', 'Time', '\u2013', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
+    expect(all.slice(-11)).toEqual(['5.0', ' km', 'Distance', '28:47', 'Time', '\u2013', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
   })
 
   it('reads the reps legend as the run\'s phase while it draws, at each window\'s edges', () => {

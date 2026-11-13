@@ -29,8 +29,8 @@ describe('formatClock', () => {
 
 describe('formatDurationRounded', () => {
   it('keeps the seconds under an hour', () => {
-    expect(formatDurationRounded(1334)).toEqual({ value: '22:14', unit: 'min' })
-    expect(formatDurationRounded(3599.4)).toEqual({ value: '59:59', unit: 'min' })
+    expect(formatDurationRounded(1334)).toEqual({ value: '22:14', unit: '' })
+    expect(formatDurationRounded(3599.4)).toEqual({ value: '59:59', unit: '' })
   })
 
   it('writes an hour or more to the minute', () => {
