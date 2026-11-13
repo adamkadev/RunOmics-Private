@@ -576,6 +576,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             start={routeStart}
             onStartModeChange={explore.setStartMode}
             day={explore.day}
+            nextKind={explore.nextKind}
             avoid={avoid}
             home={districtsHome}
             paceSecPerKm={generator.pace}

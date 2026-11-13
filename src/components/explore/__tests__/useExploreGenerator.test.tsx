@@ -95,6 +95,9 @@ describe('useExploreGenerator', () => {
   it('sends a map tap to the start, then to a new spot while marking, and to nothing from the quartier', async () => {
     const { result } = setup()
     act(() => result.current.planRun('test-unit'))
+    expect(result.current.start).toEqual({ mode: 'quartier', origin: null, waiting: false })
+    expect(result.current.mapPick).toBeNull()
+    act(() => result.current.setStartMode('pick'))
     expect(result.current.start).toEqual({ mode: 'pick', origin: null, waiting: true })
     act(() => result.current.mapPick?.([-150.01, 0.01]))
     expect(result.current.start.origin).toEqual([-150.01, 0.01])
@@ -135,16 +138,17 @@ describe('generatorUnit', () => {
   const coverage = {
     nextId: null,
     units: [
-      { id: 'test-a', name: 'Alpha', pct: 40 },
+      { id: 'test-a', name: 'Alpha', pct: 40, distanceKm: 0.9 },
       { id: 'test-b', name: 'Bravo', pct: 10 },
     ],
   } as unknown as AreaCoverage
 
   it('is the quartier asked for, else the next, else the least explored', () => {
-    expect(generatorUnit(file, null, 'test-a')).toEqual({ id: 'test-a', name: 'Alpha' })
+    expect(generatorUnit(file, null, 'test-a')).toEqual({ id: 'test-a', name: 'Alpha', distanceKm: null })
+    expect(generatorUnit(file, coverage, 'test-a')).toEqual({ id: 'test-a', name: 'Alpha', distanceKm: 0.9 })
     expect(generatorUnit(file, null, null)).toBeNull()
-    expect(generatorUnit(file, { ...coverage, nextId: 'test-a' }, null)).toEqual({ id: 'test-a', name: 'Alpha' })
-    expect(generatorUnit(file, coverage, null)).toEqual({ id: 'test-b', name: 'Bravo' })
+    expect(generatorUnit(file, { ...coverage, nextId: 'test-a' }, null)).toEqual({ id: 'test-a', name: 'Alpha', distanceKm: 0.9 })
+    expect(generatorUnit(file, coverage, null)).toEqual({ id: 'test-b', name: 'Bravo', distanceKm: null })
     expect(generatorUnit(null, coverage, 'test-a')).toBeNull()
   })
 })

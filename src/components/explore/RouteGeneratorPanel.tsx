@@ -68,9 +68,9 @@ const NOTABLE_TRAIL_PCT = 10
 /** About two minutes of walking at 10 % or more: enough to break an easy run's heart rate. */
 const STEEP_HINT_M = 200
 
-export function climbLine(budget: ClimbBudget, stats: Pick<RouteStats, 'climbPerKm'> | null): string {
+export function climbLine(budget: ClimbBudget, stats: Pick<RouteStats, 'climbPerKm'> | null, nextKind: string | null = null): string {
   const c = t.pages.map.explore.climb
-  const session = c.sessions[budget.kind]
+  const session = budget.kind === 'beforeQuality' && nextKind ? c.tomorrow(nextKind) : c.sessions[budget.kind]
   const perKm = stats?.climbPerKm != null ? formatNumber(stats.climbPerKm, 0) : null
   if (budget.maxMPerKm === null) return perKm === null ? c.flat(session) : c.flatLoop(session, perKm)
   const max = formatNumber(budget.maxMPerKm, 0)
@@ -115,8 +115,12 @@ export interface RouteGeneratorPanelProps {
   /** The session it plans for; its km is what the check compares the distance with. */
   plan: { heading: string; label: string; km: number | null } | null
   start: { mode: RouteStartMode; waiting: boolean }
+  /** "Start: Devant-les-Ponts · 0.9 km from home", once the start is known. */
+  startLine?: string | null
   onStartModeChange: (mode: RouteStartMode) => void
   day: SessionDay
+  /** The kind of the quality session the next day, "Threshold", or null. */
+  nextKind?: string | null
   darkness: Darkness
   avoid: AvoidSpots
   prefs: RoutePreferences
@@ -144,8 +148,10 @@ export function RouteGeneratorPanel({
   onDistanceChange,
   plan,
   start,
+  startLine = null,
   onStartModeChange,
   day,
+  nextKind = null,
   darkness,
   avoid,
   prefs,
@@ -222,7 +228,7 @@ export function RouteGeneratorPanel({
     ...(prefs.flatForReps ? [e.summary.flatForReps] : []),
   ].join(' · ')
   const budget = climbBudget(day)
-  const notes = [climbLine(budget, ready ? stats : null), darknessLine(darkness), terrainLine(budget, ready ? stats : null)].filter(
+  const notes = [climbLine(budget, ready ? stats : null, nextKind), darknessLine(darkness), terrainLine(budget, ready ? stats : null)].filter(
     (line): line is string => line !== null,
   )
   const onPlan = plan?.km != null && plan.km === distanceKm
@@ -318,6 +324,12 @@ export function RouteGeneratorPanel({
               </button>
             ))}
           </div>
+          {startLine && (
+            <p data-testid="route-start-line" className="-mt-1.5 flex items-center gap-1.5 truncate text-[13px] leading-[18px] text-[var(--text-2)]">
+              <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-accent" />
+              <span className="truncate">{startLine}</span>
+            </p>
+          )}
 
           <div className="flex items-center justify-between gap-3">
             <span className="text-[17px] leading-[22px] text-foreground">{e.distance}</span>
@@ -433,32 +445,8 @@ export function RouteGeneratorPanel({
             </div>
           )}
 
-          {/* 1 : 1.4 shares of the room their labels leave, so a long French label takes what it needs first. */}
-          {!start.waiting && <div className="flex gap-2.5">
-            {status === 'error' && reachKm != null ? (
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={() => onDistanceChange(reachKm)}
-                className={cn('flex-[1_1_auto] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}
-              >
-                <span className="truncate">{e.useDistance(stepperKm(reachKm))}</span>
-              </Button>
-            ) : status === 'error' && failure && RETRYABLE.has(failure) ? (
-              <Button size="lg" variant="secondary" onClick={onRetry} className={cn('flex-[1_1_auto] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}>
-                <span className="truncate">{e.retry}</span>
-              </Button>
-            ) : (
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={onRegenerate}
-                disabled={status === 'generating' || (status === 'error' && failure !== 'noRoute')}
-                className={cn('flex-[1_1_auto] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}
-              >
-                <span className="truncate">{e.regenerate}</span>
-              </Button>
-            )}
+          {/* Always there, so the sheet keeps its height; the GPX gives way to the action on a narrow phone. */}
+          <div className="flex gap-2.5">
             {isSaved ? (
               <>
                 <Button
@@ -466,25 +454,51 @@ export function RouteGeneratorPanel({
                   variant="secondary"
                   onClick={download}
                   data-testid="route-saved"
-                  // Gives way first on a narrow phone: Regenerate keeps its word whole.
-                  className={cn('flex-[1_1_auto] gap-2 bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}
+                  className={cn('shrink-0 gap-2 bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}
                 >
                   <Check size={20} strokeWidth={2.4} aria-hidden="true" className="shrink-0 text-accent-text" />
                   <span className="truncate">{e.saved}</span>
                 </Button>
                 {saved.canShare && (
-                  <Button size="lg" onClick={share} aria-label={e.share} className="w-11 shrink-0 px-0">
+                  <Button size="lg" variant="secondary" onClick={share} aria-label={e.share} className="w-11 shrink-0 bg-[var(--sheet-fill)] px-0 shadow-[var(--sheet-fill-rim)]">
                     <Share2 size={20} aria-hidden="true" />
                   </Button>
                 )}
               </>
             ) : (
-              <Button size="lg" onClick={download} disabled={!ready} className={cn('flex-[1.4_1_auto] gap-2', ROW_BUTTON)}>
-                <ArrowDownToLine size={20} aria-hidden="true" className="shrink-0 max-[359px]:hidden" />
-                <span className="truncate">{e.download}</span>
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={download}
+                disabled={!ready}
+                aria-label={e.download}
+                data-testid="route-download"
+                className={cn('shrink-0 gap-2 bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}
+              >
+                <ArrowDownToLine size={20} aria-hidden="true" className="shrink-0" />
+                <span className="truncate">{e.downloadShort}</span>
               </Button>
             )}
-          </div>}
+            {status === 'error' && reachKm != null ? (
+              <Button size="lg" onClick={() => onDistanceChange(reachKm)} className={cn('flex-1', ROW_BUTTON)}>
+                <span className="truncate">{e.useDistance(stepperKm(reachKm))}</span>
+              </Button>
+            ) : status === 'error' && failure && RETRYABLE.has(failure) ? (
+              <Button size="lg" onClick={onRetry} className={cn('flex-1', ROW_BUTTON)}>
+                <span className="truncate">{e.retry}</span>
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                onClick={onRegenerate}
+                disabled={start.waiting || status === 'generating' || (status === 'error' && failure !== 'noRoute')}
+                data-testid="route-generate"
+                className={cn('flex-1', ROW_BUTTON)}
+              >
+                <span className="truncate">{e.generate(stepperKm(distanceKm))}</span>
+              </Button>
+            )}
+          </div>
 
           <p aria-live="polite" data-testid="route-footnote" className="text-center text-footnote leading-[18px] text-muted-foreground">
             {footnote}

@@ -377,8 +377,6 @@ export const en = {
         back: 'Back',
         title: (name: string) => `Run in ${name}`,
         loop: 'Loop',
-        // The title pill's tail: `pct` is "94%".
-        newShare: (pct: string) => `${pct} new`,
         todaysPlan: 'Today’s plan',
         // The row for another day's session, from Plan's "Find a route". `day` is "Sat 24".
         planFor: (day: string) => `Plan for ${day}`,
@@ -389,6 +387,8 @@ export const en = {
           modes: { pick: 'Map point', quartier: 'District' },
           modesFull: { pick: 'Start from a point I tap on the map', quartier: 'Start inside the district' },
           pickPrompt: 'Tap the map where you’ll start.',
+          // Under the mode switch. `place` is the district or the street; `distance` "0.9 km", or null without a home.
+          line: (place: string, distance: string | null) => (distance ? `Start: ${place} · ${distance} from home` : `Start: ${place}`),
         },
         // The button that takes the shortest distance reaching the quartier. `km` is "12.5 km".
         useDistance: (km: string) => `Use ${km}`,
@@ -406,17 +406,19 @@ export const en = {
         climb: {
           sessions: {
             quality: 'Quality day',
-            beforeQuality: 'Before a quality day',
+            beforeQuality: 'Quality session tomorrow',
             recovery: 'Recovery run',
             long: 'Long run',
             easy: 'Easy run',
             none: 'No session planned',
           },
-          upTo: (session: string, max: string) => `${session} · up to ${max} m/km of climb`,
-          within: (session: string, perKm: string, max: string) => `${session} · ${perKm} of ${max} m/km of climb`,
-          over: (session: string, perKm: string, max: string) => `${session} · ${perKm} m/km of climb, over ${max}`,
-          flat: (session: string) => `${session} · as flat as it gets`,
-          flatLoop: (session: string, perKm: string) => `${session} · ${perKm} m/km of climb, flat wanted`,
+          // `next` is tomorrow's session, "Threshold".
+          tomorrow: (next: string) => `${next} tomorrow`,
+          upTo: (session: string, max: string) => `${session}, so climb stays under ${max} m/km.`,
+          within: (session: string, perKm: string, max: string) => `${session}, so climb stays under ${max} m/km. This loop: ${perKm} m/km.`,
+          over: (session: string, perKm: string, max: string) => `${session}, so climb should stay under ${max} m/km. This loop: ${perKm} m/km.`,
+          flat: (session: string) => `${session}, so the flattest loop comes first.`,
+          flatLoop: (session: string, perKm: string) => `${session}, so the flattest loop comes first. This loop: ${perKm} m/km of climb.`,
         },
         // When the run would end after dusk or start before dawn. `time` is "17:27" on the athlete's clock.
         dark: {
@@ -452,11 +454,13 @@ export const en = {
         atPace: (pace: string) => `At ${pace}`,
         climbStat: 'Climb',
         newStat: 'New',
-        regenerate: 'Regenerate',
+        // `km` is "9.0 km".
+        generate: (km: string) => `Generate ${km} loop`,
         download: 'Download GPX',
+        downloadShort: 'GPX',
         saved: 'Saved',
         share: 'Share GPX',
-        footnote: 'GPX file · import into Garmin Connect, Coros or Suunto',
+        footnote: 'Works with Garmin, Coros and Suunto',
         generating: 'Finding loops…',
         retry: 'Try again',
         errors: {
