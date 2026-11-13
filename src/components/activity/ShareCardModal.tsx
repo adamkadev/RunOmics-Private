@@ -250,11 +250,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       onClick={close}
     >
       {/* The glass on the wrapper and the scroll inside it, so the glass never
-          scrolls away. */}
+          scrolls away. One height on every tab, a bar's height short of the top, so the scrim still dims the edge. */}
       <div
         ref={trapRef}
         data-testid="share-sheet"
-        className={cn(glassClass('sheet'), 'flex h-full max-h-full w-full max-w-md animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col rounded-t-[var(--radius-sheet-large)] rounded-b-none sm:rounded-[var(--radius-sheet-large)]')}
+        className={cn(glassClass('sheet'), 'flex h-[calc(100%-44px)] max-h-full w-full max-w-md animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col rounded-t-[var(--radius-sheet-large)] rounded-b-none sm:rounded-[var(--radius-sheet-large)]')}
         style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >

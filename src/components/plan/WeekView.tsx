@@ -16,7 +16,6 @@ import { checkpointCycle } from '@/domain/training/cycleCheckpoint'
 import { CHECKPOINT_HREF } from '@/components/checkpoint/checkpointHref'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatClock, formatDate, formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
-import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -45,12 +44,11 @@ function proposalLine(proposal: BlockGuideProposal): string {
 }
 
 /** Block, its weeks and the 12-week cycle in one card, the cycle line opening the checkpoint. */
-function PhaseCard({ name, eyebrow, week, total, race, cycle, proposals = [] }: { name: string; eyebrow: string | null; week: number; total: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
+function PhaseCard({ name, week, total, race, cycle, proposals = [] }: { name: string; week: number; total: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
     <section className={cardClass({ padding: 'none', className: 'relative flex flex-col gap-2.5 px-3.5 py-3' })} data-testid="phase-line">
-      {eyebrow && <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="phase-eyebrow">{eyebrow}</p>}
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 className="text-headline text-foreground">{name}</h2>
         <p className="text-xs text-muted-foreground">
@@ -310,7 +308,6 @@ export function WeekView({
       {phase && (
         <PhaseCard
           name={blockName ?? phase.span.name}
-          eyebrow={blockName ? phase.span.name : null}
           week={phase.week}
           total={phase.total}
           race={race}

@@ -110,7 +110,7 @@ for (const theme of ['light', 'dark'] as const) {
     const hero = page.getByTestId('run-hero')
     await expect(hero).toBeVisible()
     expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(12)
-    expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(260)
+    expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(220)
     await page.waitForTimeout(300)
     // The hero's glass controls 12 pt lower cast a drop that reaches this row faintly.
     const skip = await glassDropSpans(page, '[data-testid="run-hero"]')

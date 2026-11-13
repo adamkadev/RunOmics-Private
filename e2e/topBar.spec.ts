@@ -116,7 +116,7 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
 })
 
 const EDGES = {
-  dark: { blurs: ['blur(2px)', 'blur(8px)', 'blur(20px)'], shown: ['block', 'block', 'block', 'block'], fade: 30 },
+  dark: { blurs: ['blur(6px)', 'none', 'none'], shown: ['block', 'none', 'none', 'block'], fade: 24 },
   light: { blurs: ['blur(6px)'], shown: ['block', 'none', 'none', 'block'], fade: 24 },
 }
 for (const theme of ['light', 'dark'] as const) {

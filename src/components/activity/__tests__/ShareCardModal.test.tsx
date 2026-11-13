@@ -167,7 +167,7 @@ describe('ShareCardModal', () => {
   it('keeps one sheet height on every tab, the buttons right under the options', () => {
     open()
     const sheet = screen.getByTestId('share-sheet')
-    expect(sheet.className).toMatch(/(^|\s)h-full/)
+    expect(sheet.className).toContain('h-[calc(100%-44px)]')
     expect(sheet.className).toContain('rounded-t-[var(--radius-sheet-large)]')
     expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
   })

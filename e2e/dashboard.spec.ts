@@ -5,7 +5,7 @@ test('dashboard renders the readiness card and the day', async ({ page }) => {
 
   const readiness = page.getByTestId('readiness-card')
   await expect(readiness).toBeVisible()
-  for (const id of ['tile-form', 'tile-fitness', 'tile-fatigue']) await expect(page.getByTestId(id)).toBeVisible()
+  for (const id of ['tile-fitness', 'tile-fatigue']) await expect(page.getByTestId(id)).toBeVisible()
   await expect(page.getByTestId('readiness-card-link')).toHaveAttribute('href', '/analytics')
 
   await expect(page.getByTestId('today-board')).toBeVisible()

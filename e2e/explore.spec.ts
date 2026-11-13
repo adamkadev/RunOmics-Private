@@ -91,7 +91,7 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
 
   await page.goto('/activities?view=map&explore=route&km=8')
   const panel = page.getByTestId('route-generator')
-  await expect(panel.getByTestId('route-footnote')).toHaveText('Tap the map where you’ll start.')
+  await expect(panel.getByTestId('route-pick-prompt')).toHaveText('Tap the map where you’ll start.')
   expect(request).toBeNull()
   await panel.getByRole('button', { name: 'Start inside the district' }).click()
   // The labels show while loops load; the mocked climb only once they're in.
@@ -132,10 +132,10 @@ test('a tap on the map sets the loop’s start there', async ({ page }) => {
   const requests = await mockLoops(page)
   await page.goto('/activities?view=map&explore=route&km=8')
   const panel = page.getByTestId('route-generator')
-  await expect(panel.getByTestId('route-footnote')).toHaveText('Tap the map where you’ll start.')
+  await expect(panel.getByTestId('route-pick-prompt')).toHaveText('Tap the map where you’ll start.')
 
   await tapMap(page, 0.5, 0.3, async () => {
-    await expect(panel.getByTestId('route-footnote')).not.toHaveText('Tap the map where you’ll start.', { timeout: 1_500 })
+    await expect(panel.getByTestId('route-pick-prompt')).toHaveCount(0, { timeout: 1_500 })
   })
   await expect(panel.getByTestId('route-stats')).toContainText('+24 m')
   expect(requests.length).toBeGreaterThan(0)
@@ -158,7 +158,7 @@ test('Mark a spot, then a tap on the map adds its row, and the row offers its si
     await expect(panel.getByTestId('route-avoid-spot')).toHaveCount(1, { timeout: 1_500 })
   })
   await expect(panel.getByTestId('route-avoid-marking')).toBeHidden()
-  await expect(panel.getByTestId('route-footnote')).toHaveText('Tap the map where you’ll start.')
+  await expect(panel.getByTestId('route-pick-prompt')).toHaveText('Tap the map where you’ll start.')
 
   await panel.getByRole('button', { name: /^Show the spot marked/ }).click()
   const sizes = panel.getByTestId('route-avoid-radius')
