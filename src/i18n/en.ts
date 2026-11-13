@@ -149,15 +149,16 @@ export const en = {
   },
 
   consistency: {
-    ranges: { '3m': '3M', '6m': '6M', '1y': '1Y' },
+    ranges: { since: 'Since return', '3m': '3M', '6m': '6M', '1y': '1Y' },
     // What a screen reader says for each range.
-    rangesSpoken: { '3m': '3 months', '6m': '6 months', '1y': '1 year' },
+    rangesSpoken: { since: 'Since your return', '3m': '3 months', '6m': '6 months', '1y': '1 year' },
     rangeLabel: 'Window',
     streakEyebrow: 'Weekly streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
     streakRule: (target: number, best: number) => `${target}+ runs a week · best ${best}, all time`,
     thisWeek: 'This week',
-    thisWeekRuns: (runs: number, target: number) => `${runs} of ${target}`,
+    thisWeekRuns: (runs: number) => `${runs} done`,
+    keeps: (runs: number) => `${runs} more keeps it`,
     planned: (sessions: number) => `${sessions} planned`,
     thisWeekLabel: (runs: number, target: number) => `This week: ${runs} of ${target} runs`,
     weeksOnTarget: 'weeks on target',
@@ -168,11 +169,12 @@ export const en = {
     legend: { onTarget: (runs: number) => `${runs}+ runs`, under: 'under', planned: 'planned', streak: 'streak' },
     weekLabel: (week: string, runs: number) => `Week of ${week}: ${runs} run${runs === 1 ? '' : 's'}`,
     runningWeek: 'Your running week',
-    weeksRan: (weeks: number) => `weeks you ran, of ${weeks}`,
+    weeksRan: (weeks: number) => `weeks with a run on this day, of ${weeks}`,
     weekdayLabel: (day: string, weeks: number) => `${day}: ${weeks} week${weeks === 1 ? '' : 's'}`,
     anchor: (day: string) => `${day} is your anchor`,
     anchorWeeks: (weeks: number, of: number) => `, ${weeks} of ${of} weeks.`,
     restDay: (day: string) => `${day} stays a rest day.`,
+    mostOften: (days: string[]) => `${new Intl.ListFormat('en', { type: 'conjunction' }).format(days)} come up most often.`,
     sheet: {
       title: (week: string) => `Week of ${week}`,
       summary: (runs: number, km: string, time: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km · ${time}`,

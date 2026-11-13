@@ -2,16 +2,24 @@ import type { ConsistencyRun } from '@/application/usecases/GetConsistencyData'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 
-/** In the URL as ?range=. */
-export type ConsistencyRange = '3m' | '6m' | '1y'
+/** In the URL as ?range=. `since` is a reprise's own window, from the first run back. */
+export type ConsistencyRange = 'since' | '3m' | '6m' | '1y'
 export const CONSISTENCY_RANGES: readonly ConsistencyRange[] = ['3m', '6m', '1y']
 export const DEFAULT_RANGE: ConsistencyRange = '6m'
 /** The weeks done each window counts, the week under way drawn after them. */
-export const RANGE_WEEKS: Record<ConsistencyRange, number> = { '3m': 13, '6m': 26, '1y': 52 }
+export const RANGE_WEEKS: Record<Exclude<ConsistencyRange, 'since'>, number> = { '3m': 13, '6m': 26, '1y': 52 }
 
-export function parseRange(value: string | null | undefined): ConsistencyRange {
-  return CONSISTENCY_RANGES.find((range) => range === value) ?? DEFAULT_RANGE
+/** During a reprise its own window comes first and opens the page: the others count the break. */
+export function rangesFor(reprise: boolean): { ranges: readonly ConsistencyRange[]; fallback: ConsistencyRange } {
+  return reprise ? { ranges: ['since', ...CONSISTENCY_RANGES], fallback: 'since' } : { ranges: CONSISTENCY_RANGES, fallback: DEFAULT_RANGE }
 }
+
+export function parseRange(value: string | null | undefined, ranges: readonly ConsistencyRange[] = CONSISTENCY_RANGES, fallback: ConsistencyRange = DEFAULT_RANGE): ConsistencyRange {
+  return ranges.find((range) => range === value) ?? fallback
+}
+
+/** Below this many weeks a favourite day is a coincidence: the sentence names the days instead. */
+const ANCHOR_MIN_WEEKS = 6
 
 const REST_DAY_SHARE = 0.1
 
@@ -48,8 +56,10 @@ export interface ConsistencyView {
   thisWeek: { runs: number; planned: number }
   /** Weeks done with a run on each weekday, Monday first. */
   weekdays: number[]
-  /** The weekday run most often (0 is Monday); null with no runs. */
+  /** The weekday run most often (0 is Monday); null with no runs, a tie, or too few weeks to call it. */
   anchor: number | null
+  /** The days run most often when no one day leads. */
+  topDays: number[]
   /** The weekday run least often, when it is run in a tenth of the weeks or fewer; null otherwise. */
   restDay: number | null
   /** Runs a day, from the first day a tapped week's month can show to today. */
@@ -68,6 +78,8 @@ export interface ConsistencyInput {
   bestStreakWeeks: number
   /** Days with a session still to come and not yet run, from today. */
   plannedDates?: readonly string[]
+  /** A reprise's first run back: the `since` window opens on its week. */
+  since?: string | null
 }
 
 const DAY = 86_400_000
@@ -108,11 +120,11 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
 
   const empty: ConsistencyView = {
     range, target, weeks: [], weeksCounted: 0, weeksOnTarget: 0, runs: 0, runsPerWeek: 0, streakWeeks, bestStreakWeeks,
-    thisWeek: { runs: 0, planned: 0 }, weekdays: [0, 0, 0, 0, 0, 0, 0], anchor: null, restDay: null, runDays: {}, plannedDates: [], others: [],
+    thisWeek: { runs: 0, planned: 0 }, weekdays: [0, 0, 0, 0, 0, 0, 0], anchor: null, topDays: [], restDay: null, runDays: {}, plannedDates: [], others: [],
   }
   if (!first) return empty
 
-  const windowStart = plusDays(current, -7 * RANGE_WEEKS[range])
+  const windowStart = range === 'since' ? mondayOf(input.since ?? today) : plusDays(current, -7 * RANGE_WEEKS[range])
   const firstWeek = mondayOf(first) > windowStart ? mondayOf(first) : windowStart
 
   const byWeek = new Map<string, { runs: number; km: number; seconds: number; days: Set<string> }>()
@@ -170,8 +182,10 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
 
   const most = Math.max(...weekdays)
   const least = Math.min(...weekdays)
-  const anchor = most > 0 ? weekdays.indexOf(most) : null
-  const restDay = anchor !== null && least < most && least <= done.length * REST_DAY_SHARE ? weekdays.indexOf(least) : null
+  const leaders = most > 0 ? weekdays.flatMap((n, i) => (n === most ? [i] : [])) : []
+  const anchor = leaders.length === 1 && done.length >= ANCHOR_MIN_WEEKS ? leaders[0]! : null
+  const resting = weekdays.flatMap((n, i) => (n === least ? [i] : []))
+  const restDay = anchor !== null && least < most && resting.length === 1 && least <= done.length * REST_DAY_SHARE ? resting[0]! : null
 
   const thisWeek = weeks.at(-1)!
   return {
@@ -187,6 +201,7 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
     thisWeek: { runs: thisWeek.runs, planned: thisWeek.planned },
     weekdays,
     anchor,
+    topDays: anchor === null ? leaders : [],
     restDay,
     runDays,
     plannedDates,

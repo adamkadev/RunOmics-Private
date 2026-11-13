@@ -8,7 +8,7 @@ import { formatDate, formatDecimal, formatWeekdayLong } from '@/lib/formatters'
 import { useUrlParam } from '@/lib/useUrlParam'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { CONSISTENCY_RANGES, DEFAULT_RANGE, parseRange, type ConsistencyRange, type ConsistencyView, type ConsistencyWeek } from './consistencyView'
+import { parseRange, rangesFor, type ConsistencyRange, type ConsistencyView, type ConsistencyWeek } from './consistencyView'
 import { WeekSheet } from './WeekSheet'
 
 const CARD_TITLE = 'text-[15px] font-semibold text-foreground'
@@ -23,7 +23,9 @@ function weekdayName(index: number): string {
 function StreakCard({ view }: { view: ConsistencyView }) {
   const c = t.consistency
   const { runs, planned } = view.thisWeek
-  const circles = Math.min(7, Math.max(view.target, runs))
+  // One dot a run, done or planned, as the chart under it draws the week; with no plan, the target's.
+  const circles = Math.min(7, planned > 0 ? runs + planned : Math.max(view.target, runs))
+  const toKeep = Math.max(0, view.target - runs)
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3.5' })} data-testid="consistency-streak">
       <div className="flex items-start justify-between gap-3">
@@ -49,9 +51,12 @@ function StreakCard({ view }: { view: ConsistencyView }) {
             ))}
           </span>
           <span className="text-xs text-foreground" aria-hidden>
-            {c.thisWeekRuns(runs, view.target)}
+            {c.thisWeekRuns(runs)}
             {planned > 0 && ` · ${c.planned(planned)}`}
           </span>
+          {toKeep > 0 && view.streakWeeks > 0 && (
+            <span className="text-xs text-muted-foreground" data-testid="streak-keep">{c.keeps(toKeep)}</span>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 border-t border-border pt-3" data-testid="consistency-stats">
@@ -252,8 +257,6 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
 }
 
 const WEEKDAY_BAR_PX = 70
-const STUB_SHARE = 0.1
-
 function RunningWeek({ view }: { view: ConsistencyView }) {
   const c = t.consistency
   const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
@@ -267,7 +270,7 @@ function RunningWeek({ view }: { view: ConsistencyView }) {
       <ul className="grid grid-cols-7 items-end gap-2">
         {view.weekdays.map((weeks, i) => {
           const anchor = i === view.anchor
-          const stub = weeks <= view.weeksCounted * STUB_SHARE
+          const stub = weeks === 0
           return (
             <li key={i} className="flex flex-col items-center gap-[5px]" aria-label={c.weekdayLabel(weekdayName(i), weeks)} data-testid="weekday">
               <span aria-hidden className="text-[11px] font-semibold tabular-nums text-foreground">{weeks}</span>
@@ -289,25 +292,32 @@ function RunningWeek({ view }: { view: ConsistencyView }) {
           )
         })}
       </ul>
-      {view.anchor !== null && (
+      {view.anchor !== null ? (
         <p className="text-[12.5px] leading-[1.45] text-muted-foreground" data-testid="weekday-sentence">
           <b className="font-semibold text-foreground">{c.anchor(weekdayName(view.anchor))}</b>
           {c.anchorWeeks(view.weekdays[view.anchor]!, view.weeksCounted)}
           {view.restDay !== null && ` ${c.restDay(weekdayName(view.restDay))}`}
         </p>
+      ) : (
+        view.topDays.length > 0 && (
+          <p className="text-[12.5px] leading-[1.45] text-muted-foreground" data-testid="weekday-sentence">
+            {c.mostOften(view.topDays.map(weekdayName))}
+          </p>
+        )
       )}
     </section>
   )
 }
 
-export function Consistency({ views, today }: { views: Record<ConsistencyRange, ConsistencyView>; today: string }) {
+export function Consistency({ views, today, reprise = false }: { views: Partial<Record<ConsistencyRange, ConsistencyView>>; today: string; reprise?: boolean }) {
   const c = t.consistency
+  const { ranges, fallback } = rangesFor(reprise)
   const [rangeParam, setRangeParam] = useUrlParam('range')
-  const range = parseRange(rangeParam)
-  const setRange = (next: ConsistencyRange) => setRangeParam(next === DEFAULT_RANGE ? null : next)
-  const tabs = useSegmentedTabs({ ids: CONSISTENCY_RANGES, value: range, onChange: setRange })
+  const range = parseRange(rangeParam, ranges, fallback)
+  const setRange = (next: ConsistencyRange) => setRangeParam(next === fallback ? null : next)
+  const tabs = useSegmentedTabs({ ids: ranges, value: range, onChange: setRange })
   const [week, setWeek] = useState<string | null>(null)
-  const view = views[range]
+  const view = views[range]!
 
   return (
     <>
@@ -319,7 +329,7 @@ export function Consistency({ views, today }: { views: Record<ConsistencyRange, 
           label={c.rangeLabel}
           size="sm"
           barMirror
-          items={CONSISTENCY_RANGES.map((id) => ({ id, label: c.ranges[id], ariaLabel: c.rangesSpoken[id] }))}
+          items={ranges.map((id) => ({ id, label: c.ranges[id], ariaLabel: c.rangesSpoken[id] }))}
         />
       </header>
       <div {...tabs.panelProps} className="flex flex-col gap-3.5 outline-none">

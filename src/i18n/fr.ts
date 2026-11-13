@@ -152,14 +152,15 @@ export const fr = {
   },
 
   consistency: {
-    ranges: { '3m': '3M', '6m': '6M', '1y': '1A' },
-    rangesSpoken: { '3m': '3 mois', '6m': '6 mois', '1y': '1 an' },
+    ranges: { since: 'Depuis ta reprise', '3m': '3M', '6m': '6M', '1y': '1A' },
+    rangesSpoken: { since: 'Depuis ta reprise', '3m': '3 mois', '6m': '6 mois', '1y': '1 an' },
     rangeLabel: 'Période',
     streakEyebrow: 'Série hebdomadaire',
     weeks: (weeks: number) => (weeks > 1 ? 'semaines' : 'semaine'),
     streakRule: (target: number, best: number) => `${target}+ sorties par semaine · record ${best}, depuis le début`,
     thisWeek: 'Cette semaine',
-    thisWeekRuns: (runs: number, target: number) => `${runs} sur ${target}`,
+    thisWeekRuns: (runs: number) => `${runs} faite${runs > 1 ? 's' : ''}`,
+    keeps: (runs: number) => `encore ${runs} pour la garder`,
     planned: (sessions: number) => `${sessions} prévue${sessions > 1 ? 's' : ''}`,
     thisWeekLabel: (runs: number, target: number) => `Cette semaine : ${runs} sortie${runs > 1 ? 's' : ''} sur ${target}`,
     weeksOnTarget: 'semaines à l’objectif',
@@ -175,6 +176,7 @@ export const fr = {
     anchor: (day: string) => `Le ${day} est ton point d’ancrage`,
     anchorWeeks: (weeks: number, of: number) => `, ${weeks} semaine${weeks > 1 ? 's' : ''} sur ${of}.`,
     restDay: (day: string) => `Le ${day} reste un jour de repos.`,
+    mostOften: (days: string[]) => `${new Intl.ListFormat('fr', { type: 'conjunction' }).format(days).replace(/^./, (c) => c.toUpperCase())} reviennent le plus souvent.`,
     sheet: {
       title: (week: string) => `Semaine du ${week}`,
       summary: (runs: number, km: string, time: string) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km · ${time}`,
