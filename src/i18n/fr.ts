@@ -1180,6 +1180,7 @@ export const fr = {
   },
 
   activities: {
+    pause: (months: string, year: string, count: number) => `Pause · ${months} ${year} · ${count} mois`,
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
     // Not « Toutes »: it pushes the fourth chip under the filter button at 393 pt.
     all: 'Tout',
