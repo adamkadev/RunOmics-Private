@@ -18,6 +18,8 @@ import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
 import { useUrlParam } from '@/lib/useUrlParam'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { PINNED_TOP, StickyBar } from '@/components/ui/StickyBar'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { t } from '@/i18n'
 
 interface Props {
@@ -140,8 +142,8 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
 
   return (
     <div className="flex flex-col gap-5">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="min-w-0 text-display text-foreground">{t.pages.plan.title}</h1>
+      <PageHeader title={t.pages.plan.title} />
+      <StickyBar top={PINNED_TOP} className="-my-2">
         <SegmentedTabs
           tabs={modeTabs}
           items={[
@@ -149,9 +151,10 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
             { id: 'month', label: t.plan.switcher.month },
           ]}
           label={t.pages.plan.title}
-          barMirror
+          fill
+          pinned
         />
-      </header>
+      </StickyBar>
 
       <div
         key={mode === 'week' ? `week:${isoDate(weekStart)}` : `month:${monthKey}`}

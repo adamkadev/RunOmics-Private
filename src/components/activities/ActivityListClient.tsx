@@ -26,6 +26,8 @@ import type { ExplorePlan } from '@/components/explore/routeGenerator'
 import { cardClass } from '@/components/ui/Card'
 import { Pill } from '@/components/ui/Pill'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { PINNED_ROW_H, PINNED_TOP, StickyBar } from '@/components/ui/StickyBar'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
@@ -375,21 +377,21 @@ export function ActivityListClient({
 
   return (
     <div className="flex flex-col gap-3">
-      <header>
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="min-w-0 text-display text-foreground">{t.pages.activities.title}</h1>
-          <SegmentedTabs
-            tabs={viewTabs}
-            items={[
-              { id: 'list', label: t.activities.view.list },
-              { id: 'map', label: t.activities.view.map },
-            ]}
-            label={t.activities.view.label}
-            barMirror
-          />
-        </div>
-        <p data-title-sub className="mt-0.5 text-[15px] leading-5 text-muted-foreground">{archiveLine.join(' · ')}</p>
-      </header>
+      <PageHeader title={t.pages.activities.title}>
+        <p className="text-[15px] leading-5 text-muted-foreground">{archiveLine.join(' · ')}</p>
+      </PageHeader>
+      <StickyBar top={PINNED_TOP} className="-my-2">
+        <SegmentedTabs
+          tabs={viewTabs}
+          items={[
+            { id: 'list', label: t.activities.view.list },
+            { id: 'map', label: t.activities.view.map },
+          ]}
+          label={t.activities.view.label}
+          fill
+          pinned
+        />
+      </StickyBar>
 
       <div {...viewTabs.panelProps} className="flex flex-col gap-3 outline-none">
         {view === 'map' ? (
@@ -520,12 +522,10 @@ export function ActivityListClient({
                     </section>
                   ) : (
                     <section key={block.key} data-testid="month">
-                      {/* Sticky under the compact title bar while it shows; on a phone not
-                          otherwise (--sticky-alone, globals.css). */}
                       <div
                         data-sticky-strip
                         className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
-                        style={{ top: 'var(--sticky-top, var(--sticky-alone, var(--safe-top)))' }}
+                        style={{ top: `calc(${PINNED_TOP} + ${PINNED_ROW_H}px)` }}
                       >
                         <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>
                         <span className="text-[13px] text-muted-foreground" data-testid="month-line">

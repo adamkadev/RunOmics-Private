@@ -4,6 +4,12 @@ import { createContext, forwardRef, useCallback, useRef, type ReactNode } from '
 import { useStuck } from '@/lib/useStuck'
 import { cn } from '@/lib/utils'
 
+/** Under the compact bar while it shows; on a phone not otherwise (--sticky-alone, globals.css). */
+export const PINNED_TOP = 'var(--sticky-top, var(--sticky-alone, max(var(--safe-top), 8px)))'
+
+/** A pinned row's height: a 44 pt control and the strip's 8 pt above and below, so a second strip sticks under it. */
+export const PINNED_ROW_H = 60
+
 export const StickyStuckContext = createContext<boolean | null>(null)
 
 /**

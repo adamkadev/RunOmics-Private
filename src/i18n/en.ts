@@ -60,6 +60,13 @@ export const en = {
       profile: 'Progress',
       settings: 'Settings',
     },
+    tabItems: {
+      dashboard: 'Today',
+      activities: 'Activities',
+      plan: 'Plan',
+      analytics: 'Analytics',
+      profile: 'Progress',
+    },
     // The compact bar's back chevron, named for the page it goes to.
     backTo: (page: string) => `Back to ${page}`,
     // The tab bar shrunk to its active tab: the button that brings it back.
@@ -874,6 +881,7 @@ export const en = {
     cards: {
       period: {
         label: 'Period',
+        button: (words: string) => `Period: ${words}`,
         short: { '4w': '4W', '12w': '12W', '1y': '1Y' } as Record<string, string>,
         words: { '4w': '4 weeks', '12w': '12 weeks', '1y': 'a year' } as Record<string, string>,
         hours: (h: string) => `${h} h`,

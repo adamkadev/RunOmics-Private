@@ -29,15 +29,16 @@ describe('SegmentedTabs sizes', () => {
     expect(track).not.toMatch(/\bborder\b/)
   })
 
-  it('draws the glass variant as a 44 pt .lg capsule with its layers', () => {
+  it("draws a pinned row as a 44 pt capsule of the bar's neutral glass, with its layers", () => {
     function Glassy() {
       const tabs = useSegmentedTabs({ ids: ['a', 'b'] as const, value: 'a', onChange: () => {} })
-      return <SegmentedTabs tabs={tabs} items={[{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]} label="Tabs" barMirror />
+      return <SegmentedTabs tabs={tabs} items={[{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]} label="Tabs" pinned />
     }
     render(<Glassy />)
     const list = screen.getByRole('tablist')
     expect(list.className).toMatch(/\blg\b/)
     expect(list.className).toContain('h-11')
+    expect(list.className).toContain('lg-bar')
     expect([...list.querySelectorAll(':scope > i')].map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
     expect(screen.getByRole('tab', { name: 'A' }).className).toContain('bg-[var(--tab-pill)]')
     expect(list.className).not.toContain('lg-stuck-in')
