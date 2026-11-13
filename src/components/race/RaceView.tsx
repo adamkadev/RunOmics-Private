@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import type { ReactNode } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
 import { GOALS_RACES_HREF } from '@/components/goals/goalsHref'
 import { Stat, StatGrid } from '@/components/ui/Stat'
@@ -112,10 +114,10 @@ function RaceDayForm({ form }: { form: FormForecast }) {
   )
 }
 
-export function NoRace() {
+export function NoRace({ back }: { back?: ReactNode }) {
   return (
     <div className="flex flex-col gap-3.5">
-      <h1 className="text-display text-foreground">{t.race.title}</h1>
+      <PageHeader back={back} title={t.race.title} />
       <section className={cardClass({ className: 'flex flex-col gap-1.5' })} data-testid="race-none">
         <CardTitle as="h2">{t.race.noneTitle}</CardTitle>
         <p className="text-sm text-muted-foreground text-pretty">{t.race.none}</p>
@@ -127,7 +129,7 @@ export function NoRace() {
   )
 }
 
-export function RaceView({ data }: { data: RacePageData }) {
+export function RaceView({ data, back }: { data: RacePageData; back?: ReactNode }) {
   const r = t.race
   const { race, distanceKm, daysUntil, predictedSeconds, targetSeconds, pb, trend, estimate, form } = data
   const predicted = estimate ? r.estimated : r.predicted
@@ -143,13 +145,17 @@ export function RaceView({ data }: { data: RacePageData }) {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="flex flex-col gap-1">
-        <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="race-eyebrow">
-          {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare' })} · {t.profile.hub.inDays(daysUntil)}
-        </span>
-        <h1 className="break-words text-display text-foreground text-pretty">{race.name}</h1>
+      <PageHeader
+        back={back}
+        title={race.name}
+        eyebrow={
+          <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="race-eyebrow">
+            {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare' })} · {t.profile.hub.inDays(daysUntil)}
+          </span>
+        }
+      >
         {race.location && <p className="text-sm text-muted-foreground">{race.location}</p>}
-      </header>
+      </PageHeader>
 
       <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="race-stand">
         <CardTitle as="h2">{r.standTitle}</CardTitle>

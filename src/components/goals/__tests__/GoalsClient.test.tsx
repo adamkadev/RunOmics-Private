@@ -63,16 +63,13 @@ describe('GoalsClient', () => {
     expect(t.goals.noGoalYear(2027)).toBe('No goal set for 2027')
   })
 
-  it('puts the year stepper in the button row, the title on its own row', () => {
+  it('puts the back button, the title and the year stepper on one row', () => {
     render(<GoalsClient data={data()} today={TODAY} back={<button type="button">Back</button>} />)
     const title = screen.getByRole('heading', { level: 1 })
-    const row = screen.getByTestId('year-stepper').parentElement!
-    expect(row.contains(title)).toBe(false)
+    const row = title.parentElement!
     expect(row.firstElementChild!.textContent).toBe('Back')
-    expect(row.lastElementChild).toBe(screen.getByTestId('year-stepper'))
-    expect(row.className).toContain('justify-between')
-    expect(title.parentElement!.children).toHaveLength(2)
-    expect(title.previousElementSibling).toBe(row)
+    expect(row.children[1]).toBe(title)
+    expect(row.lastElementChild!.contains(screen.getByTestId('year-stepper'))).toBe(true)
   })
 
   it('steps through the years, past ones included', () => {
