@@ -1206,7 +1206,7 @@ export const fr = {
       ofRuns: (n: number, total: number) => `${n} sur ${total} sortie${total > 1 ? 's' : ''}`,
     },
     view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
-    groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Compétitions' },
+    groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Courses' },
     filter: {
       title: 'Filtrer et trier',
       reset: 'Réinitialiser',
