@@ -1690,7 +1690,7 @@ export const fr = {
     roles: { daily: 'quotidienne', workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
     easy: 'Facile',
-    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure', avgHr: 'FC' },
+    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure moy.', avgHr: 'FC moy.' },
     lastRuns: 'Dernières sorties',
     neverUsed: 'Jamais utilisée',
     kmOf: (total: string, max: string) => `${total} / ${max} km`,

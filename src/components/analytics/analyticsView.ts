@@ -342,12 +342,16 @@ const EFFICIENCY_TREND: Record<DeltaTone, EfficiencyView['trend']> = { good: 'ri
 export function efficiencyView(allWeeks: WeeklyTrendPoint[], windowWeeks: WeeklyTrendPoint[], end: string): EfficiencyView | null {
   const upTo = allWeeks.filter((w) => w.date <= end)
   const adjustedOf = (w: WeeklyTrendPoint) => w.efAdjusted ?? w.ef
-  const block = (from: number, to: number) => mean(known(upTo.slice(Math.max(0, upTo.length - to), upTo.length - from).map(adjustedOf)))
+  // Calendar weeks back from the last Monday, not entries: weeks without a run are missing, and across a break
+  // "four weeks ago" counted back to before it.
+  const lastMonday = isoDate(startOfWeek(day(end)))
+  const weeksBack = (w: WeeklyTrendPoint) => Math.round((day(lastMonday).getTime() - day(w.date).getTime()) / (7 * 86_400_000))
+  const block = (from: number, to: number) => mean(known(upTo.filter((w) => weeksBack(w) >= from && weeksBack(w) < to).map(adjustedOf)))
   const now = block(0, 4)
   if (now === null) return null
   const prev4 = block(4, 8)
   const prev12 = block(12, 16)
-  const recent = upTo.slice(-4)
+  const recent = upTo.filter((w) => weeksBack(w) < 4)
   const heat = mean(known(recent.map((w) => (w.efAdjusted !== null && w.ef !== null ? w.efAdjusted - w.ef : null))))
   const delta4w = prev4 === null ? null : round2(now - prev4)
   return {

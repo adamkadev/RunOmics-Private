@@ -184,6 +184,15 @@ describe('D2 Performance', () => {
     expect(view.trend).toBe('dipping')
   })
 
+  it('reads efficiency\'s four and twelve weeks back by the calendar, so a break is no baseline', () => {
+    const before = mondays(8, '2026-03-09').map((d) => week(d, { ef: 0.8, efAdjusted: 0.8 }))
+    const back = mondays(4, '2026-09-21').map((d) => week(d, { ef: 0.66, efAdjusted: 0.66 }))
+    const view = efficiencyView([...before, ...back], back, '2026-09-27')!
+    expect(view.now).toBe(0.66)
+    expect(view.delta4w).toBeNull()
+    expect(view.delta12w).toBeNull()
+  })
+
   it('reads RPE over four weeks against the four before', () => {
     const all = mondays(8).map((d, i) => week(d, { avgRpe: i < 4 ? 4 : 3.4 }))
     expect(rpeView(all, '2026-09-27')).toEqual({ avg: 3.4, trend: 'easing', bars: [4, 4, 4, 4, 3.4, 3.4, 3.4, 3.4] })

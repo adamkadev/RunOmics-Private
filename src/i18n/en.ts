@@ -1812,7 +1812,7 @@ export const en = {
     shareOfDistance: 'share of distance',
     easy: 'Easy',
     // One row of four in the km card: short labels.
-    heroStats: { runs: 'Runs', avgDistance: 'Avg', avgPace: 'Pace', avgHr: 'HR' },
+    heroStats: { runs: 'Runs', avgDistance: 'Avg', avgPace: 'Avg pace', avgHr: 'Avg HR' },
     lastRuns: 'Last runs',
     neverUsed: 'Never used',
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
