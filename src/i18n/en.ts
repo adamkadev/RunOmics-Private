@@ -1,5 +1,4 @@
 import type { ActivityType, HrDistrust } from '@/domain/activity/types'
-import type { RunKind } from '@/domain/activity/runKind'
 import type { NiggleSide, NiggleSite } from '@/domain/wellness/checkIn'
 
 function ordinal(n: number): string {
@@ -306,17 +305,6 @@ export const en = {
         // The card's eyebrow, with more than one type ticked.
         types: (n: number) => `${n} types`,
       },
-      // The Type chips: sessions as Plan and Today name them.
-      kinds: {
-        easy: 'Easy',
-        long: 'Long run',
-        strides: 'Strides',
-        runWalk: 'Run/walk',
-        tempo: 'Tempo',
-        threshold: 'Threshold',
-        intervals: 'Intervals',
-        race: 'Race',
-      } satisfies Record<RunKind, string>,
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
       less: 'Rare',

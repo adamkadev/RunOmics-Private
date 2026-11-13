@@ -1,4 +1,4 @@
-import type { RunKind } from "@/domain/activity/runKind";
+import type { FilterKind } from "@/domain/activity/listKind";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
@@ -7,7 +7,7 @@ import { formatDecimal } from "@/lib/formatters";
 /** None ticked is "All". */
 export interface HeatFilters {
   years: readonly string[];
-  types: readonly RunKind[];
+  types: readonly FilterKind[];
 }
 
 export const NO_HEAT_FILTERS: HeatFilters = { years: [], types: [] };

@@ -1,16 +1,15 @@
 import { createHash } from 'node:crypto'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity, ActivityType } from '@/domain/activity/types'
-import { runKind, type RunKind } from '@/domain/activity/runKind'
-import { sessionForRun, type RunSession } from '@/domain/coaching/sessionForRun'
-import { getRunSessions } from '@/application/coaching/GetCoachingView'
+import { kindOfRun, type FilterKind } from '@/domain/activity/listKind'
 import { distanceKm } from '@/lib/math'
 import { percentileBounds, type LngLatBounds } from '@/lib/routeFrame'
 
 export interface RouteMeta {
   id: string
   type: ActivityType
-  kind: RunKind
+  /** As the Activities list files the run: its type, Long run split out of Base. */
+  kind: FilterKind
   year: string
   date: string
   distanceKm: number
@@ -82,23 +81,12 @@ function findNearestClusterIdx(
 // Keyed by the activity list itself, which stays the same array until the data changes.
 let cache: { source: Activity[]; routes: AllRoutesData } | null = null
 
-/** An unreadable plan costs the coach's session types, never the map. */
-function readSessions(): RunSession[] {
-  try {
-    return getRunSessions()
-  } catch (error) {
-    console.error('[coaching] plan unreadable, runs keep their own kinds', error)
-    return []
-  }
-}
-
 export function getAllRoutes(): AllRoutesData {
   const source = getAllActivities()
   if (cache?.source === source) return cache.routes
 
   const activities = source.filter((a) => a.route && a.route.length > 1)
-  const sessions = readSessions()
-  const kindOf = (a: Activity) => runKind(a, sessionForRun(a, sessions))
+  const kindOf = (a: Activity) => kindOfRun(a)
 
   type ClusterAcc = {
     indices: number[]

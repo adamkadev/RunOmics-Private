@@ -10,7 +10,7 @@ const f = t.pages.map.filters
 const count = (filters: HeatFilters) => (filters.types.length || 2) * (filters.years.length || 2) * 2
 
 function open(onApply = vi.fn(), value: HeatFilters = NO_HEAT_FILTERS) {
-  render(<HeatFilterSheet types={['easy', 'tempo']} years={['2026', '2025']} place="Hoenheim" value={value} count={count} onApply={onApply} onClose={() => {}} />)
+  render(<HeatFilterSheet types={['Base', 'Tempo']} years={['2026', '2025']} place="Hoenheim" value={value} count={count} onApply={onApply} onClose={() => {}} />)
   const sheet = screen.getByRole('dialog', { name: f.title })
   const section = (title: string) => within(within(sheet).getByRole('region', { name: title }))
   return { sheet, types: section(t.pages.map.type), years: section(t.pages.map.year), onApply }
@@ -26,10 +26,10 @@ describe('the heatmap filters sheet', () => {
 
   it('ticks several types or years, counts what they show, and "All" clears its section', () => {
     const { sheet, types, years } = open()
-    fireEvent.click(types.getByRole('button', { name: t.pages.map.kinds.tempo }))
+    fireEvent.click(types.getByRole('button', { name: t.activityTypes.Tempo }))
     fireEvent.click(years.getByRole('button', { name: '2026' }))
     expect(types.getByRole('button', { name: f.all })).toHaveAttribute('aria-pressed', 'false')
-    expect(types.getByRole('button', { name: t.pages.map.kinds.tempo })).toHaveAttribute('aria-pressed', 'true')
+    expect(types.getByRole('button', { name: t.activityTypes.Tempo })).toHaveAttribute('aria-pressed', 'true')
     expect(within(sheet).getByRole('button', { name: f.show(2, 'Hoenheim') })).toBeInTheDocument()
 
     fireEvent.click(years.getByRole('button', { name: '2025' }))
@@ -41,10 +41,10 @@ describe('the heatmap filters sheet', () => {
 
   it('applies only on "Show N runs", and Reset clears every section', () => {
     vi.useFakeTimers()
-    const { sheet, types, onApply } = open(vi.fn(), { types: ['easy'], years: ['2025'] })
-    expect(types.getByRole('button', { name: t.pages.map.kinds.easy })).toHaveAttribute('aria-pressed', 'true')
+    const { sheet, types, onApply } = open(vi.fn(), { types: ['Base'], years: ['2025'] })
+    expect(types.getByRole('button', { name: t.activityTypes.Base })).toHaveAttribute('aria-pressed', 'true')
 
-    fireEvent.click(types.getByRole('button', { name: t.pages.map.kinds.tempo }))
+    fireEvent.click(types.getByRole('button', { name: t.activityTypes.Tempo }))
     expect(onApply).not.toHaveBeenCalled()
 
     fireEvent.click(within(sheet).getByRole('button', { name: f.reset }))
@@ -64,14 +64,14 @@ describe('the heatmap filters sheet', () => {
   })
 
   it('leaves the type section out when the runs have one type', () => {
-    render(<HeatFilterSheet types={['easy']} years={['2026']} place={null} value={NO_HEAT_FILTERS} count={() => 3} onApply={() => {}} onClose={() => {}} />)
+    render(<HeatFilterSheet types={['Base']} years={['2026']} place={null} value={NO_HEAT_FILTERS} count={() => 3} onApply={() => {}} onClose={() => {}} />)
     expect(screen.queryByRole('region', { name: t.pages.map.type })).toBeNull()
     expect(screen.getByRole('region', { name: t.pages.map.year })).toBeInTheDocument()
   })
 
   it('switches the layer at once from the same sheet', () => {
     const onToggle = vi.fn()
-    render(<HeatFilterSheet types={['easy']} years={['2026']} place={null} value={NO_HEAT_FILTERS} count={count} onApply={vi.fn()} onClose={() => {}} layer={{ districts: false, onToggle }} />)
+    render(<HeatFilterSheet types={['Base']} years={['2026']} place={null} value={NO_HEAT_FILTERS} count={count} onApply={vi.fn()} onClose={() => {}} layer={{ districts: false, onToggle }} />)
     expect(screen.getByTestId('layer-heat')).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(screen.getByTestId('layer-heat'))
     expect(onToggle).not.toHaveBeenCalled()

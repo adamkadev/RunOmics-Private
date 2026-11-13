@@ -152,7 +152,7 @@ describe('getAllRoutes', () => {
     expect(getAllRoutes().routeMeta[0]).toEqual({
       id: 'paris',
       type: 'Base',
-      kind: 'easy',
+      kind: 'Base',
       year: '2026',
       date: '2026-07-20',
       distanceKm: 10,
@@ -161,16 +161,17 @@ describe('getAllRoutes', () => {
     })
   })
 
-  it('names each run by the session it was set as, else by what it was', async () => {
-    const threshold = { id: 'p1', date: '2026-07-20', type: 'threshold', status: 'completed', title: 'Threshold 3 × 8′', blocks: [] } as unknown as WorkoutPrescription
+  it('files each run as the Activities list does: its own type, a long Base run as Long run', async () => {
     const sprint = { ...activity('hoenheim', '2026-07-12T08:00:00', PARIS), type: 'Sprint' } as Activity
-    const { getAllRoutes } = await load([...HISTORY, sprint], [{ prescription: threshold, activityId: 'paris' }])
+    const long = { ...activity('long', '2026-07-05T08:00:00', PARIS), durationSeconds: 2 * 3600 } as Activity
+    const { getAllRoutes } = await load([...HISTORY, sprint, long])
 
     expect(getAllRoutes().routeMeta.map((m) => [m.id, m.type, m.kind])).toEqual([
-      ['paris', 'Base', 'threshold'],
-      ['brussels-new', 'Base', 'easy'],
-      ['brussels-old', 'Base', 'easy'],
-      ['hoenheim', 'Sprint', 'intervals'],
+      ['paris', 'Base', 'Base'],
+      ['brussels-new', 'Base', 'Base'],
+      ['brussels-old', 'Base', 'Base'],
+      ['hoenheim', 'Sprint', 'Sprint'],
+      ['long', 'Base', 'LongRun'],
     ])
   })
 
@@ -197,7 +198,7 @@ describe('getAllRoutes', () => {
       totalCount: 0,
       totalKm: 0,
       years: [],
-      untracked: [{ kind: 'easy', year: '2026', distanceKm: 10 }],
+      untracked: [{ kind: 'Base', year: '2026', distanceKm: 10 }],
     })
   })
 

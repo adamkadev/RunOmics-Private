@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Maximize, Minimize, SlidersHorizontal } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import { RUN_KINDS } from "@/domain/activity/runKind";
+import { kindLabel, SHEET_ORDER } from "@/components/activities/activityFilter";
 import { areaForCluster } from "@/domain/explore/areaForCluster";
 import { medianStart } from "@/domain/explore/home";
 import { circleOf } from "@/domain/explore/avoidSpots";
@@ -206,7 +206,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.kind));
-    return RUN_KINDS.filter((kind) => present.has(kind));
+    return SHEET_ORDER.filter((kind) => present.has(kind));
   }, [routeMeta]);
 
   const rows = useMemo(() => areaRows(clusters, routeMeta, filters), [clusters, routeMeta, filters]);
@@ -328,7 +328,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     const s = t.pages.map.territory;
     if (!territory) return null;
     const { types, years } = filters;
-    const typeLabel = types.length === 1 ? t.pages.map.kinds[types[0]!] : types.length > 1 ? t.pages.map.filters.types(types.length) : null;
+    const typeLabel = types.length === 1 ? kindLabel(types[0]!) : types.length > 1 ? t.pages.map.filters.types(types.length) : null;
     const eyebrow = [
       place ?? s.homeArea,
       ...(typeLabel ? [typeLabel] : []),

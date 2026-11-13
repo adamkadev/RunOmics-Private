@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import type { RunKind } from '@/domain/activity/runKind'
+import type { FilterKind } from '@/domain/activity/listKind'
+import { kindLabel } from '@/components/activities/activityFilter'
 import { Button } from '@/components/ui/Button'
 import { Sheet, SheetSection } from '@/components/ui/Sheet'
 import { cn } from '@/lib/utils'
@@ -9,7 +10,7 @@ import { t } from '@/i18n'
 import { activeFilterCount, NO_HEAT_FILTERS, type HeatFilters } from './mapUtils'
 
 interface Props {
-  types: readonly RunKind[]
+  types: readonly FilterKind[]
   years: readonly string[]
   /** The area pill's name, which the count is of; null while it has only coordinates. */
   place: string | null
@@ -112,7 +113,7 @@ export function HeatFilterSheet({ types, years, place, value, count, onApply, on
           title={t.pages.map.type}
           options={types}
           picked={draft.types}
-          label={(kind) => t.pages.map.kinds[kind]}
+          label={kindLabel}
           onChange={(next) => setDraft((d) => ({ ...d, types: next }))}
         />
       )}

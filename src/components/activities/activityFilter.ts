@@ -1,22 +1,9 @@
-import { isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
-import { isLongSession } from '@/domain/activity/longRun'
+import { LONG_RUN, isFilterKind, kindOfRun, type FilterKind } from '@/domain/activity/listKind'
+import type { ActivitySummary } from '@/domain/activity/types'
 import type { ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import { t } from '@/i18n'
 
-/**
- * The classifier has no long-run type (a long run is a Base run), so the filter
- * derives one and leaves the rest of Base as plain easy running.
- */
-export const LONG_RUN = 'LongRun'
-export type FilterKind = ActivityType | typeof LONG_RUN
-
-export function isFilterKind(value: unknown): value is FilterKind {
-  return value === LONG_RUN || isActivityType(value)
-}
-
-export function kindOfRun(activity: Pick<ActivitySummary, 'type' | 'durationSeconds' | 'description'>): FilterKind {
-  return activity.type === 'Base' && isLongSession(activity) ? LONG_RUN : activity.type
-}
+export { LONG_RUN, isFilterKind, kindOfRun, type FilterKind } from '@/domain/activity/listKind'
 
 export type FilterGroup = 'all' | 'easy' | 'workouts' | 'races'
 export type ActivitySort = 'newest' | 'oldest' | 'longest' | 'fastest'
@@ -38,7 +25,8 @@ export const FILTER_GROUPS = {
 export const GROUP_IDS = ['all', 'easy', 'workouts', 'races'] as const satisfies readonly FilterGroup[]
 export const SORT_IDS = ['newest', 'oldest', 'longest', 'fastest'] as const satisfies readonly ActivitySort[]
 
-const SHEET_ORDER: readonly FilterKind[] = Object.values(FILTER_GROUPS).flat()
+/** The sheet's order, which the map's Type chips share. */
+export const SHEET_ORDER: readonly FilterKind[] = Object.values(FILTER_GROUPS).flat()
 
 function isGroup(value: unknown): value is FilterGroup {
   return (GROUP_IDS as readonly unknown[]).includes(value)
