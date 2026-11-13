@@ -61,8 +61,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const hasRoute = (activity.route?.length ?? 0) > 1
   const designs = hasRoute ? SHARE_DESIGNS : SHARE_DESIGNS.filter((d) => d !== 'route')
 
-  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps } = useShareCardPrefs(appTheme, hasRoute)
-  const [size, setSize] = useState<ShareSize>('portrait')
+  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, size, setSize } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   // Without its reps the card is an easy run's: one colour on the route, the
   // average pace back in the stats.
