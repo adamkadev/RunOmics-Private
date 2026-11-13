@@ -2051,8 +2051,9 @@ export const en = {
     },
     cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },
     // A gap under a minute: "5s".
-    gapSeconds: (s: number) => `${s}s`,
-    faster: (gap: string) => `${gap} faster`,
+    gapSeconds: (s: number) => `${s} s`,
+    // A prediction is what could be run, not what was.
+    faster: (gap: string) => `${gap} within reach`,
     slower: (gap: string) => `${gap} slower`,
     // The prediction is the best to the second: run already at potential.
     atPotential: 'at potential',

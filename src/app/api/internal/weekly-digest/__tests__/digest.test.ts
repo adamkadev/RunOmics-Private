@@ -46,7 +46,7 @@ describe('weekly digest', () => {
     })
     expect(digestPush(digest)).toEqual({
       title: 'Last week',
-      body: '34 of 42 km · 1 of 2 quality sessions · 1:30 h other training\nResting HR 48 (−2)\nThis week: Aerobic base, one controlled threshold',
+      body: '34 of 42 km · 1 of 2 quality sessions · 1 h 30 other training\nResting HR 48 (−2)\nThis week: Aerobic base, one controlled threshold',
     })
   })
 

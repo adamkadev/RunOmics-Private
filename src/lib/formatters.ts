@@ -27,7 +27,8 @@ export function formatDurationWords(seconds: number): string {
   const totalMinutes = Math.round(seconds / 60)
   const h = Math.floor(totalMinutes / 60)
   const m = totalMinutes % 60
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')} ${t.units.hour}` : `${m} ${t.units.min}`
+  if (h === 0) return `${m} ${t.units.min}`
+  return m > 0 ? `${h} ${t.units.hour} ${String(m).padStart(2, '0')}` : `${h} ${t.units.hour}`
 }
 
 export function formatClock(seconds: number): string {

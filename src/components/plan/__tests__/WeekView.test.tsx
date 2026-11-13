@@ -238,7 +238,7 @@ describe('a session still to come', () => {
     const card = screen.getByTestId('plan-workout-workout-threshold')
     expect(card.textContent).toContain(t.activityTypes.Threshold)
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
-    expect(within(card).getByTestId('plan-amount').textContent).toContain(`1:00 ${t.units.hour}`)
+    expect(within(card).getByTestId('plan-amount').textContent).toContain(`1 ${t.units.hour}`)
     expect(card.textContent).not.toContain(t.plan.session.targetPace('4:25–4:30'))
     expect(within(card).getByTestId('workout-steps').textContent).toContain('4:25–4:30 /km')
     expect(within(card).queryByTestId('plan-status')).toBeNull()

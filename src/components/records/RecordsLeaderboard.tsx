@@ -23,7 +23,7 @@ function medalClass(i: number): string {
 }
 
 const GAP_TONE = {
-  faster: 'text-[var(--pos)]',
+  faster: 'text-muted-foreground',
   at: 'text-muted-foreground',
   slower: 'text-muted-foreground',
 } as const

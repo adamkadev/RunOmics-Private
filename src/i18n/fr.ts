@@ -1897,7 +1897,7 @@ export const fr = {
     },
     cols: { distance: 'Distance', best: 'Record', predicted: 'Prédit' },
     gapSeconds: (s: number) => `${s} s`,
-    faster: (gap: string) => `${gap} plus rapide`,
+    faster: (gap: string) => `${gap} à portée`,
     slower: (gap: string) => `${gap} plus lent`,
     atPotential: 'à ton potentiel',
     allEfforts: (distance: string) => `Tous les efforts sur ${distance} ›`,

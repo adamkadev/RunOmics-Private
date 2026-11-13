@@ -40,7 +40,7 @@ describe('RecordsLeaderboard', () => {
       t.records.atPotential,
       t.records.faster(t.records.gapSeconds(20)),
     ])
-    expect(gaps[0]!.className).toContain('text-[var(--pos)]')
+    expect(gaps[0]!.className).not.toContain('var(--pos)')
     expect(gaps[1]!.className).toContain('text-muted-foreground')
     expect(screen.getByText(t.records.raceTag)).toBeInTheDocument()
   })
