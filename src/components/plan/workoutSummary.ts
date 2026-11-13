@@ -79,7 +79,7 @@ export function workoutSummary(
 
   return {
     title: displayName(title),
-    shortTitle: displayName(view.shortName ?? title),
+    shortTitle: displayName(strides && view.shortName ? countStrides(view.shortName, reps.length) : (view.shortName ?? title)),
     durationSeconds: view.duration?.seconds ?? null,
     distanceM: view.distanceM,
     paces,
@@ -93,4 +93,9 @@ export function paceLabel({ kind, pace }: WorkoutSummary['paces'][number]): stri
   if (kind === 'strides') return s.stridesPace(`${formatClock(pace[0])} ${t.units.perKm}`)
   if (kind === 'easy') return s.easyPace(range)
   return s.targetPace(range)
+}
+
+/** A short name's "+ strides" with how many, as the full name writes them: "Easy + 6 strides". */
+function countStrides(shortName: string, count: number): string {
+  return shortName.replace(/\+\s*(strides|accélérations)\b/i, (_, word: string) => `+ ${count} ${word}`)
 }

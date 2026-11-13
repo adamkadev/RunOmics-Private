@@ -28,7 +28,7 @@ import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
 import { dayFit } from './dayFit'
-import { sessionLabel } from '@/lib/activityTitle'
+import { isGenericName, namedType, sessionLabel } from '@/lib/activityTitle'
 import { BlockFinishedCard, ComingUpCard, DoneDayCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 import { blockCovers, blockLifecycle } from './blockLifecycle'
 import { useCoachWords } from '@/components/coaching/useCoachWords'
@@ -228,8 +228,13 @@ export function WeekView({
 
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
-    const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).shortTitle)
     const session = fitWorkouts[0] ?? null
+    // A run that kept a generic name ("Easy", the watch's) is titled by the session it ran: "Easy run + 6 strides".
+    // One named for another kind ("Easy run" on a threshold day) keeps its own name.
+    const first = acts[0]
+    const generic = !!first && !!session && isGenericName(first.description) && (namedType(first.description) ?? first.type) === first.type
+    const named = !!first && !generic
+    const title = sessionLabel(named ? activityTitle(acts[0]!) : workoutSummary(session ?? workouts[0]!).shortTitle)
     const planned = session ? plannedText(session, title) : null
     dayCard = (
       <DoneDayCard

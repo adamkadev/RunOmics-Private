@@ -379,7 +379,7 @@ describe('a day that is over', () => {
 
     await user.click(day('2026-09-08'))
     const ran = screen.getByTestId('plan-day-done-2026-09-08')
-    expect(within(ran).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}${t.plan.dayCard.standsFor('Mon 7')} · 8 ${t.units.km} · Easy run`)
+    expect(within(ran).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}${t.plan.dayCard.standsFor('Mon 7')} · 8 ${t.units.km}`)
     expect(within(ran).getByRole('img', { name: t.plan.dayCard.asPlanned })).toBeInTheDocument()
   })
 

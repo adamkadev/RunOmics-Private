@@ -25,6 +25,12 @@ function isTypeWord(words: string): boolean {
   return TYPE_WORDS.has(typeKey(words))
 }
 
+/** A run's name that says no more than its type or the watch's default ("Easy", "Easy run", "Hoenheim Running"). */
+export function isGenericName(name: string | null | undefined): boolean {
+  const trimmed = name?.trim() ?? ''
+  return !trimmed || isTypeWord(trimmed) || isWatchName(trimmed)
+}
+
 /**
  * The type a run's name leads with, else the watch's: Garmin files a run by how it went (a threshold
  * session at too low a heart rate becomes tempo), but the session was what it was named.

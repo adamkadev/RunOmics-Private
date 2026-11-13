@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { intendedType, isWatchName, sessionLabel } from '@/lib/activityTitle'
+import { intendedType, isGenericName, isWatchName, sessionLabel } from '@/lib/activityTitle'
 
 // Beside a type's dot or eyebrow, a session reads as its set, said once.
 describe('sessionLabel', () => {
@@ -81,5 +81,12 @@ describe('isWatchName', () => {
     expect(isWatchName('Footing 4 × 6′')).toBe(false)
     expect(isWatchName('')).toBe(false)
     expect(isWatchName('Sortie au canal')).toBe(false)
+  })
+})
+
+describe('isGenericName', () => {
+  it('is a name that says no more than the type or the watch default', () => {
+    for (const name of ['', 'Easy', 'Easy run', 'Hoenheim Running', 'Long run']) expect(isGenericName(name)).toBe(true)
+    for (const name of ['Easy · 51 min + 6 strides', '3 × 8′ @ 4:25', 'Wine Route - Luxemburg']) expect(isGenericName(name)).toBe(false)
   })
 })
