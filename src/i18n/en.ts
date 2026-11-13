@@ -506,6 +506,7 @@ export const en = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Build info copied',
     sections: {
+      account: 'Account',
       profile: 'Profile · from your watch',
       appearance: 'Appearance',
       data: 'Data',
@@ -625,7 +626,7 @@ export const en = {
       viewRun: 'View run ›',
     },
     rowAction: {
-      signIn: 'Sign in ›',
+      needsAccount: 'Needs account',
     },
     appearance: {
       themeLabel: 'Theme',
@@ -654,7 +655,7 @@ export const en = {
       signingIn: 'Signing in...',
       error: 'Could not sign in, please retry.',
       notConfigured: 'Sign-in is not available right now.',
-      signInToManage: 'Sign in to manage',
+      unlocks: 'Sign in to export your runs and get a nudge before planned sessions.',
     },
     athlete: {
       thresholdPace: 'Threshold',

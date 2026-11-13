@@ -481,6 +481,7 @@ export const fr = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Infos de version copiées',
     sections: {
+      account: 'Compte',
       profile: 'Profil · depuis ta montre',
       appearance: 'Apparence',
       data: 'Données',
@@ -595,7 +596,7 @@ export const fr = {
       viewRun: 'Voir la sortie ›',
     },
     rowAction: {
-      signIn: 'Se connecter ›',
+      needsAccount: 'Compte requis',
     },
     appearance: {
       themeLabel: 'Thème',
@@ -624,7 +625,7 @@ export const fr = {
       signingIn: 'Connexion…',
       error: 'Connexion impossible, réessaie.',
       notConfigured: "La connexion n’est pas disponible pour le moment.",
-      signInToManage: 'Connecte-toi pour les gérer',
+      unlocks: 'Connecte-toi pour exporter tes sorties et recevoir un rappel avant tes séances.',
     },
     athlete: {
       thresholdPace: 'Allure seuil',

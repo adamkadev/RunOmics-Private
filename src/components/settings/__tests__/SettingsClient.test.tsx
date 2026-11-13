@@ -93,12 +93,15 @@ describe('SettingsClient owner gate', () => {
     expect(replacePage).toHaveBeenCalledWith('/sign-in?next=%2Fsettings')
   })
 
-  it('groups the page into Appearance, Profile, Data and Notifications, even signed out', async () => {
+  it('signed out, asks for the account once at the top, then Appearance, Profile, Data and Notifications', async () => {
     renderSettings()
     await screen.findByText(t.settings.auth.signIn)
 
+    expect(screen.getAllByText(t.settings.auth.signIn)).toHaveLength(1)
+    expect(screen.getByTestId('export-row').textContent).toContain(t.settings.rowAction.needsAccount)
     const sections = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
     expect(sections).toEqual([
+      t.settings.sections.account,
       t.settings.sections.appearance,
       t.settings.sections.profile,
       t.settings.sections.data,
@@ -112,9 +115,8 @@ describe('SettingsClient owner gate', () => {
     // The sync is the owner's: signed out there is no Sync.
     expect(screen.queryByText(t.settings.sync.action)).not.toBeInTheDocument()
     expect(screen.getAllByText(new RegExp(t.common.runs(12))).length).toBeGreaterThan(0)
-    expect(screen.getByText(t.settings.auth.signInToManage)).toBeInTheDocument()
+    expect(screen.getByText(t.settings.auth.unlocks)).toBeInTheDocument()
     expect(screen.getByText(t.settings.dataExport.title)).toBeInTheDocument()
-    expect(screen.getByText(t.settings.rowAction.signIn)).toBeInTheDocument()
   })
 
   it('draws the owner\'s height and weight as read-only facts, fetched after sign-in, then the row to Athlete & zones', async () => {
