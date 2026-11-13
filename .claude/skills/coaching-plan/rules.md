@@ -180,15 +180,15 @@ on their own, to a change to the live plan, which names the sessions it writes t
 `validateDraftNames` in `src/application/coaching/workoutNames.ts` holds a plan to
 them (design review, Oct 2026).
 
-- Name each workout in its title as its session type, then " · " and its structure when it has one: "Threshold · 3 × 8′ @ 4:25", "Easy · 54 min + 6 strides", "VO₂ intervals · 5 × 3′". A session without structure is its type alone: "Recovery run", "Easy run", "Long run". The type leads so that the word telling two sessions apart survives a watch that shows only the first characters.
-- The session types are Recovery run, Easy run, Easy, Long run, Tempo, Threshold, VO₂ intervals, Anaerobic, Sprints and Race; an easy run is "Easy" when a structure follows it.
+- Name each workout in its title as its session type, then " · " and its structure when it has one: "Threshold · 3 × 8′ @ 4:25", "VO₂ intervals · 5 × 3′". An easy run with strides is its type, " + " and how many: "Easy run + 6 strides", never the easy part's length, which is shown beside the name. A session without structure is its type alone: "Recovery run", "Easy run", "Long run". The type leads so that the word telling two sessions apart survives a watch that shows only the first characters.
+- The session types are Recovery run, Easy run, Long run, Tempo, Threshold, VO₂ intervals, Anaerobic, Sprints and Race; an easy run is "Easy run" with or without strides, never "Easy" alone.
 - Write repetitions as their count, the multiplication sign and their length with the prime: "3 × 8′", never "3 x 8", "3x8'" or "3 x 7:40". Round a repetition to the nearest minute (7:40 is 8′); one under a minute keeps its seconds with the double prime ("10 × 30″").
 - Put the repetitions' target pace last, after " @ ": "@ 4:25", the middle of their pace range, with no unit and never a range.
 - Keep a name to 28 characters, so it fits a row on a phone and on the watch; drop the pace first when it would not fit.
 - Use sentence case in names: capitalise the first word only, unless a proper noun follows.
 - Never use " - " in a name, and never put the session's total distance, its total duration or its zone in it. Each is computed from the blocks and shown beside the name, and a figure written into the name is a second source of truth that drifts from the session it names.
-- Give every workout a shortName of at most 18 characters for a tight row, the name itself when it already fits: "Threshold 3×8′", "Easy + strides", "Long run".
-- Give a workout with repetitions or extras a structure that states them as its blocks have them: {"reps": 3, "repMinutes": 8, "targetPace": "4:25"} for "Threshold · 3 × 8′ @ 4:25", {"extras": ["6 strides"]} for "Easy · 54 min + 6 strides".
+- Give every workout a shortName of at most 18 characters for a tight row, the name itself when it already fits: "Threshold 3×8′", "Easy + 6 strides", "Long run". Strides keep their count in the shortName too.
+- Give a workout with repetitions or extras a structure that states them as its blocks have them: {"reps": 3, "repMinutes": 8, "targetPace": "4:25"} for "Threshold · 3 × 8′ @ 4:25", {"extras": ["6 strides"]} for "Easy run + 6 strides".
 - A run inherits the name of the session it was, so keep each name specific enough to tell its session apart in a list of runs.
 
 ## Describing the workouts

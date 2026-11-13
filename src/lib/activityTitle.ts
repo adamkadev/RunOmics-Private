@@ -47,7 +47,7 @@ export function namedType(name: string | null | undefined): ActivityType | null 
 
 /** A set of reps ("3 × 8", "4x3"), a length in minutes or seconds ("8′", "7'"), a pace ("@ 4:25") or a body and its extras ("54 min + 6 strides"). */
 function isStructure(text: string): boolean {
-  return /\d\s*[×xX*]\s*\d/.test(text) || /\d\s?[′'″"]/.test(text) || /@\s*\d/.test(text) || /\d.*\s\+\s/.test(text)
+  return /\d\s*[×xX*]\s*\d/.test(text) || /\d\s?[′'″"]/.test(text) || /@\s*\d/.test(text) || /\d.*\s\+\s/.test(text) || /\s\+\s\d/.test(text)
 }
 
 /** A set as the naming rules write it: "3x7'@4:25/km" -> "3 × 7′ @ 4:25", a rep's "7:00" -> "7′". */

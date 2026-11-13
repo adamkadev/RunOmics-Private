@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Coaching
+
+- Naming rules: an easy run with strides is "Easy run + 6 strides" (shortName "Easy + 6 strides"), never a bare "Easy"
+  or the easy part's length; the app shows the name as written. Applies from the next block.
+
 ### Interface
 
 - Round 9 follow-up. A large title is one line ("Goals", "Checkpoint", "Depuis la maison"), the checkpoint's phase on

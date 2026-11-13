@@ -145,7 +145,7 @@ hold, judged only on the weeks it added to. While returning, every session
 it writes is held to the return's session checks. A title it writes follows the
 naming rules; one the plan already held is kept as it was written, but the
 figures in it must still match blocks the change rewrote: a lighter week that
-cuts "Easy · 54 min + 6 strides" to 43 minutes renames it. The
+drops a rep from "Threshold · 4 × 8′" renames it. The
 floor, the reduced-week rules, the "fewer runs" explanation, threshold
 progression and the race rules stay with bootstrap: they refuse exactly the
 easing an adaptation is for.

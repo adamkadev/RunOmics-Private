@@ -4,7 +4,8 @@ import { segmentSeconds } from './intensity'
 import { segmentMeters, segments } from './volume'
 
 /**
- * A name is its type, then " · " and its structure ("Threshold · 3 × 8′ @ 4:25"), or the type alone.
+ * A name is its type, then " · " and its structure ("Threshold · 3 × 8′ @ 4:25"), an easy run " + " its strides
+ * ("Easy run + 6 strides"), or the type alone.
  * The app prints it as given and never reads a figure back out of it, so the rules are held here.
  */
 
@@ -66,7 +67,7 @@ function kilometres(value: string | undefined): number {
   return Number((value ?? '').replace(',', '.'))
 }
 
-/** A length outside the repetitions is a block's own: "54 min" in "Easy · 54 min + 6 strides". */
+/** A length outside the repetitions is a block's own: "54 min" in "Long run · 90 min + 6 strides". */
 function blockLengthProblem(name: string, blocks: WorkoutBlock[]): string | null {
   const work = blocks.filter((block): block is WorkoutSegment => block.kind !== 'repeat' && isWork(block))
   for (const [, times, minutes] of name.matchAll(MINUTES)) {
@@ -144,8 +145,11 @@ function titleProblem(workout: Named): string | null {
   const separators = name.split('·').length - 1
   if (separators > 1 || separators !== name.split(' · ').length - 1) return 'one " · ", a space either side, between the type and its structure'
   const firstDigit = name.search(/\d/)
-  if (!isRace(workout.type) && firstDigit !== -1 && (separators === 0 || firstDigit < name.indexOf(' · '))) {
-    return 'the type first, then " · " and the structure: "Threshold · 3 × 8′"'
+  // "Easy run + 6 strides": the type, then its extras after " + ", with no " · " between them.
+  const extrasAt = separators === 0 ? name.indexOf(' + ') : -1
+  const structureAt = separators > 0 ? name.indexOf(' · ') : extrasAt
+  if (!isRace(workout.type) && firstDigit !== -1 && (structureAt === -1 || firstDigit < structureAt)) {
+    return 'the type first, then " · " and the structure: "Threshold · 3 × 8′", or " + " and the strides: "Easy run + 6 strides"'
   }
   if (/\S×|×\S/.test(name)) return 'a space either side of ×: "3 × 8′"'
   const paces = [...name.matchAll(PACE)]
