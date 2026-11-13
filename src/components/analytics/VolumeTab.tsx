@@ -52,9 +52,9 @@ function VolumeStat({ value, of, label, testId }: { value: string | number; of?:
   )
 }
 
-function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void; weeklyAvgKm: number | null }) {
+function WeeklyDistanceCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void }) {
   const s = t.analytics.cards.weekly
-  const view = weeklyDistanceView(rows, live ? weeklyAvgKm : null)
+  const view = weeklyDistanceView(rows)
   if (!view) return null
   const { last } = view
   const wide = rows.length > 20
@@ -68,9 +68,7 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
   const hasPlan = rows.some((r) => r.planKm !== null)
   const hasMissed = marks && rows.some(missedWeek)
   const hasUnplanned = rows.some((r) => r.km > 0 && unplanned(r, hasPlan))
-  // The app's one weekly average is its last 12 finished weeks; a window
-  // further back averages its own.
-  const avgWeeks = live && weeklyAvgKm !== null ? 12 : rows.filter((r) => !r.current).length
+  const avgWeeks = rows.filter((r) => !r.current).length
   const when = last.current ? s.thisWeek : s.weekOf(bare(last.week))
   return (
     <Card className="gap-3.5" testId="weekly-card">
@@ -238,13 +236,12 @@ export interface VolumeTabProps {
   live: boolean
   onShift: (step: 1 | -1) => void
   ytd: YtdInput | null
-  weeklyAvgKm: number | null
 }
 
-export function VolumeTab({ rows, live, onShift, ytd, weeklyAvgKm }: VolumeTabProps) {
+export function VolumeTab({ rows, live, onShift, ytd }: VolumeTabProps) {
   return (
     <div className="flex flex-col gap-3.5">
-      <WeeklyDistanceCard rows={rows} live={live} onShift={onShift} weeklyAvgKm={weeklyAvgKm} />
+      <WeeklyDistanceCard rows={rows} live={live} onShift={onShift} />
       <LongRunCard rows={rows} live={live} onShift={onShift} />
       {ytd && <YtdRow ytd={ytd} />}
     </div>

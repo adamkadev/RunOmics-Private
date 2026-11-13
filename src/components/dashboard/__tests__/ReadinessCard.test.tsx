@@ -59,6 +59,13 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(fatigue!.dataset.tone).toBe('worse')
   })
 
+  it('says steady in grey for a delta that rounds to zero', () => {
+    render(<ReadinessCard status={{ ...STATUS, ctlDeltaShown: 0.3 }} />)
+    const [fitness] = screen.getAllByTestId('readiness-delta')
+    expect(fitness!.textContent).toBe(t.dashboard.readiness.steady(7))
+    expect(fitness!.dataset.tone).toBe('neutral')
+  })
+
   it('says a neutral line in grey, never the accent, and opens Analytics', () => {
     render(<ReadinessCard status={STATUS} />)
     expect(screen.getByTestId('readiness-status').getAttribute('style')).toContain('var(--muted-foreground)')

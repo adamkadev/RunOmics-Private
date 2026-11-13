@@ -68,7 +68,6 @@ const data: AnalyticsBoardData = {
     { date: day(20), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, 3600, null, null].map((t) => (t === null ? null : Math.round(4 * t + 200))) },
     { date: day(100), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, null, null, null].map((t) => (t === null ? null : Math.round(3.9 * t + 190))) },
   ],
-  weeklyAvgKm: 26.4,
   ytd: {
     km: 1394,
     vsLastYear: { km: 1394, lastYearKm: 640, since: null },
@@ -202,10 +201,10 @@ describe('Analytics (v4.5)', () => {
     expect(coach().getAttribute('data-tone')).toBe('pos')
   })
 
-  it('dates the header range by the period chosen', async () => {
+  it('dates the header range by the period chosen, the same on every tab', async () => {
     await renderBoard()
     const cases = [
-      { tab: 'fitness', card: 'form-card', ranges: ['Aug 30 – Sep 26, 2026', 'Jul 5 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
+      { tab: 'fitness', card: 'form-card', ranges: ['Aug 31 – Sep 26, 2026', 'Jul 6 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
       { tab: 'volume', card: 'weekly-card', ranges: ['Aug 31 – Sep 26, 2026', 'Jul 6 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
     ] as const
     for (const { tab, card, ranges } of cases) {
@@ -248,9 +247,9 @@ describe('Analytics (v4.5)', () => {
 
   it('widens the Form strip with the period, and resets the range', async () => {
     await renderBoard()
-    expect(screen.getByTestId('form-strip').children).toHaveLength(28)
+    expect(screen.getByTestId('form-strip').children).toHaveLength(27)
     fireEvent.click(screen.getByRole('radio', { name: '12 weeks' }))
-    expect(screen.getByTestId('form-strip').children.length).toBeLessThan(28)
+    expect(screen.getByTestId('form-strip').children.length).toBeLessThan(27)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
   })
 
@@ -301,7 +300,7 @@ describe('Analytics (v4.5)', () => {
     // Fitness rose: good news, an arrow and its size.
     expect(screen.getByTestId('fitness-delta').firstElementChild!.getAttribute('style')).toContain('var(--good)')
     const bands = [...screen.getByTestId('form-strip').querySelectorAll<HTMLElement>('[data-band]')]
-    expect(bands).toHaveLength(28)
+    expect(bands).toHaveLength(27)
     for (const bar of bands) expect(bar.style.background).toMatch(/^color-mix\(in srgb, var\(--form-band-fill-(fresh|neutral|tired)\) var\(--form-fill\), transparent\)$/)
     expect(card.className).toContain('[--form-fill:70%]')
     expect(card.className).toContain('dark:[--form-fill:60%]')
@@ -411,8 +410,8 @@ describe('Analytics (v4.5)', () => {
     const current = bars.querySelector<HTMLElement>('[data-current]')!
     expect(current.style.background).toBe('var(--data-done-soft)')
     expect(current.style.outline).toBe('1.5px dashed var(--accent)')
-    // The one weekly average, as a stat with its unit.
-    expect(screen.getByTestId('weekly-card').textContent).toContain(`26${t.analytics.cards.weekly.underAvg(12)}`)
+    // The average over the period chosen: its 11 finished weeks.
+    expect(screen.getByTestId('weekly-card').textContent).toContain(t.analytics.cards.weekly.underAvg(11))
     // This week, dashed in the one "this week" style and never flagged over:
     // its first runs are all of its distance so far.
     const longRun = screen.getByTestId('long-run-bars').querySelector<HTMLElement>('[data-current]')!
@@ -567,7 +566,7 @@ describe('a week with nothing run (v4.6)', () => {
     const rows = weekRows(weeksWithGap, [], window, TODAY)
     render(
       <>
-        <VolumeTab rows={rows} live onShift={() => {}} ytd={null} weeklyAvgKm={null} />
+        <VolumeTab rows={rows} live onShift={() => {}} ytd={null} />
         <IntensityTab rows={rows} live onShift={() => {}} plan={[]} />
       </>,
     )
@@ -697,7 +696,7 @@ describe('Year to date on Volume', () => {
       />,
     )
     const goals = within(goal.container)
-    const volume = within(render(<VolumeTab rows={rows} live onShift={() => {}} ytd={ytd} weeklyAvgKm={null} />).container)
+    const volume = within(render(<VolumeTab rows={rows} live onShift={() => {}} ytd={ytd} />).container)
     return { goals, volume }
   }
 

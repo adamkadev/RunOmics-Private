@@ -767,8 +767,9 @@ export const en = {
       loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimated` : state),
       ctl: 'Fitness',
       atl: 'Fatigue',
-      // "↘ 2 this week" under a tile.
-      deltaWeek: (n: number, days: number) => (days === 7 ? `${n} this week` : `${n} in ${days} days`),
+      // "↘ 2 in 7 days" under a tile: a rolling window, not the calendar week.
+      deltaWeek: (n: number, days: number) => `${n} in ${days} days`,
+      steady: (days: number) => `steady in ${days} days`,
       // The card's words when no written verdict is in yet, from the load itself.
       fallback: {
         // The headline follows the form state the status line names: "fresh" only when form is above +5.

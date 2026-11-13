@@ -6,7 +6,7 @@ import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
 import { formatDelta } from '@/lib/formatters'
 import { formBand } from '@/domain/training/formBand'
-import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
 import { cardClass, tileLabelClass } from '@/components/ui/Card'
@@ -40,7 +40,10 @@ function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; 
 function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: number; current: number; days: number }) {
   const tone = deltaTone(metric, delta, { value: current })
   const rounded = Math.round(delta)
-  const Arrow = rounded > 0 ? ArrowUpRight : rounded < 0 ? ArrowDownRight : ArrowRight
+  const Arrow = rounded > 0 ? ArrowUpRight : ArrowDownRight
+  if (rounded === 0) {
+    return <span data-testid="readiness-delta" data-tone="neutral" className="whitespace-nowrap text-muted-foreground">{t.dashboard.readiness.steady(days)}</span>
+  }
   return (
     <span data-testid="readiness-delta" data-tone={tone} className="inline-flex items-center gap-0.5 whitespace-nowrap tabular-nums" style={{ color: DELTA_TONE_COLOR[tone] }}>
       <Arrow size={12} strokeWidth={1.8} aria-hidden className="shrink-0" />

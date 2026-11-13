@@ -60,7 +60,7 @@ const pairs = (acute: (i: number) => number, chronic = 300, n = 120): LoadPair[]
 describe('loadTrendView', () => {
   it('bands each day at 0.8-1.3 × chronic and reads today against it', () => {
     const view = loadTrendView(pairs(() => 300), dayWindow(TODAY, '4w'), 480)!
-    expect(view.points).toHaveLength(28)
+    expect(view.points).toHaveLength(27)
     expect(view).toMatchObject({ acute: 300, lo: 240, hi: 390, state: 'in', ratio: 1 })
     expect(view.points.every((p) => !p.out)).toBe(true)
   })

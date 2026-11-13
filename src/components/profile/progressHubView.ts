@@ -258,9 +258,9 @@ export function progressHubView(input: HubInput): ProgressHubView {
     vo2max:
       vo2Value !== null
         ? {
-            value: Math.round(vo2Value),
+            value: Math.round(vo2Value * 10) / 10,
             grade: input.vo2Grade ?? null,
-            delta: vo2Window.length >= 2 ? Math.round(vo2Window.at(-1)!.vo2max - vo2Window[0]!.vo2max) : null,
+            delta: vo2Window.length >= 2 ? Math.round((vo2Window.at(-1)!.vo2max - vo2Window[0]!.vo2max) * 10) / 10 : null,
             series: vo2Window.map((s) => s.vo2max),
             thresholdPaceSecPerKm: input.athlete.thresholdPaceSecPerKm ?? null,
             lthrBpm: input.athlete.lthrBpm ?? null,

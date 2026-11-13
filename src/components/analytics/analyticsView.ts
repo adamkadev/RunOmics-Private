@@ -44,16 +44,13 @@ function day(iso: string): Date {
   return new Date(`${iso}T00:00:00`)
 }
 
-const PERIOD_DAYS: Record<Period, number> = { '4w': 28, '12w': 84, '1y': 365 }
 
-/**
- * Not Monday-aligned: Monday weeks read "13 of the last 27 days" on a Saturday. The week-based charts (Volume,
- * Intensity) keep their Monday weeks.
- */
+/** The same Monday-aligned start as the week tabs, so every tab names one date range for a period. */
 export function dayWindow(today: string, period: LoadPeriod, offset = 0): DayWindow {
-  const days = PERIOD_DAYS[period]
-  const end = isoDate(addDays(day(today), -offset * days))
-  return { start: isoDate(addDays(day(end), -(days - 1))), end, days, live: offset === 0 }
+  const weeks = weekWindow(today, period, offset)
+  const end = weeks.live ? today : weeks.end
+  const days = Math.round((day(end).getTime() - day(weeks.start).getTime()) / 86_400_000) + 1
+  return { start: weeks.start, end, days, live: weeks.live }
 }
 
 export function weekWindow(today: string, period: WeekPeriod, offset = 0): WeekWindow {

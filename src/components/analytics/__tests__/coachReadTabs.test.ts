@@ -21,7 +21,7 @@ function rows(weeks: { km: number; planKm: number | null; longestKm: number; zon
   return weeks.map((w, i) => ({ week: `2026-0${(i % 9) + 1}-01`, km: w.km, planKm: w.planKm, current: i === weeks.length - 1, point: point(w.km, w.longestKm, w.zones) }))
 }
 
-const data = { weeklyAvgKm: null, ytd: null, plan: [], missed: [] } as unknown as AnalyticsBoardData
+const data = { ytd: null, plan: [], missed: [] } as unknown as AnalyticsBoardData
 
 describe('the Volume read', () => {
   it('reads weeks on plan as good news', () => {

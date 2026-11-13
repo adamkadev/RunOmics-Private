@@ -11,8 +11,11 @@ vi.mock('@/infrastructure/repositories/JsonVo2maxHistoryRepository', () => ({
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({
   getAllActivities: () => activities.all,
 }))
+vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({
+  getAthleteProfile: () => ({ vo2maxMlKgMin: 57 }),
+}))
 
-const { getVO2maxSeries } = await import('../GetVO2maxHistory')
+const { getLatestVO2max, getVO2maxSeries } = await import('../GetVO2maxHistory')
 
 const day = (date: string, vo2max: number): Vo2maxSample => ({ date, vo2max })
 
@@ -67,5 +70,12 @@ describe('getVO2maxSeries', () => {
 
     expect(getVO2maxSeries()['1y'].map((p) => p.value)).toEqual([57, 56])
     expect(getVO2maxSeries()['4w'].map((p) => p.date)).toEqual(['2026-06-28', '2026-07-16'])
+  })
+})
+
+describe('getLatestVO2max', () => {
+  it('reads the precise daily value, not the profile\'s whole number', () => {
+    samples.days = [day('2026-11-10', 57.2), day('2026-11-12', 57.4)]
+    expect(getLatestVO2max()).toBe(57.4)
   })
 })

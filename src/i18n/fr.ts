@@ -726,6 +726,7 @@ export const fr = {
       atl: 'Fatigue',
       // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
       deltaWeek: (n: number, days: number) => `${n} en ${days} j`,
+      steady: (days: number) => `stable en ${days} j`,
       fallback: {
         below: (acute: number, lo: number, hi: number, fresh = false) => ({
           headline: fresh ? 'La fatigue est retombée. Il est temps de reconstruire.' : 'La charge est sous ta zone. Il est temps de reconstruire.',

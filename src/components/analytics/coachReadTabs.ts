@@ -277,7 +277,7 @@ const LONG_RUN_PATTERN = 2
 export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: boolean): TabRead | null {
   const cr = t.analytics.cards.coachRead
   const s = cr.volumeTab
-  const weekly = weeklyDistanceView(rows, live ? data.weeklyAvgKm : null)
+  const weekly = weeklyDistanceView(rows)
   if (!weekly) return null
   const long = longRunView(rows)
   const finished = rows.filter((r) => !r.current).length
@@ -285,7 +285,7 @@ export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: bool
   const planShare = plan && plan.of > 0 ? plan.hit / plan.of : null
 
   const out: CoachRow[] = []
-  if (weekly.avg !== null) out.push({ trend: 'flat', text: s.avgRow(formatKm(weekly.avg), live && data.weeklyAvgKm !== null ? 12 : finished) })
+  if (weekly.avg !== null) out.push({ trend: 'flat', text: s.avgRow(formatKm(weekly.avg), finished) })
   if (plan && planShare !== null) {
     out.push({ trend: planShare >= ON_PLAN_WEEKS ? 'improving' : planShare < UNDER_PLAN_WEEKS ? 'declining' : 'flat', text: s.onPlanRow(plan.hit, plan.of) })
   }

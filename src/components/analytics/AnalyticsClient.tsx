@@ -88,7 +88,6 @@ export interface AnalyticsBoardData {
   paceBests: RunBests[]
   ytd: YtdInput | null
   /** The app's one weekly average: the last 12 complete weeks. */
-  weeklyAvgKm: number | null
 }
 
 const DEFAULT_PERIOD: Record<TabId, LoadPeriod> = { fitness: '4w', performance: '12w', volume: '12w', health: '12w' }
@@ -218,7 +217,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             paceBests={data.paceBests}
           />
         )}
-        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} weeklyAvgKm={data.weeklyAvgKm} />}
+        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} />}
         {tab === 'health' && weeks && <IntensityTab rows={rows} live={weeks.live} onShift={shift} plan={data.plan} />}
       </div>
     </div>
