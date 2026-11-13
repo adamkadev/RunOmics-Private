@@ -197,7 +197,7 @@ describe('Analytics (v4.5)', () => {
     // finished week, leads the case.
     await openTab(t.analytics.tabs.volume, 'weekly-card', '12w')
     expect(coach().textContent).toContain(s.eyebrow)
-    expect(headline()).toBe(s.volumeTab.onPlan(12, 12))
+    expect(headline()).toBe(s.volumeTab.onPlan)
     expect(coach().getAttribute('data-tone')).toBe('pos')
     fireEvent.click(screen.getByTestId('coach-read-why'))
     expect(screen.getByRole('dialog').querySelector('li')!.textContent).toBe(s.volumeTab.longRunRow(11))

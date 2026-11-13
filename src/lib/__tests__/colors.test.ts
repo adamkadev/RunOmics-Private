@@ -46,6 +46,18 @@ describe('the status colours (3.0 override 2)', () => {
     }
   })
 
+  it('draws moderate in a grey-blue apart from the easy blue and the hard purple, and marks it at 3:1 on a card', async () => {
+    const { SURFACES, ZONE_HEX, ZONE_MODERATE_HEX } = await import('@/lib/themeTokens')
+    const { contrastRatio } = await import('@/lib/oklch')
+    for (const mode of ['dark', 'light'] as const) {
+      const moderate = ZONE_MODERATE_HEX[mode]
+      expect(hexToOklch(moderate).c, mode).toBeLessThan(0.05)
+      expect(deltaE(moderate, ZONE_HEX[mode][1]), `${mode} Z2`).toBeGreaterThanOrEqual(11)
+      for (const zone of ZONE_HEX[mode].slice(3)) expect(deltaE(moderate, zone), `${mode} ${zone}`).toBeGreaterThanOrEqual(18)
+      expect(contrastRatio(moderate, SURFACES[mode].card)).toBeGreaterThanOrEqual(3)
+    }
+  })
+
   it('keeps warning amber and bad coral', async () => {
     const { STATUS_HEX } = await import('@/lib/themeTokens')
     expect(STATUS_HEX.dark.warn).toBe('#f0b73c')

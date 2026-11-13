@@ -943,8 +943,9 @@ export const en = {
         // The Volume tab's read: the long run first, then the plan, then the average.
         volumeTab: {
           longRunOver: (n: number, of: number) => `Your long run was over 35% of its week in ${n} of ${of} weeks.`,
-          underPlan: (hit: number, of: number) => `On plan in only ${hit} of ${of} weeks.`,
-          onPlan: (hit: number, of: number) => `On plan in ${hit} of ${of} weeks.`,
+          // The card's stat already counts the weeks: the headline says what to do with them.
+          underPlan: 'Get back to the planned km each week before adding anything.',
+          onPlan: 'Keep running the weeks as the plan sets them.',
           average: (km: string) => `Averaging ${km} km a week.`,
           avgRow: (km: string, n: number) => `${km} km a week on average over ${n} finished week${n === 1 ? '' : 's'}.`,
           onPlanRow: (hit: number, of: number) => `${hit} of ${of} planned weeks at 90% of the plan or more.`,
@@ -1033,6 +1034,7 @@ export const en = {
         in12w: (delta: string) => `${delta} in 12 weeks`,
         // A change names its window, so it never reads as the checkpoint's own.
         since: (note: string, date: string) => `${note} since ${date}`,
+        sinceReturn: (note: string) => `${note} since your return`,
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',

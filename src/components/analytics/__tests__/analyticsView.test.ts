@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import { addDays, isoDate } from '@/lib/calendarDate'
+import { t } from '@/i18n'
+import { paceNotes } from '../PerformanceTab'
+import { windowLabels } from '../AnalyticsKit'
 import {
   coachRead,
   yearOverYear,
@@ -444,5 +447,32 @@ describe('race prediction deltas on one line (v5.5 #21)', () => {
     expect(signedChange(-70)).toBe('−1:10')
     expect(signedChange(0.2)).toBe('0 s')
     expect(signedChange(null)).toBeNull()
+  })
+})
+
+describe('paceNotes', () => {
+  it('says a change both paces share once', () => {
+    const notes = paceNotes({ now: 261, delta: 0 }, { now: 350, delta: 1 }, 'Aug 24')
+    expect(notes).toEqual({ threshold: null, easy: null, shared: t.analytics.cards.summary.since(t.analytics.cards.summary.same, 'Aug 24') })
+  })
+
+  it('keeps each pace its own note when they differ', () => {
+    const notes = paceNotes({ now: 261, delta: 0 }, { now: 350, delta: -20 }, 'Aug 24')
+    expect(notes.shared).toBeNull()
+    expect(notes.easy).toBe(t.analytics.cards.summary.since(t.analytics.cards.summary.faster('20 s'), 'Aug 24'))
+  })
+
+  it('dates a comeback’s change from the return', () => {
+    expect(paceNotes(null, { now: 420, delta: -15 }, null).easy).toBe(t.analytics.cards.summary.sinceReturn(t.analytics.cards.summary.faster('15 s')))
+  })
+})
+
+describe('windowLabels', () => {
+  it('gives each tick its year when the window spans a new year', () => {
+    expect(windowLabels(['2025-11-16', '2026-05-17', '2026-11-07'], false)).toEqual(["Nov ’25", "May ’26", "Nov ’26"])
+  })
+
+  it('keeps day and month inside one year', () => {
+    expect(windowLabels(['2026-08-01', '2026-09-01', '2026-10-01'], false)).toEqual(['Aug 1', 'Sep 1', 'Oct 1'])
   })
 })

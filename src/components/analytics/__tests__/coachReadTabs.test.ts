@@ -26,12 +26,12 @@ const data = { ytd: null, plan: [], missed: [] } as unknown as AnalyticsBoardDat
 describe('the Volume read', () => {
   it('reads weeks on plan as good news', () => {
     const read = volumeRead(data, rows([...Array(4)].map(() => ({ km: 40, planKm: 40, longestKm: 12 })).concat({ km: 10, planKm: 40, longestKm: 10 })), true)!
-    expect(read).toMatchObject({ tone: 'pos', headline: s.volumeTab.onPlan(4, 4) })
+    expect(read).toMatchObject({ tone: 'pos', headline: s.volumeTab.onPlan })
   })
 
   it('reads a plan mostly not run as a caution', () => {
     const read = volumeRead(data, rows([...Array(4)].map((_, i) => ({ km: i ? 20 : 40, planKm: 40, longestKm: 6 })).concat({ km: 0, planKm: 40, longestKm: 0 })), true)!
-    expect(read).toMatchObject({ tone: 'warn', headline: s.volumeTab.underPlan(1, 4) })
+    expect(read).toMatchObject({ tone: 'warn', headline: s.volumeTab.underPlan })
   })
 
   // The week under way is never "over": its first runs are all of its distance so far.

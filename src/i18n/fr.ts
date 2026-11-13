@@ -888,8 +888,8 @@ export const fr = {
         volumeSince: (delta: string, since: string) => `${delta} km par rapport à l’an dernier aux mêmes dates, depuis le ${since}.`,
         volumeTab: {
           longRunOver: (n: number, of: number) => `Ta sortie longue a dépassé 35 % de sa semaine ${n} semaine${n > 1 ? 's' : ''} sur ${of}.`,
-          underPlan: (hit: number, of: number) => `Dans le plan seulement ${hit} semaine${hit > 1 ? 's' : ''} sur ${of}.`,
-          onPlan: (hit: number, of: number) => `Dans le plan ${hit} semaine${hit > 1 ? 's' : ''} sur ${of}.`,
+          underPlan: 'Reviens d’abord aux km prévus chaque semaine avant d’ajouter quoi que ce soit.',
+          onPlan: 'Continue à courir les semaines comme le plan les prévoit.',
           average: (km: string) => `En moyenne ${km} km par semaine.`,
           avgRow: (km: string, n: number) => `${km} km par semaine en moyenne sur ${n} semaine${n > 1 ? 's' : ''} terminée${n > 1 ? 's' : ''}.`,
           onPlanRow: (hit: number, of: number) => `${hit} semaine${hit > 1 ? 's' : ''} planifiée${hit > 1 ? 's' : ''} sur ${of} à 90 % du plan ou plus.`,
@@ -970,6 +970,7 @@ export const fr = {
         easyPace: 'Allure facile',
         in12w: (delta: string) => `${delta} en 12 semaines`,
         since: (note: string, date: string) => `${note} depuis le ${date}`,
+        sinceReturn: (note: string) => `${note} depuis la reprise`,
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
