@@ -53,9 +53,9 @@ function nameParts(activity: ShareActivity): { title: string; type: string | nul
   return { title: /^\d/.test(label) ? name : label, type: null }
 }
 
-/** "Easy run + 6 strides · 7.5 km": the distance run, never the plan's. */
+/** "Easy run + 6 strides": the distance is in the stats under it. */
 export function shareCardTitle(activity: ShareActivity): string {
-  return `${nameParts(activity).title} · ${formatKm(activity.distanceKm, 1)} ${t.units.km}`
+  return nameParts(activity).title
 }
 
 /** "Threshold · Wed, Nov 11 · Hoenheim": the type only where the title gave it up for the set. */

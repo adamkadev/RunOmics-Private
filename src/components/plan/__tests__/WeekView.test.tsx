@@ -195,7 +195,7 @@ describe('the day selector', () => {
     expect(day(TODAY).className).toContain('state-today')
   })
 
-  it('draws each day as a bar as long as its km, in its colour, with its km over it, and nothing on a rest day', () => {
+  it('draws each day as a bar as long as its km, in its colour, with no km over it, and nothing on a rest day', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
     expect(bar('2026-09-07').style.height).toBe(`${Math.round(4.79 * 5)}px`)
@@ -203,7 +203,7 @@ describe('the day selector', () => {
     expect(bar('2026-09-12').style.height).toBe('54px')
     expect(bar('2026-09-12').style.borderColor).toBe('var(--zone-2)')
     expect(bar('2026-09-12').getAttribute('data-bar-state')).toBe('planned')
-    expect(within(day('2026-09-12')).getByTestId('day-km').textContent).toBe('18')
+    expect(within(day('2026-09-12')).queryByText('18')).toBeNull()
     expect(day('2026-09-10').querySelector('[data-bar-state]')).toBeNull()
   })
 

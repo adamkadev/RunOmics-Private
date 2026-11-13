@@ -78,7 +78,7 @@ describe('drawShareCard', () => {
   })
 
   it('draws the same header and stat row on every design', () => {
-    const header = ['RunOmics', 'Strides 6 × 20s · 10.0 km']
+    const header = ['RunOmics', 'Strides 6 × 20s']
     const stats = ['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR']
     for (const design of ['route', 'stats', 'photo'] as const) {
       const all = texts(draw({ design }))
@@ -170,7 +170,7 @@ describe('an interval session (design review, Oct 2026)', () => {
 
   it('titles the card by its set, the type leading the line under it, and the rep chips on the Stats card only', () => {
     const route = texts(draw({ design: 'route', activity: session }))
-    expect(route).toContain('3 × 8′ · 10.0 km')
+    expect(route).toContain('3 × 8′')
     expect(route.find((text) => text.endsWith(' · Hoenheim'))).toMatch(/^Threshold · /)
     expect(route).not.toContain('Threshold')
     expect(route).not.toContain('Rep 1')
@@ -549,7 +549,7 @@ describe('the Photo design (design review, Oct 2026)', () => {
     const photo = { width: 1000, height: 800 } as HTMLImageElement
     const ops = draw({ design: 'photo', photo })
     expect(ops.find((o) => o.op === 'drawImage')?.args.slice(5)).toEqual([0, 0, W, H])
-    expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'Strides 6 × 20s · 10.0 km')?.fill).toBe('#ffffff')
+    expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'Strides 6 × 20s')?.fill).toBe('#ffffff')
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
   })
 

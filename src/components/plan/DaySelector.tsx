@@ -23,9 +23,8 @@ export interface SelectorDay {
 }
 
 const PX_PER_KM = 5
-const TRACK_PX = 70
-// Room above the tallest bar for its km.
 const MAX_BAR_PX = 54
+const TRACK_PX = MAX_BAR_PX
 /** A session with no distance, or a very short one, still reads as a bar. */
 const MIN_BAR_PX = 14
 
@@ -85,12 +84,7 @@ export function DaySelector({
               {Number(day.date.slice(8))}
             </span>
             {/* Done solid, planned dashed, as Today and Month draw them; a rest day draws nothing. */}
-            <span className="flex flex-col items-center justify-end gap-1" style={{ height: TRACK_PX }}>
-              {day.state !== 'rest' && day.km !== null && (
-                <span aria-hidden className="text-[11px] leading-none tabular-nums text-muted-foreground" data-testid="day-km">
-                  {formatPlannedKm(day.km)}
-                </span>
-              )}
+            <span className="flex flex-col items-center justify-end" style={{ height: TRACK_PX }}>
               {day.state !== 'rest' && (
                 <span
                   data-bar-state={day.state}

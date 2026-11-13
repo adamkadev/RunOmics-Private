@@ -11,7 +11,7 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
-- Round 10 review (78–106): share cards and Activities keep the session's name and real distance, one type word
+- Round 10 review (78–106): share cards and Activities keep the session's name, one type word
   ("Easy" / "Footing"), Z3 grey-blue, "Effort 2/10"; Plan says "Week 5 of 12", phase over block, a done card that
   says done and the month run against its goal; Today shows one status the verdict can't contradict; Training status
   on 28 days, Sleep and HRV on their own rows; the route generator drops District mode; race titles fit; Home runs
