@@ -1880,6 +1880,7 @@ export const fr = {
       routes: 'Parcours',
     },
     recurring: {
+      equalBest: 'égal',
       showAll: (n: number) => `Voir les ${n} parcours`,
       runCount: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
       trailKey: 'Allure par sortie · plus haute = plus rapide',

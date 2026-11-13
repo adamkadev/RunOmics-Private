@@ -177,7 +177,7 @@ function LoadCard({
         </div>
         {ramp !== null && (
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="inline-flex items-center gap-1 text-[22px] font-bold leading-tight tabular-nums" style={{ color: ramp < 0 ? WARN : undefined }} data-testid="fitness-ramp">
+            <span className="inline-flex items-center gap-1 text-[22px] font-bold leading-tight tabular-nums" data-testid="fitness-ramp">
               {ramp > 0 ? <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden /> : ramp < 0 ? <ArrowDownRight size={14} strokeWidth={1.8} aria-hidden /> : null}
               {formatDecimal(Math.abs(ramp), 1)}
             </span>

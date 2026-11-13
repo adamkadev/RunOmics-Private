@@ -2030,6 +2030,7 @@ export const en = {
       routes: 'Routes',
     },
     recurring: {
+      equalBest: 'level with it',
       showAll: (n: number) => `Show all ${n} routes`,
       runCount: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
       // What a bar is: one bar per run, the last six.
