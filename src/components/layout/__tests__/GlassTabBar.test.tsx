@@ -97,6 +97,7 @@ describe('GlassTabBar', () => {
   })
 
   it('shrinks to the active tab on a scroll down and comes back', () => {
+    Object.defineProperty(document.documentElement, 'scrollHeight', { value: 3000, configurable: true })
     render(<GlassTabBar />)
     const capsule = screen.getByTestId('tab-bar-capsule')
     const shrunk = screen.getByTestId('tab-bar-collapsed')
@@ -112,7 +113,7 @@ describe('GlassTabBar', () => {
     expect(capsule.hasAttribute('data-collapsed')).toBe(true)
     expect(capsule.contains(shrunk)).toBe(true)
     expect(shrunk.className).toContain('opacity-100')
-    expect(shrunk.getAttribute('aria-label')).toBe(t.nav.showTabs(t.nav.items.dashboard))
+    expect(shrunk.getAttribute('aria-label')).toBe(t.nav.showTabs(t.nav.tabItems.dashboard))
 
     scrollTo(250)
     expect(capsule.style.width).toBe('100%')
@@ -122,6 +123,26 @@ describe('GlassTabBar', () => {
     fireEvent.click(shrunk)
     expect(capsule.style.width).toBe('100%')
     expect(shrunk.className).toContain('opacity-0')
+    scrollTo(0)
+  })
+
+  it('stays shrunk through the bounce at the foot of a short page', () => {
+    Object.defineProperty(document.documentElement, 'scrollHeight', { value: window.innerHeight + 400, configurable: true })
+    render(<GlassTabBar />)
+    const capsule = screen.getByTestId('tab-bar-capsule')
+    const scrollTo = (y: number) => act(() => {
+      Object.defineProperty(window, 'scrollY', { value: y, configurable: true })
+      fireEvent.scroll(window)
+    })
+
+    scrollTo(300)
+    scrollTo(430)
+    expect(capsule.style.width).toBe('var(--tab-bar-h)')
+    scrollTo(400)
+    expect(capsule.style.width).toBe('var(--tab-bar-h)')
+    scrollTo(300)
+    scrollTo(200)
+    expect(capsule.style.width).toBe('100%')
     scrollTo(0)
   })
 

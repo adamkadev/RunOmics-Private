@@ -14,14 +14,17 @@ import { GlassLayers } from '@/components/ui/GlassSurface'
 import { SPRING, useTabLens } from './useTabLens'
 
 const TABS = [
-  { href: '/',           label: t.nav.items.dashboard,   icon: LayoutDashboard },
-  { href: '/activities', label: t.nav.items.activities,  icon: Activity },
-  { href: '/plan',       label: t.nav.items.plan,        icon: CalendarDays },
-  { href: '/analytics',  label: t.nav.items.analytics,   icon: BarChart2 },
-  { href: '/profile',    label: t.nav.items.profile,     icon: TrophyIcon },
+  { href: '/',           label: t.nav.tabItems.dashboard,   icon: LayoutDashboard },
+  { href: '/activities', label: t.nav.tabItems.activities,  icon: Activity },
+  { href: '/plan',       label: t.nav.tabItems.plan,        icon: CalendarDays },
+  { href: '/analytics',  label: t.nav.tabItems.analytics,   icon: BarChart2 },
+  { href: '/profile',    label: t.nav.tabItems.profile,     icon: TrophyIcon },
 ] as const
 
 const TAB_HREFS = TABS.map((tab) => tab.href)
+
+/** Past this many letters a label is tightened, not shrunk: the tab font is already at its 10 px floor. */
+const LONG_LABEL = 10
 
 export const COLLAPSE_AFTER = 80
 const SCROLL_SLOP = 4
@@ -37,10 +40,12 @@ function useCollapsed(pathname: string): [boolean, () => void] {
     let last = window.scrollY
     const onScroll = () => {
       const y = window.scrollY
+      // A page's bounce at its foot, or a panel swap that shortens it, moves it up without the finger doing so.
+      const bottom = document.documentElement.scrollHeight - window.innerHeight - SCROLL_SLOP
       if (y <= COLLAPSE_AFTER) setCollapsed(false)
       else if (y > last + SCROLL_SLOP) setCollapsed(true)
-      else if (y < last - SCROLL_SLOP) setCollapsed(false)
-      else return
+      else if (y < last - SCROLL_SLOP && last < bottom) setCollapsed(false)
+      else if (y >= last - SCROLL_SLOP) return
       last = y
     }
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -139,7 +144,10 @@ export function GlassTabBar() {
                   )}
                 >
                   <Icon size={24} strokeWidth={1.8} aria-hidden="true" />
-                  <span data-testid={active ? 'tab-active' : undefined} className={cn('text-tab', lit ? 'font-semibold' : 'font-medium')}>
+                  <span
+                    data-testid={active ? 'tab-active' : undefined}
+                    className={cn('text-tab whitespace-nowrap', label.length > LONG_LABEL && 'tracking-[-0.02em]', lit ? 'font-semibold' : 'font-medium')}
+                  >
                     {label}
                   </span>
                 </Link>
