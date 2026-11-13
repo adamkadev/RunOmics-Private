@@ -179,14 +179,12 @@ export const en = {
     sheet: {
       title: (week: string) => `Week of ${week}`,
       summary: (runs: number, km: string, time: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km · ${time}`,
-      hit: 'Target hit',
-      under: 'Under target',
-      current: 'In progress',
-      runsColumn: 'runs',
+      hit: 'target hit',
+      under: 'under target',
+      current: 'in progress',
       seeRuns: (runs: number) => (runs === 1 ? 'See the run in Activities' : `See the ${runs} runs in Activities`),
       prevMonth: 'Previous month',
       nextMonth: 'Next month',
-      close: 'Close',
     },
     empty: 'No runs yet.',
   },
@@ -359,10 +357,8 @@ export const en = {
           quartierOf: (commune: string) => `District · ${commune}`,
           commune: 'Commune',
           explored: (pct: string) => `${pct} explored`,
-          // `n` formats a count for the reader's locale.
-          cells: (visited: number, total: number, n: (count: number) => string) => `${n(visited)} of ${n(total)} cell${total === 1 ? '' : 's'}`,
-          completeAt: (pct: string) => `Complete at ${pct}`,
-          completeSince: (date: string) => `Complete since ${date}`,
+          completeAt: (pct: string) => `complete at ${pct}`,
+          completeSince: (date: string) => `complete since ${date}`,
           runHere: 'Run here',
           lastRun: 'Last run',
           fromHome: 'From home',
@@ -1334,12 +1330,11 @@ export const en = {
     shareMenu: {
       share: 'Share',
       download: 'Download',
-      copy: 'Copy image',
+      copy: 'Copy',
       copied: 'Copied',
     },
     shareCard: {
       title: 'Share run',
-      close: 'Close',
       distance: 'Distance',
       pace: 'Pace',
       avgHr: 'Avg HR',
@@ -1359,15 +1354,15 @@ export const en = {
       // The headline of an easy run's zones, on a run without a written verdict: "100% easy · Z1–Z2".
       easyZones: (from: number, to: number) => `easy · Z${from}–Z${to}`,
       noZones: 'No heart-rate zones for this run',
-      // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
-      repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
+      // An interval session's headline, drawn in capitals; the title above already names the set.
+      repPace: 'Rep pace',
       target: (pace: string) => `target ${pace}`,
       rep: (n: number) => `Rep ${n}`,
       repRange: (fastest: string, slowest: string) => `Fastest ${fastest} · Slowest ${slowest}`,
       // The route's legend on an interval session: the reps are what it marks.
       repsLegend: 'Reps',
       // The switch on an interval session: off, the card is an easy run's.
-      showReps: 'Rep pace',
+      showReps: 'Show rep pace',
       // The stat row's first cell on an interval session's Route card.
       repPaceStat: 'Rep pace',
       // The accent line under the header of an interval session: "9 s/km under target".
@@ -1394,7 +1389,7 @@ export const en = {
       coolDown: 'Cool-down',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
-      photoHint: 'This frame is the exact crop',
+      photoHint: 'The frame shows the final crop',
       replacePhoto: 'Replace photo',
     },
     stats: {

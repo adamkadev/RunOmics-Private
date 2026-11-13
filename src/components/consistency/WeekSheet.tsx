@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useId, useState, type CSSProperties } from 'react'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { Sheet as BottomSheet } from '@/components/ui/Sheet'
+import { ButtonLink } from '@/components/ui/Button'
 import { CrossTrainingList } from '@/components/crossTraining/CrossTraining'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,8 @@ import { mondayOf, sheetMonths, shiftMonth, weekSheet, type ConsistencyView, typ
 
 function dayStyle(day: SheetDay): CSSProperties {
   if (day.runs > 0) return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
+  // Today already wears a ring: a dashed one under it read as two.
+  if (day.planned && day.today) return { background: 'color-mix(in srgb, var(--accent) 18%, transparent)' }
   if (day.planned) return { border: '1.5px dashed var(--accent)' }
   return {}
 }
@@ -21,7 +23,7 @@ function dayStyle(day: SheetDay): CSSProperties {
 const HIT_TINT = 'color-mix(in srgb, var(--pos) 18%, transparent)'
 
 function RunsChip({ row, target }: { row: SheetRow; target: number }) {
-  if (row.status === 'future') return <span className="justify-self-center text-[11px] text-subtle">–</span>
+  if (row.status === 'future') return <span />
   const chip = 'justify-self-center whitespace-nowrap rounded-[7px] px-1.5 py-[3px] text-[11px] font-semibold tabular-nums'
   if (row.status === 'hit') {
     return (
@@ -36,7 +38,13 @@ function RunsChip({ row, target }: { row: SheetRow; target: number }) {
   if (row.status === 'current') {
     return <span className={cn(chip, 'border border-[var(--line-2)] text-foreground')} data-status="current">{`${row.runs}/${target}`}</span>
   }
-  return <span className={cn(chip, 'bg-muted text-muted-foreground')} data-status="under">{row.runs}</span>
+  return <span className={cn(chip, 'bg-[var(--fill-3)] text-muted-foreground')} data-status="under">{`${row.runs}/${target}`}</span>
+}
+
+/** "Novembre", not "novembre": it stands alone as a title. */
+function monthTitle(month: string): string {
+  const name = formatDate(`${month}-01`, { precision: 'month', style: 'full', year: 'auto' })
+  return name.charAt(0).toLocaleUpperCase(t.locale) + name.slice(1)
 }
 
 /** "Sep 14 – 20" */
@@ -68,7 +76,7 @@ function Calendar({ sheet, target, paging }: { sheet: Sheet; target: number; pag
           <ChevronLeft size={16} aria-hidden />
         </button>
         <span className="text-[13px] font-semibold text-foreground" aria-live="polite" data-testid="week-calendar-month">
-          {formatDate(`${sheet.month}-01`, { precision: 'month', style: 'full', year: 'auto' })}
+          {monthTitle(sheet.month)}
         </span>
         <button type="button" aria-label={s.nextMonth} onClick={paging.onNext} disabled={!paging.canNext} className={MONTH_BUTTON}>
           <ChevronRight size={16} aria-hidden />
@@ -83,7 +91,9 @@ function Calendar({ sheet, target, paging }: { sheet: Sheet; target: number; pag
           {Array.from({ length: 7 }, (_, i) => (
             <span key={i}>{narrow.format(new Date(Date.UTC(2024, 0, 1 + i)))}</span>
           ))}
-          <span>{t.consistency.sheet.runsColumn}</span>
+          <span className="flex justify-center">
+            <Check size={12} strokeWidth={2.5} aria-hidden />
+          </span>
         </div>
         {sheet.rows.map((row) => (
           <div
@@ -128,6 +138,7 @@ function Calendar({ sheet, target, paging }: { sheet: Sheet; target: number; pag
 
 export function WeekSheet({ view, weekStart, today, onClose }: { view: ConsistencyView; weekStart: string; today: string; onClose: () => void }) {
   const s = t.consistency.sheet
+  const titleId = useId()
   const [paged, setPaged] = useState<{ month: string; direction: 'forward' | 'backward' } | null>(null)
   const sheet = weekSheet(view, weekStart, today, paged?.month)
   const months = sheetMonths(view, today)
@@ -151,49 +162,41 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
   const others = view.others.filter((entry) => mondayOf(entry.date) === week.start)
   const otherSeconds = others.reduce((sum, entry) => sum + entry.durationSeconds, 0)
 
-  // It draws its own title block and Close; the sheet adds only the glass and the grabber.
+  const status = hit ? s.hit : sheet.status === 'under' ? s.under : s.current
+
   return (
-    <BottomSheet onClose={onClose} label={title} showClose={false} testId="week-sheet" bodyClassName="flex flex-col gap-2.5">
-      {(close) => (
-        <>
-        <div className="flex items-end justify-between gap-3 px-1">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <h2 className="text-title-3 text-foreground">{title}</h2>
-            <p className="text-[13px] text-muted-foreground" data-testid="week-summary">
-              {s.summary(week.runs, formatDistance(week.km), formatDurationWords(week.seconds))}
-            </p>
-          </div>
-          <span
-            className={cn('shrink-0 rounded-full px-3 py-1 text-[13px] font-semibold', hit ? 'text-[var(--pos)]' : 'bg-[var(--fill-3)] text-muted-foreground')}
-            style={hit ? { background: HIT_TINT } : undefined}
-            data-testid="week-status"
-          >
-            {hit ? s.hit : sheet.status === 'under' ? s.under : s.current}
+    <BottomSheet
+      onClose={onClose}
+      title={title}
+      subtitle={
+        <span data-testid="week-summary">
+          {s.summary(week.runs, formatDistance(week.km), formatDurationWords(week.seconds))}
+          {' · '}
+          <span className={cn(hit && 'font-semibold text-[var(--pos)]')} data-testid="week-status">
+            {status}
           </span>
+        </span>
+      }
+      titleId={titleId}
+      testId="week-sheet"
+      bodyClassName="flex flex-col gap-2.5 pt-3"
+      footer={
+        week.runs > 0 ? (
+          <ButtonLink href={`/activities?week=${week.start}`} variant="secondary" size="lg" className="w-full" data-testid="week-activities">
+            {s.seeRuns(week.runs)}
+          </ButtonLink>
+        ) : undefined
+      }
+    >
+      <Calendar sheet={sheet} target={view.target} paging={paging} />
+      {others.length > 0 && (
+        <div className="flex flex-col gap-0.5 px-1" data-testid="week-cross-training">
+          <p className="flex items-baseline justify-between gap-3 text-[13px]">
+            <span className="font-semibold text-foreground">{t.crossTraining.title}</span>
+            <span className="text-muted-foreground">{t.crossTraining.weekTotal(others.length, formatDurationWords(otherSeconds))}</span>
+          </p>
+          <CrossTrainingList entries={others} withWeekday />
         </div>
-        <Calendar sheet={sheet} target={view.target} paging={paging} />
-        {others.length > 0 && (
-          <div className="flex flex-col gap-0.5 px-1" data-testid="week-cross-training">
-            <p className="flex items-baseline justify-between gap-3 text-[13px]">
-              <span className="font-semibold text-foreground">{t.crossTraining.title}</span>
-              <span className="text-muted-foreground">{t.crossTraining.weekTotal(others.length, formatDurationWords(otherSeconds))}</span>
-            </p>
-            <CrossTrainingList entries={others} withWeekday />
-          </div>
-        )}
-        <div className="flex items-center justify-between gap-3 px-1 pb-1">
-          {week.runs > 0 ? (
-            <Link href={`/activities?week=${week.start}`} className="hit-44 text-[13px] font-semibold text-accent-text" data-testid="week-activities">
-              {s.seeRuns(week.runs)} ›
-            </Link>
-          ) : (
-            <span />
-          )}
-          <button type="button" onClick={close} className="hit-44 text-[15px] font-medium text-muted-foreground">
-            {s.close}
-          </button>
-        </div>
-        </>
       )}
     </BottomSheet>
   )

@@ -33,11 +33,11 @@ export const SHEET_CONTROL = 'hit-44 flex h-11 shrink-0 items-center justify-cen
 export function Sheet({
   onClose,
   title,
+  subtitle,
   titleId,
   label,
   action,
   trailing,
-  showClose = true,
   footer,
   detent: fixedDetent,
   testId,
@@ -46,12 +46,13 @@ export function Sheet({
 }: {
   onClose: () => void
   title?: ReactNode
+  /** Under the title, centred with it. */
+  subtitle?: ReactNode
   /** The heading that names the dialog: the header's title, or one in the content. */
   titleId?: string
   label?: string
   action?: { label: string; onClick: () => void; disabled?: boolean }
   trailing?: ReactNode
-  showClose?: boolean
   footer?: Slot
   /** Fixed instead of measured. A fixed medium sheet stops at the medium height and its body scrolls. */
   detent?: SheetDetent
@@ -60,7 +61,7 @@ export function Sheet({
   children: Slot
 }) {
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
-  const trapRef = useFocusTrap<HTMLDivElement>()
+  const trapRef = useFocusTrap<HTMLDivElement>({ initial: 'container' })
   const contentRef = useRef<HTMLDivElement>(null)
   const [measured, setMeasured] = useState<SheetDetent>('medium')
   const detent = fixedDetent ?? measured
@@ -122,37 +123,36 @@ export function Sheet({
             <span aria-hidden="true" className="h-[5px] w-9 rounded-[2.5px] bg-[rgb(127_127_127/0.45)]" />
           </div>
 
-          {(showClose || title || action || trailing) && (
-            <div className="grid h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2">
-              <span className="flex justify-start">
-                {showClose && (
-                  <button type="button" onClick={close} aria-label={t.common.close} className={cn(SHEET_CONTROL, 'w-11 text-foreground')}>
-                    <X size={20} strokeWidth={2.2} aria-hidden="true" />
-                  </button>
-                )}
-              </span>
-              {title ? (
-                <h2 id={titleId} className="min-w-0 truncate text-center text-headline text-foreground">
+          <div className="grid min-h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <span className="flex justify-start">
+              <button type="button" onClick={close} aria-label={t.common.close} className={cn(SHEET_CONTROL, 'w-11 text-foreground')}>
+                <X size={20} strokeWidth={2.2} aria-hidden="true" />
+              </button>
+            </span>
+            {title ? (
+              <div className="flex min-w-0 flex-col items-center text-center">
+                <h2 id={titleId} className="line-clamp-2 text-balance text-headline text-foreground">
                   {title}
                 </h2>
-              ) : (
-                <span />
+                {subtitle && <p className="text-footnote leading-4 text-muted-foreground" data-testid="sheet-subtitle">{subtitle}</p>}
+              </div>
+            ) : (
+              <span />
+            )}
+            <span className="flex justify-end">
+              {trailing}
+              {!trailing && action && (
+                <button
+                  type="button"
+                  onClick={action.onClick}
+                  disabled={action.disabled}
+                  className={cn(SHEET_CONTROL, 'px-4 text-[17px] text-accent-text disabled:opacity-40')}
+                >
+                  {action.label}
+                </button>
               )}
-              <span className="flex justify-end">
-                {trailing}
-                {!trailing && action && (
-                  <button
-                    type="button"
-                    onClick={action.onClick}
-                    disabled={action.disabled}
-                    className={cn(SHEET_CONTROL, 'px-4 text-[17px] text-accent-text disabled:opacity-40')}
-                  >
-                    {action.label}
-                  </button>
-                )}
-              </span>
-            </div>
-          )}
+            </span>
+          </div>
 
           <div className={cn('-mx-[var(--sheet-pad)] min-h-0 flex-1 overflow-y-auto px-[var(--sheet-pad)]', bodyClassName)} style={{ touchAction: 'pan-y' }}>
             {render(children, close)}

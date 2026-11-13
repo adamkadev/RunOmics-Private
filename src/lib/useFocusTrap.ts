@@ -5,7 +5,8 @@ import { useEffect, useRef } from 'react'
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-export function useFocusTrap<T extends HTMLElement>() {
+/** `container` focuses the dialog itself on open, so no control wears a focus ring the athlete did not ask for. */
+export function useFocusTrap<T extends HTMLElement>({ initial = 'first' }: { initial?: 'first' | 'container' } = {}) {
   const ref = useRef<T>(null)
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export function useFocusTrap<T extends HTMLElement>() {
 
     container.tabIndex = -1
     container.style.outline = 'none'
-    ;(focusables()[0] ?? container).focus({ preventScroll: true })
+    ;((initial === 'first' && focusables()[0]) || container).focus({ preventScroll: true })
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Tab') return
@@ -53,7 +54,7 @@ export function useFocusTrap<T extends HTMLElement>() {
       madeInert.forEach((el) => el.removeAttribute('inert'))
       previouslyFocused?.focus?.({ preventScroll: true })
     }
-  }, [])
+  }, [initial])
 
   return ref
 }

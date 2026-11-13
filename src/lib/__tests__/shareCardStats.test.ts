@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  percentsTo100, repLength, zoneName, shareCardSubtitle, shareCardTitle, shareRepHeadline, shareRepHero, shareRepResult, shareStats, shareZones, type ShareActivity, shareRepDetail,
+  mergeSlivers, percentsTo100, repLength, zoneName, zoneTint, shareCardSubtitle, shareCardTitle, shareRepHeadline, shareRepHero, shareRepResult, shareStats, shareZones, type ShareActivity, shareRepDetail,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
 
@@ -51,16 +51,31 @@ describe('shareZones', () => {
   it('rows the zones the run spent time in, Z1 and Z2 as one, in whole percents that sum to 100', () => {
     const zones = shareZones(RUN)!
     expect(zones.rows).toEqual([
-      { zone: 2, from: 1, percent: 79 }, { zone: 3, percent: 14 }, { zone: 4, percent: 5 }, { zone: 5, percent: 2 },
+      { zone: 2, from: 1, percent: 79 }, { zone: 3, percent: 14 }, { zone: 5, from: 4, percent: 7, tint: 4 },
     ])
-    expect(zones.rows.map(zoneName)).toEqual(['Z1–Z2', 'Z3', 'Z4', 'Z5'])
+    expect(zones.rows.map(zoneName)).toEqual(['Z1–Z2', 'Z3', 'Z4–Z5'])
+  })
+
+  it('merges a zone under 5% into its neighbour, which keeps its colour', () => {
+    expect(mergeSlivers([{ zone: 2, from: 1, percent: 32 }, { zone: 3, percent: 64 }, { zone: 4, percent: 4 }])).toEqual([
+      { zone: 2, from: 1, percent: 32 }, { zone: 4, from: 3, percent: 68, tint: 3 },
+    ])
+    expect(mergeSlivers([{ zone: 2, from: 1, percent: 3 }, { zone: 3, percent: 97 }])).toEqual([{ zone: 3, from: 1, percent: 100 }])
+    expect(mergeSlivers([{ zone: 2, from: 1, percent: 50 }, { zone: 3, percent: 2 }, { zone: 4, percent: 48 }])).toEqual([
+      { zone: 2, from: 1, percent: 50 }, { zone: 4, from: 3, percent: 50 },
+    ])
+    expect(zoneTint({ zone: 4, tint: 3 })).toBe(3)
+  })
+
+  it('heads an easy session that ran mostly harder with that zone, not its small easy share', () => {
+    const footing = { ...RUN, type: 'Base' as const, hrZones: [300, 900, 2400, 150, 0].map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) }
+    expect(shareZones(footing)!.headline).toEqual({ percent: 64, label: 'in Z3' })
   })
 
   it('rounds once, to the total, and heads with the rows\' own sum', () => {
     const at = (shares: number[]) => ({ ...RUN, type: 'Base' as const, hrZones: shares.map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) })
     const zones = shareZones(at([96, 766, 96, 42, 0]))!
-    // 10 / 76 / 10 / 4, and 86% easy.
-    expect(zones.rows.map((r) => r.percent)).toEqual([86, 10, 4])
+    expect(zones.rows.map((r) => r.percent)).toEqual([86, 14])
     expect(zones.headline.percent).toBe(86)
 
     // Any split: the rows sum to 100, and the headline is their Z1 + Z2.
@@ -71,8 +86,10 @@ describe('shareZones', () => {
       if (!sample) continue
       const shown = sample.rows.reduce((sum, r) => sum + r.percent, 0)
       expect(shown).toBe(100)
-      const easy = sample.rows.filter((r) => r.zone <= 2).reduce((sum, r) => sum + r.percent, 0)
-      expect(sample.headline.percent).toBe(easy)
+      const easy = sample.rows.find((r) => zoneTint(r) <= 2)?.percent ?? 0
+      if (!sample.headline.label.startsWith('easy')) continue
+      expect(sample.headline.percent).toBeLessThanOrEqual(easy)
+      expect(sample.headline.percent).toBeGreaterThan(easy - 5)
     }
   })
 
@@ -110,12 +127,12 @@ const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, paces: [262, 264, 2
 
 describe('an interval session (design review, Oct 2026)', () => {
   it('takes the coach\'s name for the session, else the run\'s', () => {
-    expect(shareCardTitle({ ...RUN, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' })).toBe('Threshold · 3 × 8′ @ 4:25')
+    expect(shareCardTitle({ ...RUN, sessionTitle: 'Footing 40′' })).toBe('Footing 40′')
     expect(shareCardTitle({ ...RUN, sessionTitle: '  ' })).toBe('Strides 6 × 20s')
   })
 
   it('leads with the reps\' pace, the plan\'s, and how far off it ran', () => {
-    expect(shareRepHero({ ...RUN, reps: REPS })).toEqual({ eyebrow: 'Rep pace · 3 × 8′', pace: '4:24', unit: '/km', target: 'target 4:25 · −1 s' })
+    expect(shareRepHero({ ...RUN, reps: REPS })).toEqual({ eyebrow: 'Rep pace', pace: '4:24', unit: '/km', target: 'target 4:25 · −1 s' })
     // Inside the band: the target alone, with nothing to answer for.
     expect(shareRepHero({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })!.target).toBe('target 4:20–4:30')
     expect(shareRepHero({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } })!.target).toBe('target 4:20–4:30 · +5 s')
@@ -147,6 +164,15 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(shareCardTitle(run)).toBe('3 × 8′')
     expect(shareCardSubtitle(run, 'Hoenheim')).toBe(`Threshold · ${formatDate('2026-09-26')} · Hoenheim`)
     expect(shareCardSubtitle({ ...RUN, type: 'Threshold' }, 'Hoenheim')).toBe(`${formatDate('2026-09-26')} · Hoenheim`)
+  })
+
+  it('gives a set named after its type the same structure without reps: the set, then type · date · place', () => {
+    const runWalk = { ...RUN, type: 'Base' as const, sessionTitle: 'Footing · 4 × 6′' }
+    expect(shareCardTitle(runWalk)).toBe('4 × 6′')
+    expect(shareCardSubtitle(runWalk, 'Hoenheim')).toBe(`Footing · ${formatDate('2026-09-26')} · Hoenheim`)
+    expect(shareCardTitle({ ...RUN, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' })).toBe('3 × 8′ @ 4:25')
+    expect(shareCardTitle(RUN)).toBe('Strides 6 × 20s')
+    expect(shareCardSubtitle(RUN, null)).toBe(formatDate('2026-09-26'))
   })
 
   it('leads the Stats card with the rep pace, captioned with the target', () => {

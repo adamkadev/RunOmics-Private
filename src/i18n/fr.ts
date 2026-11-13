@@ -182,14 +182,12 @@ export const fr = {
     sheet: {
       title: (week: string) => `Semaine du ${week}`,
       summary: (runs: number, km: string, time: string) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km · ${time}`,
-      hit: 'Objectif atteint',
-      under: 'Sous l’objectif',
-      current: 'En cours',
-      runsColumn: 'sorties',
+      hit: 'objectif atteint',
+      under: 'sous l’objectif',
+      current: 'en cours',
       seeRuns: (runs: number) => (runs > 1 ? `Voir les ${runs} sorties dans Activités` : 'Voir la sortie dans Activités'),
       prevMonth: 'Mois précédent',
       nextMonth: 'Mois suivant',
-      close: 'Fermer',
     },
     empty: 'Aucune sortie pour l’instant.',
   },
@@ -350,9 +348,8 @@ export const fr = {
           quartierOf: (commune: string) => `Quartier · ${commune}`,
           commune: 'Commune',
           explored: (pct: string) => `${pct} exploré`,
-          cells: (visited: number, total: number, n: (count: number) => string) => `${n(visited)} case${visited > 1 ? 's' : ''} sur ${n(total)}`,
-          completeAt: (pct: string) => `Complet à ${pct}`,
-          completeSince: (date: string) => `Complet depuis le ${date}`,
+          completeAt: (pct: string) => `complet à ${pct}`,
+          completeSince: (date: string) => `complet depuis le ${date}`,
           runHere: 'Courus ici',
           lastRun: 'Dernière sortie',
           fromHome: 'Depuis chez toi',
@@ -1249,12 +1246,11 @@ export const fr = {
     shareMenu: {
       share: 'Partager',
       download: 'Télécharger',
-      copy: 'Copier l’image',
+      copy: 'Copier',
       copied: 'Copié',
     },
     shareCard: {
       title: 'Partager la sortie',
-      close: 'Fermer',
       distance: 'Distance',
       pace: 'Allure',
       avgHr: 'FC moy',
@@ -1274,15 +1270,15 @@ export const fr = {
       // L’en-tête des zones d’une sortie facile sans verdict rédigé : « 100 % facile · Z1–Z2 ».
       easyZones: (from: number, to: number) => `facile · Z${from}–Z${to}`,
       noZones: 'Pas de zones cardiaques pour cette sortie',
-      // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
-      repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
+      // L’en-tête d’une séance de fractionné, en capitales ; le titre au-dessus nomme déjà la série.
+      repPace: 'Allure des fractions',
       target: (pace: string) => `cible ${pace}`,
       rep: (n: number) => `Fraction ${n}`,
       repRange: (fastest: string, slowest: string) => `Plus rapide ${fastest} · Plus lente ${slowest}`,
       // La légende du parcours d’une séance de fractionné : elle marque les fractions.
       repsLegend: 'Fractions',
       // L’interrupteur d’une séance de fractionné : éteint, la carte est celle d’une sortie facile.
-      showReps: 'Allure des fractions',
+      showReps: 'Voir l’allure des fractions',
       // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
       repPaceStat: 'Allure fractions',
       secPerKm: (n: number) => `${n} s/km`,
@@ -1308,7 +1304,7 @@ export const fr = {
       coolDown: 'Retour au calme',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',
-      photoHint: 'Ce cadre est le recadrage exact',
+      photoHint: 'Le cadre montre le recadrage final',
       replacePhoto: 'Remplacer la photo',
     },
     stats: {

@@ -143,7 +143,15 @@ describe('an interval session (design review, Oct 2026)', () => {
     const label = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Rep pace')!
     expect(label.fill).toBe(palette.zones[3])
     expect(label.font).toMatch(/^600 /)
-    expect(all).not.toContain('REP PACE · 3 × 8′')
+    expect(all).not.toContain('REP PACE')
+  })
+
+  it('spreads the rep chips across the card in one row', () => {
+    const chips = draw({ design: 'stats', activity: session }).filter((o) => o.op === 'roundRect' && o.args[3] === 22).map((o) => o.args as number[])
+    expect(chips).toHaveLength(3)
+    expect(chips[0]![0]).toBe(16)
+    expect(chips[2]![0]! + chips[2]![2]!).toBeCloseTo(W - 16, 6)
+    expect(new Set(chips.map((c) => c[1])).size).toBe(1)
   })
 
   it('leads the Stats card with the rep pace, the zones dropped to a thin bar', () => {
@@ -154,7 +162,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all).toEqual(expect.arrayContaining(['/km', 'Reps · target 4:25', 'Z1–Z2 80%', 'Z3 20%']))
     expect(all).not.toContain('80%')
     expect(all.some((text) => text.startsWith('in Z'))).toBe(false)
-    expect(all).not.toContain('REP PACE · 3 × 8′')
+    expect(all).not.toContain('REP PACE')
     expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
     expect(all.slice(-8)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
     expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z2']))
@@ -453,6 +461,21 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
     expect(texts(ops)).not.toContain('Z4 Threshold')
   })
 
+  it('lays the legend on one row, dropping the zone names before it would wrap', () => {
+    const four = { ...RUN, hrZones: [2, 3, 4, 5].map((zone) => ({ zone, seconds: 600, percent: 25, minBpm: 100, maxBpm: 200 })) }
+    const legend = draw({ design: 'stats', activity: four }).filter((o) => o.op === 'fillText' && /^Z\d/.test(o.args[0] as string))
+    expect(legend.map((o) => o.args[0])).toEqual(['Z1–Z2', 'Z3', 'Z4', 'Z5'])
+    expect(new Set(legend.map((o) => o.args[2])).size).toBe(1)
+    const two = draw({ design: 'stats' }).filter((o) => o.op === 'fillText' && /^Z\d/.test(o.args[0] as string))
+    expect(two.map((o) => o.args[0])).toEqual(['Z1–Z2 Easy', 'Z3 Moderate'])
+    expect(new Set(two.map((o) => o.args[2])).size).toBe(1)
+  })
+
+  it('draws the date line a step above the muted ink', () => {
+    const subtitle = draw({ design: 'stats' }).find((o) => o.op === 'fillText' && (o.args[0] as string).includes('Hoenheim'))!
+    expect(subtitle.fill).toBe(palette.tx)
+  })
+
   it('draws one bar of edge-to-edge segments and a legend, no bar per zone', () => {
     const ops = draw({ design: 'stats' }).filter((o) => o.ty === layout(RUN, 'stats').middleTop)
     const segments = ops.filter((o) => o.op === 'fillRect' && (o.fill === palette.zones[1] || o.fill === palette.zones[2]))
@@ -519,7 +542,7 @@ describe('the 9:16 story', () => {
 
 describe('the Photo design (design review, Oct 2026)', () => {
   it('asks for a photo until there is one', () => {
-    expect(texts(draw({ design: 'photo' }))).toEqual(expect.arrayContaining(['Choose photo', 'This frame is the exact crop']))
+    expect(texts(draw({ design: 'photo' }))).toEqual(expect.arrayContaining(['Choose photo', 'The frame shows the final crop']))
   })
 
   it('fills the whole card with the photo, the words over it in white', () => {
@@ -530,7 +553,7 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
   })
 
-  it('darkens the top enough for the date line to read 4.5:1 on a white photo, then clears', () => {
+  it('darkens the top enough for the date line to read 4.5:1 on a white photo, clears, and darkens the foot under its words', () => {
     const linear = (c: number) => { const v = c / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }
     const contrast = (a: number, b: number) => (Math.max(linear(a), linear(b)) + 0.05) / (Math.min(linear(a), linear(b)) + 0.05)
     const alphaAt = (stops: [number, number][], at: number) => {
@@ -540,14 +563,17 @@ describe('the Photo design (design review, Oct 2026)', () => {
       return a0 + ((a1 - a0) * (at - o0)) / (o1 - o0)
     }
     const long = { ...RUN, description: 'Threshold 3 × 8 min at 4:25 with 2 min jog recoveries between' }
-    for (const activity of [RUN, long]) {
-      const foot = headerFoot(layout(activity))
-      const stops = photoScrim(foot)
+    for (const activity of [RUN, long, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
+      const l = layout(activity, 'photo')
+      const foot = headerFoot(l)
+      const stops = photoScrim(foot, l.textBottom)
       // White under the scrim, and the date's 85% white over that.
       const under = 255 * (1 - alphaAt(stops, (foot - 3) / H))
       expect(contrast(0.85 * 255 + 0.15 * under, under)).toBeGreaterThanOrEqual(4.5)
       expect(alphaAt(stops, 0.45)).toBe(0)
-      expect(stops.at(-1)).toEqual([1, 0.78])
+      for (let y = l.textBottom; y <= H; y += 5) expect(alphaAt(stops, y / H)).toBeGreaterThanOrEqual(0.62)
+      expect(stops.at(-1)).toEqual([1, 0.8])
+      expect(stops.map(([offset]) => offset)).toEqual([...stops.map(([offset]) => offset)].sort((a, b) => a - b))
     }
   })
 })
