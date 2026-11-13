@@ -115,7 +115,7 @@ export interface RouteGeneratorPanelProps {
   /** The session it plans for; its km is what the check compares the distance with. */
   plan: { heading: string; label: string; km: number | null } | null
   start: { mode: RouteStartMode; waiting: boolean }
-  /** "Start: Devant-les-Ponts · 0.9 km from home", once the start is known. */
+  /** "Start: Hoenheim · 0.9 km from home", once the start is known. */
   startLine?: string | null
   onStartModeChange: (mode: RouteStartMode) => void
   day: SessionDay

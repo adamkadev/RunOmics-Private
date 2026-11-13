@@ -49,7 +49,7 @@ export function shareCardTitle(activity: ShareActivity): string {
   return nameParts(activity).title
 }
 
-/** "Threshold · Wed, Nov 11 · Metz": the type only where the title gave it up for the set. */
+/** "Threshold · Wed, Nov 11 · Hoenheim": the type only where the title gave it up for the set. */
 export function shareCardSubtitle(activity: ShareActivity, place: string | null | undefined): string {
   return [nameParts(activity).type, formatDate(activity.date.slice(0, 10)), place].filter(Boolean).join(' · ')
 }

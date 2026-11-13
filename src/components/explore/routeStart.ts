@@ -19,7 +19,7 @@ export function routeStartState(mode: RouteStartMode, picked: LonLat | null): Ro
   return { mode, origin: picked, waiting: !picked }
 }
 
-/** "Start: Devant-les-Ponts · 0.9 km from home"; null until the start is known. */
+/** "Start: Hoenheim · 0.9 km from home"; null until the start is known. */
 export function startLineOf(
   start: RouteStartState,
   target: { name: string; distanceKm?: number | null } | null,

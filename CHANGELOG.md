@@ -6,11 +6,18 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
-- The VO2max grade page shows the precise daily value (57.4), as Analytics and the hub do, not the profile's whole number.
-- Design review, round 9 (pages). Plan's week says Saturday once, its bars named "Block 4 of 4" and "Cycle 5 of 12";
-  the month ends where the plan does, future weeks read "8.7 planned", and the reprise bars name their weeks. Records
-  reads Best · Predicted · Gap with years on every date; Home runs labels All · 2026 · Nov with the clock at the top;
-  Checkpoint names the cycle compared with; moderate intensity is a grey-blue; Settings shows heart rate read-only.
+- Design review, round 9 (one PR). **Numbers agree**: VO2max is the precise 57.4 on every page; Load's third
+  stat is the window's fitness change, as Form says it, and Form's bars sit above and below zero; threshold pace has
+  one source on Analytics and Checkpoint; a month on Activities counts runs by date, as Plan does; the map's share
+  divides by all the running; the laps total matches the header; the Analytics period stays when the tab changes.
+  **One header rule**: back on the title's row, switchers in a pinned row under the title, neutral bar glass, the
+  Analytics period one "4W" button; every sheet has ✕ and a centred title; Share pins Download and Copy on every tab,
+  with a scrim behind the text on a photo. Today leads a rest day with "Rest day" and gives the readiness headline a
+  reason; Progress draws its data under the rows (goal, weeks, explored, wear) with news over counts. Plan says
+  Saturday once and ends the month where the plan does; Records reads Best · Predicted · Gap; Home runs labels
+  All · 2026 · Nov; the map filters by session type; the generator opens in District mode with a Generate button.
+  Hyphens no longer stretch in titles, "target" replaces "guide", gaps read "−5 s"; French: "Progrès", "Copier",
+  "Courses", "FC", "Footing" for an easy run.
 - Design review, rounds 1-8 (one PR). **Good has its own green**, apart from the teal accent (dark `#5ad06a`,
   light `#2f7a2a`); Z4 and Z5 move clear of Heather, which stays as it is. Bars judged against a plan, this week's
   included, take a neutral fill; a posted share card says its result in ink with a fixed-colour mark.
