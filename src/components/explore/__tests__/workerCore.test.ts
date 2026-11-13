@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { activityCells, aggregateCoverage, buildAreaIndex } from '@/domain/explore/coverage'
 import { medianStart } from '@/domain/explore/home'
-import { routeStart } from '@/domain/explore/routeScore'
 import type { ExploreAreaRef, RouteCandidate } from '@/domain/explore/types'
 import { PROJ, at, line, testArea, track } from '@/domain/explore/__tests__/areaFixture'
 import { projectX, projectY } from '@/domain/explore/grid'
@@ -353,7 +352,7 @@ describe('addTracks and coverage', () => {
   })
 })
 
-describe('scoreRoutes, routeStart and routePlan', () => {
+describe('scoreRoutes and routePlan', () => {
   const candidate = (seed: number, pointsM: [number, number][]): RouteCandidate => ({
     seed,
     coordinates: pointsM.map(([x, y]) => at(x, y)),
@@ -391,16 +390,6 @@ describe('scoreRoutes, routeStart and routePlan', () => {
     expect(await score()).toBe(1)
     await send({ type: 'addTracks', areaKey: KEY, ...buffers(['r1']) })
     expect(await score()).toBe(0)
-  })
-
-  it('finds the route start from the area alone, whatever runs it holds', async () => {
-    const { send } = await loaded()
-    const before = ok(await send({ type: 'routeStart', areaKey: KEY, unitId: 'test-delta' }))
-    await send({ type: 'addTracks', areaKey: KEY, ...buffers(['r1', 'r2']) })
-
-    expect(before).toEqual(routeStart(INDEX, 'test-delta'))
-    expect(ok(await send({ type: 'routeStart', areaKey: KEY, unitId: 'test-delta' }))).toEqual(before)
-    expect(ok(await send({ type: 'routeStart', areaKey: KEY, unitId: 'nope' }))).toBeNull()
   })
 
   it('keeps the vias away from the runs’ median start', async () => {

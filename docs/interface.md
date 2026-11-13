@@ -149,16 +149,14 @@ count as the same distance, and then the more explored goes first, then the name
 range, the nearest incomplete unit of all.
 
 **Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`) once per seed, five
-seeds a batch. The panel's **Start** picks where the loop begins:
-
-- **Map point** (the default) waits for a tap on the map. The worker plans the loop on the device:
-  from the tapped point, through two unexplored runnable cells of the quartier (one may lie outside
-  it when the quartier is too small for the distance), and back, chosen per seed so the straight
-  lines add up to the distance over a 1.3 street detour. Each seed is one directions request
-  through those points. When no loop of the distance reaches the quartier, the panel names the
-  shortest that does.
-- **Quartier** starts at the centre of the quartier's runnable cell nearest its public label point,
-  with a `round_trip` of 4 points, re-asked once when it misses the distance by more than 15 %.
+seeds a batch. The loop starts where the athlete taps the map, and a later tap moves it; the panel
+is titled with that start's street ("Run from Rue Émile Michel") and its distance from home. The
+worker plans the loop on the device: from the tapped point, through two unexplored runnable cells of
+the quartier (one may lie outside it when the quartier is too small for the distance), and back,
+chosen per seed so the straight lines add up to the distance over a 1.3 street detour. Each seed is
+one directions request through those points. When no loop of the distance reaches the quartier, the
+panel names the shortest that does. The bar over the map stays empty until a loop is drawn, then
+reads "Loop · 8.5 km".
 
 The device's position is never read: the loop starts exactly at the tapped point. The vias the
 worker picks are never closer than 600 m to home (the median start of the runs, kept on the

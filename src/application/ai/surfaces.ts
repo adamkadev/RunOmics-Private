@@ -5,6 +5,8 @@ import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getActivityNotes } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { buildTodayContext, todayInsightSession } from '@/application/usecases/GetTodayInsight'
+import { getRecentLoad } from '@/application/usecases/GetRecentLoad'
+import { appTodayIso } from '@/lib/calendarDate'
 import { buildPbCelebrationContext } from '@/application/usecases/GetPbCelebrationInsight'
 import { wearOutlook } from '@/domain/shoe/wearStatus'
 import type { Limits } from '@/domain/ai/prompt'
@@ -76,7 +78,9 @@ export function insightSurfaces() {
       const current = await status()
       if (!current) return 'no training status'
 
-      const context = buildTodayContext(current, await todayInsightSession())
+      const today = appTodayIso()
+      const loadState = getRecentLoad(today, current)?.reading?.state ?? null
+      const context = buildTodayContext(current, await todayInsightSession(today), today, loadState)
 
       return {
         surface: TODAY_SURFACE,

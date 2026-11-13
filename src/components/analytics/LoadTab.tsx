@@ -279,22 +279,20 @@ function FormCard({
           <span style={{ color: rhr.side ? WARN : DELTA_TONE_COLOR.good }}>{rhr.side ? t.analytics.cards.loadCompact.check : t.analytics.cards.loadCompact.ok}</span>
         </div>
       )}
-      {night && (
-        <div className="flex items-center justify-between gap-3 border-t border-border pt-2 text-[12.5px]" data-testid="form-night">
+      {night?.sleep && (
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-2 text-[12.5px]" data-testid="form-sleep">
           <span className="text-[var(--text-2)]">
-            {night.sleep && (
-              <span data-testid="form-sleep">
-                {c.sleep} <b className="font-semibold text-foreground">{c.duration(night.sleep.last)}</b> · {c.sleepWeek(c.duration(night.sleep.week))}
-              </span>
-            )}
-            {night.sleep && night.hrv && ' · '}
-            {night.hrv && (
-              <span data-testid="form-hrv">
-                {c.hrv} <b className="font-semibold text-foreground">{night.hrv.now} {t.units.ms}</b> · {c.baseline(night.hrv.side, night.hrv.lo, night.hrv.hi)}
-              </span>
-            )}
+            {c.sleep} <b className="font-semibold text-foreground">{c.duration(night.sleep.last)}</b> · {c.sleepWeek(c.duration(night.sleep.week))}
           </span>
-          {night.hrv && <span style={{ color: night.out ? WARN : DELTA_TONE_COLOR.good }}>{night.out ? c.check : c.ok}</span>}
+          <span style={{ color: night.sleep.short ? WARN : DELTA_TONE_COLOR.good }}>{night.sleep.short ? c.short : c.ok}</span>
+        </div>
+      )}
+      {night?.hrv && (
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-2 text-[12.5px]" data-testid="form-hrv">
+          <span className="text-[var(--text-2)]">
+            {c.hrv} <b className="font-semibold text-foreground">{night.hrv.now} {t.units.ms}</b> · {c.baseline(night.hrv.side, night.hrv.lo, night.hrv.hi)}
+          </span>
+          <span style={{ color: night.out ? WARN : DELTA_TONE_COLOR.good }}>{night.out ? c.check : c.ok}</span>
         </div>
       )}
     </Card>

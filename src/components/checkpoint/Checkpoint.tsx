@@ -2,11 +2,11 @@ import type { ReactNode } from 'react'
 import { CardHead } from '@/components/analytics/AnalyticsKit'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
-import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { Unit } from '@/components/ui/Stat'
 import { DELTA_TONE_COLOR, type DeltaTone } from '@/lib/deltaTone'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { CheckpointEyebrow } from './CheckpointEyebrow'
 import { type CheckpointPageView, type CompareRow, type CompareSection } from './checkpointView'
 
 const TONES: DeltaTone[] = ['good', 'worse', 'flat']
@@ -81,8 +81,8 @@ export function Checkpoint({ view, back }: { view: CheckpointPageView; back?: Re
       </PageHeader>
 
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="checkpoint-status">
-        {/* The phase and cycle sit on the card, so the page's head is a title and one line. */}
-        <span className={cn(EYEBROW_CLASS, '-mb-1.5 text-muted-foreground')} data-testid="checkpoint-eyebrow">{view.eyebrow}</span>
+        {/* The phase and block sit on the card, so the page's head is a title and one line. */}
+        {view.eyebrow && <CheckpointEyebrow text={view.eyebrow} withBlock={view.generalPreparation} />}
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
           <h2 className="text-headline text-foreground">{status.title}</h2>
           {status.detail && <p className="text-xs text-muted-foreground">{status.detail}</p>}

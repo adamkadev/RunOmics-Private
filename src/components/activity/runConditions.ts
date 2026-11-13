@@ -29,7 +29,9 @@ export function conditionsChips(weather: ActivityWeather): string[] {
     air.push(c.wind(`${Math.round(weather.windKph)} ${t.units.kmh}${dir}`))
   }
   const first = [sky && t.activity.weather.conditions[sky], feels ? `${temp}, ${feels}` : temp].filter(Boolean).join(' · ')
-  return air.length ? [first, air.join(' · ')] : [first]
+  // A chip starts with a capital, as "Clear sky" does: "Wind 2 km/h", "70% humidity · wind 2 km/h".
+  const second = air.join(' · ')
+  return air.length ? [first, second.charAt(0).toLocaleUpperCase(t.locale) + second.slice(1)] : [first]
 }
 
 /** Garmin Connect's page for one activity: where its shoe is set or changed. */

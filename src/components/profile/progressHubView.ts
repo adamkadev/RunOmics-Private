@@ -298,12 +298,12 @@ export function progressHubView(input: HubInput): ProgressHubView {
   }
 }
 
-const RETURN_STEPS_MIN = [10, 20, 30]
+const RETURN_STEPS_MIN = [10, 20, 30, 40]
 
-/** The longest non-stop run since a return against the next step of 10, 20 or 30 minutes; null before a minute of it. */
-export function returnStep(progress: { longestSec: number; ongoing: boolean } | null): { minutes: number; goal: number } | null {
+/** The longest non-stop run since a return against the next step above it; goal null past the last step, null before a minute of it. */
+export function returnStep(progress: { longestSec: number; ongoing: boolean } | null): { minutes: number; goal: number | null } | null {
   if (!progress?.ongoing) return null
   const minutes = Math.floor(progress.longestSec / 60)
   if (minutes < 1) return null
-  return { minutes, goal: RETURN_STEPS_MIN.find((step) => step > minutes) ?? RETURN_STEPS_MIN.at(-1)! }
+  return { minutes, goal: RETURN_STEPS_MIN.find((step) => step > minutes) ?? null }
 }

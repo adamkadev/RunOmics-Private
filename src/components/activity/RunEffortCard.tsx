@@ -5,7 +5,7 @@ import { cardClass } from '@/components/ui/Card'
 import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { Legend, LegendItem } from '@/components/ui/Legend'
 import { STAT_TONE_CLASS, type StatTone } from '@/components/ui/Stat'
-import { zoneColor, type SessionZone } from '@/lib/colors'
+import { hrZoneColor, type SessionZone } from '@/lib/colors'
 import { formatDecimal, formatDeltaFixed } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -100,13 +100,13 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
               <span
                 key={zone.zone}
                 className="h-full rounded-full"
-                style={{ flexGrow: zone.percent, flexBasis: 0, background: zoneColor(zone.zone as SessionZone) }}
+                style={{ flexGrow: zone.percent, flexBasis: 0, background: hrZoneColor(zone.zone as SessionZone) }}
               />
             ))}
           </div>
           <Legend className="gap-x-[18px]">
             {zones.map((zone) => (
-              <LegendItem key={zone.zone} swatch="square" color={zoneColor(zone.zone as SessionZone)}>
+              <LegendItem key={zone.zone} swatch="square" color={hrZoneColor(zone.zone as SessionZone)}>
                 <span>
                   {`Z${zone.zone} ${t.zoneLabels[zone.zone] ?? ''} `}
                   <b className="font-semibold text-foreground">{Math.round(zone.percent)}%</b>

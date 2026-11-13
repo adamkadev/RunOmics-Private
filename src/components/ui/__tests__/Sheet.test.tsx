@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { Sheet } from '../Sheet'
 import { ActivityFilterSheet } from '@/components/activities/ActivityFilterSheet'
+import { t } from '@/i18n'
 
 const css = readFileSync(path.resolve(__dirname, '../../../app/globals.css'), 'utf8')
 
@@ -53,7 +54,7 @@ describe('Filter & sort', () => {
     )
     const box = (name: RegExp) => screen.getByRole('checkbox', { name }).querySelector('span')!
     expect(box(/Tempo/).className).toContain('bg-accent')
-    expect(box(/Base/).className).toContain('shadow-[inset_0_0_0_1.5px_var(--radio-ring)]')
-    expect(box(/Base/).className).not.toContain('fill-3')
+    expect(box(new RegExp(t.activityTypes.Base)).className).toContain('shadow-[inset_0_0_0_1.5px_var(--radio-ring)]')
+    expect(box(new RegExp(t.activityTypes.Base)).className).not.toContain('fill-3')
   })
 })

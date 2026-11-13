@@ -163,13 +163,15 @@ export const en = {
     rangeLabel: 'Window',
     streakEyebrow: 'Weekly streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
-    streakRule: (target: number, best: number) => `${target}+ runs a week · best streak ${best} week${best === 1 ? '' : 's'}`,
+    streakRule: (target: number) => `${target}+ runs a week`,
+    bestStreak: 'Best streak',
     thisWeek: 'This week',
     thisWeekRuns: (runs: number) => `${runs} done`,
     keeps: (runs: number) => `${runs} more keeps it`,
     planned: (sessions: number) => `${sessions} planned`,
     thisWeekLabel: (runs: number, target: number) => `This week: ${runs} of ${target} runs`,
     weeksOnTarget: 'weeks on target',
+    weeksOf: (counted: number) => `/${counted}`,
     runsPerWeek: 'runs / week',
     runs: (runs: number): string => (runs === 1 ? 'run' : 'runs'),
     perWeek: 'Runs per week',
@@ -366,20 +368,21 @@ export const en = {
       // Explore's route generator: a loop in one quartier, sized to today's plan, out as a GPX file.
       explore: {
         back: 'Back',
-        title: (name: string) => `Run in ${name}`,
+        // `street` is the start's, "Rue Émile Michel"; null when the map can't name it.
+        title: (street: string | null) => (street ? `Run from ${street}` : 'Run from the map point'),
+        titleWaiting: 'Choose a start',
         loop: 'Loop',
+        // The bar over the map once a loop is drawn. `km` is "8.5 km".
+        loopOf: (km: string) => `Loop · ${km}`,
         todaysPlan: 'Today’s plan',
         // The row for another day's session, from Plan's "Find a route". `day` is "Sat 24".
         planFor: (day: string) => `Plan for ${day}`,
         // The plan row as a button: back to the plan's distance. `km` is "9.5 km".
         usePlanDistance: (km: string) => `Use the plan’s distance, ${km}`,
         start: {
-          label: 'Start',
-          modes: { pick: 'Map point', quartier: 'District' },
-          modesFull: { pick: 'Start from a point I tap on the map', quartier: 'Start inside the district' },
           pickPrompt: 'Tap the map where you’ll start.',
-          // Under the mode switch. `place` is the district or the street; `distance` "0.9 km", or null without a home.
-          line: (place: string, distance: string | null) => (distance ? `Start: ${place} · ${distance} from home` : `Start: ${place}`),
+          // Under the title. `distance` is "0.9 km", or null without a home.
+          line: (distance: string | null) => (distance ? `${distance} from home · tap the map to move the start` : 'Tap the map to move the start'),
         },
         // The button that takes the shortest distance reaching the quartier. `km` is "12.5 km".
         useDistance: (km: string) => `Use ${km}`,
@@ -769,8 +772,8 @@ export const en = {
       // Said in place of the load line while a break has left nothing to read it against.
       buildingBack: 'Comeback',
       formLater: 'Your form shows once you have run regularly for a few weeks.',
-      // "Estimated" where the watch rates no load and the app did the arithmetic itself.
-      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimated` : state),
+      // Where the watch rates no load and the app did the arithmetic itself.
+      estimatedNote: 'Estimated load',
       ctl: 'Fitness',
       atl: 'Fatigue',
       // "↘ 2 in 7 days" under a tile: a rolling window, not the calendar week.
@@ -916,6 +919,7 @@ export const en = {
         headline: {
           positive: 'Your load is turning into speed.',
           positiveSteadyLoad: (last: string) => `Speed has improved over ${last}.`,
+          easyFaster: (s: number, within: string) => `Your easy pace is ${s} s/km faster ${within}.`,
           // Names only the reads that slipped.
           cautionLoadUp: (slipped: string, plural: boolean) => `Load is up, but ${slipped} ${plural ? 'have' : 'has'} slipped.`,
           caution: (last: string) => `Speed has slipped over ${last}.`,
@@ -1018,6 +1022,7 @@ export const en = {
           side === 'high' ? `above ${lo}–${hi} baseline` : side === 'low' ? `below ${lo}–${hi} baseline` : `inside ${lo}–${hi} baseline`,
         ok: 'OK',
         check: 'Check',
+        short: 'Short',
       },
       loadTrend: {
         aboutEstimated: 'Your acute load: the last 7 days of training load, which the app works out from each run’s heart rate and time as your watch sends none, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
@@ -1061,7 +1066,6 @@ export const en = {
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
-        flat: (signed: string) => `${signed} · flat`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {
@@ -1118,9 +1122,9 @@ export const en = {
       paceCurve: {
         title: 'Pace curve',
         caption: 'best pace for each duration',
-        about: "Your best pace for every duration from 30 seconds to 2 hours, in these weeks and in the weeks before, read from each run's full recording. Critical speed (CS) is fitted to the 3 to 20 minute bests as distance = CS x time + D': the fastest pace you can hold without tiring towards a stop, roughly what you could race for 30 to 40 minutes, usually a little faster than your threshold pace. D' is the distance you can run above it before you tire. It is only as good as your hardest efforts of 3 to 20 minutes: easy weeks read low.",
+        about: "Your best pace for every duration from 30 seconds to 2 hours, in these weeks and in the weeks before, read from each run's full recording. Critical speed (CS) is fitted to the 3 to 20 minute bests as distance = CS x time + D′: the fastest pace you can hold without tiring towards a stop, roughly what you could race for 30 to 40 minutes, usually a little faster than your threshold pace. D′ is the distance you can run above it before you tire. It is only as good as your hardest efforts of 3 to 20 minutes: easy weeks read low.",
         cs: 'Critical speed',
-        dPrime: (m: number) => `D' ${m} m`,
+        dPrime: (m: number) => `D′ ${m} m`,
         noThreshold: 'Fitted to your 3-20 min bests: roughly the pace you could hold for 30 to 40 minutes.',
         level: (pace: string) => ['Level with your threshold pace of ', pace, '.'] as [string, string, string],
         faster: (s: number, pace: string) => [`${s} s/km faster than your threshold pace of `, pace, ', where critical speed usually sits.'] as [string, string, string],
@@ -1349,7 +1353,7 @@ export const en = {
       fastest: 'Fastest',
     },
     row: {
-      rpeValue: (n: number) => `RPE ${n}`,
+      rpeValue: (n: number) => `Effort ${n}/10`,
     },
   },
 
@@ -1381,7 +1385,7 @@ export const en = {
         dark: 'Dark',
         light: 'Light',
       },
-      inZone: (zone: number) => `in Z${zone}`,
+      inZone: (zone: string) => `in ${zone}`,
       // The headline of an easy run's zones, on a run without a written verdict: "100% easy · Z1–Z2".
       easyZones: (from: number, to: number) => `easy · Z${from}–Z${to}`,
       noZones: 'No heart-rate zones for this run',
@@ -1435,6 +1439,8 @@ export const en = {
         neutral: (type: string) => `${type} logged`,
         caution: (type: string) => `Tough ${type}`,
       },
+      // The easy type's word inside a verdict: "Solid base", not "Solid easy".
+      easyType: 'base',
     },
     // Read-only: RPE comes from the watch, and the note is the one thing on an
     // activity the user writes.
@@ -1776,10 +1782,11 @@ export const en = {
     pageTitle: 'Home runs',
     back: 'Progress',
     tileDetail: (runs: number, since: string) => `${runs} runs from your usual start since ${since}, replayed together`,
-    subtitle: (runs: number, since: string) => `${runs} runs from one start · since ${since}`,
+    subtitle: (runs: number, since: string, place: string | null) => (place ? `${runs} runs from ${place} · since ${since}` : `${runs} runs · since ${since}`),
     periods: 'Runs shown',
     spots: 'Start points',
     spot: (runs: number) => `${runs} runs`,
+    spotNamed: (place: string, runs: number) => `${place} · ${runs}`,
     periodAll: 'All',
     period: (label: string, runs: number) => `${label} · ${runs}`,
     running: (n: number, of: number) => `${n} of ${of} still out`,
@@ -1835,7 +1842,8 @@ export const en = {
       saved: 'Saved. Mileage updates after the next sync.',
     },
     listCheckedAt: (date: string) => `Shoe list last refreshed from Garmin on ${date}`,
-    tracked: (km: string) => `${km} km tracked`,
+    // The gap is what All time counts beyond the shoes: runs Garmin gave no shoe.
+    tracked: (km: string, without: string | null) => (without ? `${km} km on shoes (${without} km without a shoe)` : `${km} km on shoes`),
     addLabel: 'Add a pair in your watch app',
     edit: 'Edit shoe',
     editLabel: 'Edit in your watch app',
@@ -1964,14 +1972,15 @@ export const en = {
       kmOfGoal: (km: string, goal: string) => `${km} / ${goal} km`,
       onPaceFor: (km: string) => `on pace for ${km} km`,
       better: (n: number) => `${n} better`,
-      // The checkpoint row: the cycle's week, then the checkpoint's date.
+      // The checkpoint row: the week of the 12, then the checkpoint's date.
       checkpointWeek: (week: number) => `week ${week} of 12`,
-      checkpointLine: (week: number, date: string) => `week ${week} of 12 · ${date}`,
+      checkpointLine: (week: number, date: string) => `week ${week} of 12 · checkpoint ${date}`,
       newestRecord: (date: string) => `newest · ${date}`,
       homeRunsDetail: (runs: string, date: string) => `${runs} · last ${date}`,
-      // The return row: the longest non-stop run since the break, and the next step of 10, 20 or 30 minutes.
+      // The return row: the longest non-stop run since the break, and the next step of 10, 20, 30 or 40 minutes.
       comebackValue: (minutes: number) => `${minutes} min non-stop`,
       comebackNext: (minutes: number) => `next: ${minutes} min`,
+      comebackDone: 'step reached',
       // U+2011: a value's tabular figures set an ASCII hyphen a figure wide ("1 - week").
       streakValue: (weeks: number) => `${weeks}\u2011week streak`,
       noStreakShort: 'no streak yet',
@@ -2292,16 +2301,14 @@ export const en = {
     title: '12\u2011week checkpoint',
     // The page's large title, on one line beside the back button.
     pageTitle: 'Checkpoint',
-    cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: 'Last 12 weeks',
-    againstPrevious: (range: string) => `vs previous cycle · ${range}`,
     againstBefore: (range: string) => `vs the 12 weeks before · ${range}`,
-    weekOf: (week: number) => `Cycle week ${week} of 12`,
-    complete: (n: number) => `Cycle ${n} complete`,
+    weekOf: (week: number) => `Week ${week} of 12`,
+    complete: '12 weeks complete',
     dueIn: (date: string, days: number) =>
       days <= 0 ? 'Checkpoint today' : days === 1 ? 'Checkpoint tomorrow' : days < 14 ? `Checkpoint ${date} · in ${days} days` : `Checkpoint ${date} · in ${Math.round(days / 7)} weeks`,
     reached: (date: string) => `Checkpoint ${date}`,
-    nextBegan: (n: number, date: string) => `Cycle ${n} began ${date}; it takes over here next week.`,
+    nextBegan: (date: string) => `The next 12 weeks began ${date}; they take over here next week.`,
     rolling: 'No coach plan to count cycles from, so this sets your last 12 full weeks against the 12 before them.',
     tooEarly: 'No week of this cycle is over yet: the weekly figures start on Monday.',
     better: (n: number) => `${n} better`,
@@ -2312,7 +2319,7 @@ export const en = {
     vs: (value: string) => `vs ${value}`,
     notEnough: 'Not enough data',
     nothingBefore: 'first cycle',
-    startingPoint: (date: string) => `Your starting point: these values are compared at the checkpoint on ${date}.`,
+    startingPoint: 'Your starting point: these values are compared at the checkpoint.',
     lastReading: (date: string) => `Last reading ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min in ${sessions} session${sessions === 1 ? '' : 's'} so far`,
     noCheck: 'No 5K check this cycle',
@@ -2357,8 +2364,8 @@ export const en = {
     },
     units: { runs: 'runs', perBeat: 'm/beat' },
     tile: {
-      inProgress: (week: number, date: string) => `Cycle week ${week} of 12 · checkpoint ${date}`,
-      complete: (n: number) => `Cycle ${n} complete: time to review it`,
+      inProgress: (week: number, date: string) => `Week ${week} of 12 · checkpoint ${date}`,
+      complete: '12 weeks complete: time to review them',
       rolling: 'Your last 12 weeks against the 12 before',
     },
   },
@@ -2485,7 +2492,7 @@ export const en = {
     } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Block', after: `of ${total}` }),
-      cycle: (week: number, date: string) => `Cycle ${week} of 12 · checkpoint ${date}`,
+      checkpoint: (week: number, date: string) => `Week ${week} of 12 · checkpoint ${date}`,
       // The part week before a block's first Monday.
       leadIn: 'Lead-in week',
       generalShort: 'General prep',
@@ -2504,11 +2511,10 @@ export const en = {
       phaseWeeks: (phase: string, n: number) => `${phase} · ${n} week${n !== 1 ? 's' : ''}`,
       // The legend's one blue entry.
       easyLong: 'Easy / Long',
-      // The plan's km over the days it covers, not a goal for the month.
-      kmOf: (ran: string, plan: string) => `${ran} of ${plan} km planned`,
-      // Where the plan starts partway through the month, the comparison is over the
-      // days it covers, and the month's own total is said beside it.
-      planCovers: (from: string, to: string) => `${from} – ${to}`,
+      // The month's goal is the Goals page's; without one, the plan's km is what the run is set against.
+      runGoal: (ran: string, goal: string) => `${ran} km run · goal ${goal}`,
+      runPlanned: (ran: string, plan: string) => `${ran} km run · ${plan} planned`,
+      planCovers: (from: string, to: string) => `Plan covers ${from} – ${to}`,
       monthTotal: (km: string) => `${km} km this month`,
       plannedWord: 'planned',
       plannedKm: (km: string) => `${km} km planned`,
@@ -2744,7 +2750,7 @@ export const en = {
     VO2Max: 'VO₂ Max',
     Threshold: 'Threshold',
     Tempo: 'Tempo',
-    Base: 'Base',
+    Base: 'Easy',
     Race: 'Race',
   } as Record<ActivityType, string>,
 }

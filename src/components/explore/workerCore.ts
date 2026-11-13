@@ -8,7 +8,7 @@ import {
 } from '@/domain/explore/coverage'
 import { medianStart } from '@/domain/explore/home'
 import { planRoute } from '@/domain/explore/routePlan'
-import { routeStart, scoreRoutes } from '@/domain/explore/routeScore'
+import { scoreRoutes } from '@/domain/explore/routeScore'
 import type { ExploreAreaFile, ExploreAreaRef } from '@/domain/explore/types'
 import { areaCacheKey, trackCacheKey, type ExploreCache } from './idb'
 import { isValidTrackBuffers } from './trackBuffers'
@@ -288,8 +288,6 @@ function dispatch(
       return serial(state, msg.areaKey, async () => coverage(requireArea(state, msg.areaKey), msg))
     case 'scoreRoutes':
       return serial(state, msg.areaKey, async () => score(requireArea(state, msg.areaKey), msg))
-    case 'routeStart':
-      return serial(state, msg.areaKey, async () => routeStart(requireArea(state, msg.areaKey).index, msg.unitId, msg.avoid))
     case 'routePlan':
       return serial(state, msg.areaKey, async () => plan(requireArea(state, msg.areaKey), msg))
     default:

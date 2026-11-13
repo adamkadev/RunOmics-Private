@@ -26,6 +26,8 @@ interface Props {
   byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   coaching?: PlanCoachingView | null
   planPhaseRanges?: PlanPhaseRange[]
+  /** The Goals page's km for this month; null without a distance goal. */
+  goalKm?: number | null
   today: string
   atPresent: boolean
   onToday: () => void
@@ -85,7 +87,7 @@ function tileStyle(cell: Cell): CSSProperties | null {
       border: `1px solid color-mix(in srgb, ${color} 50%, transparent)`,
     }
   if (cell.state === 'planned') return { border: `1px dashed ${color}` }
-  if (cell.state === 'missed') return { border: '1px dashed var(--warn)' }
+  if (cell.state === 'missed') return { border: '1px dashed var(--muted-foreground)' }
   return null
 }
 
@@ -135,6 +137,7 @@ export function MonthView({
   byDateCoach,
   coaching = null,
   planPhaseRanges = [],
+  goalKm = null,
   today,
   atPresent,
   onToday,
@@ -244,6 +247,13 @@ export function MonthView({
   // French months are lowercase mid-sentence; as a title the month opens the line.
   const monthName = spelled.charAt(0).toLocaleUpperCase(t.locale) + spelled.slice(1)
   const m = t.plan.month
+  const hasGoal = goalKm !== null && goalKm > 0
+  const target = hasGoal ? { ran: ranKm, km: goalKm } : plannedKm > 0 ? { ran: againstPlanKm, km: plannedKm } : null
+  const covers = planSpan && m.planCovers(formatDate(planSpan.from, { style: 'bare', year: 'never' }), formatDate(planSpan.to, { style: 'bare', year: 'never' }))
+  const planLine = (hasGoal
+    ? [covers, plannedKm > 0 ? m.plannedKm(formatPlannedKm(plannedKm)) : null]
+    : [covers, covers && ranKm !== againstPlanKm ? m.monthTotal(formatRanKm(ranKm)) : null]
+  ).filter(Boolean).join(' · ')
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -316,7 +326,7 @@ export function MonthView({
                         data-testid="month-tile"
                         className={cn(
                           'box-border flex h-[34px] w-full max-w-[40px] items-center justify-center rounded-[9px] text-xs font-semibold tabular-nums',
-                          cell.state === 'missed' ? 'text-[var(--warn)]' : 'text-foreground',
+                          cell.state === 'missed' ? 'text-muted-foreground' : 'text-foreground',
                         )}
                         style={style ?? undefined}
                       >
@@ -382,22 +392,17 @@ export function MonthView({
 
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="month-summary">
         <h2 className="text-headline text-foreground">{monthName}</h2>
-        {plannedKm > 0 && (
+        {target && (
           <div aria-hidden className="h-2 overflow-hidden rounded-full bg-[var(--line-2)]">
-            <div className="h-full rounded-full bg-[var(--data-done)]" data-testid="month-plan-fill" style={{ width: `${Math.min(100, Math.round((againstPlanKm / plannedKm) * 100))}%` }} />
+            <div className="h-full rounded-full bg-[var(--data-done)]" data-testid="month-plan-fill" style={{ width: `${Math.min(100, Math.round((target.ran / target.km) * 100))}%` }} />
           </div>
         )}
         <p className="text-xs text-muted-foreground" data-testid="month-km">
-          {plannedKm > 0 ? m.kmOf(formatRanKm(againstPlanKm), formatPlannedKm(plannedKm)) : `${formatRanKm(ranKm)} ${t.units.km}`}
-          {plannedKm > 0 && planSpan !== null && (
-            <>
-              {' · '}
-              {m.planCovers(formatDate(planSpan.from, { style: 'bare', year: 'never' }), formatDate(planSpan.to, { style: 'bare', year: 'never' }))}
-              {/* Only when it adds something: "93.4 of 120 km · … · 93.4 km this month" said the same number twice. */}
-              {ranKm !== againstPlanKm && ` · ${m.monthTotal(formatRanKm(ranKm))}`}
-            </>
-          )}
+          {target === null
+            ? `${formatRanKm(ranKm)} ${t.units.km}`
+            : (hasGoal ? m.runGoal : m.runPlanned)(formatRanKm(target.ran), formatPlannedKm(target.km))}
         </p>
+        {planLine && <p className="-mt-1.5 text-xs text-muted-foreground" data-testid="month-plan">{planLine}</p>}
       </section>
     </div>
   )

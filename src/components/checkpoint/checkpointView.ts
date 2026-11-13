@@ -33,7 +33,9 @@ export interface CompareSection {
 }
 
 export interface CheckpointPageView {
-  eyebrow: string
+  /** Null under a race plan; general preparation adds the block's name on the device, as Plan does. */
+  eyebrow: string | null
+  generalPreparation: boolean
   /** The cycle compared with; the current cycle's dates are on the status card. */
   range: string | null
   status: {
@@ -211,20 +213,17 @@ function asStartingPoint(section: CompareSection): CompareSection {
 
 export function checkpointView(data: CycleCheckpoint, today: string): CheckpointPageView {
   const { cycle } = data
-  const general = t.plan.weekPurpose.generalPreparation
-  const eyebrow = cycle.mode === 'rolling'
-    ? s().lastWeeks
-    : data.generalPreparation ? `${general} · ${s().cycle(cycle.number!)}` : s().cycle(cycle.number!)
+  const eyebrow = cycle.mode === 'rolling' ? s().lastWeeks : data.generalPreparation ? t.plan.phase.generalShort : null
 
   const status: CheckpointPageView['status'] = cycle.mode === 'rolling'
     ? { title: s().lastWeeks, detail: null, week: cycle.week, segments: null, note: s().rolling }
     : cycle.complete
       ? {
-          title: s().complete(cycle.number!),
+          title: s().complete,
           detail: s().reached(formatDate(cycle.current.end)),
           week: cycle.week,
           segments: 12,
-          note: s().nextBegan(cycle.number! + 1, formatDate(shiftDays(cycle.current.end, 1))),
+          note: s().nextBegan(formatDate(shiftDays(cycle.current.end, 1))),
         }
       : {
           title: s().weekOf(cycle.week),
@@ -244,8 +243,9 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
 
   return {
     eyebrow,
-    range: compared ? (cycle.mode === 'rolling' ? s().againstBefore : s().againstPrevious)(formatDateRange(cycle.previous.start, cycle.previous.end, { year: 'always' })) : null,
-    status: starting && cycle.mode !== 'rolling' && !cycle.complete ? { ...status, note: s().startingPoint(formatDate(cycle.current.end)) } : status,
+    generalPreparation: cycle.mode !== 'rolling' && data.generalPreparation,
+    range: compared ? s().againstBefore(formatDateRange(cycle.previous.start, cycle.previous.end, { year: 'always' })) : null,
+    status: starting && cycle.mode !== 'rolling' && !cycle.complete ? { ...status, note: s().startingPoint } : status,
     summary: starting ? null : summary,
     sections: built,
   }
@@ -263,7 +263,7 @@ export function checkpointTileView(data: CycleCheckpoint, today: string): Checkp
   const tile = s().tile
   const line = cycle.mode === 'rolling'
     ? tile.rolling
-    : cycle.complete ? tile.complete(cycle.number!) : tile.inProgress(cycle.week, formatDate(cycle.current.end, { style: 'bare' }))
+    : cycle.complete ? tile.complete : tile.inProgress(cycle.week, formatDate(cycle.current.end, { style: 'bare', year: 'never' }))
   const inProgress = cycle.mode === 'rolling' || cycle.complete ? null : { week: cycle.week, end: cycle.current.end }
   return { line, inProgress, summary: checkpointView(data, today).summary }
 }

@@ -165,7 +165,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all).not.toContain('REP PACE')
     expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
     expect(all.slice(-8)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
-    expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z2']))
+    expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z1–Z2']))
   })
 
   it('titles the card by its set, the type leading the line under it, and the rep chips on the Stats card only', () => {
@@ -478,7 +478,7 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
 
   it('draws one bar of edge-to-edge segments and a legend, no bar per zone', () => {
     const ops = draw({ design: 'stats' }).filter((o) => o.ty === layout(RUN, 'stats').middleTop)
-    const segments = ops.filter((o) => o.op === 'fillRect' && (o.fill === palette.zones[1] || o.fill === palette.zones[2]))
+    const segments = ops.filter((o) => o.op === 'fillRect' && (o.fill === palette.hrZones[1] || o.fill === palette.hrZones[2]))
     expect(segments).toHaveLength(2)
     const [z2, z3] = segments.map((o) => o.args as number[])
     expect(z2![0]! + z2![2]!).toBeCloseTo(z3![0]!, 6)

@@ -34,6 +34,7 @@ function context(overrides: Partial<TodayContext> = {}): TodayContext {
     tone: 'hold',
     plannedWorkout: workout,
     recent: { weekRuns: 5, weekKm: 39, lastRun: { type: 'Base', daysAgo: 1, distanceKm: 5 } },
+    eyebrow: t.dashboard.readiness.loadState.in,
     ...overrides,
   }
 }
@@ -170,9 +171,10 @@ describe('the kind of day (v4.16.4)', () => {
 })
 
 describe('what the screen already shows (v4.16.4)', () => {
-  it('hands the model the badge words it must not echo', () => {
-    const prompt = todayInsightPrompt(context({ tone: 'go' }), [])
-    expect(prompt).toContain(`shown in the badge above your headline as "${t.dashboard.readiness.eyebrowByTone.go}"`)
+  it('hands the model the status line it must neither echo nor contradict', () => {
+    const prompt = todayInsightPrompt(context({ tone: 'go', eyebrow: t.dashboard.readiness.loadState.above }), [])
+    expect(prompt).toContain(`The status line above your headline reads "${t.dashboard.readiness.loadState.above}"`)
+    expect(prompt).toContain('must never contradict it')
     expect(TODAY_SYSTEM_INSTRUCTION).toContain('Never reuse that phrase.')
   })
 
@@ -206,7 +208,7 @@ describe('one claim, one piece of advice', () => {
 
   it('agrees with the tone the app shows, building included', () => {
     const prompt = todayInsightPrompt(context({ tone: 'build' }), [])
-    expect(prompt).toContain(`Tone: build, shown in the badge above your headline as "${t.dashboard.readiness.eyebrowByTone.build}"`)
+    expect(prompt).toContain('Tone: build.')
     expect(prompt).toContain('The training load is in range.')
   })
 })

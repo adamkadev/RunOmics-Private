@@ -234,20 +234,18 @@ describe('addTracks', () => {
   })
 })
 
-describe('coverage, scoreRoutes and routeStart', () => {
+describe('coverage and scoreRoutes', () => {
   it('pass their options through, after the area is loaded', async () => {
     const { engine, workers } = setup()
     const prefs = { avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false }
 
     await engine.coverage(REF, { activityIds: ['a'], home: [1, 2], homeFromTracks: false })
     await engine.scoreRoutes(REF, { candidates: [], targetM: 8000, prefs })
-    await engine.routeStart(REF, { unitId: 'test-alpha' })
 
     const types = workers[0]!.posted.map((p) => p.message.type)
-    expect(types).toEqual(['loadArea', 'coverage', 'scoreRoutes', 'routeStart'])
+    expect(types).toEqual(['loadArea', 'coverage', 'scoreRoutes'])
     expect(workers[0]!.sent('coverage')[0]).toMatchObject({ areaKey: KEY, activityIds: ['a'], home: [1, 2] })
     expect(workers[0]!.sent('scoreRoutes')[0]).toMatchObject({ areaKey: KEY, targetM: 8000, prefs })
-    expect(workers[0]!.sent('routeStart')[0]).toEqual({ type: 'routeStart', id: expect.any(Number), areaKey: KEY, unitId: 'test-alpha' })
   })
 
   it('fails the call when the area cannot be loaded', async () => {

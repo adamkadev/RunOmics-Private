@@ -160,8 +160,18 @@ export interface StatusView {
   totals: { status: TrainingStatusType; days: number }[]
 }
 
+/** The daily strip's span: a live window ending mid-week would otherwise draw 26 bars under a "last 28 days" caption. */
+const STATUS_DAYS = 28
+
 export function statusView(days: StatusDay[], window: DayWindow): StatusView | null {
-  const inWindow = days.filter((d) => d.date >= window.start && d.date <= window.end)
+  const daily = window.days <= STATUS_DAYS
+  const byDate = new Map(days.map((d) => [d.date, d.status]))
+  const inWindow = daily
+    ? Array.from({ length: STATUS_DAYS }, (_, i) => {
+        const date = isoDate(addDays(day(window.end), i - STATUS_DAYS + 1))
+        return { date, status: byDate.get(date) ?? null }
+      })
+    : days.filter((d) => d.date >= window.start && d.date <= window.end)
   const current = [...inWindow].reverse().find((d) => d.status !== null)?.status ?? null
   if (!current) return null
 
@@ -170,8 +180,8 @@ export function statusView(days: StatusDay[], window: DayWindow): StatusView | n
   const totals = [...tally.entries()].map(([status, n]) => ({ status, days: n })).sort((a, b) => b.days - a.days)
 
   let cells: StatusView['cells']
-  if (window.days <= 28) {
-    cells = inWindow.map((d) => ({ status: d.status, date: d.date }))
+  if (daily) {
+    cells = inWindow
   } else {
     const byWeek = new Map<string, StatusDay[]>()
     for (const d of inWindow) {
@@ -186,7 +196,7 @@ export function statusView(days: StatusDay[], window: DayWindow): StatusView | n
     })
   }
 
-  return { current, count: tally.get(current) ?? 0, days: window.days, cells, totals }
+  return { current, count: tally.get(current) ?? 0, days: daily ? STATUS_DAYS : window.days, cells, totals }
 }
 
 export type RiskState = 'ok' | 'out' | 'alert'

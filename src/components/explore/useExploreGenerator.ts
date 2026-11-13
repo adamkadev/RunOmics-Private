@@ -8,7 +8,7 @@ import type { RouteCluster } from '@/application/usecases/GetAllRoutes'
 import { removeUrlParams, useUrlParam } from '@/lib/useUrlParam'
 import { parseExploreRoute } from './exploreHref'
 import { generatorDay, generatorPlan, generatorTarget, nextQualityKind, type ExplorePlan, type GeneratorTarget } from './routeGenerator'
-import { routeStartState, type RouteStartMode, type RouteStartState } from './routeStart'
+import { routeStartState, type RouteStartState } from './routeStart'
 import { useAvoidSpots, type AvoidSpots } from './useAvoidSpots'
 import type { LonLat } from './workerProtocol'
 
@@ -60,12 +60,11 @@ export interface ExploreGenerator {
   drawn: ScoredRoute | null
   setDrawn: (route: ScoredRoute | null) => void
   start: RouteStartState
-  setStartMode: (mode: RouteStartMode) => void
   avoid: AvoidSpots
   day: SessionDay
   /** The kind of the quality session the next day, "Threshold", or null. */
   nextKind: string | null
-  /** What a tap on the map does while it is open: mark a spot, set the start, or nothing. */
+  /** What a tap on the map does while it is open: mark a spot or set the start; null while it is shut. */
   mapPick: ((lngLat: LonLat) => void) | null
   /** The opener of the generator closed last, once: focus goes back to it when the map it gives back has rendered. */
   takeClosedOpener: () => GeneratorOpener | null
@@ -96,9 +95,8 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     flatForReps: generator?.plan?.session === 'quality',
   }))
   const [drawn, setDrawn] = useState<ScoredRoute | null>(null)
-  const [startMode, setStartMode] = useState<RouteStartMode>('pick')
   const [picked, setPicked] = useState<LonLat | null>(null)
-  const start = useMemo(() => routeStartState(startMode, picked), [startMode, picked])
+  const start = useMemo(() => routeStartState(picked), [picked])
   const avoid = useAvoidSpots(generatorOpen, today ?? undefined)
   const { setMarking } = avoid
   const planDay = generator?.plan ?? null
@@ -113,8 +111,6 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
       const plan = generatorPlan(explorePlans, null, today)
       setGenerator({ ...generatorTarget(null, { unitId, plan, medianKm, easyPace }), plan, returnTo: { expanded, unitId: openUnitId }, opener })
       setPrefs((p) => ({ ...p, flatForReps: plan?.session === 'quality' }))
-      // A district's own button: its start is already known.
-      setStartMode('quartier')
       onOpen()
     },
     [explorePlans, today, medianKm, easyPace, expanded, openUnitId, onOpen],
@@ -125,7 +121,6 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     closedOpener.current = generator?.opener ?? null
     setGenerator(null)
     setDrawn(null)
-    setStartMode('pick')
     setPicked(null)
     setMarking(false)
     if (back) onReturn(back)
@@ -140,7 +135,7 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     return opener
   }, [])
 
-  const mapPick = !generatorOpen ? null : avoid.marking ? avoid.mark : startMode === 'pick' ? setPicked : null
+  const mapPick = !generatorOpen ? null : avoid.marking ? avoid.mark : setPicked
 
   return {
     generator,
@@ -154,7 +149,6 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     drawn,
     setDrawn,
     start,
-    setStartMode,
     avoid,
     day,
     nextKind,

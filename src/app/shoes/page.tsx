@@ -1,4 +1,5 @@
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
+import { getActivities } from '@/application/usecases/GetActivities'
 import { getShoeComparison } from '@/application/usecases/GetShoeComparison'
 import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
@@ -36,6 +37,9 @@ export default async function ShoesPage() {
   const comparison = getShoeComparison()
   const listCheckedOn = shoes.length > 0 ? getOldShoeListDate() : null
   const defaultOptions = shoes.filter((shoe) => !shoe.retired).map(({ gearId, name }) => ({ gearId, name }))
+  // Rounded as each page shows it, so the gap is All time's total minus this one.
+  const shoeKm = Math.round(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0))
+  const withoutShoe = Math.round(getActivities().reduce((sum, a) => sum + a.distanceKm, 0)) - shoeKm
 
   return (
     <div className="space-y-6">
@@ -58,7 +62,7 @@ export default async function ShoesPage() {
           </a>
         }
       >
-        <p className="text-footnote text-muted-foreground">{t.shoes.tracked(formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)))}</p>
+        <p className="text-footnote text-muted-foreground">{t.shoes.tracked(formatKm(shoeKm), withoutShoe > 0 ? formatKm(withoutShoe) : null)}</p>
         {listCheckedOn && (
           <p className="text-footnote text-muted-foreground" data-testid="shoe-list-old">
             {t.shoes.listCheckedAt(formatDate(listCheckedOn))}

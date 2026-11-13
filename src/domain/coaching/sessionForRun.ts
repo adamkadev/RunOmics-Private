@@ -1,5 +1,6 @@
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { intendedType } from '@/lib/activityTitle'
+import { PLAN_MATCH_WINDOW_DAYS } from '@/domain/training/monthDays'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan, type WorkoutEvaluation, type WorkoutPrescription } from './types'
 
 type SessionPrescription = Pick<WorkoutPrescription, 'date' | 'type' | 'status'> & { title?: string }
@@ -45,6 +46,32 @@ export function sessionForRun<P extends SessionPrescription>(run: SessionRun, se
     ?? only(day.filter((p) => typeOf(p) === intended))
     ?? only(day.filter((p) => family(intended) !== null && family(typeOf(p)) === family(intended)))
     ?? (run.typeSource === 'runomics' ? only(day) : null)
+}
+
+const plusDays = (iso: string, days: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
+
+/** Plan counts a run on a day with no session as an unrun session's of the day before or after: it keeps that one's name. */
+export function plannedSessionForRun<P extends SessionPrescription>(
+  run: SessionRun,
+  sessions: readonly RunSession<P>[],
+  ran: (date: string) => boolean,
+): P | null {
+  const own = sessionForRun(run, sessions)
+  if (own) return own
+  const live = sessions.filter((s) => s.prescription.status !== 'cancelled')
+  const date = run.date.slice(0, 10)
+  if (live.some((s) => s.prescription.date === date)) return null
+  const intended = family(intendedType(run))
+  if (!intended) return null
+  for (let i = 1; i <= PLAN_MATCH_WINDOW_DAYS; i++) {
+    for (const day of [plusDays(date, -i), plusDays(date, i)]) {
+      if (ran(day)) continue
+      const unrun = live.filter((s) => s.activityId === null && s.prescription.date === day)
+      const match = only(unrun.filter((s) => family(COACHING_TO_ACTIVITY_TYPE[s.prescription.type]) === intended))
+      if (match) return match.prescription
+    }
+  }
+  return null
 }
 
 /** `plans` newest first; an older plan's session counts only on a day no newer plan's weeks cover. */

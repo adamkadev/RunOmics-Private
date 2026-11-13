@@ -7,8 +7,8 @@ import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
 import { pickDefined } from '@/components/pickDefined'
 import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
-import { activityTitle, intendedType } from '@/lib/activityTitle'
-import { sessionForRun } from '@/domain/coaching/sessionForRun'
+import { activityTitle, intendedType, sessionLabel } from '@/lib/activityTitle'
+import { plannedSessionForRun, type RunSession } from '@/domain/coaching/sessionForRun'
 
 /** Only the fields a client component reads: every field handed to it goes into the page payload, drawn or not. */
 const DETAIL_FIELDS = [
@@ -124,16 +124,31 @@ export function shownType(activity: Pick<Activity, 'type' | 'description'>, sess
   return session ? COACHING_TO_ACTIVITY_TYPE[session.type] : intendedType(activity)
 }
 
-export function sessionTypes(
-  workouts: readonly { prescription: WorkoutPrescription; activityId: string | null }[],
-  activities: readonly Pick<Activity, 'id' | 'date' | 'type' | 'description'>[],
-): Record<string, ActivityType> {
+type SessionRun = Pick<Activity, 'id' | 'date' | 'type' | 'description'>
+
+function runSessions(workouts: readonly RunSession[], activities: readonly SessionRun[]): [SessionRun, WorkoutPrescription | null][] {
+  const days = new Set(activities.map((activity) => activity.date.slice(0, 10)))
+  return activities.map((activity) => [activity, plannedSessionForRun(activity, workouts, (day) => days.has(day))])
+}
+
+export function sessionTypes(workouts: readonly RunSession[], activities: readonly SessionRun[]): Record<string, ActivityType> {
   const types: Record<string, ActivityType> = {}
-  for (const activity of activities) {
-    const type = shownType(activity, sessionForRun(activity, workouts))
+  for (const [activity, session] of runSessions(workouts, activities)) {
+    const type = shownType(activity, session)
     if (type !== activity.type) types[activity.id] = type
   }
   return types
+}
+
+/** Each run's session name where it differs from the run's own, so a row reads as its detail page and share card. */
+export function sessionNames(workouts: readonly RunSession[], activities: readonly SessionRun[]): Record<string, string> {
+  const names: Record<string, string> = {}
+  for (const [activity, session] of runSessions(workouts, activities)) {
+    if (!session) continue
+    const name = runLabel(activity, session)
+    if (name !== sessionLabel(activityTitle(activity))) names[activity.id] = name
+  }
+  return names
 }
 
 /** As Plan and Today write it: "Easy 63 min + 6 × 20s strides", not the watch's "Strides 6 x 20s". */
@@ -150,6 +165,11 @@ function sessionName(session: WorkoutPrescription): string {
 /** The session's name, where the coach set one, so the page's header agrees with its share card. */
 export function runName(activity: Pick<Activity, 'description' | 'date'>, session: WorkoutPrescription | null): string {
   return session ? sessionName(session) : activityTitle(activity)
+}
+
+/** The set alone, as a row, the header and the share card show it: the type is the dot beside it. */
+export function runLabel(activity: Pick<Activity, 'description' | 'date'>, session: WorkoutPrescription | null): string {
+  return sessionLabel(runName(activity, session))
 }
 
 /**

@@ -12,6 +12,9 @@ export function aLieu(name: string): string {
   return `${article[1]!.toLowerCase() === 'le' ? 'au' : 'aux'} ${article[2]}`
 }
 
+/** A sentence ending on an abbreviated month ("29 oct.") takes no second full stop. */
+const sentence = (text: string) => text.replace(/\.\.$/, '.')
+
 /** "+6" as "up 6", "−23" as "down 23", "0" as level. */
 function moveWords(delta: string, up: string, down: string, level: string): string {
   const sign = delta.charAt(0)
@@ -167,13 +170,15 @@ export const fr = {
     rangeLabel: 'Période',
     streakEyebrow: 'Série hebdomadaire',
     weeks: (weeks: number) => (weeks > 1 ? 'semaines' : 'semaine'),
-    streakRule: (target: number, best: number) => `${target}+ sorties par semaine · meilleure série ${best} semaine${best > 1 ? 's' : ''}`,
+    streakRule: (target: number) => `${target}+ sorties par semaine`,
+    bestStreak: 'Meilleure série',
     thisWeek: 'Cette semaine',
     thisWeekRuns: (runs: number) => `${runs} faite${runs > 1 ? 's' : ''}`,
     keeps: (runs: number) => `encore ${runs} pour la garder`,
     planned: (sessions: number) => `${sessions} prévue${sessions > 1 ? 's' : ''}`,
     thisWeekLabel: (runs: number, target: number) => `Cette semaine : ${runs} sortie${runs > 1 ? 's' : ''} sur ${target}`,
-    weeksOnTarget: 'semaines à l’objectif',
+    weeksOnTarget: 'à l’objectif',
+    weeksOf: (counted: number) => ` sur ${counted}`,
     runsPerWeek: 'sorties / semaine',
     runs: (runs: number) => (runs > 1 ? 'sorties' : 'sortie'),
     perWeek: 'Sorties par semaine',
@@ -299,7 +304,7 @@ export const fr = {
         button: 'Carte et filtres',
         buttonActive: (n: number) => `Carte et filtres, ${n} filtre${n > 1 ? 's' : ''} actif${n > 1 ? 's' : ''}`,
         title: 'Carte et filtres',
-        reset: 'Réinitialiser',
+        reset: 'Effacer',
         all: 'Tout',
         show: (n: number, place: string | null) => `Afficher ${n} sortie${n > 1 ? 's' : ''}${place ? ` ${aLieu(place)}` : ''}`,
         types: (n: number) => `${n} types`,
@@ -356,17 +361,16 @@ export const fr = {
       },
       explore: {
         back: 'Retour',
-        title: (name: string) => `Courir ${aLieu(name)}`,
+        title: (street: string | null) => (street ? `Départ : ${street}` : 'Départ du point choisi'),
+        titleWaiting: 'Choisir un départ',
         loop: 'Boucle',
+        loopOf: (km: string) => `Boucle · ${km}`,
         todaysPlan: 'Au programme',
         planFor: (day: string) => `Programme du ${day}`,
         usePlanDistance: (km: string) => `Reprendre la distance du programme, ${km}`,
         start: {
-          label: 'Départ',
-          modes: { pick: 'Sur la carte', quartier: 'Quartier' },
-          modesFull: { pick: 'Partir d’un point touché sur la carte', quartier: 'Partir du quartier' },
           pickPrompt: 'Touche la carte là où tu pars.',
-          line: (place: string, distance: string | null) => (distance ? `Départ : ${place} · à ${distance} de chez toi` : `Départ : ${place}`),
+          line: (distance: string | null) => (distance ? `À ${distance} de chez toi · touche la carte pour déplacer le départ` : 'Touche la carte pour déplacer le départ'),
         },
         useDistance: (km: string) => `Passer à ${km}`,
         distance: 'Distance',
@@ -726,7 +730,7 @@ export const fr = {
       },
       buildingBack: 'Reprise',
       formLater: 'Ta forme s’affichera après quelques semaines de sorties régulières.',
-      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimée` : state),
+      estimatedNote: 'Charge estimée',
       ctl: 'Condition',
       atl: 'Fatigue',
       // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
@@ -864,6 +868,7 @@ export const fr = {
         headline: {
           positive: 'Ta charge se transforme en vitesse.',
           positiveSteadyLoad: (last: string) => `La vitesse a progressé sur ${last}.`,
+          easyFaster: (s: number, within: string) => `Ton footing est ${s} s/km plus rapide ${within}.`,
           cautionLoadUp: (slipped: string, plural: boolean) => `La charge monte, mais ${slipped} ${plural ? 'ont' : 'a'} reculé.`,
           caution: (last: string) => `La vitesse a reculé sur ${last}.`,
           neutral: (last: string) => `La vitesse est stable sur ${last}.`,
@@ -905,7 +910,7 @@ export const fr = {
         efficiencyDown: (value: string, delta: string, within: string) => `Efficacité aérobie ${value} m par battement, ${delta} ${within} : moins de distance à chaque battement.`,
         efficiencyLevel: (value: string, ago: string) => `Efficacité aérobie ${value} m par battement, comme ${ago}.`,
         volume: (delta: string) => `${delta} km par rapport à la même date l’an dernier.`,
-        volumeSince: (delta: string, since: string) => `${delta} km par rapport à l’an dernier aux mêmes dates, depuis le ${since}.`,
+        volumeSince: (delta: string, since: string) => sentence(`${delta} km par rapport à l’an dernier aux mêmes dates, depuis le ${since}.`),
         volumeTab: {
           longRunOver: (n: number, of: number) => `Ta sortie longue a dépassé 35 % de sa semaine ${n} semaine${n > 1 ? 's' : ''} sur ${of}.`,
           underPlan: 'Reviens d’abord aux km prévus chaque semaine avant d’ajouter quoi que ce soit.',
@@ -914,9 +919,9 @@ export const fr = {
           avgRow: (km: string, n: number) => `${km} km par semaine en moyenne sur ${n} semaine${n > 1 ? 's' : ''} terminée${n > 1 ? 's' : ''}.`,
           onPlanRow: (hit: number, of: number) => `${hit} semaine${hit > 1 ? 's' : ''} planifiée${hit > 1 ? 's' : ''} sur ${of} à 90 % du plan ou plus.`,
           longRunRow: (n: number) => (n === 0 ? 'Aucune semaine avec une sortie longue au-delà de 35 %.' : `${n} semaine${n > 1 ? 's' : ''} avec une sortie longue au-delà de 35 %.`),
-          missedRow: (n: number, from: string, to: string) => `${n} séances prévues manquées entre le ${from} et le ${to}.`,
+          missedRow: (n: number, from: string, to: string) => sentence(`${n} séances prévues manquées entre le ${from} et le ${to}.`),
           missedRows: (n: number, stretches: number, from: string, to: string) =>
-            `${n} séances prévues manquées en ${stretches} périodes, la dernière entre le ${from} et le ${to}.`,
+            sentence(`${n} séances prévues manquées en ${stretches} périodes, la dernière entre le ${from} et le ${to}.`),
         },
         intensityTab: {
           inRange: (easy: number) => `Intensité dans la cible : ${easy} % du temps en facile.`,
@@ -954,6 +959,7 @@ export const fr = {
           side === 'high' ? `au-dessus de la base ${lo}–${hi}` : side === 'low' ? `sous la base ${lo}–${hi}` : `dans la base ${lo}–${hi}`,
         ok: 'OK',
         check: 'À surveiller',
+        short: 'Court',
       },
       loadTrend: {
         aboutEstimated: "Ta charge aiguë : les 7 derniers jours de charge, calculée par l’app à partir de la fréquence cardiaque et de la durée de chaque sortie puisque ta montre n’en envoie pas, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
@@ -970,7 +976,7 @@ export const fr = {
         above: ['La charge est ', 'au-dessus de ta zone sûre', '. Lève le pied 3 à 4 jours.'] as [string, string, string],
         below: ['La charge est ', 'sous ta zone sûre', '. La condition va commencer à baisser.'] as [string, string, string],
         wentOver: (days: number, last: string) =>
-          days === 1 ? ` Plus tôt sur la période, un jour au-dessus, le ${last}.` : ` Plus tôt sur la période, ${days} jours au-dessus, le dernier le ${last}.`,
+          sentence(days === 1 ? ` Plus tôt sur la période, un jour au-dessus, le ${last}.` : ` Plus tôt sur la période, ${days} jours au-dessus, le dernier le ${last}.`),
       },
       status: {
         title: "Statut d’entraînement",
@@ -994,7 +1000,6 @@ export const fr = {
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
-        flat: (signed: string) => `${signed} · stable`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {
@@ -1048,9 +1053,9 @@ export const fr = {
       paceCurve: {
         title: 'Courbe allure-durée',
         caption: 'meilleure allure pour chaque durée',
-        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d’avant, lue dans l’enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D' : l’allure la plus rapide que tu tiens sans t’épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D' est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
+        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d’avant, lue dans l’enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D′ : l’allure la plus rapide que tu tiens sans t’épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D′ est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
         cs: 'Vitesse critique',
-        dPrime: (m: number) => `D' ${m} m`,
+        dPrime: (m: number) => `D′ ${m} m`,
         noThreshold: 'Ajustée sur tes meilleurs efforts de 3 à 20 min : à peu près l’allure que tu tiendrais 30 à 40 minutes.',
         level: (pace: string) => ['Au niveau de ton allure seuil, ', pace, '.'] as [string, string, string],
         faster: (s: number, pace: string) => [`${s} s/km plus rapide que ton allure seuil, `, pace, ', là où se situe d’habitude la vitesse critique.'] as [string, string, string],
@@ -1291,7 +1296,7 @@ export const fr = {
         dark: 'Sombre',
         light: 'Clair',
       },
-      inZone: (zone: number) => `en Z${zone}`,
+      inZone: (zone: string) => `en ${zone}`,
       // L’en-tête des zones d’une sortie facile sans verdict rédigé : « 100 % facile · Z1–Z2 ».
       easyZones: (from: number, to: number) => `facile · Z${from}–Z${to}`,
       noZones: 'Pas de zones cardiaques pour cette sortie',
@@ -1342,8 +1347,10 @@ export const fr = {
       headline: {
         positive: (type: string) => `Sortie ${type} réussie`,
         neutral: (type: string) => `Sortie ${type} enregistrée`,
-        caution: (type: string) => `Sortie ${type} exigeante`,
+        // The type's own gender: "Footing exigeant", "Course exigeante".
+        caution: (type: string) => `${type} ${/^(?:course|anaérobie)$/i.test(type) ? 'exigeante' : 'exigeant'}`,
       },
+      easyType: 'footing',
     },
     effort: {
       label: 'Effort',
@@ -1647,14 +1654,15 @@ export const fr = {
   },
 
   homeRuns: {
-    title: 'Sorties depuis la maison',
+    title: 'Depuis la maison',
     pageTitle: 'Depuis la maison',
     back: 'Progression',
     tileDetail: (runs: number, since: string) => `${runs} sorties depuis le point de départ habituel, depuis ${since}, rejouées ensemble`,
-    subtitle: (runs: number, since: string) => `${runs} sorties depuis un même départ · depuis ${since}`,
+    subtitle: (runs: number, since: string, place: string | null) => (place ? `${runs} sorties au départ de ${place} · depuis ${since}` : `${runs} sorties · depuis ${since}`),
     periods: 'Sorties affichées',
     spots: 'Points de départ',
     spot: (runs: number) => `${runs} sorties`,
+    spotNamed: (place: string, runs: number) => `${place} · ${runs}`,
     periodAll: 'Toutes',
     period: (label: string, runs: number) => `${label} · ${runs}`,
     running: (n: number, of: number) => `${n} sur ${of} encore dehors`,
@@ -1705,7 +1713,7 @@ export const fr = {
       saved: 'Enregistré. Le kilométrage suit après la prochaine synchro.',
     },
     listCheckedAt: (date: string) => `Liste des chaussures mise à jour depuis Garmin le ${date}`,
-    tracked: (km: string) => `${km} km au compteur`,
+    tracked: (km: string, without: string | null) => (without ? `${km} km sur tes chaussures (${without} km sans chaussure)` : `${km} km sur tes chaussures`),
     addLabel: 'Ajouter une paire dans l’app de ta montre',
     edit: 'Modifier la paire',
     editLabel: 'Modifier dans l’app de ta montre',
@@ -1820,11 +1828,12 @@ export const fr = {
       onPaceFor: (km: string) => `à ce rythme ${km} km`,
       better: (n: number) => `${n} en progrès`,
       checkpointWeek: (week: number) => `sem. ${week} sur 12`,
-      checkpointLine: (week: number, date: string) => `sem. ${week} sur 12 · ${date}`,
+      checkpointLine: (week: number, date: string) => `sem. ${week} sur 12 · bilan ${date}`,
       newestRecord: (date: string) => `le plus récent · ${date}`,
       homeRunsDetail: (runs: string, date: string) => `${runs} · dernière le ${date}`,
       comebackValue: (minutes: number) => `${minutes} min sans marcher`,
       comebackNext: (minutes: number) => `prochaine étape : ${minutes} min`,
+      comebackDone: 'étape atteinte',
       streakValue: (weeks: number) => `${weeks} sem. d’affilée`,
       noStreakShort: 'pas encore de série',
       recordCount: (n: number) => `${n} distance${n > 1 ? 's' : ''}`,
@@ -2095,7 +2104,7 @@ export const fr = {
     split: 'Passage',
     pace: 'Allure',
     finish: 'Arrivée',
-    title: 'Prochaine compétition',
+    title: 'Prochaine course',
     noneTitle: 'Aucune compétition prévue',
     none: 'Ajoute-la dans Garmin Connect ou ici : ta prédiction et ton allure cible apparaîtront après la synchro.',
     formTitle: 'Forme le jour de la course',
@@ -2118,16 +2127,14 @@ export const fr = {
   checkpoint: {
     title: 'Bilan 12 semaines',
     pageTitle: 'Bilan',
-    cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: '12 dernières semaines',
-    againstPrevious: (range: string) => `contre le cycle précédent · ${range}`,
     againstBefore: (range: string) => `contre les 12 semaines d’avant · ${range}`,
-    weekOf: (week: number) => `Cycle · semaine ${week} sur 12`,
-    complete: (n: number) => `Cycle ${n} terminé`,
+    weekOf: (week: number) => `Sem. ${week} sur 12`,
+    complete: '12 semaines terminées',
     dueIn: (date: string, days: number) =>
       days <= 0 ? 'Bilan aujourd’hui' : days === 1 ? 'Bilan demain' : days < 14 ? `Bilan ${date} · dans ${days} jours` : `Bilan ${date} · dans ${Math.round(days / 7)} semaines`,
     reached: (date: string) => `Bilan ${date}`,
-    nextBegan: (n: number, date: string) => `Le cycle ${n} a commencé ${date} ; il prend la place de celui-ci la semaine prochaine.`,
+    nextBegan: (date: string) => `Les 12 semaines suivantes ont commencé ${date} ; elles prennent le relais ici la semaine prochaine.`,
     rolling: 'Aucun plan du coach pour compter les cycles : tes 12 dernières semaines complètes face aux 12 d’avant.',
     tooEarly: 'Aucune semaine de ce cycle n’est encore terminée : les chiffres par semaine arrivent lundi.',
     better: (n: number) => `${n} en progrès`,
@@ -2138,7 +2145,7 @@ export const fr = {
     vs: (value: string) => `contre ${value}`,
     notEnough: 'Pas assez de données',
     nothingBefore: 'premier cycle',
-    startingPoint: (date: string) => `Ton point de départ : on comparera ces valeurs au bilan du ${date}.`,
+    startingPoint: 'Ton point de départ : on comparera ces valeurs au bilan.',
     lastReading: (date: string) => `Dernière mesure ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min en ${sessions} séance${sessions > 1 ? 's' : ''} pour l’instant`,
     noCheck: 'Pas de test 5 km ce cycle',
@@ -2183,8 +2190,8 @@ export const fr = {
     },
     units: { runs: 'sorties', perBeat: 'm par battement' },
     tile: {
-      inProgress: (week: number, date: string) => `Cycle · semaine ${week} sur 12 · bilan ${date}`,
-      complete: (n: number) => `Cycle ${n} terminé : place au bilan`,
+      inProgress: (week: number, date: string) => `Sem. ${week} sur 12 · bilan ${date}`,
+      complete: '12 semaines terminées : place au bilan',
       rolling: 'Tes 12 dernières semaines face aux 12 d’avant',
     },
   },
@@ -2303,7 +2310,7 @@ export const fr = {
     } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Bloc', after: `sur ${total}` }),
-      cycle: (week: number, date: string) => `Cycle ${week} sur 12 · bilan ${date}`,
+      checkpoint: (week: number, date: string) => `Sem. ${week} sur 12 · bilan ${date}`,
       leadIn: 'Semaine de mise en route',
       generalShort: 'Prépa générale',
       raceInWeeks: (race: string, weeks: number) => `${race} dans ${weeks} sem.`,
@@ -2319,8 +2326,9 @@ export const fr = {
       phaseEnds: (phase: string, date: string) => `${phase} · fin le ${date}`,
       phaseWeeks: (phase: string, n: number) => `${phase} · ${n} semaine${n > 1 ? 's' : ''}`,
       easyLong: 'Footing / Sortie longue',
-      kmOf: (ran: string, plan: string) => `${ran} sur ${plan} km prévus`,
-      planCovers: (from: string, to: string) => `du ${from} au ${to}`,
+      runGoal: (ran: string, goal: string) => `${ran} km courus · objectif ${goal}`,
+      runPlanned: (ran: string, plan: string) => `${ran} km courus · ${plan} prévus`,
+      planCovers: (from: string, to: string) => `Plan du ${from} au ${to}`,
       monthTotal: (km: string) => `${km} km ce mois-ci`,
       plannedWord: 'prévu',
       plannedKm: (km: string) => `${km} km prévus`,

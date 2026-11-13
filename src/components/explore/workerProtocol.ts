@@ -51,12 +51,6 @@ export interface ScoreRoutesRequest {
   context?: RouteContext
 }
 
-/** No home: the start is worked out from the area file alone. */
-export interface RouteStartRequest {
-  unitId: string
-  avoid?: AvoidCircle[]
-}
-
 /** Home comes in as for coverage: the plan picks no via near it. */
 export interface RoutePlanRequest {
   unitId: string
@@ -73,7 +67,6 @@ export type ExploreRequestBody =
   | ({ type: 'addTracks'; areaKey: string } & TrackBuffers)
   | ({ type: 'coverage'; areaKey: string } & CoverageOptions)
   | ({ type: 'scoreRoutes'; areaKey: string } & ScoreRoutesRequest)
-  | ({ type: 'routeStart'; areaKey: string } & RouteStartRequest)
   | ({ type: 'routePlan'; areaKey: string } & RoutePlanRequest)
 
 export type ExploreRequestType = ExploreRequestBody['type']
@@ -94,8 +87,6 @@ export interface ExploreResults {
   coverage: AreaCoverage
   /** Best first. */
   scoreRoutes: ScoredRoute[]
-  /** A public point inside the unit, never home. */
-  routeStart: LonLat | null
   routePlan: RoutePlan | null
 }
 

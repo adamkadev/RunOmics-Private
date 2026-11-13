@@ -162,7 +162,7 @@ export function SegmentedTabs<T extends string | number>({
   )
 }
 
-const FADE = '24px'
+const FADE = '40px'
 
 function ScrollingTabs({
   listProps,

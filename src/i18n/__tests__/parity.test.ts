@@ -46,6 +46,10 @@ describe('French words a French athlete reads', () => {
   it('names the check-in mood in French', () => {
     expect(fr.wellness.checkIn.scores.mood.label).toBe('Humeur')
   })
+
+  it('ends a sentence on an abbreviated month with one full stop', () => {
+    expect(fr.analytics.cards.loadTrend.wentOver(3, '29 oct.')).toBe(' Plus tôt sur la période, 3 jours au-dessus, le dernier le 29 oct.')
+  })
 })
 
 describe('French copy', () => {
@@ -105,7 +109,7 @@ describe('French design review copy', () => {
   it('writes the plan phase card, the week line and the race tile', () => {
     expect(fr.plan.phase.raceInWeeks('Semi', 29)).toBe('Semi dans 29 sem.')
     expect(fr.plan.phase.raceInDays('Semi', 0)).toBe('Semi aujourd’hui')
-    expect(fr.plan.phase.cycle(5, '3 janv.')).toBe('Cycle 5 sur 12 · bilan 3 janv.')
+    expect(fr.plan.phase.checkpoint(5, '3 janv.')).toBe('Sem. 5 sur 12 · bilan 3 janv.')
     expect(fr.profile.hub.inDays(1)).toBe('demain')
     expect(fr.profile.hub.inDays(155)).toBe('dans 155 jours')
   })

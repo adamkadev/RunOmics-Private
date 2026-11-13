@@ -2,7 +2,7 @@ import type { Activity, ActivityType } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { formatClock, formatDate, formatDurationRounded, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { activityTitle, namedType } from '@/lib/activityTitle'
+import { activityTitle, namedType, sessionLabel } from '@/lib/activityTitle'
 
 export type ShareActivity = Pick<
   Activity,
@@ -47,9 +47,13 @@ function nameParts(activity: ShareActivity): { title: string; type: string | nul
     const set = typed ? typed[2]!.trim() : SET.test(name) ? name : `${reps.count} × ${repLength(reps.repSeconds)}`
     return { title: set, type: activity.type ? t.activityTypes[activity.type] : null }
   }
-  return typed ? { title: typed[2]!.trim(), type: typed[1]!.trim() } : { title: name, type: null }
+  if (typed) return { title: typed[2]!.trim(), type: typed[1]!.trim() }
+  // "Easy · 6 km" reads "Easy run": the plan's distance goes, a name it would cut to a bare set stays whole.
+  const label = sessionLabel(name)
+  return { title: /^\d/.test(label) ? name : label, type: null }
 }
 
+/** "Easy run + 6 strides": the distance is in the stats under it. */
 export function shareCardTitle(activity: ShareActivity): string {
   return nameParts(activity).title
 }
@@ -281,20 +285,21 @@ export function shareZones(activity: ShareActivity): ShareZones | null {
     { zone: 2, from: 1, percent: percents[0]! + percents[1]! },
     ...percents.slice(2).map((percent, i) => ({ zone: i + 3, percent })),
   ].filter((row) => row.percent > 0))
+  // A zone the legend merged with a sliver leads as that row, so the hero and the legend agree: "51% in Z4–Z5".
+  const inZone = (zone: number): ShareZones['headline'] => {
+    const row = rows.find((r) => r.from !== undefined && r.from <= zone && zone <= r.zone)
+    return row ? { percent: row.percent, label: s.inZone(zoneName(row)) } : { percent: percents[zone - 1]!, label: s.inZone(`Z${zone}`) }
+  }
   const zones = headlineZones(activity.type)
   // An easy run that spent most of its time harder leads with that zone, not with a small "32% easy".
   const harder = [2, 3, 4].reduce((top, i) => (percents[i]! > percents[top]! ? i : top), 2)
-  if (zones?.[0] === 1 && percents[harder]! > percents[0]! + percents[1]!) {
-    return { rows, headline: { percent: percents[harder]!, label: s.inZone(harder + 1) } }
-  }
+  if (zones?.[0] === 1 && percents[harder]! > percents[0]! + percents[1]!) return { rows, headline: inZone(harder + 1) }
   if (zones) {
     const percent = zones.reduce((sum, z) => sum + (percents[z - 1] ?? 0), 0)
-    const label = zones.length > 1 ? s.easyZones(zones[0]!, zones[zones.length - 1]!) : s.inZone(zones[0]!)
-    if (percent > 0) return { rows, headline: { percent, label } }
+    if (percent > 0) return { rows, headline: zones.length > 1 ? { percent, label: s.easyZones(zones[0]!, zones[zones.length - 1]!) } : inZone(zones[0]!) }
     // Never a 0% hero: a session that missed its zone leads with the hardest one it reached.
     const reached = percents.slice(0, zones[0]! - 1).findLastIndex((p) => p > 0)
-    if (reached >= 0) return { rows, headline: { percent: percents[reached]!, label: s.inZone(reached + 1) } }
+    if (reached >= 0) return { rows, headline: inZone(reached + 1) }
   }
-  const main = percents.indexOf(Math.max(...percents))
-  return { rows, headline: { percent: percents[main]!, label: s.inZone(main + 1) } }
+  return { rows, headline: inZone(percents.indexOf(Math.max(...percents)) + 1) }
 }

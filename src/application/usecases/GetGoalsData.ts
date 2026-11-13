@@ -144,6 +144,13 @@ export function plannedKmByMonth(planned: readonly { date: string; distanceM?: n
   return new Map([...byMonth].map(([key, km]) => [key, round(km, 1)]))
 }
 
+const monthKey = (year: number, month: number) => `${year}-${String(month).padStart(2, '0')}`
+
+// A month's target is what the plan asks of it, so Goals and Plan agree; a month the plan does not cover keeps a twelfth of the year.
+function monthTargetKm(annualKm: number, key: string, planned: PlannedKmByMonth): number {
+  return planned.get(key) ?? round(annualKm / 12, 1)
+}
+
 export function computeMonthlyGoals(
   activities: Activity[],
   year: number,
@@ -151,13 +158,9 @@ export function computeMonthlyGoals(
   now = new Date(),
   planned: PlannedKmByMonth = new Map(),
 ): MonthGoal[] {
-  // A month's target is what the plan asks of it, so Goals and Plan agree; a
-  // month the plan does not cover keeps a twelfth of the year.
-  const evenShare = round(goals.annualDistanceKm / 12, 1)
-
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1
-    const targetKm = planned.get(`${year}-${String(month).padStart(2, '0')}`) ?? evenShare
+    const targetKm = monthTargetKm(goals.annualDistanceKm, monthKey(year, month), planned)
     const monthStart = new Date(year, month - 1, 1)
     const monthEnd = new Date(year, month, 1)
     const daysInMonth = Math.round((monthEnd.getTime() - monthStart.getTime()) / DAY_MS)
@@ -194,6 +197,19 @@ export function computeMonthlyGoals(
 
     return { month, targetKm, actualKm, status, progress }
   })
+}
+
+/** Each "YYYY-MM" of a year with a distance goal, to the target the Goals page sets it. */
+export async function getMonthKmGoals(): Promise<Record<string, number>> {
+  const planned = plannedKmByMonth(await getPlannedWorkouts())
+  return Object.fromEntries(
+    getGoalYears()
+      .filter((goals) => goals.annualDistanceKm > 0)
+      .flatMap((goals) => Array.from({ length: 12 }, (_, i) => {
+        const key = monthKey(goals.year, i + 1)
+        return [key, monthTargetKm(goals.annualDistanceKm, key, planned)]
+      })),
+  )
 }
 
 export function nextRaceAcrossYears(

@@ -38,8 +38,8 @@ describe('checkpointView', () => {
     expect(rows.restingHr!.missing).toBe(t.checkpoint.nothingBefore)
   })
 
-  it('names the cycle compared with, its dates with their year, and leaves this cycle’s dates to the status card', () => {
-    expect(view.range).toBe(t.checkpoint.againstPrevious(formatDateRange(DATA.cycle.previous.start, DATA.cycle.previous.end, { year: 'always' })))
+  it('names the 12 weeks compared with, their dates with their year, and leaves this cycle’s dates to the status card', () => {
+    expect(view.range).toBe(t.checkpoint.againstBefore(formatDateRange(DATA.cycle.previous.start, DATA.cycle.previous.end, { year: 'always' })))
   })
 
   it('says the cycle is new and gives no comparison line when there is nothing before it', () => {
@@ -61,6 +61,6 @@ describe('checkpointView', () => {
     const all = start.sections.flatMap((section) => section.rows)
     expect(start.summary).toBeNull()
     expect(all.every((row) => row.previous === null && row.delta === null && row.missing === null && row.current !== null)).toBe(true)
-    expect(start.status.note).toBe(t.checkpoint.startingPoint(formatDate(DATA.cycle.current.end)))
+    expect(start.status.note).toBe(t.checkpoint.startingPoint)
   })
 })

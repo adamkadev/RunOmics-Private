@@ -6,6 +6,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import { dailyTrimpByDate } from './GetTrainingLoad'
 import type { TrainingStatus } from './GetTrainingStatus'
 import { getLoadSeries } from './GetLoadRecovery'
+import type { LoadState } from '@/domain/training/readiness'
 import { latestLoadPair, loadRatio, safeRange, type LoadPair } from '@/domain/training/loadTrend'
 
 export const RECENT_LOAD_DAYS = 7
@@ -29,7 +30,7 @@ export interface LoadReading {
   acute: number
   lo: number
   hi: number
-  state: 'below' | 'in' | 'above'
+  state: LoadState
   ratio: number
   /** The app's own arithmetic, for a watch that sends no loads: said so on the card. */
   estimated: boolean

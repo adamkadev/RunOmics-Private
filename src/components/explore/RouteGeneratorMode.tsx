@@ -7,7 +7,7 @@ import { t } from '@/i18n'
 import type { SessionDay } from '@/domain/explore/climbBudget'
 import { runDarkness } from '@/domain/explore/daylight'
 import type { ExploreAreaRef, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
-import { formatWeekday } from '@/lib/formatters'
+import { formatDistance, formatWeekday } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
@@ -17,7 +17,7 @@ import { planRouteKm, type ExploreFrom } from './exploreHref'
 import { RouteGeneratorPanel } from './RouteGeneratorPanel'
 import { generatorBack, routeStats, runStart, type ExplorePlan } from './routeGenerator'
 import { routeGpxFile } from './routeGpx'
-import { startLineOf, type RouteStartMode, type RouteStartState } from './routeStart'
+import { startLineOf, startTitleOf, type RouteStartState } from './routeStart'
 import type { AvoidSpots } from './useAvoidSpots'
 import { useRouteGenerator } from './useRouteGenerator'
 import type { LonLat } from './workerProtocol'
@@ -55,7 +55,6 @@ export interface RouteGeneratorModeProps {
   onPrefsChange: (prefs: RoutePreferences) => void
   /** The parent owns it: the map draws the start and takes the tap that picks one. */
   start: RouteStartState
-  onStartModeChange: (mode: RouteStartMode) => void
   /** The session the loop is for and whether a quality one follows it. */
   day: SessionDay
   /** The kind of the quality session the next day, "Threshold", or null. */
@@ -90,7 +89,6 @@ export function RouteGeneratorMode({
   prefs,
   onPrefsChange,
   start,
-  onStartModeChange,
   day,
   nextKind = null,
   avoid,
@@ -158,8 +156,7 @@ export function RouteGeneratorMode({
     if (backAction.kind === 'back') router.back()
     else if (backAction.kind === 'push') router.push(backAction.href)
   }
-  const street = useStartStreet(start.mode === 'pick' ? start.origin : null)
-  const startLine = startLineOf(start, target, street, home)
+  const street = useStartStreet(start.origin)
 
   const gpxFile = () =>
     route && target
@@ -176,22 +173,23 @@ export function RouteGeneratorMode({
             <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
           </button>
         )}
-        <Glass data-testid="route-generator-pill" className="flex h-11 min-w-0 flex-1 items-center justify-center px-4 text-[16px] font-semibold leading-5 text-foreground">
-          {e.loop}
-        </Glass>
+        {drawn && (
+          <Glass data-testid="route-generator-pill" className="flex h-11 min-w-0 flex-1 items-center justify-center px-4 text-[16px] font-semibold leading-5 text-foreground">
+            <span className="truncate">{e.loopOf(`${formatDistance(drawn.candidate.distanceM / 1000)} ${t.units.km}`)}</span>
+          </Glass>
+        )}
       </div>
 
       <div className="pointer-events-none absolute inset-x-[var(--sheet-inset)] bottom-[var(--sheet-inset)] z-40 mx-auto flex max-w-[420px] flex-col items-end gap-2">
         <MapAttribution className="pointer-events-auto mr-3" extraCredits={allCredits} />
         <RouteGeneratorPanel
           ref={panelRef}
-          unitName={target?.name ?? null}
+          title={startTitleOf(start, street)}
           distanceKm={distanceKm}
           onDistanceChange={onDistanceChange}
           plan={plan ? { heading: !today || plan.date === today ? e.todaysPlan : e.planFor(formatWeekday(plan.date, true)), label: plan.label, km: planRouteKm(plan.distanceM) } : null}
           start={start}
-          startLine={startLine}
-          onStartModeChange={onStartModeChange}
+          startLine={startLineOf(start, home)}
           day={day}
           nextKind={nextKind}
           darkness={darkness}

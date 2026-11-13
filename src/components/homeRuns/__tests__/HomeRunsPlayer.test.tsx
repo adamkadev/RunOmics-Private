@@ -26,6 +26,7 @@ const spot: HomeRunSpot = {
   firstDate: '2026-01-01',
   lastDate: '2026-01-01',
   totalKm: 2,
+  place: null,
 }
 
 describe('HomeRunsPlayer video', () => {
@@ -84,12 +85,14 @@ describe('homeRunPeriods', () => {
     expect(screen.getByTestId('home-runs-canvas')).toHaveAttribute('aria-label', t.homeRuns.canvasLabel(25))
   })
 
-  it('offers the other start points under the periods, and opens one from the link', async () => {
+  it('names each start point by its town above the periods, and opens one from the link', async () => {
     window.history.replaceState(null, '', '/home-runs')
-    const other = { ...spot, runs: runs.slice(0, 2) }
-    render(<HomeRunsPlayer spots={[{ ...spot, runs }, other]} today="2026-11-13" />)
+    const other = { ...spot, runs: runs.slice(0, 2), place: 'Bravo' }
+    render(<HomeRunsPlayer spots={[{ ...spot, runs, place: 'Alpha' }, other]} today="2026-11-13" />)
 
-    const second = screen.getByRole('button', { name: t.homeRuns.spot(2) })
+    expect(screen.getByTestId('home-runs-spots').compareDocumentPosition(screen.getByTestId('home-runs-periods'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(screen.getByRole('button', { name: t.homeRuns.spotNamed('Alpha', 95) })).toHaveAttribute('aria-pressed', 'true')
+    const second = screen.getByRole('button', { name: t.homeRuns.spotNamed('Bravo', 2) })
     await userEvent.click(second)
     expect(second).toHaveAttribute('aria-pressed', 'true')
     expect(window.location.search).toBe('?start=2')

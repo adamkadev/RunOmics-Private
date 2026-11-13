@@ -46,7 +46,9 @@ describe('RecordsLeaderboard', () => {
   it('dates every row with its year', () => {
     render(<RecordsLeaderboard records={RECORDS} topEfforts={TOP} predictions={PREDICTIONS} />)
 
-    expect(screen.getAllByText(`${formatDate('2026-06-16', { style: 'bare', year: 'always' })} ·`, { exact: false })).toHaveLength(3)
+    const dates = screen.getAllByText(formatDate('2026-06-16', { style: 'bare', year: 'always' }))
+    expect(dates).toHaveLength(3)
+    expect(dates.every((date) => date.className.includes('whitespace-nowrap'))).toBe(true)
   })
 
   it('leaves out the prediction and gap columns when no distance has a prediction', () => {

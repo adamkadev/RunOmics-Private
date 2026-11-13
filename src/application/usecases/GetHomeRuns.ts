@@ -1,7 +1,10 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity } from '@/domain/activity/types'
 import { homeSpots, pointSeconds, thinIndices } from '@/domain/activity/homeRuns'
+import { parseAreaFile } from '@/domain/explore/areaFile'
+import { inBBox, pointInGeometry } from '@/domain/explore/geometry'
 import { encodeIntegers, encodePolyline } from '@/lib/polyline'
+import { getExploreAreaFile, getExploreAreas } from './GetExploreAreas'
 
 /** The original replay's radius: a start across the street still counts as home. */
 export const START_RADIUS_M = 200
@@ -28,6 +31,8 @@ export interface HomeRunSpot {
   firstDate: string
   lastDate: string
   totalKm: number
+  /** The town the start sits in, or its district when another home shares the town; null outside every area. */
+  place: string | null
 }
 
 export interface HomeRunsSummary {
@@ -39,7 +44,7 @@ export interface HomeRunsSummary {
 }
 
 interface Built {
-  spots: { activities: Activity[] }[]
+  spots: { activities: Activity[]; center: [number, number] }[]
 }
 
 let cache: { source: Activity[]; built: Built } | null = null
@@ -52,6 +57,7 @@ function build(): Built {
     .slice(0, MAX_SPOTS)
     .map((spot) => ({
       activities: spot.members.map((i) => runs[i]!).sort((a, b) => a.date.localeCompare(b.date)),
+      center: spot.center,
     }))
   const built = { spots }
   cache = { source, built }
@@ -76,13 +82,32 @@ function homeRun(a: Activity): HomeRun {
   }
 }
 
+function placeAt([lon, lat]: [number, number]): { commune: string; district: string } | null {
+  for (const area of getExploreAreas()) {
+    if (!inBBox(lon, lat, area.bbox)) continue
+    const read = getExploreAreaFile(area.id)
+    const file = read ? parseAreaFile(JSON.parse(read.body)) : null
+    const unit = file?.features.find((feature) => pointInGeometry(lon, lat, feature.geometry))
+    if (unit) return { commune: unit.properties.commune, district: unit.properties.name }
+  }
+  return null
+}
+
 export function getHomeRuns(): HomeRunSpot[] {
-  return build().spots.map(({ activities }) => ({
-    runs: activities.map(homeRun),
-    firstDate: activities[0]!.date,
-    lastDate: activities[activities.length - 1]!.date,
-    totalKm: Math.round(activities.reduce((sum, a) => sum + a.distanceKm, 0)),
-  }))
+  const spots = build().spots
+  const places = spots.map(({ center }) => placeAt(center))
+  // The town tells the homes apart; two homes in the same town fall back to their districts.
+  const shared = (commune: string) => places.filter((p) => p?.commune === commune).length > 1
+  return spots.map(({ activities }, i) => {
+    const place = places[i]
+    return {
+      runs: activities.map(homeRun),
+      firstDate: activities[0]!.date,
+      lastDate: activities[activities.length - 1]!.date,
+      totalKm: Math.round(activities.reduce((sum, a) => sum + a.distanceKm, 0)),
+      place: place ? (shared(place.commune) ? place.district : place.commune) : null,
+    }
+  })
 }
 
 function previewPath(activities: readonly Activity[]): string {

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { formatDate, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { zoneColor, type SessionZone } from '@/lib/colors'
+import { hrZoneColor, type SessionZone } from '@/lib/colors'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, Sentence, THIS_WEEK_BORDER } from './AnalyticsKit'
 import { easyHardView, qualityView, smooth, zonesView, type PlanWeekInput, type QualityDot, type WeekRow } from './analyticsView'
@@ -17,8 +17,8 @@ const hours = (sec: number) => formatKm(sec / 3600, 1)
 const partTime = (sec: number) => (sec < 3600 ? `${Math.round(sec / 60)} ${t.units.min}` : t.analytics.cards.period.hours(hours(sec)))
 const PART_COLUMNS = ['grid-cols-1', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3']
 
-/** Heart-rate zones are categories: the one zone scale, Z1 to Z5. */
-const ZONE_COLOR = ([1, 2, 3, 4, 5] as SessionZone[]).map(zoneColor)
+/** Heart-rate zones are categories, Z3 in the moderate grey-blue of Easy vs hard. */
+const ZONE_COLOR = ([1, 2, 3, 4, 5] as SessionZone[]).map(hrZoneColor)
 
 const EASY_TARGET_PCT = 80
 
@@ -29,7 +29,7 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
   const status = view.status === 'inRange' ? s.inRange : view.status === 'tooModerate' ? s.tooModerate : s.tooHard
   const parts = [
     { label: s.easy, sec: view.easySec, pct: view.easyPct, color: ZONE_COLOR[1]! },
-    { label: s.moderate, sec: view.moderateSec, pct: view.moderatePct, color: 'var(--zone-moderate)' },
+    { label: s.moderate, sec: view.moderateSec, pct: view.moderatePct, color: ZONE_COLOR[2]! },
     { label: s.hard, sec: view.hardSec, pct: view.hardPct, color: ZONE_COLOR[3]! },
   ]
   const shown = parts.filter((p) => p.sec > 0)
