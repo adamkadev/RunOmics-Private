@@ -299,7 +299,7 @@ export const fr = {
         button: 'Carte et filtres',
         buttonActive: (n: number) => `Carte et filtres, ${n} filtre${n > 1 ? 's' : ''} actif${n > 1 ? 's' : ''}`,
         title: 'Carte et filtres',
-        reset: 'Réinitialiser',
+        reset: 'Effacer',
         all: 'Tout',
         show: (n: number, place: string | null) => `Afficher ${n} sortie${n > 1 ? 's' : ''}${place ? ` ${aLieu(place)}` : ''}`,
         types: (n: number) => `${n} types`,
