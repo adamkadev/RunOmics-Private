@@ -57,6 +57,14 @@ describe('RecordsLeaderboard', () => {
     expect(screen.queryAllByTestId('prediction-gap')).toHaveLength(0)
   })
 
+  it('leaves them out too when the only predictions are for distances with no record yet', () => {
+    const missing = { ...record('10k', '10K', 0), seconds: null }
+    render(<RecordsLeaderboard records={[RECORDS[0]!, missing]} topEfforts={TOP} predictions={[prediction('10k', 2700)]} />)
+
+    expect(screen.queryByText(t.records.cols.predicted)).toBeNull()
+    expect(screen.queryByText(t.records.cols.gap)).toBeNull()
+  })
+
   it('opens a distance with more than one effort into its top five, medalled and linked', () => {
     render(<RecordsLeaderboard records={RECORDS} topEfforts={TOP} predictions={PREDICTIONS} />)
 

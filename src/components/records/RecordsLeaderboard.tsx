@@ -60,7 +60,8 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
   const missing = ranked.filter((r) => r.seconds === null)
   const missingText = t.records.missing(missing.map((r) => r.label), missing.some((r) => predictionByKey.has(r.key)))
 
-  const predicted = ranked.some((r) => predictionByKey.has(r.key))
+  // Only the rows drawn: a prediction for a distance with no record yet left two empty columns.
+  const predicted = ranked.some((r) => r.seconds !== null && predictionByKey.has(r.key))
   const grid = predicted ? ROW_GRID : ROW_GRID_NO_PREDICTION
 
   const toggle = (key: string) => {

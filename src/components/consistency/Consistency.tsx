@@ -281,7 +281,8 @@ function RunningWeek({ view }: { view: ConsistencyView }) {
           const stub = weeks === 0
           return (
             <li key={i} className="flex flex-col items-center gap-[5px]" aria-label={c.weekdayLabel(weekdayName(i), weeks)} data-testid="weekday">
-              <span aria-hidden className="text-[11px] font-semibold tabular-nums text-foreground">{weeks}</span>
+              {/* An empty day is its grey stub alone: no "0" over it. */}
+              <span aria-hidden className="min-h-[1lh] text-[11px] font-semibold tabular-nums text-foreground">{stub ? '' : weeks}</span>
               <span
                 aria-hidden
                 data-testid="weekday-bar"
