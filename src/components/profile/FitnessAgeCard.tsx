@@ -36,12 +36,13 @@ function Trend({ trend, age }: { trend: FitnessAgeView['trend']; age: number | n
   )
 }
 
-export function FitnessAgeCard({ view }: { view: FitnessAgeView }) {
+export function FitnessAgeCard({ view, reprise = false }: { view: FitnessAgeView; reprise?: boolean }) {
   const a = t.settings.athlete
   const now = Math.round(view.now)
   const younger = view.age === null ? null : view.age - now
   const band = younger === null ? null : younger > 0 ? a.fitnessAgeBand.younger(younger) : younger < 0 ? a.fitnessAgeBand.older(-younger) : a.fitnessAgeBand.onPar
-  const tone = younger === null || younger === 0 ? 'var(--muted-foreground)' : younger > 0 ? 'var(--pos)' : 'var(--warn)'
+  // A reprise reads the break's detraining: the number stands, unjudged.
+  const tone = reprise || younger === null || younger === 0 ? 'var(--muted-foreground)' : younger > 0 ? 'var(--pos)' : 'var(--warn)'
   return (
     <Card testId="fitness-age-card">
       <CardHead

@@ -109,6 +109,7 @@ export const fr = {
     regainedGrade: 'Note retrouvée',
     upFrom: (grade: string) => `en hausse (avant : ${grade})`,
     downFrom: (grade: string, daysOff: number | null) => (daysOff ? `En baisse après ${daysOff} jours sans courir (avant : ${grade})` : `En baisse (avant : ${grade})`),
+    afterReprise: 'La note et le percentile reviendront après ton bloc de reprise.',
     calibrating: 'Calibrage',
     gradeIn: (n: number) => `Note dans ${n} sortie${n > 1 ? 's' : ''}`,
     gradeAfter: 'Note après 4 semaines de sorties avec cardio',

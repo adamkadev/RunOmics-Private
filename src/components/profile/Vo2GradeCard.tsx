@@ -41,8 +41,18 @@ function GradeTile({ children, testId }: { children: string; testId?: string }) 
 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 
-export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
+export function Vo2GradeCard({ view, reprise = false }: { view: Vo2GradeView; reprise?: boolean }) {
   const g = t.vo2Grade
+
+  if (reprise && view.status === 'graded') {
+    return (
+      <section className={cardClass({ className: 'flex flex-col gap-1' })} data-testid="vo2-grade-card">
+        <h2 className={TITLE}>{g.valueLabel}</h2>
+        <p className="text-[22px] font-semibold leading-tight tabular-nums text-foreground" data-testid="vo2-value">{one(view.value)}</p>
+        <p className="text-[13px] text-muted-foreground text-pretty" data-testid="grade-after-reprise">{g.afterReprise}</p>
+      </section>
+    )
+  }
 
   if (view.status === 'calibrating') {
     return (

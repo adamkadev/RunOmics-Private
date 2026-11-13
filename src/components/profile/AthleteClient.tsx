@@ -23,9 +23,10 @@ interface Props {
   recentZoneTime: ZoneShare[]
   paceZones: TrainingZonesData | null
   lastSyncedAt?: string | null
+  reprise?: boolean
 }
 
-export function AthleteClient({ athlete, vo2Grade, fitnessAge, weeklyZoneTime, recentZoneTime, paceZones, lastSyncedAt = null }: Props) {
+export function AthleteClient({ athlete, vo2Grade, fitnessAge, weeklyZoneTime, recentZoneTime, paceZones, lastSyncedAt = null, reprise = false }: Props) {
   const p = t.pages.athlete
   // Relative time only after mount: on the server it is as old as the cached
   // page, and the mismatch is React error #418.
@@ -42,8 +43,8 @@ export function AthleteClient({ athlete, vo2Grade, fitnessAge, weeklyZoneTime, r
         <p className="mt-1 text-sm text-muted-foreground">{source}</p>
       </header>
 
-      {vo2Grade && <Vo2GradeCard view={vo2Grade} />}
-      {fitnessAge && <FitnessAgeCard view={fitnessAge} />}
+      {vo2Grade && <Vo2GradeCard view={vo2Grade} reprise={reprise} />}
+      {fitnessAge && <FitnessAgeCard view={fitnessAge} reprise={reprise} />}
       <AthleteStats athlete={athlete} />
       <ProfileHrZones
         athlete={athlete}

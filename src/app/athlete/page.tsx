@@ -10,6 +10,7 @@ import { AthleteClient } from '@/components/profile/AthleteClient'
 import { athletePageView } from '@/components/profile/athleteView'
 import { loadData } from '@/application/usecases/LoadData'
 import { getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
+import { getReprise } from '@/application/usecases/GetReprise'
 
 export const revalidate = 3600
 
@@ -33,6 +34,7 @@ export default async function AthletePage() {
       recentZoneTime={recentZoneTime}
       paceZones={await getTrainingZones()}
       lastSyncedAt={getLastSyncedAt()}
+      reprise={getReprise(today) !== null}
     />
   )
 }

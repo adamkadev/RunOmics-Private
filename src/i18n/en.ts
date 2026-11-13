@@ -106,6 +106,7 @@ export const en = {
     upFrom: (grade: string) => `up from ${grade}`,
     downFrom: (grade: string, daysOff: number | null) => (daysOff ? `From ${grade} after ${daysOff} days off` : `From ${grade}`),
     calibrating: 'Calibrating',
+    afterReprise: 'The grade and percentile come back after your comeback block.',
     gradeIn: (n: number) => `Grade in ${n} more run${n === 1 ? '' : 's'}`,
     gradeAfter: 'Grade after 4 weeks of runs with heart rate',
     open: 'VO₂max grade details',
