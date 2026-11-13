@@ -27,7 +27,7 @@ describe('RunVerdict', () => {
   it('names the session the run was planned as, not the type guessed for it', () => {
     render(<RunVerdict activity={{ ...activity, type: 'VO2Max', rpe: 3 }} type="Base" tone="positive" aiVerdict={null} />)
 
-    expect(screen.getByTestId('run-verdict').textContent).toContain(t.activity.verdict.headline.positive(t.activityTypes.Base))
+    expect(screen.getByTestId('run-verdict').textContent).toContain(t.activity.verdict.headline.positive(t.activity.verdict.easyType))
     expect(screen.getByTestId('run-verdict').textContent).not.toContain(t.activityTypes.VO2Max)
   })
 

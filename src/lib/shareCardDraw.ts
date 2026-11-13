@@ -9,6 +9,7 @@ import { runTypeZone } from '@/lib/colors'
 import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
+import { verdictType } from '@/lib/activityTitle'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
 
@@ -1046,7 +1047,7 @@ function drawVerdict(ctx: Ctx, scene: ShareCardScene, verdict: ShareVerdict, { m
   ctx.font = `700 ${VERDICT_EYEBROW}px ${fonts.text}`
   setSpacing(ctx, 0.1 * VERDICT_EYEBROW)
   // As the activity page's verdict; a run with no type reads as Base, the plain run's.
-  const eyebrow = t.activity.verdict.headline[verdict.tone](t.activityTypes[activity.type ?? 'Base'])
+  const eyebrow = t.activity.verdict.headline[verdict.tone](verdictType(activity.type ?? 'Base'))
   ctx.fillText(eyebrow.toLocaleUpperCase(t.locale), PAD_X + 10, y + VERDICT_EYEBROW / 2)
   setSpacing(ctx, 0)
   y += VERDICT_EYEBROW + VERDICT_EYEBROW_GAP

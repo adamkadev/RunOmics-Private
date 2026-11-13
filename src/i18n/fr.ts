@@ -1048,9 +1048,9 @@ export const fr = {
       paceCurve: {
         title: 'Courbe allure-durée',
         caption: 'meilleure allure pour chaque durée',
-        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d’avant, lue dans l’enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D' : l’allure la plus rapide que tu tiens sans t’épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D' est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
+        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d’avant, lue dans l’enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D′ : l’allure la plus rapide que tu tiens sans t’épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D′ est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
         cs: 'Vitesse critique',
-        dPrime: (m: number) => `D' ${m} m`,
+        dPrime: (m: number) => `D′ ${m} m`,
         noThreshold: 'Ajustée sur tes meilleurs efforts de 3 à 20 min : à peu près l’allure que tu tiendrais 30 à 40 minutes.',
         level: (pace: string) => ['Au niveau de ton allure seuil, ', pace, '.'] as [string, string, string],
         faster: (s: number, pace: string) => [`${s} s/km plus rapide que ton allure seuil, `, pace, ', là où se situe d’habitude la vitesse critique.'] as [string, string, string],
@@ -1342,8 +1342,10 @@ export const fr = {
       headline: {
         positive: (type: string) => `Sortie ${type} réussie`,
         neutral: (type: string) => `Sortie ${type} enregistrée`,
-        caution: (type: string) => `Sortie ${type} exigeante`,
+        // The type's own gender: "Footing exigeant", "Course exigeante".
+        caution: (type: string) => `${type} ${/^(?:course|anaérobie)$/i.test(type) ? 'exigeante' : 'exigeant'}`,
       },
+      easyType: 'footing',
     },
     effort: {
       label: 'Effort',
