@@ -612,7 +612,7 @@ export const fr = {
     },
     accent: {
       title: 'Accent',
-      caption: 'graphiques et mises en avant',
+      caption: 'boutons, tes parcours, cette semaine',
       options: {
         teal:     { label: 'Sarcelle' },
         cyan: { label: 'Cyan' },
@@ -675,6 +675,7 @@ export const fr = {
     },
     profile: {
       readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
+      heartRate: 'Fréquence cardiaque',
       lthr: (bpm: number) => `seuil ${bpm}`,
       maxHr: (bpm: number) => `FC max ${bpm}`,
     },
@@ -1565,7 +1566,7 @@ export const fr = {
     title: 'Objectifs et saison',
     barTitle: 'Objectifs',
     empty: 'Aucun objectif configuré pour le moment.',
-    emptyHow: 'Fixe une distance pour l’année, des temps visés et tes courses dans Réglages → Courses et objectifs.',
+    emptyHow: 'Fixe une distance pour l’année, des temps visés et tes courses.',
     emptyAction: 'Ouvrir Courses et objectifs',
     noGoalYear: (year: number) => `Aucun objectif fixé pour ${year}`,
     back: 'Progression',
@@ -1693,7 +1694,7 @@ export const fr = {
     runs: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
     overLimit: 'Limite dépassée, pense à la retirer',
     since: (brand: string, month: string) => `${brand} · depuis ${month}`,
-    roles: { daily: 'quotidienne', workouts: 'séances', intervals: 'fractionné', races: 'courses' },
+    roles: { workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
     easy: 'Facile',
     heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure moy.', avgHr: 'FC moy.' },
@@ -1863,7 +1864,7 @@ export const fr = {
       fromMax: (bpm: number) => `depuis la FC max ${bpm}`,
       columnZone: 'Zone',
       columnPace: 'Allure /km',
-      columnHr: 'Fréq. cardiaque',
+      columnHr: 'FC',
       hrOnly: 'Zones à la FC : en course/marche, l’allure ne dit pas l’effort.',
       timeInZones: 'Temps en zones · Analyses',
       estimatedPaces: (effort: string, date: string) => `Allures estimées par VDOT à partir de ton ${effort} du ${date} : la montre ne donne pas d’allure seuil à jour.`,

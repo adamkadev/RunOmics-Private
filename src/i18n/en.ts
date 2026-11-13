@@ -710,7 +710,8 @@ export const en = {
       // Under the read-only height and weight. No brand in the words: the data is
       // imported JSON, and the brand can change.
       readOnly: 'From your watch – edit in your watch app.',
-      // The Athlete & zones row's value: "Max HR 200 · threshold 179".
+      heartRate: 'Heart rate',
+      // The heart rate row's value: "Max HR 200 · threshold 179".
       lthr: (bpm: number) => `threshold ${bpm}`,
       maxHr: (bpm: number) => `Max HR ${bpm}`,
     },
@@ -1676,7 +1677,7 @@ export const en = {
     // The compact top bar's, short enough to sit beside the ‹ 2026 › stepper.
     barTitle: 'Goals',
     empty: 'No goals configured yet.',
-    emptyHow: 'Set a distance for the year, target times and your races in Settings → Races & goals.',
+    emptyHow: 'Set a distance for the year, target times and your races.',
     emptyAction: 'Open Races & goals',
     noGoalYear: (year: number) => `No goal set for ${year}`,
     back: 'Progress',
@@ -1817,7 +1818,7 @@ export const en = {
     runs: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
     overLimit: 'Over limit, consider retiring',
     since: (brand: string, month: string) => `${brand} · since ${month}`,
-    roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
+    roles: { workouts: 'workouts', intervals: 'intervals', races: 'races' },
     shareOfDistance: 'share of distance',
     easy: 'Easy',
     // One row of four in the km card: short labels.

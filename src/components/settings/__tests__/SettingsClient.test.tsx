@@ -119,7 +119,7 @@ describe('SettingsClient owner gate', () => {
     expect(screen.getByText(t.settings.dataExport.title)).toBeInTheDocument()
   })
 
-  it('draws the owner\'s height and weight as read-only facts, fetched after sign-in, then the row to Athlete & zones', async () => {
+  it('draws the owner\'s height and weight as read-only facts, fetched after sign-in, then the heart rate, read-only too', async () => {
     mockUser = signedIn(OWNER_EMAIL, { owner: true })
     authorizedFetch.mockResolvedValue(Response.json({ heightCm: 178, weightKg: 70 }))
     render(<SettingsClient lastSyncedAt={null} activityCount={0} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
@@ -132,9 +132,11 @@ describe('SettingsClient owner gate', () => {
     for (const value of values) expect(value.className).toContain('text-muted-foreground')
     expect(profile.textContent).not.toContain('BMI')
 
-    const athlete = screen.getByTestId('athlete-zones-row')
-    expect(athlete.getAttribute('href')).toBe('/athlete')
-    expect(athlete.textContent).toBe(`${t.pages.athlete.title}Max HR 200 · threshold 179`)
+    const zones = screen.getByTestId('profile-zones')
+    expect(zones.tagName).toBe('DL')
+    expect(within(zones).queryByRole('link')).toBeNull()
+    expect(zones.textContent).toBe(`${t.settings.profile.heartRate}Max HR 200 · threshold 179`)
+    expect(zones.className).toContain('flex-col')
     const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
     expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
     expect(garmin.className).toContain('hit-44')
@@ -147,7 +149,7 @@ describe('SettingsClient owner gate', () => {
     render(<SettingsClient lastSyncedAt={null} activityCount={0} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
     await screen.findByText(t.settings.auth.signIn)
     expect(within(screen.getByTestId('settings-profile')).queryAllByTestId('profile-value')).toEqual([])
-    expect(screen.getByTestId('athlete-zones-row')).toBeInTheDocument()
+    expect(screen.getByTestId('profile-zones')).toBeInTheDocument()
     expect(authorizedFetch).not.toHaveBeenCalled()
     // data-row-thumb: the separator under the row starts under its text.
     expect(screen.getByTestId('garmin-row').hasAttribute('data-row-thumb')).toBe(true)
@@ -167,10 +169,10 @@ describe('SettingsClient owner gate', () => {
     const profile = within(screen.getByTestId('settings-profile')).getAllByTestId('profile-value').map((v) => v.closest('dl')!)
     const group = profile[0]!.parentElement!
     expect(group.className).toContain('inset-group')
-    expect([...group.children]).toEqual([...profile, screen.getByTestId('athlete-zones-row')])
+    expect([...group.children]).toEqual([...profile, screen.getByTestId('profile-zones')])
   })
 
-  it('names only the heart rate Garmin has on the Athlete & zones row', () => {
+  it('names only the heart rate Garmin has on the heart rate row', () => {
     expect(zonesSummary({ lthrBpm: 179, maxHrBpm: 200 })).toBe('Max HR 200 · threshold 179')
     expect(zonesSummary({ maxHrBpm: 200 })).toBe('Max HR 200')
     expect(zonesSummary({})).toBeNull()

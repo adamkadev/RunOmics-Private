@@ -43,10 +43,10 @@ export function isPastLimit(shoe: { totalKm: number; maxKm: number }): boolean {
 /** Matches the registry's default `alertThresholdKm`: past it, a pair is kept for easy runs. */
 export const RETIRE_FROM_WORKOUTS_SHARE = 0.8
 
+/** An everyday pair needs no role: the meta line names only a pair kept for something. */
 export function shoeRole(type: ActivityType | null): string | null {
-  if (!type) return null
+  if (!type || type === 'Base') return null
   const r = t.shoes.roles
-  if (type === 'Base') return r.daily
   if (type === 'Tempo' || type === 'Threshold') return r.workouts
   if (type === 'Race') return r.races
   return r.intervals
