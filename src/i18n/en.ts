@@ -2257,7 +2257,8 @@ export const en = {
     title: '12-week checkpoint',
     cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: 'Last 12 weeks',
-    against: (current: string, previous: string) => `${current} vs ${previous}`,
+    againstPrevious: (range: string) => `vs previous cycle · ${range}`,
+    againstBefore: (range: string) => `vs the 12 weeks before · ${range}`,
     weekOf: (week: number) => `Cycle week ${week} of 12`,
     complete: (n: number) => `Cycle ${n} complete`,
     dueIn: (date: string, days: number) =>
@@ -2277,8 +2278,8 @@ export const en = {
     startingPoint: (date: string) => `Your starting point: these values are compared at the checkpoint on ${date}.`,
     lastReading: (date: string) => `Last reading ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min in ${sessions} session${sessions === 1 ? '' : 's'} so far`,
-    noCheck: 'No check this cycle',
-    vdot: (value: string) => `VDOT ${value}`,
+    noCheck: 'No 5K check this cycle',
+    lastCheck: (date: string, time: string) => `last ${date}, ${time}`,
     sections: {
       volume: {
         title: 'Volume',
@@ -2294,7 +2295,7 @@ export const en = {
       },
       markers: {
         title: 'Fitness markers',
-        about: 'The latest 5K check of each cycle, a 5K race or a time trial, with the VDOT it implies, and Garmin’s VO₂max and threshold estimates as they stood at the end of each cycle. Threshold HR has no better direction, so it is shown but not scored.',
+        about: 'The latest 5K check of each cycle, a 5K race or a time trial, and Garmin’s VO₂max and threshold estimates as they stood at the end of each cycle. Threshold HR has no better direction, so it is shown but not scored.',
       },
       recovery: {
         title: 'Recovery and load',

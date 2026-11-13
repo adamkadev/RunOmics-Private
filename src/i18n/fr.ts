@@ -2092,7 +2092,8 @@ export const fr = {
     title: 'Bilan 12 semaines',
     cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: '12 dernières semaines',
-    against: (current: string, previous: string) => `${current} contre ${previous}`,
+    againstPrevious: (range: string) => `contre le cycle précédent · ${range}`,
+    againstBefore: (range: string) => `contre les 12 semaines d’avant · ${range}`,
     weekOf: (week: number) => `Cycle · semaine ${week} sur 12`,
     complete: (n: number) => `Cycle ${n} terminé`,
     dueIn: (date: string, days: number) =>
@@ -2112,8 +2113,8 @@ export const fr = {
     startingPoint: (date: string) => `Ton point de départ : on comparera ces valeurs au bilan du ${date}.`,
     lastReading: (date: string) => `Dernière mesure ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min en ${sessions} séance${sessions > 1 ? 's' : ''} pour l’instant`,
-    noCheck: 'Pas de test ce cycle',
-    vdot: (value: string) => `VDOT ${value}`,
+    noCheck: 'Pas de test 5 km ce cycle',
+    lastCheck: (date: string, time: string) => `dernier le ${date}, ${time}`,
     sections: {
       volume: {
         title: 'Volume',
@@ -2129,7 +2130,7 @@ export const fr = {
       },
       markers: {
         title: 'Marqueurs de forme',
-        about: 'Le dernier test 5 km de chaque cycle, course ou contre-la-montre, avec la VDOT qu’il donne, et les estimations Garmin de VO₂max et de seuil à la fin de chaque cycle. La FC seuil n’a pas de bon sens de variation : elle est affichée, pas notée.',
+        about: 'Le dernier test 5 km de chaque cycle, course ou contre-la-montre, et les estimations Garmin de VO₂max et de seuil à la fin de chaque cycle. La FC seuil n’a pas de bon sens de variation : elle est affichée, pas notée.',
       },
       recovery: {
         title: 'Récupération et charge',

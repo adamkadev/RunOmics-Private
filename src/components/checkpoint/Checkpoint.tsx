@@ -1,4 +1,3 @@
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { CardHead } from '@/components/analytics/AnalyticsKit'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
@@ -13,9 +12,9 @@ const TONES: DeltaTone[] = ['good', 'worse', 'flat']
 function Summary({ summary }: { summary: Record<DeltaTone, number> }) {
   const words: Record<DeltaTone, (n: number) => string> = { good: t.checkpoint.better, worse: t.checkpoint.worse, flat: t.checkpoint.level }
   return (
-    <ul className="flex flex-wrap gap-x-3.5 gap-y-1 text-[13px] text-[var(--text-2)]" data-testid="checkpoint-summary">
+    <ul className="flex flex-wrap gap-x-3.5 gap-y-1 text-[13px] font-medium" data-testid="checkpoint-summary">
       {TONES.filter((tone) => summary[tone] > 0).map((tone) => (
-        <li key={tone} className="flex items-center gap-1.5 tabular-nums" data-tone={tone}>
+        <li key={tone} className="flex items-center gap-1.5 tabular-nums" data-tone={tone} style={{ color: DELTA_TONE_COLOR[tone] }}>
           <span aria-hidden className="size-2 rounded-full" style={{ background: DELTA_TONE_COLOR[tone] }} />
           {words[tone](summary[tone])}
         </li>
@@ -36,23 +35,25 @@ function Segments({ count, done }: { count: number; done: number }) {
 
 function Row({ row }: { row: CompareRow }) {
   const color = row.delta === null ? 'var(--muted-foreground)' : DELTA_TONE_COLOR[row.tone]
-  const Arrow = row.direction === 'up' ? ArrowUpRight : row.direction === 'down' ? ArrowDownRight : null
   return (
     <li className="flex flex-col gap-0.5 border-t border-border py-2.5 first:border-t-0 first:pt-1 last:pb-0" data-testid="checkpoint-row" data-key={row.key} data-tone={row.delta === null ? undefined : row.tone}>
       <span className="text-[13px] text-[var(--text-2)] text-pretty">{row.label}</span>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-          <span className="text-[17px] font-semibold leading-snug tabular-nums text-foreground" data-testid="checkpoint-current">
-            {row.current ?? '—'}
-            {row.current !== null && row.unit && <Unit>{row.unit}</Unit>}
+      {row.absent !== null ? (
+        <span className="text-[15px] text-muted-foreground" data-testid="checkpoint-absent">{row.absent}</span>
+      ) : (
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+            <span className="text-[17px] font-semibold leading-snug tabular-nums text-foreground" data-testid="checkpoint-current">
+              {row.current ?? '—'}
+              {row.current !== null && row.unit && <Unit>{row.unit}</Unit>}
+            </span>
+            {row.previous !== null && <span className="text-[13px] tabular-nums text-muted-foreground">{t.checkpoint.vs(row.previous)}</span>}
           </span>
-          {row.previous !== null && <span className="text-[13px] tabular-nums text-muted-foreground">{t.checkpoint.vs(row.previous)}</span>}
-        </span>
-        <span className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium tabular-nums" style={{ color }} data-testid="checkpoint-delta">
-          {Arrow && row.delta !== null && <Arrow size={12} strokeWidth={2} aria-hidden />}
-          {row.delta ?? row.missing}
-        </span>
-      </div>
+          <span className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium tabular-nums" style={{ color }} data-testid="checkpoint-delta">
+            {row.delta ?? row.missing}
+          </span>
+        </div>
+      )}
       {row.note && <span className="text-xs text-muted-foreground">{row.note}</span>}
     </li>
   )
@@ -76,7 +77,7 @@ export function Checkpoint({ view }: { view: CheckpointPageView }) {
       <header className="flex flex-col gap-1">
         <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="checkpoint-eyebrow">{view.eyebrow}</span>
         <h1 className="text-display text-foreground text-pretty">{t.checkpoint.title}</h1>
-        <p className="text-sm text-muted-foreground text-pretty" data-testid="checkpoint-range">{view.range}</p>
+        {view.range && <p className="text-sm text-muted-foreground text-pretty" data-testid="checkpoint-range">{view.range}</p>}
       </header>
 
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="checkpoint-status">
