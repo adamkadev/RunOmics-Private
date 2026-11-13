@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- The VO2max grade page shows the precise daily value (57.4), as Analytics and the hub do, not the profile's whole number.
 - Design review, rounds 1-8 (one PR). **Good has its own green**, apart from the teal accent (dark `#5ad06a`,
   light `#2f7a2a`); Z4 and Z5 move clear of Heather, which stays as it is. Bars judged against a plan, this week's
   included, take a neutral fill; a posted share card says its result in ink with a fixed-colour mark.
