@@ -87,7 +87,8 @@ export interface AnalyticsBoardData {
   /** Each run's duration bests, oldest first; empty until the runs are reprocessed. */
   paceBests: RunBests[]
   ytd: YtdInput | null
-  /** The app's one weekly average: the last 12 complete weeks. */
+  /** A runner back from a long break: predictions past 5 km wait. */
+  reprise: boolean
 }
 
 const DEFAULT_PERIOD: Record<TabId, LoadPeriod> = { fitness: '4w', performance: '12w', volume: '12w', health: '12w' }
@@ -215,6 +216,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             race={data.race}
             heat={data.heat}
             paceBests={data.paceBests}
+            reprise={data.reprise}
           />
         )}
         {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} />}

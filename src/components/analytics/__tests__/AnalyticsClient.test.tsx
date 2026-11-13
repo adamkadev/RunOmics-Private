@@ -68,6 +68,7 @@ const data: AnalyticsBoardData = {
     { date: day(20), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, 3600, null, null].map((t) => (t === null ? null : Math.round(4 * t + 200))) },
     { date: day(100), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, null, null, null].map((t) => (t === null ? null : Math.round(3.9 * t + 190))) },
   ],
+  reprise: false,
   ytd: {
     km: 1394,
     vsLastYear: { km: 1394, lastYearKm: 640, since: null },
@@ -389,11 +390,9 @@ describe('Analytics (v4.5)', () => {
     expect(loss('cool').getAttribute('style')).toContain('var(--pos)')
     expect(loss('mild').textContent).toBe('+4 s')
     expect(loss('mild').getAttribute('style')).toContain('var(--muted-foreground)')
-    expect(row('hot').textContent).toContain(t.analytics.cards.heatCost.noRuns)
-    // The best band is the zero, marked; a band without runs is an empty dashed track, never drawn like the best.
+    expect(screen.queryByTestId('heat-hot')).toBeNull()
+    expect(screen.getByTestId('heat-untested').textContent).toBe(t.analytics.cards.heatCost.noRunsIn([t.analytics.charts.heatImpact.bands.hot!]))
     expect(within(row('cool')).getByTestId('heat-zero').style.background).toBe('var(--pos)')
-    expect(within(row('hot')).getByTestId('heat-empty').className).toContain('border-dashed')
-    expect(within(row('cool')).queryByTestId('heat-empty')).toBeNull()
     expect(screen.getByTestId('heat-key').textContent).toBe(t.analytics.cards.heatCost.barKey)
     expect(screen.getByTestId('heat-card').innerHTML).not.toContain('var(--accent)')
   })

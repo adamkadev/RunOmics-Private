@@ -1,3 +1,4 @@
+import { getReprise } from '@/application/usecases/GetReprise'
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { appTodayIso } from '@/lib/calendarDate'
 import { getVO2maxReadings } from '@/application/usecases/GetVO2maxHistory'
@@ -66,6 +67,7 @@ export default async function AnalyticsPage() {
     balance: getLoadBalance(),
     paceBests: getPaceBests(),
     ytd: analyticsYtd(activities, yearData, today),
+    reprise: getReprise(today) !== null,
   }
 
   return <AnalyticsClient data={board} today={today} />

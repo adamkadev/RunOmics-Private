@@ -1033,6 +1033,7 @@ export const en = {
         title: 'Race predictions',
         caption: (period: string) => `change in ${period}`,
         about: "The race times your watch predicts. The line under each is the period's trend, faster up.",
+        unlockLater: '10 km and longer show once you run 20 minutes without walking.',
         count: (n: number): string => (n === 4 ? 'All four' : n === 3 ? 'All three' : n === 2 ? 'Both' : 'It'),
         slipped: (who: string, range: string, period: string) => `${who} slipped ${range} over ${period}.`,
         improved: (who: string, range: string, period: string) => `${who} improved by ${range} over ${period}.`,
@@ -1106,7 +1107,7 @@ export const en = {
         little: 'Temperature has cost you little so far: under 5 s/km at the same heart rate.',
         noWarm: 'No easy runs above 20 °C yet to measure what heat costs you.',
         best: 'best',
-        noRuns: 'no runs',
+        noRunsIn: (bands: string[]) => `No easy run yet at ${new Intl.ListFormat('en', { type: 'disjunction' }).format(bands)}.`,
         plus: (s: number) => `+${s} s`,
         barKey: 'Longer bar: more s/km lost against your best band.',
         // "You're fastest at 15–20 °C. Below 5 °C costs 16 s/km, above 20 °C 14–15 s/km."
