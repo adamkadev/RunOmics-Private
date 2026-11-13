@@ -85,7 +85,7 @@ describe('homeRunPeriods', () => {
     expect(screen.getByTestId('home-runs-canvas')).toHaveAttribute('aria-label', t.homeRuns.canvasLabel(25))
   })
 
-  it('names each start point by its district above the periods, and opens one from the link', async () => {
+  it('names each start point by its town above the periods, and opens one from the link', async () => {
     window.history.replaceState(null, '', '/home-runs')
     const other = { ...spot, runs: runs.slice(0, 2), place: 'Bravo' }
     render(<HomeRunsPlayer spots={[{ ...spot, runs, place: 'Alpha' }, other]} today="2026-11-13" />)

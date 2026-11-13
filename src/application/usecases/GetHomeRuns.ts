@@ -31,7 +31,7 @@ export interface HomeRunSpot {
   firstDate: string
   lastDate: string
   totalKm: number
-  /** The Explore unit the start sits in; null outside every area. */
+  /** The town the start sits in, or its district when another home shares the town; null outside every area. */
   place: string | null
 }
 
@@ -82,25 +82,32 @@ function homeRun(a: Activity): HomeRun {
   }
 }
 
-function placeAt([lon, lat]: [number, number]): string | null {
+function placeAt([lon, lat]: [number, number]): { commune: string; district: string } | null {
   for (const area of getExploreAreas()) {
     if (!inBBox(lon, lat, area.bbox)) continue
     const read = getExploreAreaFile(area.id)
     const file = read ? parseAreaFile(JSON.parse(read.body)) : null
     const unit = file?.features.find((feature) => pointInGeometry(lon, lat, feature.geometry))
-    if (unit) return unit.properties.name
+    if (unit) return { commune: unit.properties.commune, district: unit.properties.name }
   }
   return null
 }
 
 export function getHomeRuns(): HomeRunSpot[] {
-  return build().spots.map(({ activities, center }) => ({
-    runs: activities.map(homeRun),
-    firstDate: activities[0]!.date,
-    lastDate: activities[activities.length - 1]!.date,
-    totalKm: Math.round(activities.reduce((sum, a) => sum + a.distanceKm, 0)),
-    place: placeAt(center),
-  }))
+  const spots = build().spots
+  const places = spots.map(({ center }) => placeAt(center))
+  // The town tells the homes apart; two homes in the same town fall back to their districts.
+  const shared = (commune: string) => places.filter((p) => p?.commune === commune).length > 1
+  return spots.map(({ activities }, i) => {
+    const place = places[i]
+    return {
+      runs: activities.map(homeRun),
+      firstDate: activities[0]!.date,
+      lastDate: activities[activities.length - 1]!.date,
+      totalKm: Math.round(activities.reduce((sum, a) => sum + a.distanceKm, 0)),
+      place: place ? (shared(place.commune) ? place.district : place.commune) : null,
+    }
+  })
 }
 
 function previewPath(activities: readonly Activity[]): string {

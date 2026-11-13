@@ -24,7 +24,7 @@ function run(id: string, date: string, start: [number, number], durationSeconds 
 const homes = Array.from({ length: 21 }, (_, i) => run(`home-${i}`, `2026-${String(Math.floor(i / 2) + 1).padStart(2, '0')}-${10 + (i % 2)}`, [HOME[0] + i * 0.00005, HOME[1]]))
 
 describe('getHomeRuns', () => {
-  it('keeps the runs from the shared start, oldest first, named by its district, and leaves a lone start out', () => {
+  it('keeps the runs from the shared start, oldest first, named by its town, and leaves a lone start out', () => {
     getAllActivities.mockReturnValue([...homes].reverse().concat(run('away', '2026-03-01', AWAY)))
 
     const spots = getHomeRuns()
@@ -33,7 +33,7 @@ describe('getHomeRuns', () => {
     expect(spots[0]!.runs.map((r) => r.id)).toEqual(homes.map((a) => a.id))
     expect(spots[0]!.firstDate).toBe('2026-01-10')
     expect(spots[0]!.totalKm).toBe(105)
-    expect(spots[0]!.place).toBe('Alpha')
+    expect(spots[0]!.place).toBe('Testville')
   })
 
   it('sends each track with one time per point, ending at the run’s duration', () => {
