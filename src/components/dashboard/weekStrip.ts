@@ -45,6 +45,8 @@ export interface WeekStripDay {
   letter: string
   state: WeekDayState
   isToday: boolean
+  /** No run on it and none to come, a session moved off it included: its letter dims. */
+  idle: boolean
   /** Run km on a day run, planned km on a day to come or missed; null on rest, a session run on another day, or none given. */
   km: number | null
   /** The km as the circle writes it: "12.8" run, "13" planned. */
@@ -79,6 +81,7 @@ export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Re
       letter: weekday.charAt(0).toUpperCase(),
       state: day.state,
       isToday,
+      idle: !isToday && day.runs === 0 && day.state !== 'planned',
       km,
       kmText,
       color: zoneColor(sessionZone(day)),

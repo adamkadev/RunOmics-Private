@@ -186,7 +186,7 @@ export function ThisWeekCard({
               // Today: 20 pt, its ring 28 across.
               'box-border flex size-7 items-center justify-center rounded-full',
               day.isToday && 'size-5 state-today my-1 font-semibold text-accent-text',
-              !day.isToday && day.state === 'rest' && 'opacity-40',
+              day.idle && 'opacity-40',
             )}
           >
             {day.letter}
