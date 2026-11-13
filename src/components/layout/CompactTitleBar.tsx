@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Plus, RotateCw, Settings, Share, type LucideIcon } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, RotateCw, Settings, Share, type LucideIcon } from 'lucide-react'
 import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
 import { fadeElement, unfadeElement } from '@/lib/glassFade'
 import { cn } from '@/lib/utils'
@@ -22,9 +22,6 @@ const BAR_FOOT = 10
 
 /** The edge sampler's height (--edge-sample-h). */
 const SAMPLER = 12
-
-/** A mirrored control comes into the bar this far before it reaches the bar's foot. */
-const MIRROR_LEAD = 24
 
 /** A stuck sticky strip's height, which the scroll edge grows by. */
 export const STICKY_H_VAR = '--sticky-h'
@@ -52,11 +49,10 @@ const WIDE = '(min-width: 64rem)'
 /** `avatar` is not here: it shows the page's own initials. */
 const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Settings, refresh: RotateCw, add: Plus }
 
-interface BarSegments {
-  /** `stepper`: the first and last buttons are the arrows, the value the text between them. */
-  kind: 'segments' | 'stepper'
+/** Goals' year: the first and last buttons are the arrows, the value the text between them. */
+interface BarStepper {
   label: string
-  items: { text: string; name: string; selected: boolean; disabled: boolean }[]
+  items: { name: string; disabled: boolean }[]
   value: string
 }
 
@@ -68,6 +64,8 @@ interface BarAction {
   /** `data-bar-busy`: the sync running, its arrows turning. */
   busy: boolean
   disabled: boolean
+  /** It opens a menu: Analytics' period. Null for a plain button. */
+  expanded: boolean | null
 }
 
 /** As the page header's controls, so a mirrored copy lands on the original. */
@@ -125,7 +123,7 @@ export function CompactTitleBar() {
   const actionsRef = useRef<HTMLElement[]>([])
   const segmentsRef = useRef<HTMLElement[]>([])
   const scheduleRef = useRef<() => void>(() => {})
-  const [segments, setSegments] = useState<BarSegments | null>(null)
+  const [segments, setSegments] = useState<BarStepper | null>(null)
   const [title, setTitle] = useState<string | null>(null)
   const [shown, setShown] = useState(false)
   const [back, setBack] = useState<string | null>(null)
@@ -145,14 +143,14 @@ export function CompactTitleBar() {
     let pageActions: HTMLElement[] = []
     let segmentsEl: HTMLElement | null = null
     let inHeader = false
-    let segmentsRead: BarSegments | null = null
+    let segmentsRead: BarStepper | null = null
     let strips: HTMLElement[] = []
     let labels: HTMLElement[] = []
     let edge: HTMLElement | null = null
     let statusBar = 0
     // What React last got, so a scroll frame that changes nothing renders nothing.
     let lastShown: boolean | null = null
-    let lastSegments: BarSegments | null | undefined
+    let lastSegments: BarStepper | null | undefined
     const wideQuery = window.matchMedia(WIDE)
     let wide = wideQuery.matches
 
@@ -192,24 +190,18 @@ export function CompactTitleBar() {
         text: el.textContent?.trim() ?? '',
         busy: el.hasAttribute('data-bar-busy'),
         disabled: el.hasAttribute('disabled'),
+        expanded: el.hasAttribute('aria-expanded') ? el.getAttribute('aria-expanded') === 'true' : null,
       }))
       setActions((prev) => (JSON.stringify(prev) === JSON.stringify(read) ? prev : read))
-      segmentsEl = document.querySelector<HTMLElement>('main [data-bar-segments]')
+      segmentsEl = document.querySelector<HTMLElement>('main [data-bar-segments="stepper"]')
       const segmentButtons = segmentsEl ? [...segmentsEl.querySelectorAll<HTMLElement>('button')] : []
       segmentsRef.current = segmentButtons
       inHeader = !!segmentsEl && !!heading?.closest('header')?.contains(segmentsEl)
-      const stepper = segmentsEl?.dataset.barSegments === 'stepper'
       segmentsRead = segmentsEl
         ? {
-            kind: stepper ? 'stepper' : 'segments',
             label: segmentsEl.getAttribute('aria-label') ?? '',
-            items: segmentButtons.map((b) => ({
-              text: b.textContent?.trim() ?? '',
-              name: nameOf(b),
-              selected: b.getAttribute('aria-selected') === 'true' || b.getAttribute('aria-checked') === 'true',
-              disabled: b.hasAttribute('disabled'),
-            })),
-            value: stepper ? (segmentsEl.querySelector<HTMLElement>('[data-bar-value]')?.textContent?.trim() ?? '') : '',
+            items: segmentButtons.map((b) => ({ name: nameOf(b), disabled: b.hasAttribute('disabled') })),
+            value: segmentsEl.querySelector<HTMLElement>('[data-bar-value]')?.textContent?.trim() ?? '',
           }
         : null
       strips = [...document.querySelectorAll<HTMLElement>('main [data-sticky-strip]')]
@@ -224,10 +216,8 @@ export function CompactTitleBar() {
       if (stale) refresh()
       const scroll = window.scrollY
       const barBottom = statusBar + BAR_HEIGHT
-      // Mirrored before the soft edge blurs the control, never beside it; a control in the large title's
-      // header is the bar's from the moment the bar collapses in, as the title is.
-      const underBar = !!segmentsEl && (inHeader || segmentsEl.getBoundingClientRect().bottom <= barBottom + MIRROR_LEAD)
-      const mirrored = underBar ? segmentsRead : null
+      // In the large title's header, the stepper is the bar's from the moment the bar collapses in, as the title is.
+      const mirrored = inHeader ? segmentsRead : null
       if (mirrored !== lastSegments) {
         lastSegments = mirrored
         setSegments((prev) => (JSON.stringify(prev) === JSON.stringify(mirrored) ? prev : mirrored))
@@ -247,15 +237,14 @@ export function CompactTitleBar() {
       const collapsed = !atTop && scroll >= collapseAt
       // At rest is where "at rest" is read, should the page above it move.
       const restNow = atTop ? heading.getBoundingClientRect().top + scroll : headingRest
-      // The scroll edge grows by the sticky strip stuck under the bar (its
-      // own height, whichever it is), so the rows dissolve under it too.
-      const stuck = collapsed
-        ? strips.find((el) => {
-            const box = el.getBoundingClientRect()
-            return box.top <= barBottom + 1 && box.bottom > barBottom
-          })
-        : undefined
-      const stickyH = stuck ? `${stuck.offsetHeight}px` : ''
+      // The edge grows by every strip stuck under the bar, stacked (Activities' switcher, then its month).
+      let stuckBottom = barBottom
+      if (collapsed) {
+        for (const box of strips.map((el) => el.getBoundingClientRect()).sort((a, b) => a.top - b.top)) {
+          if (box.top <= stuckBottom + 1 && box.bottom > stuckBottom) stuckBottom = box.bottom
+        }
+      }
+      const stickyH = stuckBottom > barBottom ? `${Math.round(stuckBottom - barBottom)}px` : ''
       const labelOpacity = labels.map((el) => (collapsed ? (el.getBoundingClientRect().top - barBottom) / LABEL_FADE : 1))
 
       show(collapsed)
@@ -336,9 +325,8 @@ export function CompactTitleBar() {
         attributeFilter: [
           'data-bar-busy',
           'disabled',
-          'aria-selected',
-          'aria-checked',
           'aria-label',
+          'aria-expanded',
           'data-bar-back',
           'data-bar-action',
           'data-bar-segments',
@@ -416,7 +404,7 @@ export function CompactTitleBar() {
     return () => window.removeEventListener('resize', layoutTitle)
   }, [layoutTitle])
 
-  const stepArrow = (stepper: BarSegments, i: number, Arrow: LucideIcon) => {
+  const stepArrow = (stepper: BarStepper, i: number, Arrow: LucideIcon) => {
     const item = stepper.items[i]
     if (!item) return null
     return (
@@ -442,11 +430,12 @@ export function CompactTitleBar() {
         aria-label={action.name}
         disabled={action.disabled}
         onClick={() => actionsRef.current[i]?.click()}
+        aria-expanded={action.expanded ?? undefined}
         className={cn(
           'flex shrink-0 items-center justify-center rounded-full disabled:opacity-60',
           action.kind === 'avatar'
             ? cn('bg-accent font-bold text-accent-foreground', inCapsule ? 'hit-44 size-8 text-[13px]' : 'size-11 text-base shadow-[0_6px_20px_rgb(0_0_0/0.2)]')
-            : cn('size-11 text-foreground', inCapsule ? 'lg-press' : glassClass('regular')),
+            : cn('text-foreground', Icon ? 'size-11' : 'h-11 min-w-11 gap-0.5 pl-3.5 pr-2.5 text-[15px] font-semibold', inCapsule ? 'lg-press' : glassClass('bar')),
           action.kind === 'avatar' && inCapsule && 'lg-press',
         )}
       >
@@ -455,7 +444,12 @@ export function CompactTitleBar() {
           <span aria-hidden="true">{action.text}</span>
         ) : Icon ? (
           <Icon size={20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
-        ) : null}
+        ) : (
+          <>
+            <span>{action.text}</span>
+            {action.expanded !== null && <ChevronDown size={14} strokeWidth={2.4} aria-hidden="true" />}
+          </>
+        )}
       </button>
     )
   }
@@ -495,7 +489,7 @@ export function CompactTitleBar() {
                 data-testid="compact-bar-back"
                 aria-label={t.nav.backTo(back)}
                 onClick={() => backRef.current?.click()}
-                className={glassClass('regular', cn(GLASS_CIRCLE, 'lg-fade-in'))}
+                className={glassClass('bar', cn(GLASS_CIRCLE, 'lg-fade-in'))}
               >
                 <GlassLayers />
                 <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
@@ -515,29 +509,8 @@ export function CompactTitleBar() {
         </span>
         <span className="flex justify-end" style={{ paddingRight: SIDE_PAD }}>
           <span ref={rightRef} className="pointer-events-auto flex w-max items-center gap-2">
-            {segments?.kind === 'segments' && (
-              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={glassClass('regular', 'lg-fade-in flex h-11 shrink-0 items-center p-1')}>
-                <GlassLayers />
-                {segments.items.map((item, i) => (
-                  <button
-                    key={item.text + i}
-                    type="button"
-                    aria-label={item.name}
-                    aria-pressed={item.selected}
-                    onClick={() => segmentsRef.current[i]?.click()}
-                    className={cn(
-                      // 36 pt in the capsule's 4 pt of glass: 44 pt, as at rest.
-                      'lg-press flex h-9 items-center whitespace-nowrap rounded-full px-3.5 text-[15px] text-foreground transition-colors',
-                      item.selected ? 'bg-[var(--tab-pill)] font-semibold' : 'font-medium',
-                    )}
-                  >
-                    {item.text}
-                  </button>
-                ))}
-              </span>
-            )}
-            {segments?.kind === 'stepper' && (
-              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={glassClass('regular', 'lg-fade-in flex h-11 shrink-0 items-center gap-0.5 p-1')}>
+            {segments && (
+              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={glassClass('bar', 'lg-fade-in flex h-11 shrink-0 items-center gap-0.5 p-1')}>
                 <GlassLayers />
                 {stepArrow(segments, 0, ChevronLeft)}
                 <span aria-live="polite" className="min-w-[4ch] px-1 text-center text-sm font-semibold tabular-nums text-foreground">
@@ -548,7 +521,7 @@ export function CompactTitleBar() {
             )}
             {actions.length === 1 && <span className={cn('flex', fadeIn)}>{actionButton(actions[0]!, 0, false)}</span>}
             {actions.length > 1 && (
-              <span data-testid="compact-bar-capsule" className={glassClass('regular', 'lg-fade-in flex h-11 items-center gap-1 pr-1.5')}>
+              <span data-testid="compact-bar-capsule" className={glassClass('bar', 'lg-fade-in flex h-11 items-center gap-1 pr-1.5')}>
                 <GlassLayers />
                 {actions.map((action, i) => actionButton(action, i, true))}
               </span>

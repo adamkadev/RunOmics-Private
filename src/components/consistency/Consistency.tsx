@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { PINNED_TOP, StickyBar } from '@/components/ui/StickyBar'
 import { formatDate, formatDecimal, formatWeekdayLong } from '@/lib/formatters'
 import { useUrlParam } from '@/lib/useUrlParam'
 import { cn } from '@/lib/utils'
@@ -315,7 +317,17 @@ function RunningWeek({ view }: { view: ConsistencyView }) {
   )
 }
 
-export function Consistency({ views, today, reprise = false }: { views: Partial<Record<ConsistencyRange, ConsistencyView>>; today: string; reprise?: boolean }) {
+export function Consistency({
+  views,
+  today,
+  reprise = false,
+  back,
+}: {
+  views: Partial<Record<ConsistencyRange, ConsistencyView>>
+  today: string
+  reprise?: boolean
+  back?: ReactNode
+}) {
   const c = t.consistency
   const { ranges, fallback } = rangesFor(reprise)
   const [rangeParam, setRangeParam] = useUrlParam('range')
@@ -327,17 +339,16 @@ export function Consistency({ views, today, reprise = false }: { views: Partial<
 
   return (
     <>
-      {/* Wraps: at display size "Consistency" and the pill do not fit one line on a phone, and the pill ran over the title. */}
-      <header className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <h1 className="text-display text-foreground">{t.pages.consistency.title}</h1>
+      <PageHeader back={back} title={t.pages.consistency.title} />
+      <StickyBar top={PINNED_TOP} className="-my-2">
         <SegmentedTabs
           tabs={tabs}
           label={c.rangeLabel}
-          size="sm"
-          barMirror
+          fill
+          pinned
           items={ranges.map((id) => ({ id, label: c.ranges[id], ariaLabel: c.rangesSpoken[id] }))}
         />
-      </header>
+      </StickyBar>
       <div {...tabs.panelProps} className="flex flex-col gap-3.5 outline-none">
         {view.weeks.length === 0 ? (
           <section className={cardClass({ dashed: true, className: 'py-10 text-center' })}>

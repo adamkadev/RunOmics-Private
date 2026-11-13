@@ -76,7 +76,7 @@ export function SegmentedTabs<T extends string | number>({
   fill = false,
   className,
   tabClassName,
-  barMirror = false,
+  pinned = false,
   onAura = false,
   scroll = false,
 }: {
@@ -88,15 +88,15 @@ export function SegmentedTabs<T extends string | number>({
   fill?: boolean
   className?: string
   tabClassName?: string
-  /** The compact top bar carries a copy once this scrolls away, so it is glass at rest and the copy lands with no jump. */
-  barMirror?: boolean
+  /** A switcher row pinned under the top bar: the bar's glass at rest too, so it never changes look as it pins. */
+  pinned?: boolean
   /** Straight on the background glow. */
   onAura?: boolean
   /** Labels at their own width, scrolling inside the track with a fade at the edge that has more. */
   scroll?: boolean
 }) {
   const stuck = useContext(StickyStuckContext)
-  const glass = barMirror || stuck === true
+  const glass = pinned || stuck === true
   const buttons = items.map((item) => {
     const props = tabs.tabProps(item.id)
     return (
@@ -131,7 +131,7 @@ export function SegmentedTabs<T extends string | number>({
         data-variant={glass ? 'glass' : 'content'}
         className={cn(
           glass ? 'lg flex h-11 shrink-0 p-1' : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS,
-          glass && !barMirror && 'lg-stuck-in',
+          glass && !pinned && 'lg-stuck-in',
           'w-full max-w-full',
           className,
         )}
@@ -147,12 +147,11 @@ export function SegmentedTabs<T extends string | number>({
     <div
       {...tabs.listProps}
       aria-label={label}
-      data-bar-segments={barMirror ? '' : undefined}
       data-variant={glass ? 'glass' : 'content'}
       className={cn(
-        glass ? 'lg flex h-11 shrink-0 p-1' : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS,
-        // A strip's glass fades in as it sticks; the bar's copy is glass from the start.
-        glass && !barMirror && 'lg-stuck-in',
+        glass ? cn('lg flex h-11 shrink-0 p-1', pinned && 'lg-bar') : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS,
+        // A strip's glass fades in as it sticks; a pinned row is glass from the start.
+        glass && !pinned && 'lg-stuck-in',
         fill && 'w-full',
         className,
       )}

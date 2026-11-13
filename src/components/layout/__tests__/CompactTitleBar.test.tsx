@@ -65,7 +65,7 @@ describe('titleColumns', () => {
     expect(titleColumns(393, 16, 120, 80)).toEqual({ columns: '120px minmax(0,1fr) 120px', lead: null })
   })
 
-  it("lead-aligns it when it can't be centred on screen (Analytics' 4W | 12W | 1Y)", () => {
+  it("lead-aligns it when it can't be centred on screen", () => {
     // No back circle: the page's 16 pt margin.
     expect(titleColumns(402, 16, 182, 80)).toEqual({ columns: '16px minmax(0,1fr) 182px', lead: 0 })
     // 16 pt after a back circle, beside Goals' ‹ 2026 ›.
@@ -113,6 +113,22 @@ describe('CompactTitleBar', () => {
     strip.getBoundingClientRect = () => ({ top: DIVIDER + 200, bottom: DIVIDER + 200 + STATUS_BAR }) as DOMRect
     await scrollTo(61)
     expect(edge.style.getPropertyValue('--sticky-h')).toBe('')
+  })
+
+  it('grows the scroll edge by strips stuck one under another, as Activities\' switcher and month', async () => {
+    tabPage()
+    const main = document.querySelector('main')!
+    for (const [top, height] of [[DIVIDER + 60, 40], [DIVIDER, 60], [DIVIDER + 400, 40]] as const) {
+      const strip = document.createElement('div')
+      strip.setAttribute('data-sticky-strip', '')
+      strip.getBoundingClientRect = () => ({ top, bottom: top + height }) as DOMRect
+      main.appendChild(strip)
+    }
+    const edge = document.createElement('div')
+    edge.className = 'scroll-edge'
+    document.body.appendChild(edge)
+    await mount(60)
+    expect(edge.style.getPropertyValue('--sticky-h')).toBe('100px')
   })
 
   it("shows a page's short bar title where it has one (Goals & season)", async () => {
@@ -241,36 +257,43 @@ describe('CompactTitleBar', () => {
     expect(gear.querySelector('svg')).not.toBeNull()
   })
 
-  it("carries the page's segmented control once it is under the bar", async () => {
+  it('leaves a switcher row on the page, never in the bar', async () => {
     tabPage()
     document.querySelector('main')!.insertAdjacentHTML(
       'beforeend',
-      '<div role="radiogroup" aria-label="Period" data-bar-segments><button aria-checked="true" aria-label="4 weeks">4W</button><button aria-checked="false" aria-label="12 weeks">12W</button></div>',
+      '<div role="tablist" aria-label="View"><button role="tab" aria-selected="true">Week</button><button role="tab" aria-selected="false">Month</button></div>',
     )
-    const group = document.querySelector('[data-bar-segments]')!
-    place(group, STATUS_BAR + 200, 34)
-    const twelve = vi.fn()
-    group.querySelectorAll('button')[1]!.addEventListener('click', twelve)
-
-    await mount(60)
+    await mount(200)
     expect(shown()).toBe(true)
+    expect(within(bar()).queryByRole('tab')).toBeNull()
     expect(within(bar()).queryByTestId('compact-bar-segments')).toBeNull()
+  })
 
-    await scrollTo(200)
-    const mirror = within(bar()).getByTestId('compact-bar-segments')
-    expect(mirror.getAttribute('aria-label')).toBe('Period')
-    const [four, twelveMirror] = within(mirror).getAllByRole('button')
-    expect(four!.textContent).toBe('4W')
-    expect(four!.getAttribute('aria-pressed')).toBe('true')
-    expect(twelveMirror!.getAttribute('aria-label')).toBe('12 weeks')
-    twelveMirror!.click()
-    expect(twelve).toHaveBeenCalledTimes(1)
+  it("carries Analytics' period as one round button that opens the page's menu", async () => {
+    tabPage()
+    document.querySelector('main')!.insertAdjacentHTML(
+      'beforeend',
+      '<button data-bar-action="period" aria-label="Period: 4 weeks" aria-expanded="false"><span>4W</span></button>',
+    )
+    const own = document.querySelector<HTMLElement>('[data-bar-action]')!
+    const open = vi.fn(() => own.setAttribute('aria-expanded', 'true'))
+    own.addEventListener('click', open)
+    await mount(60)
+    const period = within(bar()).getByRole('button', { name: 'Period: 4 weeks' })
+    expect(period.textContent).toBe('4W')
+    expect(period.className).toContain('h-11')
+    expect(period.className).toContain('lg-bar')
+    expect(period.getAttribute('aria-expanded')).toBe('false')
+    period.click()
+    expect(open).toHaveBeenCalledTimes(1)
+    await scrollTo(61)
+    expect(within(bar()).getByRole('button', { name: 'Period: 4 weeks' }).getAttribute('aria-expanded')).toBe('true')
   })
 
   it('hands a header control to the bar as it collapses in', async () => {
     document.body.innerHTML = `<main><header>
-      <div><h1>Activities</h1><div role="tablist" aria-label="View" data-bar-segments><button role="tab" aria-selected="true">List</button><button role="tab" aria-selected="false">Map</button></div></div>
-      <p data-title-sub>272 runs</p>
+      <div><h1>Goals</h1><div role="group" aria-label="Season year" data-bar-segments="stepper"><button aria-label="Previous year"></button><span data-bar-value>2026</span><button aria-label="Next year"></button></div></div>
+      <p data-title-sub>A season</p>
     </header></main>`
     place(document.querySelector('h1')!, STATUS_BAR + 4, 40)
     place(document.querySelector('[data-bar-segments]')!, STATUS_BAR + 4, 44)
@@ -281,7 +304,7 @@ describe('CompactTitleBar', () => {
 
     await scrollTo(60)
     expect(shown()).toBe(true)
-    expect(within(within(bar()).getByTestId('compact-bar-segments')).getAllByRole('button').map((b) => b.textContent)).toEqual(['List', 'Map'])
+    expect(within(bar()).getByTestId('compact-bar-segments').textContent).toBe('2026')
     expect(group.style.opacity).toBe('0')
     expect(group.style.pointerEvents).toBe('none')
     expect(document.querySelector<HTMLElement>('p')!.style.opacity).toBe('0')
@@ -292,10 +315,9 @@ describe('CompactTitleBar', () => {
 
   it("carries Goals' year stepper, and Shoes' add, in the bar", async () => {
     tabPage()
-    document.querySelector('main')!.insertAdjacentHTML(
-      'beforeend',
-      '<div role="group" aria-label="Season year" data-bar-segments="stepper"><button aria-label="Previous year"></button><span data-bar-value>2026</span><button aria-label="Next year" disabled></button></div>',
-    )
+    document.querySelector('main > div')!.outerHTML =
+      '<header><h1>Goals</h1><div role="group" aria-label="Season year" data-bar-segments="stepper"><button aria-label="Previous year"></button><span data-bar-value>2026</span><button aria-label="Next year" disabled></button></div></header>'
+    place(document.querySelector('h1')!, STATUS_BAR + 4, 40)
     const group = document.querySelector('[data-bar-segments]')!
     place(group, STATUS_BAR + 4, 34)
     const older = vi.fn()

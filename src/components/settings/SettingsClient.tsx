@@ -14,6 +14,7 @@ import { formatRelativeAgo } from '@/lib/formatters'
 import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
 import { BackButton } from '@/components/ui/BackButton'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { AccentPicker } from './AccentPicker'
@@ -210,10 +211,7 @@ export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device
 
 function SettingsHeader() {
   return (
-    <header className="mb-1.5">
-      <BackButton label={t.pages.settings.back} fallbackHref="/profile" className="lg:hidden" />
-      <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
-    </header>
+    <PageHeader back={<BackButton label={t.pages.settings.back} fallbackHref="/profile" />} backOnPhoneOnly title={t.pages.settings.title} className="mb-1.5" />
   )
 }
 

@@ -1,7 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { GlassLayers } from '@/components/ui/GlassSurface'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { Check, ChevronDown } from 'lucide-react'
+import { BAR_HEIGHT } from '@/components/layout/CompactTitleBar'
+import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { formatDate, formatMonthShortYear } from '@/lib/formatters'
 import { linePath } from '@/lib/linePath'
@@ -135,37 +138,103 @@ export function AxisLabels({ labels, className }: { labels: string[]; className?
   )
 }
 
-/**
- * The page's one period control (v4.17), right of the title: a header
- * toggle in glass, as SegmentedTabs' barMirror recipe (Liquid Glass v2,
- * section 11) - 36 pt segments in a 44 pt capsule, the chosen one on the tab
- * bar's pill. It stays a radiogroup: a period filters the tab under it, it
- * is not a tab of its own.
- */
+/** One round button, so the compact bar carries it as any page's button; its menu is a radiogroup, not tabs. */
 export function PeriodControl<P extends string>({ periods, value, onChange }: { periods: readonly P[]; value: P; onChange: (p: P) => void }) {
   const s = t.analytics.cards.period
+  const [at, setAt] = useState<{ top: string; right: number } | null>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const menuId = useId()
+  const open = at !== null
+
+  function toggle() {
+    const box = buttonRef.current?.getBoundingClientRect()
+    if (open || !box) return setAt(null)
+    // Pressed from the compact bar, the button itself has scrolled away: the menu drops from the bar instead.
+    setAt({ top: `max(${box.bottom + 8}px, calc(var(--safe-top) + ${BAR_HEIGHT}px))`, right: window.innerWidth - box.right })
+  }
+
+  function pick(p: P) {
+    onChange(p)
+    setAt(null)
+    buttonRef.current?.focus({ preventScroll: true })
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!menuRef.current?.contains(target) && !buttonRef.current?.contains(target)) setAt(null)
+    }
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setAt(null)
+      buttonRef.current?.focus({ preventScroll: true })
+    }
+    const close = () => setAt(null)
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', key)
+    window.addEventListener('scroll', close, { passive: true })
+    menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus({ preventScroll: true })
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('keydown', key)
+      window.removeEventListener('scroll', close)
+    }
+  }, [open])
+
   return (
-    // data-bar-segments: the compact top bar carries it once it scrolls away.
-    <div role="radiogroup" aria-label={s.label} data-bar-segments className="lg flex h-11 shrink-0 p-1">
-      <GlassLayers />
-      {periods.map((p) => (
-        <button
-          key={p}
-          type="button"
-          role="radio"
-          aria-checked={p === value}
-          // "4W" on screen, "4 weeks" read aloud (3.1.0).
-          aria-label={s.words[p]}
-          onClick={() => onChange(p)}
-          className={cn(
-            'lg-press hit-44 flex h-9 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-[15px] text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            p === value ? 'bg-[var(--tab-pill)] font-semibold' : 'font-medium',
-          )}
-        >
-          {s.short[p]}
-        </button>
-      ))}
-    </div>
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        // The compact top bar keeps this button once the page scrolls.
+        data-bar-action="period"
+        data-testid="period-button"
+        aria-label={s.button(s.words[value] ?? value)}
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        onClick={toggle}
+        className={glassClass('bar', 'hit-44 flex h-11 min-w-11 shrink-0 items-center justify-center gap-0.5 pl-3.5 pr-2.5 text-[15px] font-semibold text-foreground')}
+      >
+        <GlassLayers />
+        <span>{s.short[value]}</span>
+        <ChevronDown size={14} strokeWidth={2.4} aria-hidden="true" />
+      </button>
+      {at &&
+        createPortal(
+          <div
+            ref={menuRef}
+            id={menuId}
+            role="radiogroup"
+            aria-label={s.label}
+            data-testid="period-menu"
+            className={glassClass('bar', 'lg-fade-in fixed z-50 flex min-w-32 flex-col gap-0.5 rounded-[22px] p-1.5')}
+            style={{ top: at.top, right: at.right }}
+          >
+            <GlassLayers />
+            {periods.map((p) => (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={p === value}
+                // "4W" on screen, "4 weeks" read aloud (3.1.0).
+                aria-label={s.words[p]}
+                onClick={() => pick(p)}
+                className={cn(
+                  'lg-press flex h-11 items-center justify-between gap-3 rounded-full px-3.5 text-[15px] text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  p === value ? 'bg-[var(--tab-pill)] font-semibold' : 'font-medium',
+                )}
+              >
+                {s.short[p]}
+                {p === value && <Check size={16} strokeWidth={2.4} aria-hidden="true" />}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </>
   )
 }
 

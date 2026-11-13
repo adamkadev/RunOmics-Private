@@ -10,11 +10,9 @@ export const revalidate = 3600
 export default async function RacePage() {
   await loadData()
   const data = await getRacePageData(appTodayIso())
+  const back = <BackButton label={t.race.back} fallbackHref="/profile" />
 
   return (
-    <div className="space-y-4">
-      <BackButton label={t.race.back} fallbackHref="/profile" />
-      {data ? <RaceView data={data} /> : <NoRace />}
-    </div>
+    data ? <RaceView data={data} back={back} /> : <NoRace back={back} />
   )
 }

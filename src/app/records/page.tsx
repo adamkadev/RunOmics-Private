@@ -8,6 +8,7 @@ import { RecordsClient } from '@/components/records/RecordsClient'
 import { appTodayIso } from '@/lib/calendarDate'
 import { EFFORT_LIST_MAX } from '@/components/records/recordsView'
 import { BackButton } from '@/components/ui/BackButton'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
 
@@ -26,12 +27,7 @@ export default async function RecordsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <BackButton label={t.pages.records.back} fallbackHref="/profile" />
-        <div>
-          <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
-        </div>
-      </div>
+      <PageHeader back={<BackButton label={t.pages.records.back} fallbackHref="/profile" />} title={t.pages.records.title} />
 
       <RecordsClient
         records={records}

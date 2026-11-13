@@ -66,6 +66,14 @@ export const fr = {
       profile: 'Progression',
       settings: 'Réglages',
     },
+    // « Progression » touches the selected pill at the tab bar's 10 px floor.
+    tabItems: {
+      dashboard: 'Aujourd’hui',
+      activities: 'Activités',
+      plan: 'Plan',
+      analytics: 'Analyses',
+      profile: 'Progrès',
+    },
     backTo: (page: string) => `Retour à ${page}`,
     showTabs: (page: string) => `${page} – afficher les onglets`,
   },
@@ -847,6 +855,7 @@ export const fr = {
     cards: {
       period: {
         label: 'Période',
+        button: (words: string) => `Période\u00a0: ${words}`,
         short: { '4w': '4S', '12w': '12S', '1y': '1A' } as Record<string, string>,
         words: { '4w': '4 semaines', '12w': '12 semaines', '1y': 'un an' } as Record<string, string>,
         hours: (h: string) => `${h} h`,

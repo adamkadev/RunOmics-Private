@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react'
 import { CardHead } from '@/components/analytics/AnalyticsKit'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { Unit } from '@/components/ui/Stat'
@@ -70,15 +72,17 @@ function Section({ section }: { section: CompareSection }) {
   )
 }
 
-export function Checkpoint({ view }: { view: CheckpointPageView }) {
+export function Checkpoint({ view, back }: { view: CheckpointPageView; back?: ReactNode }) {
   const { status } = view
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="flex flex-col gap-1">
-        <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="checkpoint-eyebrow">{view.eyebrow}</span>
-        <h1 className="text-display text-foreground text-pretty">{t.checkpoint.title}</h1>
+      <PageHeader
+        back={back}
+        title={t.checkpoint.title}
+        eyebrow={<span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="checkpoint-eyebrow">{view.eyebrow}</span>}
+      >
         {view.range && <p className="text-sm text-muted-foreground text-pretty" data-testid="checkpoint-range">{view.range}</p>}
-      </header>
+      </PageHeader>
 
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="checkpoint-status">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">

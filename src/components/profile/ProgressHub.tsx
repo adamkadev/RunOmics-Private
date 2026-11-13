@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ChevronRight, Settings } from 'lucide-react'
 import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { formatDate, formatDecimal, formatDuration, formatKm, formatNumber, formatPercent } from '@/lib/formatters'
@@ -203,20 +204,23 @@ export function ProgressHub({ view, checkpoint = null, explored = null, homeRuns
 
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="mb-1.5 flex items-start justify-between gap-3">
-        <h1 className="min-w-0 text-display text-foreground">{t.nav.items.profile}</h1>
-        <Link
-          href="/settings"
-          aria-label={h.settings}
-          data-testid="settings-gear"
-          // The compact bar reads this to keep the gear at the top right once the page scrolls.
-          data-bar-action="settings"
-          className={glassClass('regular', cn(GLASS_CIRCLE, 'lg:hidden'))}
-        >
-          <GlassLayers />
-          <Settings size={20} strokeWidth={2} aria-hidden="true" />
-        </Link>
-      </header>
+      <PageHeader
+        title={t.nav.items.profile}
+        className="mb-1.5"
+        action={
+          <Link
+            href="/settings"
+            aria-label={h.settings}
+            data-testid="settings-gear"
+            // The compact bar reads this to keep the gear at the top right once the page scrolls.
+            data-bar-action="settings"
+            className={glassClass('bar', cn(GLASS_CIRCLE, 'lg:hidden'))}
+          >
+            <GlassLayers />
+            <Settings size={20} strokeWidth={2} aria-hidden="true" />
+          </Link>
+        }
+      />
 
       {!view.race && view.block ? <BlockCard block={view.block} /> : <RaceCard race={view.race} />}
 

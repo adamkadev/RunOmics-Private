@@ -4,6 +4,7 @@ import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoach
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { formatDate, formatKm } from '@/lib/formatters'
 import { Plus } from 'lucide-react'
 import { t } from '@/i18n'
@@ -38,21 +39,11 @@ export default async function ShoesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <BackButton label={t.pages.shoes.back} fallbackHref="/profile" />
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
-            <p className="mt-0.5 text-footnote text-muted-foreground">
-              {t.shoes.tracked(formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)))}
-            </p>
-            {listCheckedOn && (
-              <p className="mt-0.5 text-footnote text-muted-foreground" data-testid="shoe-list-old">
-                {t.shoes.listCheckedAt(formatDate(listCheckedOn))}
-              </p>
-            )}
-          </div>
-          {/* Pairs come from Garmin; adding one happens there. */}
+      <PageHeader
+        back={<BackButton label={t.pages.shoes.back} fallbackHref="/profile" />}
+        title={t.pages.shoes.title}
+        action={
+          // Pairs come from Garmin; adding one happens there.
           <a
             href={GARMIN_GEAR_URL}
             target="_blank"
@@ -60,13 +51,20 @@ export default async function ShoesPage() {
             aria-label={t.shoes.addLabel}
             // The compact top bar keeps this button once the page scrolls.
             data-bar-action="add"
-            className={glassClass('regular', GLASS_CIRCLE)}
+            className={glassClass('bar', GLASS_CIRCLE)}
           >
             <GlassLayers />
             <Plus size={20} strokeWidth={2} aria-hidden="true" />
           </a>
-        </div>
-      </div>
+        }
+      >
+        <p className="text-footnote text-muted-foreground">{t.shoes.tracked(formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)))}</p>
+        {listCheckedOn && (
+          <p className="text-footnote text-muted-foreground" data-testid="shoe-list-old">
+            {t.shoes.listCheckedAt(formatDate(listCheckedOn))}
+          </p>
+        )}
+      </PageHeader>
 
       <DefaultShoe options={defaultOptions} initial={getShoeChoices().defaultGearId} />
 

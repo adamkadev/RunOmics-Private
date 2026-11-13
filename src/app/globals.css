@@ -225,6 +225,8 @@
   --tab-glass-fill:          rgb(255 255 255 / 0.36);
   --clear-glass-fill:        rgb(255 255 255 / 0.10);
   --clear-glass-filter:      blur(8px) saturate(1.8);
+  --bar-glass-filter:        blur(18px) saturate(0) brightness(1.02);
+  --bar-glass-edge-filter:   blur(1px) saturate(0) brightness(1.08);
   --sheet-glass-fill:        rgb(250 251 250 / 0.55);
   --sheet-glass-filter:      blur(28px) saturate(2);
   --sheet-fill:              rgb(0 0 0 / 0.05);
@@ -360,6 +362,8 @@
   --tab-glass-fill:          rgb(34 38 37 / 0.60);
   --clear-glass-fill:        rgb(16 18 18 / 0.22);
   --clear-glass-filter:      blur(5px) saturate(1.6) brightness(0.9);
+  --bar-glass-filter:        blur(12px) saturate(0) brightness(1.1);
+  --bar-glass-edge-filter:   blur(1px) saturate(0) brightness(1.25);
   --sheet-glass-fill:        rgb(28 31 31 / 0.80);
   --sheet-glass-filter:      blur(28px) saturate(1.8);
   --sheet-fill:              rgb(255 255 255 / 0.10);
@@ -581,6 +585,11 @@
   .lg-clear {
     --glass-fill: var(--clear-glass-fill);
     --glass-filter: var(--clear-glass-filter);
+  }
+  /* Bar buttons and pinned rows: grey glass, so the page's glow never tints them. */
+  .lg-bar {
+    --glass-filter: var(--bar-glass-filter);
+    --glass-edge-filter: var(--bar-glass-edge-filter);
   }
 
   /* Light glass reads darker than the page under a sheet's scrim or a selected platter, so its secondary and accent

@@ -1,5 +1,6 @@
 import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
 import { BackButton } from '@/components/ui/BackButton'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { formatDate, formatKm } from '@/lib/formatters'
@@ -23,15 +24,13 @@ export function Vo2GradeDetail({ view }: { view: Vo2GradeView }) {
 
   return (
     <div className="space-y-3">
-      <div>
-        <BackButton label={g.back} fallbackHref="/athlete" />
-        <h1 className="text-display text-foreground">{g.title}</h1>
+      <PageHeader back={<BackButton label={g.back} fallbackHref="/athlete" />} title={g.title}>
         {view.status === 'graded' && (
-          <p className="mt-1 text-footnote text-muted-foreground">
+          <p className="text-footnote text-muted-foreground">
             <GradeBandLabel band={view.band} /> · {g.source}
           </p>
         )}
-      </div>
+      </PageHeader>
 
       {view.status === 'calibrating' ? <Vo2GradeCard view={view} /> : <Ladder view={view} />}
     </div>
