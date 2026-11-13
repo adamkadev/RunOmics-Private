@@ -61,9 +61,9 @@ describe('ActivityDetailClient', () => {
     vi.restoreAllMocks()
   })
 
-  it('keeps the run in reading order: map, title, stats, tabs, verdict', () => {
+  it('keeps the run in reading order: map, title, stats, verdict, tabs', () => {
     const { container } = renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
-    const order = ['run-hero', 'activity-subtitle', 'run-stats', 'sticky-bar', 'run-verdict'].map((id) => screen.getByTestId(id))
+    const order = ['run-hero', 'activity-subtitle', 'run-stats', 'run-verdict', 'sticky-bar'].map((id) => screen.getByTestId(id))
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
@@ -208,14 +208,14 @@ describe('ActivityDetailClient', () => {
   })
 
   // So a tab switch never moves the page under the hero.
-  it('keeps the map, title and numbers above every tab, and the verdict on Overview alone', () => {
+  it('keeps the map, title, numbers and verdict above every tab', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
     renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
 
     expect(screen.getByRole('heading', { name: 'Threshold run' })).toBeInTheDocument()
     expect(within(screen.getByTestId('run-hero')).getByTestId('map')).toBeInTheDocument()
     expect(screen.getByTestId('run-stats')).toBeInTheDocument()
-    expect(screen.queryByTestId('run-verdict')).toBeNull()
+    expect(screen.getByTestId('run-verdict')).toBeInTheDocument()
   })
 
   it('floats back, expand and share on the map, and expand opens it full screen', () => {

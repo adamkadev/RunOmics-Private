@@ -27,13 +27,23 @@ function paceOf(split: ActivitySplit): number | null {
 
 function QuietRow({ label, pace, hr }: { label: string; pace: number | null; hr: number | null }) {
   return (
-    <div className={cn(ROW, 'min-h-6 text-subhead')}>
-      <span className="text-subtle-2">·</span>
+    <div className={cn(ROW, 'min-h-6 text-footnote')} data-testid="quiet-row">
+      <span />
       <span className="truncate text-muted-foreground">{label}</span>
       <span className={MUTED_CELL}>{pace ? formatClock(pace) : '–'}</span>
       <span className={MUTED_CELL}>{hr ?? '–'}</span>
     </div>
   )
+}
+
+/** Laps the watch split a warm-up into read as one: they are not reps and should not be as loud. */
+function merged(laps: ActivitySplit[]): ActivitySplit | null {
+  if (laps.length === 0) return null
+  const durationSec = laps.reduce((sum, lap) => sum + lap.durationSec, 0)
+  const distanceM = laps.reduce((sum, lap) => sum + lap.distanceM, 0)
+  const hrSec = laps.reduce((sum, lap) => sum + (lap.avgHr !== null ? lap.durationSec : 0), 0)
+  const avgHr = hrSec > 0 ? Math.round(laps.reduce((sum, lap) => sum + (lap.avgHr ?? 0) * lap.durationSec, 0) / hrSec) : null
+  return { ...laps[0]!, durationSec, distanceM, avgHr, laps: [] }
 }
 
 type RepStanding = 'faster' | 'inBand' | 'slower'
@@ -86,6 +96,7 @@ export function IntervalSet({ set, bare = false }: Props) {
   const band = set.band
   const planned = set.bandSource === 'plan'
   const recovery = recoveryAverage(set.reps)
+  const warmup = merged(set.warmups)
   const warmupLabel = s.intervalTypes.interval_warmup ?? ''
   const cooldownLabel = s.intervalTypes.interval_cooldown ?? ''
   const stridePaces = set.reps.map((r) => r.paceSecPerKm).filter((p): p is number => p !== null)
@@ -134,9 +145,7 @@ export function IntervalSet({ set, bare = false }: Props) {
           <span className="text-right">{s.cols.hr}</span>
         </div>
 
-        {set.warmups.map((lap, i) => (
-          <QuietRow key={`w${i}`} label={`${warmupLabel} ${km(lap.distanceM)} ${t.units.km}`} pace={paceOf(lap)} hr={lap.avgHr} />
-        ))}
+        {warmup && <QuietRow label={`${warmupLabel} ${km(warmup.distanceM)} ${t.units.km}`} pace={paceOf(warmup)} hr={warmup.avgHr} />}
 
         {set.body && <QuietRow label={`${s.bodyLap} ${km(set.body.distanceM)} ${t.units.km}`} pace={paceOf(set.body)} hr={set.body.avgHr} />}
 
