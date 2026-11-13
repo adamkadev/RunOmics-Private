@@ -1061,7 +1061,6 @@ export const en = {
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
-        flat: (signed: string) => `${signed} · flat`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {

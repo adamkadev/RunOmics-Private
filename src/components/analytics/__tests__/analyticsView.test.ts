@@ -462,6 +462,10 @@ describe('paceNotes', () => {
     expect(notes.easy).toBe(t.analytics.cards.summary.since(t.analytics.cards.summary.faster('20 s'), 'Aug 24'))
   })
 
+  it('names the direction of a threshold change of a few seconds', () => {
+    expect(paceNotes({ now: 261, delta: -4 }, null, 'Oct 19').threshold).toBe(t.analytics.cards.summary.since(t.analytics.cards.summary.faster('4 s'), 'Oct 19'))
+  })
+
   it('dates a comeback’s change from the return', () => {
     expect(paceNotes(null, { now: 420, delta: -15 }, null).easy).toBe(t.analytics.cards.summary.sinceReturn(t.analytics.cards.summary.faster('15 s')))
   })

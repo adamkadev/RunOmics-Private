@@ -994,7 +994,6 @@ export const fr = {
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
-        flat: (signed: string) => `${signed} · stable`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {
