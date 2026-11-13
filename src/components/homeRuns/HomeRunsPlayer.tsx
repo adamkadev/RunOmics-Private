@@ -19,7 +19,8 @@ import { t } from '@/i18n'
 /** Holds a long replay's detail at 1080 × 1920. */
 const BITRATE = 8_000_000
 
-type Period = 'all' | 'year' | 'month'
+/** 'all', or a year: "2025". */
+type Period = string
 
 interface PeriodTab {
   id: Period
@@ -27,17 +28,14 @@ interface PeriodTab {
   runs: HomeRun[]
 }
 
-/** All, this year and this month, each only when it holds runs the wider one does not. */
-export function homeRunPeriods(runs: HomeRun[], today: string): PeriodTab[] {
-  const capital = (text: string) => text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
-  const year = runs.filter((run) => run.date.startsWith(today.slice(0, 4)))
-  const month = year.filter((run) => run.date.startsWith(today.slice(0, 7)))
-  const tabs: PeriodTab[] = [{ id: 'all', label: t.homeRuns.periodAll, runs }]
-  if (year.length > 0 && year.length < runs.length) tabs.push({ id: 'year', label: today.slice(0, 4), runs: year })
-  if (month.length > 0 && month.length < tabs.at(-1)!.runs.length) {
-    tabs.push({ id: 'month', label: capital(formatDate(today, { precision: 'month', year: 'never' })), runs: month })
-  }
-  return tabs.length > 1 ? tabs : []
+/** All, then each year with runs, newest first, so a past year can be replayed; none when they all fall in one year. */
+export function homeRunPeriods(runs: HomeRun[]): PeriodTab[] {
+  const years = [...new Set(runs.map((run) => run.date.slice(0, 4)))].sort().reverse()
+  if (years.length < 2) return []
+  return [
+    { id: 'all', label: t.homeRuns.periodAll, runs },
+    ...years.map((year) => ({ id: year, label: year, runs: runs.filter((run) => run.date.startsWith(year)) })),
+  ]
 }
 
 /** The start point a link or the switcher picked (`?start=2`), the busiest one by default. */
@@ -60,11 +58,11 @@ export function HomeRunsSubtitle({ spots }: { spots: HomeRunSpot[] }) {
   )
 }
 
-export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: string }) {
+export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
   const accentId = useAccent()
   const [spotIdx, setSpotIdx] = useHomeRunSpot(spots)
   const spot = spots[spotIdx]!
-  const periods = useMemo(() => homeRunPeriods(spot.runs, today), [spot, today])
+  const periods = useMemo(() => homeRunPeriods(spot.runs), [spot])
   const [period, setPeriod] = useState<Period>('all')
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(true)
@@ -168,7 +166,7 @@ export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: 
   return (
     <div className="flex flex-col items-center gap-3.5">
       {periods.length > 0 && (
-        <div className={cn(SEGMENTED_TRACK_CLASS, 'w-full max-w-[420px]')} role="group" aria-label={t.homeRuns.periods} data-testid="home-runs-periods">
+        <div className={cn(SEGMENTED_TRACK_CLASS, 'w-full max-w-[420px] overflow-x-auto')} role="group" aria-label={t.homeRuns.periods} data-testid="home-runs-periods">
           {periods.map((tab) => (
             <button
               key={tab.id}
