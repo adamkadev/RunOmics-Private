@@ -184,9 +184,9 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
 
   const avatar = (
     <Link
-      href="/profile"
-      aria-label={t.nav.items.profile}
-      // The compact bar keeps it at the top right once the page scrolls.
+      href="/settings"
+      aria-label={t.nav.items.settings}
+      // The compact bar keeps it at the top right once the page scrolls. It opens the account, as an avatar does on iOS.
       data-bar-action="avatar"
       className="lg-press hit-44 flex size-8 shrink-0 items-center justify-center rounded-full"
     >

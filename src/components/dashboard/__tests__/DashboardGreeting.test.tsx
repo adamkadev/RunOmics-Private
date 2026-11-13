@@ -31,11 +31,11 @@ describe('DashboardGreeting', () => {
     expect(screen.getByRole('heading', { level: 1, name: t.pages.dashboard.title })).toBeInTheDocument()
   })
 
-  it('makes the avatar a 44 pt link to Progress', () => {
+  it('makes the avatar a 44 pt link to Settings', () => {
     render(<DashboardGreeting name="Adam" />)
-    const link = screen.getByRole('link', { name: t.nav.items.profile })
+    const link = screen.getByRole('link', { name: t.nav.items.settings })
 
-    expect(link).toHaveAttribute('href', '/profile')
+    expect(link).toHaveAttribute('href', '/settings')
     // The disc is 32 pt in its capsule; hit-44 grows its target without growing the row.
     expect(link.className).toContain('hit-44')
     expect(link.className).toContain('size-8')
@@ -72,7 +72,7 @@ describe('DashboardGreeting', () => {
     // The glass layers first, then the ↻.
     expect([...capsule.children].filter((c) => c.tagName === 'I').map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
     expect([...capsule.children].find((c) => c.tagName !== 'I')).toBe(button)
-    expect(capsule.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
+    expect(capsule.contains(screen.getByRole('link', { name: t.nav.items.settings }))).toBe(true)
 
     // Signed out: the tap goes to Settings, where signing in lives.
     await userEvent.click(button)
