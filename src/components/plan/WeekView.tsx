@@ -232,7 +232,8 @@ export function WeekView({
     // A run that kept a generic name ("Easy", the watch's) is titled by the session it ran: "Easy run + 6 strides".
     // One named for another kind ("Easy run" on a threshold day) keeps its own name.
     const first = acts[0]
-    const generic = !!first && !!session && isGenericName(first.description) && (namedType(first.description) ?? first.type) === first.type
+    // Judged as shown: "Easy · 7.5 km" reads "Easy run" once the plan's distance is dropped, as generic as "Easy".
+    const generic = !!first && !!session && isGenericName(sessionLabel(activityTitle(first))) && (namedType(first.description) ?? first.type) === first.type
     const named = !!first && !generic
     const title = sessionLabel(named ? activityTitle(acts[0]!) : workoutSummary(session ?? workouts[0]!).shortTitle)
     const planned = session ? plannedText(session, title) : null
