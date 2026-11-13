@@ -135,14 +135,13 @@ describe('ShareCardModal', () => {
     }
   })
 
-  it('offers 4:5 and 9:16, the preview taking the picked ratio on every tab', async () => {
+  it('makes every card 4:5, for a chat, with no size to pick', async () => {
     open()
-    expect(checked('Size')).toBe('4:5')
-    await userEvent.click(screen.getByRole('radio', { name: '9:16' }))
-    expect(screen.getByTestId('share-preview').style.aspectRatio).toBe('9 / 16')
+    expect(screen.queryByRole('radiogroup', { name: 'Size' })).toBeNull()
+    expect(screen.getByTestId('share-preview').style.aspectRatio).toBe('4 / 5')
     await userEvent.click(screen.getByRole('radio', { name: 'Stats' }))
-    expect(screen.getByTestId('share-preview').style.aspectRatio).toBe('9 / 16')
-    expect(document.querySelector('canvas')!.height).toBe(Math.round(16 / 9 * document.querySelector('canvas')!.width))
+    expect(screen.getByTestId('share-preview').style.aspectRatio).toBe('4 / 5')
+    expect(document.querySelector('canvas')!.height).toBe(Math.round(5 / 4 * document.querySelector('canvas')!.width))
   })
 
   it('makes the empty photo frame the picker, and shares nothing until a photo is chosen', async () => {

@@ -335,7 +335,8 @@ behaves as before until a token is added as a secret.
   every caller thins alike.
 - The light-mode accent needs a deeper tone to survive the pale backdrops, but not the same deepening
   `ACCENT_SWATCHES_LIGHT` applies, so the route line does not go muddy against the map design.
-- Export is a 1080px-wide story frame — the resolution Instagram, Strava and Garmin expect.
+- Export is a 1080 × 1350 (4:5) frame, made for a chat: it shows whole in Messages and WhatsApp. The drawing code
+  still takes a 9:16 `story` size, which the sheet no longer offers.
 - Clipboard copy must construct the `ClipboardItem` synchronously with a pending promise to keep
   Safari's user-gesture check.
 - Reverse-geocode results are cached in `sessionStorage` so re-opening a card does not re-hit the
