@@ -84,3 +84,13 @@ export function sessionLabel(title: string): string {
   if (!isStructure(set)) return name
   return isTypeWord(words) ? notation(set) : `${notation(set)} ${lowerFirst(words.trim())}`
 }
+
+/** The kind of activity Garmin names a run after when nobody renamed it, after an optional place. */
+const WATCH_KIND = /(?:^|\s)(?:running|run|treadmill running|trail running|course à pied|course sur tapis|course)$/iu
+
+/** "Hoenheim Course à pied", "Running": the watch's default name, which says nothing the session's type does not. */
+export function isWatchName(description: string | null | undefined): boolean {
+  const name = description?.trim() ?? ''
+  if (!name || /\d/.test(name) || isTypeWord(name)) return false
+  return WATCH_KIND.test(name)
+}

@@ -50,4 +50,10 @@ describe('ActivityThumbRow', () => {
     render(<ActivityThumbRow activity={{ ...activity, type: 'Base', description: 'Long run' }} variant="inset" />)
     expect(screen.getByTestId('thumb-row').textContent).toContain('Long run')
   })
+
+  it('names a run the watch named by place and kind with the word Plan uses for its session', () => {
+    render(<ActivityThumbRow activity={{ ...activity, type: 'Base', description: 'Hoenheim Course à pied' }} variant="inset" />)
+    expect(screen.getByTestId('thumb-row').textContent).toContain(t.plan.kinds.easy)
+    expect(screen.getByTestId('thumb-row').textContent).not.toContain('Hoenheim')
+  })
 })

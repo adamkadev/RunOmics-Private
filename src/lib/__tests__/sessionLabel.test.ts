@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { intendedType, sessionLabel } from '@/lib/activityTitle'
+import { intendedType, isWatchName, sessionLabel } from '@/lib/activityTitle'
 
 // Beside a type's dot or eyebrow, a session reads as its set, said once.
 describe('sessionLabel', () => {
@@ -59,5 +59,21 @@ describe('intendedType', () => {
     for (const description of ['Morning Run', '10K de Metz', 'Strides 6 × 20s', 'Intervals', 'Recovery Jog', '', undefined]) {
       expect(intendedType({ type: 'Tempo', description })).toBe('Tempo')
     }
+  })
+})
+
+describe('isWatchName', () => {
+  it('knows the watch’s default names, with or without a place', () => {
+    expect(isWatchName('Hoenheim Course à pied')).toBe(true)
+    expect(isWatchName('Running')).toBe(true)
+    expect(isWatchName('Hoenheim Running')).toBe(true)
+  })
+
+  it('keeps a name someone gave the run', () => {
+    expect(isWatchName('Long run')).toBe(false)
+    expect(isWatchName('Easy run')).toBe(false)
+    expect(isWatchName('Footing 4 × 6′')).toBe(false)
+    expect(isWatchName('')).toBe(false)
+    expect(isWatchName('Sortie au canal')).toBe(false)
   })
 })

@@ -12,7 +12,9 @@ import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatDuration, formatPace, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { activityTitle, sessionLabel } from '@/lib/activityTitle'
+import { activityTitle, isWatchName, sessionLabel } from '@/lib/activityTitle'
+import { isLongSession } from '@/domain/activity/longRun'
+import { kindLabel, kindOf } from '@/components/plan/sessionKind'
 
 interface Props {
   activity: ActivitySummary
@@ -37,8 +39,9 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
 }
 
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.type, variant = 'card' }: Props) {
-  // The session as its set ("3 × 8′ @ 4:25"), not its type: the type is the dot beside the meta.
-  const title = sessionLabel(activityTitle(a))
+  // The session as its set ("3 × 8′ @ 4:25"), not its type: the type is the dot beside the meta. A watch's
+  // default name gives way to the word Plan uses for the session.
+  const title = isWatchName(a.description) ? kindLabel(type, kindOf(type, isLongSession(a))) : sessionLabel(activityTitle(a))
   const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
   const router = useRouter()

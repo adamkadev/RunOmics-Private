@@ -2516,7 +2516,7 @@ export const fr = {
     VO2Max: 'VO₂ Max',
     Threshold: 'Seuil',
     Tempo: 'Tempo',
-    Base: 'Base',
+    Base: 'Footing',
     Race: 'Course',
   } as Record<ActivityType, string>,
 
