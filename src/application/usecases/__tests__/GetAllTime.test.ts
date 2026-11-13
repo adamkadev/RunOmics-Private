@@ -18,11 +18,11 @@ describe('allTimeView', () => {
     expect(view).toMatchObject({ km: 104, runs: 6, since: '2025-05-03', months: 17, currentYear: 2026 })
   })
 
-  it('gives one row per year with its km a month over the months it covers', () => {
+  it('gives one row per year with its km a month over the months run', () => {
     const view = allTimeView(RUNS, '2026-09-26')
-    expect(view.years.map(({ year, km, runs, months, kmPerMonth }) => ({ year, km, runs, months, kmPerMonth }))).toEqual([
-      { year: 2025, km: 43, runs: 3, months: 8, kmPerMonth: 5 },
-      { year: 2026, km: 61, runs: 3, months: 9, kmPerMonth: 7 },
+    expect(view.years.map(({ year, km, runs, months, monthsRun, kmPerMonth }) => ({ year, km, runs, months, monthsRun, kmPerMonth }))).toEqual([
+      { year: 2025, km: 43, runs: 3, months: 8, monthsRun: 2, kmPerMonth: 22 },
+      { year: 2026, km: 61, runs: 3, months: 9, monthsRun: 2, kmPerMonth: 30 },
     ])
   })
 

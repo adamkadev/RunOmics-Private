@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
-import { formatWeekKm } from '@/components/plan/weekPlanDays'
-import { formatRanKm } from '@/lib/formatters'
+import { formatRanKm, formatPlannedKm } from '@/lib/formatters'
 import { useToday } from '@/lib/useToday'
 import { useSkippedDays } from '@/lib/skippedDays'
 import type { SkipReason } from '@/domain/wellness/checkIn'
@@ -15,8 +14,8 @@ import type { ActivityType } from '@/domain/activity/types'
 import { weekStripDays, type WeekStripDay } from './weekStrip'
 import { t } from '@/i18n'
 
-const TRACK_PX = 120
-const MAX_BAR_PX = 92
+const TRACK_PX = 90
+const MAX_BAR_PX = 66
 const MIN_BAR_PX = 8
 
 interface Bar {
@@ -33,11 +32,12 @@ export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<st
   const px = (km: number) => Math.max(MIN_BAR_PX, Math.round((km / peak) * MAX_BAR_PX))
   return target.days.map((source, i) => {
     const day = strip[i]!
-    if (day.state === 'rest') return { day, height: 3, label: null }
-    if (day.state === 'done') return source.runs > 0 ? { day, height: px(source.ranKm), label: formatWeekKm(source.ranKm) } : { day, height: 3, label: null }
+    // A day without a run draws nothing: a stub would read as a very short run.
+    if (day.state === 'rest') return { day, height: 0, label: null }
+    if (day.state === 'done') return source.runs > 0 ? { day, height: px(source.ranKm), label: formatPlannedKm(source.ranKm) } : { day, height: 0, label: null }
     const km = source.plannedKm ?? 0
     // A missed day keeps its km over the amber bar, so it says what was missed.
-    return { day, height: px(km), label: km > 0 ? formatWeekKm(km) : null }
+    return { day, height: px(km), label: km > 0 ? formatPlannedKm(km) : null }
   })
 }
 
@@ -75,7 +75,7 @@ export function weekLegend(target: WeekTarget, bars: Bar[]): LegendEntry[] {
 function barStyle({ day, height }: Bar): CSSProperties {
   switch (day.state) {
     case 'rest':
-      return { height, background: 'var(--track)', borderRadius: 2 }
+      return { height }
     case 'done':
       return { height, background: day.color, borderRadius: 10 }
     case 'missed':
@@ -115,8 +115,31 @@ export function ThisWeekCard({
         <h2 className="text-headline text-foreground">{s.title}</h2>
         <p className="text-[13px] tabular-nums text-text-2">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
-          {targetKm !== null ? ` / ${formatWeekKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
+          {targetKm !== null ? ` / ${formatPlannedKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
         </p>
+      </div>
+
+      {/* Read before the bars: the key and what is left this week. */}
+      <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap text-[13px] text-muted-foreground">
+        {legend.map((entry) => (
+          <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">
+            <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: entry.color }} />
+            {entry.label}
+          </span>
+        ))}
+        {missed > 0 && (
+          <span className="flex items-center gap-[5px]" data-testid="legend-missed">
+            <span aria-hidden className="box-border size-[9px] rounded-[2px] border border-dashed border-[var(--warn)]" />
+            {s.missed}
+          </span>
+        )}
+        {(left > 0 || missed > 0) && (
+          <span className="ml-auto whitespace-nowrap text-text-2" data-testid="week-footer-count">
+            {left > 0 && s.runsLeft(left)}
+            {left > 0 && missed > 0 && ' · '}
+            {missed > 0 && <span className="text-[var(--warn)]">{s.missedCount(missed)}</span>}
+          </span>
+        )}
       </div>
 
       <ul className="pointer-events-none relative grid grid-cols-7 items-end gap-2" style={{ height: TRACK_PX }} data-testid="week-bars">
@@ -173,28 +196,6 @@ export function ThisWeekCard({
         ))}
       </div>
 
-      {/* Each entry on one line; with a miss in the week the count drops to its own line, right-aligned. */}
-      <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap border-t-[0.5px] border-[var(--row-separator)] pt-3 text-[13px] text-muted-foreground">
-        {legend.map((entry) => (
-          <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">
-            <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: entry.color }} />
-            {entry.label}
-          </span>
-        ))}
-        {missed > 0 && (
-          <span className="flex items-center gap-[5px]" data-testid="legend-missed">
-            <span aria-hidden className="box-border size-[9px] rounded-[2px] border border-dashed border-[var(--warn)]" />
-            {s.missed}
-          </span>
-        )}
-        {(left > 0 || missed > 0) && (
-          <span className="ml-auto whitespace-nowrap text-text-2" data-testid="week-footer-count">
-            {left > 0 && s.runsLeft(left)}
-            {left > 0 && missed > 0 && ' · '}
-            {missed > 0 && <span className="text-[var(--warn)]">{s.missedCount(missed)}</span>}
-          </span>
-        )}
-      </div>
     </section>
   )
 }

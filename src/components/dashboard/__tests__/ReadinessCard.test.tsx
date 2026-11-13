@@ -41,10 +41,11 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('readiness-status').textContent).toBe(`${t.formBand.neutral} · ${t.dashboard.readiness.lineByTone.build}`)
   })
 
-  it('names no form band and shows no form number while building back after a break', () => {
+  it('says when form will show, with no form tile or band, while building back after a break', () => {
     render(<ReadinessCard status={{ ...STATUS, tsbNow: -11, buildingBack: true }} />)
     expect(screen.getByTestId('readiness-status').textContent).toBe(t.dashboard.readiness.buildingBack)
-    expect(screen.getByTestId('tile-form')).toHaveTextContent(`${t.dashboard.readiness.formLabel}–`)
+    expect(screen.queryByTestId('tile-form')).toBeNull()
+    expect(screen.getByTestId('readiness-card')).toHaveTextContent(t.dashboard.readiness.formLater)
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.formBand[formBand(-11)])
   })
 
@@ -57,6 +58,13 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(fitness!.dataset.tone).toBe('good')
     expect(fatigue!.textContent).toBe(t.dashboard.readiness.deltaWeek(4, 7))
     expect(fatigue!.dataset.tone).toBe('worse')
+  })
+
+  it('says steady in grey for a delta that rounds to zero', () => {
+    render(<ReadinessCard status={{ ...STATUS, ctlDeltaShown: 0.3 }} />)
+    const [fitness] = screen.getAllByTestId('readiness-delta')
+    expect(fitness!.textContent).toBe(t.dashboard.readiness.steady(7))
+    expect(fitness!.dataset.tone).toBe('neutral')
   })
 
   it('says a neutral line in grey, never the accent, and opens Analytics', () => {

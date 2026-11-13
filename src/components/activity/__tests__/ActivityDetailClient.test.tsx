@@ -61,9 +61,9 @@ describe('ActivityDetailClient', () => {
     vi.restoreAllMocks()
   })
 
-  it('keeps the run in reading order: map, title, stats, tabs, verdict', () => {
+  it('keeps the run in reading order: map, title, stats, verdict, tabs', () => {
     const { container } = renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
-    const order = ['run-hero', 'activity-subtitle', 'run-stats', 'sticky-bar', 'run-verdict'].map((id) => screen.getByTestId(id))
+    const order = ['run-hero', 'activity-subtitle', 'run-stats', 'run-verdict', 'sticky-bar'].map((id) => screen.getByTestId(id))
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
@@ -89,7 +89,7 @@ describe('ActivityDetailClient', () => {
     renderDetail()
     const stats = screen.getByTestId('run-stats')
     expect(stats.textContent).toBe(
-      `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.units.min}${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
+      `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
     )
     expect(stats.className).toContain('grid-cols-[repeat(4,auto)]')
     expect(stats.className).toContain('gap-x-2')
@@ -132,6 +132,7 @@ describe('ActivityDetailClient', () => {
     expect(chips.getByTestId('run-effort').textContent).toBe(t.activities.row.rpeValue(1))
     expect(chips.getAllByTestId('run-conditions').map((chip) => chip.textContent)).toEqual(['Clear sky · 18°C', 'wind 2 km/h N'])
     expect(chips.getByTestId('run-shoe').textContent).toBe('Vomero Plus')
+    expect(chips.getByTestId('run-shoe-icon')).toBeInTheDocument()
     expect(chips.getByTestId('note-row')).toBeInTheDocument()
   })
 
@@ -208,14 +209,14 @@ describe('ActivityDetailClient', () => {
   })
 
   // So a tab switch never moves the page under the hero.
-  it('keeps the map, title and numbers above every tab, and the verdict on Overview alone', () => {
+  it('keeps the map, title, numbers and verdict above every tab', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
     renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
 
     expect(screen.getByRole('heading', { name: 'Threshold run' })).toBeInTheDocument()
     expect(within(screen.getByTestId('run-hero')).getByTestId('map')).toBeInTheDocument()
     expect(screen.getByTestId('run-stats')).toBeInTheDocument()
-    expect(screen.queryByTestId('run-verdict')).toBeNull()
+    expect(screen.getByTestId('run-verdict')).toBeInTheDocument()
   })
 
   it('floats back, expand and share on the map, and expand opens it full screen', () => {
@@ -231,7 +232,7 @@ describe('ActivityDetailClient', () => {
     expect(hero.getByTestId('map').hasAttribute('data-fullscreen')).toBe(true)
     expect(hero.getByTestId('map').textContent).toContain('Threshold runSun, Oct 18')
     expect(hero.getByTestId('map-card-stats').textContent).toBe(
-      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25:24${t.units.min}${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
+      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25:24${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
     )
   })
 

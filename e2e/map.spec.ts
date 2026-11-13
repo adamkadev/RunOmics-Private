@@ -80,8 +80,8 @@ test('heatmap filters open where they can be seen', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(chip).toHaveAttribute('aria-expanded', 'false')
 
-  await page.getByRole('button', { name: 'Filters', exact: true }).click()
-  const sheet = page.getByRole('dialog', { name: 'Filters' })
+  await page.getByRole('button', { name: 'Map and filters', exact: true }).click()
+  const sheet = page.getByRole('dialog', { name: 'Map and filters' })
   await expect(sheet).toBeVisible()
   const show = sheet.getByRole('button', { name: /^Show \d+ runs?$/ })
   // Polled: the sheet slides up for 0.42 s.
@@ -89,7 +89,7 @@ test('heatmap filters open where they can be seen', async ({ page }) => {
   await sheet.getByRole('region', { name: 'Year' }).getByRole('button').nth(1).click()
   await expect(page.getByTestId('heat-filter-badge')).toHaveCount(0)
   await show.click()
-  await expect(page.getByRole('button', { name: 'Filters, 1 on' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Map and filters, 1 filter on' })).toBeVisible()
   await expect(page.getByTestId('heat-filter-badge')).toHaveText('1')
 })
 
@@ -189,8 +189,8 @@ test('heatmap fullscreen: the top row is live glass in full ink over a soft edge
 // In fullscreen the edge sampler paints over the row, so a badge reaching above the row loses its top.
 test('heatmap fullscreen: the filter badge is whole, clear of the edge sampler', async ({ page }) => {
   await page.goto('/map')
-  await page.getByRole('button', { name: 'Filters', exact: true }).click()
-  const sheet = page.getByRole('dialog', { name: 'Filters' })
+  await page.getByRole('button', { name: 'Map and filters', exact: true }).click()
+  const sheet = page.getByRole('dialog', { name: 'Map and filters' })
   await sheet.getByRole('region', { name: 'Year' }).getByRole('button').nth(1).click()
   await sheet.getByRole('button', { name: /^Show \d+ runs?$/ }).click()
   await expect(sheet).toHaveCount(0)

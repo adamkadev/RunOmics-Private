@@ -256,7 +256,7 @@ interface Ink {
 
 const PHOTO_INK: Ink = { tx: '#ffffff', mu: 'rgba(255, 255, 255, 0.85)', mark: '#ffffff' }
 
-function drawHeader(ctx: Ctx, { activity, fonts, place, palette }: ShareCardScene, { title, result }: ShareCardLayout, ink: Ink) {
+function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { title, result }: ShareCardLayout, ink: Ink) {
   ctx.textAlign = 'left'
   ctx.save()
   ctx.globalAlpha = LOCKUP_ALPHA
@@ -285,11 +285,12 @@ function drawHeader(ctx: Ctx, { activity, fonts, place, palette }: ShareCardScen
   const max = RIGHT - PAD_X
   let size: number = RESULT_SIZES[0]
   for (size of RESULT_SIZES) {
-    ctx.font = `700 ${size}px ${fonts.display}`
+    ctx.font = `600 ${size}px ${fonts.display}`
     setSpacing(ctx, -0.02 * size)
     if (ctx.measureText(result).width <= max) break
   }
-  ctx.fillStyle = palette.pos
+  // A posted card says the result plainly: green would grade the run on the athlete's behalf.
+  ctx.fillStyle = ink.tx
   ctx.fillText(fit(ctx, result, max), PAD_X, last + 18 + RESULT_GAP)
   setSpacing(ctx, 0)
 }
@@ -1084,7 +1085,7 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
   ctx.fillStyle = repColor(activity, palette)
   ctx.fillText(fit(ctx, headline.caption, RIGHT - PAD_X), PAD_X, captionTop + Math.round(REP_CAPTION * 0.8))
 
-  const ink = { tx: palette.tx, mu: palette.mu, mark: palette.acc }
+  const ink = { tx: palette.tx, mu: palette.mu, mark: palette.tx }
   if (detail) drawRepDetail(ctx, scene, detail, captionTop + REP_CAPTION + REP_DETAIL_PAD_TOP, ink)
   if (zones) drawZoneStrip(ctx, scene, zones, stripTop)
 }
@@ -1250,7 +1251,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
     ctx.restore()
   }
 
-  const ink = photo ? PHOTO_INK : { tx: palette.tx, mu: palette.mu, mark: palette.acc }
+  const ink = photo ? PHOTO_INK : { tx: palette.tx, mu: palette.mu, mark: palette.tx }
   if (layout.ruleY !== null) {
     ctx.fillStyle = palette.card
     ctx.fillRect(0, layout.ruleY, W, height - layout.ruleY)

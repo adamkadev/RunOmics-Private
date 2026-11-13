@@ -77,7 +77,7 @@ describe('RecurringRoutes row', () => {
 
     const line = screen.getByTestId('route-best')
     // Five runs at 280-284: the latest at 284, four behind the best.
-    expect(line.textContent).toBe(`${t.records.recurring.bestPace('4:40')} · ${t.records.recurring.lastPace('4:44')} +4s`)
+    expect(line.textContent).toBe(`${t.records.recurring.bestPace('4:40')} · ${t.records.recurring.lastPace('4:44')} +4 s`)
     expect(screen.getByTestId('route-gap').className).toContain('var(--warn)')
   })
 

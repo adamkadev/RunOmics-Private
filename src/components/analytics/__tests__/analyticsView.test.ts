@@ -61,12 +61,11 @@ const mondays = (n: number, last = '2026-09-21') =>
   Array.from({ length: n }, (_, i) => isoDate(addDays(new Date(`${last}T00:00:00`), -(n - 1 - i) * 7)))
 
 describe('the tab windows', () => {
-  it('ends the load window today and steps back a whole window per swipe', () => {
-    // The last 28 / 84 / 365 days ending today.
-    expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-30', end: TODAY, days: 28, live: true })
-    expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-02', end: '2026-08-29', days: 28, live: false })
-    expect(dayWindow(TODAY, '12w')).toMatchObject({ start: '2026-07-05', days: 84 })
-    expect(dayWindow(TODAY, '1y')).toMatchObject({ start: '2025-09-27', days: 365 })
+  it('starts the load window on the week tabs\' Monday, ends it today, and steps back a whole window per swipe', () => {
+    expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-31', end: TODAY, days: 27, live: true })
+    expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-03', end: '2026-08-30', days: 28, live: false })
+    expect(dayWindow(TODAY, '12w')).toMatchObject({ start: weekWindow(TODAY, '12w').start })
+    expect(dayWindow(TODAY, '1y')).toMatchObject({ start: weekWindow(TODAY, '1y').start })
   })
 
   it('ends the week window on the current week, Monday to Sunday', () => {
@@ -89,7 +88,7 @@ describe('D1 Load', () => {
     expect(view.form).toBe(-7)
     expect(view.band).toBe('neutral')
     expect(view.fitness).toBe(Math.round(last.ctl))
-    expect(view.bars).toHaveLength(28)
+    expect(view.bars).toHaveLength(27)
     expect(view.yMax).toBe(75)
   })
 
@@ -105,14 +104,13 @@ describe('D1 Load', () => {
       ...Array.from({ length: 5 }, () => 'detraining' as const),
       'recovery' as const,
       ...Array.from({ length: 8 }, () => 'overreaching' as const),
-      ...Array.from({ length: 14 }, () => 'productive' as const),
-    ].map((status, i) => ({ date: isoDate(addDays(new Date('2026-08-30T00:00:00'), i)), status }))
+      ...Array.from({ length: 13 }, () => 'productive' as const),
+    ].map((status, i) => ({ date: isoDate(addDays(new Date('2026-08-31T00:00:00'), i)), status }))
     const view = statusView(days, dayWindow(TODAY, '4w'))!
     expect(view.current).toBe('productive')
-    expect(view.count).toBe(14)
-    // "13 of the last 28 days", not 27.
-    expect(view.days).toBe(28)
-    expect(view.cells).toHaveLength(28)
+    expect(view.count).toBe(13)
+    expect(view.days).toBe(27)
+    expect(view.cells).toHaveLength(27)
     expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
   })
 
@@ -166,7 +164,7 @@ describe('D2 Performance', () => {
   // One rule for the row and the sentence: any slower time is a caution.
   it('reads a prediction as moved by the same rule its row is coloured by', () => {
     const days = [
-      { date: '2026-07-16', seconds: { '5k': 1208, '10k': 2544, half: 5712, marathon: 12611 } },
+      { date: '2026-07-20', seconds: { '5k': 1208, '10k': 2544, half: 5712, marathon: 12611 } },
       { date: '2026-10-07', seconds: { '5k': 1224, '10k': 2552, half: 5770, marathon: 12765 } },
     ]
     const rows = predictionRows(days, dayWindow('2026-10-07', '12w'))
@@ -184,6 +182,15 @@ describe('D2 Performance', () => {
     expect(view.delta4w).toBe(-0.03)
     expect(view.heatCost).toBe(0.03)
     expect(view.trend).toBe('dipping')
+  })
+
+  it('reads efficiency\'s four and twelve weeks back by the calendar, so a break is no baseline', () => {
+    const before = mondays(8, '2026-03-09').map((d) => week(d, { ef: 0.8, efAdjusted: 0.8 }))
+    const back = mondays(4, '2026-09-21').map((d) => week(d, { ef: 0.66, efAdjusted: 0.66 }))
+    const view = efficiencyView([...before, ...back], back, '2026-09-27')!
+    expect(view.now).toBe(0.66)
+    expect(view.delta4w).toBeNull()
+    expect(view.delta12w).toBeNull()
   })
 
   it('reads RPE over four weeks against the four before', () => {

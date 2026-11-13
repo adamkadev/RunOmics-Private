@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -6,7 +7,7 @@ import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
 import { formatDelta } from '@/lib/formatters'
 import { formBand } from '@/domain/training/formBand'
-import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
 import { cardClass, tileLabelClass } from '@/components/ui/Card'
@@ -40,7 +41,10 @@ function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; 
 function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: number; current: number; days: number }) {
   const tone = deltaTone(metric, delta, { value: current })
   const rounded = Math.round(delta)
-  const Arrow = rounded > 0 ? ArrowUpRight : rounded < 0 ? ArrowDownRight : ArrowRight
+  const Arrow = rounded > 0 ? ArrowUpRight : ArrowDownRight
+  if (rounded === 0) {
+    return <span data-testid="readiness-delta" data-tone="neutral" className="whitespace-nowrap text-muted-foreground">{t.dashboard.readiness.steady(days)}</span>
+  }
   return (
     <span data-testid="readiness-delta" data-tone={tone} className="inline-flex items-center gap-0.5 whitespace-nowrap tabular-nums" style={{ color: DELTA_TONE_COLOR[tone] }}>
       <Arrow size={12} strokeWidth={1.8} aria-hidden className="shrink-0" />
@@ -77,7 +81,8 @@ export function ReadinessCard({
   // A written headline that names a form state the status line doesn't ("You're fresh" over NEUTRAL) gives way to the load's own.
   const contradicts = verdict ? (!fresh && FRESH_WORDS.test(verdict.headline)) || (band !== 'tired' && TIRED_WORDS.test(verdict.headline)) : false
   const headline = (contradicts ? fallback?.headline : verdict?.headline) ?? fallback?.headline ?? verdict?.headline ?? null
-  const body = verdict ? verdict.body : (fallback?.body ?? null)
+  // Building back, the missing reading is said in a sentence rather than left as an empty Form tile.
+  const body = verdict ? verdict.body : status.buildingBack ? s.formLater : (fallback?.body ?? null)
 
   return (
     <section
@@ -93,8 +98,8 @@ export function ReadinessCard({
         />
 
         {/* A flat row under a hairline: tiles inside the card read as cards within a card. */}
-        <div className="grid grid-cols-3 gap-3 border-t border-border pt-3">
-          <Tile testId="tile-form" label={s.formLabel} value={bandWord ? formatDelta(form) : '–'} sub={bandWord?.toLocaleLowerCase(t.locale)} />
+        <div className={cn('grid gap-3 border-t border-border pt-3', bandWord ? 'grid-cols-3' : 'grid-cols-2')}>
+          {bandWord && <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={bandWord.toLocaleLowerCase(t.locale)} />}
           <Tile
             testId="tile-fitness"
             label={s.ctl}

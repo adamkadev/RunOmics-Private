@@ -1,5 +1,4 @@
-import Link from 'next/link'
-import { ArrowDownRight, ArrowUpRight, ChevronRight } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { CardHead } from '@/components/analytics/AnalyticsKit'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
@@ -7,8 +6,7 @@ import { Unit } from '@/components/ui/Stat'
 import { DELTA_TONE_COLOR, type DeltaTone } from '@/lib/deltaTone'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { CHECKPOINT_HREF } from './checkpointHref'
-import { type CheckpointPageView, type CheckpointTileView, type CompareRow, type CompareSection } from './checkpointView'
+import { type CheckpointPageView, type CompareRow, type CompareSection } from './checkpointView'
 
 const TONES: DeltaTone[] = ['good', 'worse', 'flat']
 
@@ -93,22 +91,5 @@ export function Checkpoint({ view }: { view: CheckpointPageView }) {
 
       {view.sections.map((section) => <Section key={section.key} section={section} />)}
     </div>
-  )
-}
-
-export function CheckpointTile({ view }: { view: CheckpointTileView }) {
-  return (
-    <Link
-      href={CHECKPOINT_HREF}
-      data-testid="checkpoint-tile"
-      className={cardClass({ className: 'flex flex-col gap-2 px-4 py-3.5 text-left transition-transform duration-100 ease-out active:scale-[0.98]' })}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-headline text-foreground">{t.checkpoint.title}</span>
-        <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
-      </div>
-      <span className="text-[13px] text-[var(--text-2)] text-pretty">{view.line}</span>
-      {view.summary && <Summary summary={view.summary} />}
-    </Link>
   )
 }

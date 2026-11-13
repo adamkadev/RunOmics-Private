@@ -20,7 +20,12 @@ export type VO2maxSeries = Record<VO2maxRange, VO2maxPoint[]>
 const MONTHS_IN_RANGE: Record<Exclude<VO2maxRange, '4w'>, number> = { '6m': 6, '1y': 12 }
 const RECENT_DAYS = 28
 
+/** The precise daily reading first: the profile's copy is a whole number, so pages reading it disagreed with the checkpoint. */
 export function getLatestVO2max(): number | null {
+  const { months, days } = getVo2maxSamples()
+  const precise = days.at(-1) ?? months.at(-1)
+  if (precise) return precise.vo2max
+
   const profileVo2max = getAthleteProfile().vo2maxMlKgMin
   if (profileVo2max) return profileVo2max
 

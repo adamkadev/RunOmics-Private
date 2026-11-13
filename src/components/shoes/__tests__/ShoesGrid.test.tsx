@@ -19,6 +19,7 @@ function shoe(over: Partial<ShoeStats>): ShoeStats {
     kmPerWeek: 10,
     wearPercent: 15,
     nearingLimit: false,
+    carriedWorkouts: true,
     ...over,
   }
 }
@@ -91,6 +92,13 @@ describe('ShoesGrid', () => {
     expect(screen.getByTestId('shoes-tick-key').textContent).toBe(t.shoes.detail.retireFromWorkouts('800'))
     expect(screen.queryAllByTestId('wear-tick-label')).toHaveLength(0)
     expect(screen.getAllByTestId('wear-tick')).toHaveLength(2)
+  })
+
+  it('leaves the retire-from-workouts tick off a pair that never carried a workout', () => {
+    render(<ShoesGrid shoes={[shoe({ gearId: 'a', carriedWorkouts: false })]} />)
+
+    expect(screen.queryByTestId('shoes-tick-key')).toBeNull()
+    expect(screen.queryAllByTestId('wear-tick')).toHaveLength(0)
   })
 
   it('pills a pair to replace soon under its km left, in warn, and links to it from Shoes', () => {

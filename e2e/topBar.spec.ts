@@ -116,7 +116,7 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
 })
 
 const EDGES = {
-  dark: { blurs: ['blur(2px)', 'blur(8px)', 'blur(20px)'], shown: ['block', 'block', 'block', 'block'], fade: 30 },
+  dark: { blurs: ['blur(6px)', 'none', 'none'], shown: ['block', 'none', 'none', 'block'], fade: 24 },
   light: { blurs: ['blur(6px)'], shown: ['block', 'none', 'none', 'block'], fade: 24 },
 }
 for (const theme of ['light', 'dark'] as const) {
@@ -203,7 +203,7 @@ test('nothing shows through the light edge under the compact bar (F21)', async (
 })
 
 for (const theme of ['light', 'dark'] as const) {
-  test(`a stuck activity strip is glass over the rows, not over the edge (${theme})`, async ({ page }) => {
+  test(`a stuck activity strip grows the scroll edge by its height, the rows under it covered (${theme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
     await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
     await page.goto('/activities')
@@ -224,16 +224,18 @@ for (const theme of ['light', 'dark'] as const) {
       .toBe('glass')
     await expect(tabs).toHaveClass(/\blg-stuck-in\b/)
     const under = () => page.evaluate(() => {
+      window.dispatchEvent(new Event('scroll'))
       const edge = document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!.getBoundingClientRect()
       const bar = document.querySelector<HTMLElement>('[data-testid="compact-title-bar"]')!.getBoundingClientRect()
       const list = document.querySelector<HTMLElement>('[data-testid="sticky-bar"] [role="tablist"]')!.getBoundingClientRect()
       const below = document.elementsFromPoint(list.left + 8, list.bottom - 4)
+      const stickyH = parseFloat(document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!.style.getPropertyValue('--sticky-h')) || 0
       return {
-        edgeFade: Math.round(edge.bottom - bar.bottom),
-        stickyH: getComputedStyle(document.documentElement).getPropertyValue('--sticky-h'),
+        grownBy: Math.round(edge.bottom - bar.bottom - stickyH),
+        grown: stickyH > 0,
         content: below.some((el) => el.closest('[data-testid="activity-panel"]') !== null),
       }
     })
-    await expect.poll(under).toEqual({ edgeFade: 24, stickyH: '', content: true })
+    await expect.poll(under).toEqual({ grownBy: 24, grown: true, content: true })
   })
 }

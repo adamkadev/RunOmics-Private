@@ -35,7 +35,8 @@ export function YearView({ yearData, today, block = null }: Props) {
     : null
   // deltaKm arrives absolute and `status` can be on track above the goal, so the sign comes from the projection.
   const signedDeltaKm = projection ? projection.projectedYearKm - annualDistanceKm : 0
-  const projectionColor = signedDeltaKm < 0 ? 'var(--warn)' : 'var(--pos)'
+  // A projection is not a result: ink, unless it falls short of the goal.
+  const projectionColor = signedDeltaKm < 0 ? 'var(--warn)' : 'var(--foreground)'
   const verdict = signedDeltaKm < 0
     ? p.shortAtPace(formatKm(Math.abs(signedDeltaKm)))
     : signedDeltaKm > 0

@@ -9,8 +9,10 @@ export interface AllTimeYear {
   hours: number
   /** The year's months from the first run on, this one included: 8 for a first year from May. */
   months: number
-  /** Km a month over those months, which compares a partial first year fairly. */
+  /** Km a month over the months run, which compares a partial year, or one with a break, fairly. */
   kmPerMonth: number
+  /** Those months with a run: fewer than `months` across a break. */
+  monthsRun: number
 }
 
 export interface AllTimeMonth {
@@ -109,13 +111,15 @@ export function allTimeView(
   const years = Array.from({ length: currentYear - firstYear + 1 }, (_, i) => firstYear + i).map((year) => {
     const entry = byYear.get(year)
     const months = monthly.filter((m) => m.year === year).length
+    const monthsRun = monthly.filter((m) => m.year === year && m.km > 0).length
     return {
       year,
       km: Math.round(entry?.km ?? 0),
       runs: entry?.runs ?? 0,
       hours: Math.round(entry?.hours ?? 0),
       months,
-      kmPerMonth: months > 0 ? Math.round((entry?.km ?? 0) / months) : 0,
+      monthsRun,
+      kmPerMonth: monthsRun > 0 ? Math.round((entry?.km ?? 0) / monthsRun) : 0,
     }
   })
   const bestMonth = monthly.reduce<AllTimeMonth | null>((best, m) => (!best || m.km > best.km ? m : best), null)

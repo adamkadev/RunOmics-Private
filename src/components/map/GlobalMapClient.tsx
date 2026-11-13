@@ -24,7 +24,6 @@ import { MapAttribution, type MapCredit } from "@/components/ui/MapAttribution";
 import { GlassLayers, GLASS_CIRCLE, glassClass } from "@/components/ui/GlassSurface";
 import { useMapRoutes, type HomeRing } from "./useMapRoutes";
 import { clusterTracks, type ClusterTracks } from "./mapData";
-import { LayersButton } from "@/components/explore/LayersButton";
 import { DistrictsLegend } from "@/components/explore/DistrictsLegend";
 import { useDistrictsCoverage } from "@/components/explore/useDistrictsCoverage";
 import { districtsCardContent } from "@/components/explore/districtsCard";
@@ -532,6 +531,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
           count={(next) => areaRuns(next).length}
           onApply={setFilters}
           onClose={() => setFiltersOpen(false)}
+          layer={districtsArea ? { districts: districtsOn, onToggle: toggleLayer } : null}
         />
       )}
 
@@ -599,6 +599,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
               onClick={() => setFiltersOpen(true)}
               aria-haspopup="dialog"
               aria-label={filterCount > 0 ? f.buttonActive(filterCount) : f.button}
+              data-testid="map-menu"
               className={circle}
             >
               <GlassLayers />
@@ -659,7 +660,6 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
           // One column for both layers, so the layers button and the ⓘ never
           // move under the finger when the layer changes.
           <div className="pointer-events-none absolute inset-x-6 bottom-[max(24px,var(--safe-bottom))] z-10 flex flex-col items-end gap-2">
-            {districtsArea && <LayersButton on={districtsOn} onToggle={toggleLayer} className="pointer-events-auto" />}
             {districtsOn ? (
               // Absolute, so the row keeps the ⓘ's height; 60px is the layers
               // button's 44 + 16, for a second line (French at 320 pt) to rise
@@ -698,7 +698,6 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
               // -mr-0.5 lines it up with the Expand circle (10 pt in, the ⓘ 12);
               // after it in the DOM, the ⓘ's credits open over it.
               <div className="ml-auto flex flex-col items-end gap-2.5">
-                <LayersButton on={districtsOn} onToggle={toggleLayer} className="pointer-events-auto -mr-0.5" />
                 <MapAttribution className="pointer-events-auto" extraCredits={credits} />
               </div>
             ) : (

@@ -15,6 +15,8 @@ interface Props {
   count: (filters: HeatFilters) => number
   onApply: (filters: HeatFilters) => void
   onClose: () => void
+  /** Heat or districts, switched at once: one sheet for what the map shows, so the map keeps one button for it. */
+  layer?: { districts: boolean; onToggle: () => void } | null
 }
 
 // Controls inside a glass sheet take fills, never glass.
@@ -61,7 +63,7 @@ function ChipGroup<T extends string>({
   )
 }
 
-export function HeatFilterSheet({ types, years, value, count, onApply, onClose }: Props) {
+export function HeatFilterSheet({ types, years, value, count, onApply, onClose, layer = null }: Props) {
   const [draft, setDraft] = useState<HeatFilters>(value)
   const f = t.pages.map.filters
 
@@ -85,6 +87,24 @@ export function HeatFilterSheet({ types, years, value, count, onApply, onClose }
         </Button>
       )}
     >
+      {layer && (
+        <SheetSection title={f.layer} label={f.layer}>
+          <div className="flex flex-wrap gap-2" data-testid="layer-chips">
+            {([false, true] as const).map((districts) => (
+              <button
+                key={String(districts)}
+                type="button"
+                aria-pressed={layer.districts === districts}
+                data-testid={districts ? 'layer-districts' : 'layer-heat'}
+                onClick={() => layer.districts !== districts && layer.onToggle()}
+                className={cn(CHIP, layer.districts === districts ? 'bg-foreground px-4 font-semibold text-background' : 'bg-[var(--fill-3)] font-medium text-foreground')}
+              >
+                {districts ? f.layerDistricts : f.layerHeat}
+              </button>
+            ))}
+          </div>
+        </SheetSection>
+      )}
       {types.length > 1 && (
         <ChipGroup
           title={t.pages.map.type}

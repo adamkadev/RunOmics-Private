@@ -2,6 +2,7 @@ import type { Activity, ActivitySplit, ActivityType, PlannedWorkout, WorkoutStep
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
+import { prescribedRepPace } from '@/domain/coaching/repPace'
 import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
 import { pickDefined } from '@/components/pickDefined'
 import { workoutSummary } from '@/components/plan/workoutSummary'
@@ -72,13 +73,10 @@ function paceOf(text: string | undefined): number | null {
 
 /** Falls back to the planned workout the watch carried: a run the coach matched to nothing still has the band it beeped at. */
 function repTarget(prescription: WorkoutPrescription | null, planned: PlannedWorkout | null): ShareReps['target'] {
+  const guide = prescribedRepPace(prescription)
+  if (guide) return guide
   const named = paceOf(prescription?.structure?.targetPace)
   if (named !== null) return { min: named, max: named }
-  for (const block of prescription?.blocks ?? []) {
-    if (block.kind !== 'repeat') continue
-    const pace = block.steps.find((step) => step.kind === 'effort')?.target.paceSecPerKm
-    if (pace) return { min: Math.round(pace.min), max: Math.round(pace.max) }
-  }
   const step = planned?.steps?.find((item: WorkoutStep) => item.kind === 'effort' && item.paceSecPerKm)
   const band = step?.paceSecPerKm
   return band ? { min: Math.round(band[0]), max: Math.round(band[1]) } : null

@@ -72,7 +72,7 @@ export function PlannedWorkoutCard({
 }) {
   const s = t.plan.session
   const summary = workoutSummary(workout)
-  const title = sessionLabel(summary.title)
+  const title = sessionLabel(summary.shortTitle)
   const totalSeconds = summary.durationSeconds ?? 0
   const structured = (workout.structure?.length ?? 0) > 1
   const km = summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null

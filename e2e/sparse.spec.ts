@@ -84,7 +84,7 @@ test('Progress shows the coach’s current block where a race would be, and Athl
   await expect(page.getByTestId('block-tile')).toHaveAttribute('href', '/plan')
   await expect(page.getByTestId('block-name')).toHaveText(nextSession().block)
   await expect(page.getByTestId('race-tile')).toHaveCount(0)
-  await expect(page.getByTestId('year-hero')).toHaveAttribute('href', '/all-time')
+  await expect(page.getByTestId('year-row')).toHaveAttribute('href', '/all-time')
   await expect(page.getByTestId('athlete-row')).toContainText(t.profile.hub.athleteZones)
   expect(await (await request.get('/profile')).text()).not.toContain(nextSession().block)
 })

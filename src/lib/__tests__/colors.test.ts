@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { RUN_TYPE_ZONE, runTypeColor } from '@/lib/colors'
+import { hexToOklch } from '@/lib/oklch'
+
+function deltaE(a: string, b: string): number {
+  const lab = (hex: string) => {
+    const { l, c, h } = hexToOklch(hex)
+    return [l, c * Math.cos((h * Math.PI) / 180), c * Math.sin((h * Math.PI) / 180)]
+  }
+  const [x, y] = [lab(a), lab(b)]
+  return 100 * Math.hypot(x[0]! - y[0]!, x[1]! - y[1]!, x[2]! - y[2]!)
+}
 
 describe('RUN_TYPE_ZONE', () => {
   it('maps each run type to the zone it targets', () => {
@@ -19,12 +29,21 @@ describe('RUN_TYPE_ZONE', () => {
 
 /** Every delta, chip and bar the app calls good reads --pos, so this is the one place the rule can be held. */
 describe('the status colours (3.0 override 2)', () => {
-  it('calls good mint, never lime', async () => {
-    const { STATUS_HEX } = await import('@/lib/themeTokens')
-    expect(STATUS_HEX.dark.pos).toBe('#2dd4a7')
-    expect(STATUS_HEX.dark.pos).not.toBe('#7fd13b')
-    // Light is the same hue at text grade, not an olive.
-    expect(STATUS_HEX.light.pos).toBe('#0f7a52')
+  it('calls good a green of its own, apart from every accent and the zones', async () => {
+    const { STATUS_HEX, ZONE_HEX } = await import('@/lib/themeTokens')
+    const { CURATED_ACCENTS } = await import('@/lib/accentScale')
+    for (const mode of ['dark', 'light'] as const) {
+      for (const accent of CURATED_ACCENTS) expect(deltaE(STATUS_HEX[mode].pos, accent[mode].acc), `${mode} ${accent.id}`).toBeGreaterThanOrEqual(7)
+      for (const zone of ZONE_HEX[mode]) expect(deltaE(STATUS_HEX[mode].pos, zone), `${mode} ${zone}`).toBeGreaterThanOrEqual(7)
+    }
+  })
+
+  it('keeps Z4 and Z5 apart from the heather accent', async () => {
+    const { ZONE_HEX } = await import('@/lib/themeTokens')
+    const { curatedAccent } = await import('@/lib/accentScale')
+    for (const [mode, floor] of [['dark', 18], ['light', 13]] as const) {
+      for (const zone of ZONE_HEX[mode].slice(3)) expect(deltaE(zone, curatedAccent('heather')[mode].acc), `${mode} ${zone}`).toBeGreaterThanOrEqual(floor)
+    }
   })
 
   it('keeps warning amber and bad coral', async () => {

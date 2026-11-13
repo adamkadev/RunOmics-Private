@@ -4,7 +4,7 @@ import type { HeatImpactData, HeatBandId } from '@/application/usecases/GetHeatI
 import type { TrainingStatusType } from '@/domain/training/status'
 import { formBand, type FormBand } from '@/domain/training/formBand'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
-import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
+import { addDays, isoDate, periodStart, startOfWeek } from '@/lib/calendarDate'
 import { median } from '@/lib/math'
 import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import { intensityMix, type IntensityMix } from '@/domain/training/intensityMix'
@@ -44,21 +44,18 @@ function day(iso: string): Date {
   return new Date(`${iso}T00:00:00`)
 }
 
-const PERIOD_DAYS: Record<Period, number> = { '4w': 28, '12w': 84, '1y': 365 }
 
-/**
- * Not Monday-aligned: Monday weeks read "13 of the last 27 days" on a Saturday. The week-based charts (Volume,
- * Intensity) keep their Monday weeks.
- */
+/** The same Monday-aligned start as the week tabs, so every tab names one date range for a period. */
 export function dayWindow(today: string, period: LoadPeriod, offset = 0): DayWindow {
-  const days = PERIOD_DAYS[period]
-  const end = isoDate(addDays(day(today), -offset * days))
-  return { start: isoDate(addDays(day(end), -(days - 1))), end, days, live: offset === 0 }
+  const weeks = weekWindow(today, period, offset)
+  const end = weeks.live ? today : weeks.end
+  const days = Math.round((day(end).getTime() - day(weeks.start).getTime()) / 86_400_000) + 1
+  return { start: weeks.start, end, days, live: weeks.live }
 }
 
 export function weekWindow(today: string, period: WeekPeriod, offset = 0): WeekWindow {
   const n = PERIOD_WEEKS[period]
-  const last = addDays(startOfWeek(day(today)), -offset * n * 7)
+  const last = addDays(day(periodStart(today, 1)), -offset * n * 7)
   const weeks = Array.from({ length: n }, (_, i) => isoDate(addDays(last, -(n - 1 - i) * 7)))
   return { weeks, start: weeks[0]!, end: isoDate(addDays(last, 6)), live: offset === 0 }
 }
@@ -345,12 +342,16 @@ const EFFICIENCY_TREND: Record<DeltaTone, EfficiencyView['trend']> = { good: 'ri
 export function efficiencyView(allWeeks: WeeklyTrendPoint[], windowWeeks: WeeklyTrendPoint[], end: string): EfficiencyView | null {
   const upTo = allWeeks.filter((w) => w.date <= end)
   const adjustedOf = (w: WeeklyTrendPoint) => w.efAdjusted ?? w.ef
-  const block = (from: number, to: number) => mean(known(upTo.slice(Math.max(0, upTo.length - to), upTo.length - from).map(adjustedOf)))
+  // Calendar weeks back from the last Monday, not entries: weeks without a run are missing, and across a break
+  // "four weeks ago" counted back to before it.
+  const lastMonday = isoDate(startOfWeek(day(end)))
+  const weeksBack = (w: WeeklyTrendPoint) => Math.round((day(lastMonday).getTime() - day(w.date).getTime()) / (7 * 86_400_000))
+  const block = (from: number, to: number) => mean(known(upTo.filter((w) => weeksBack(w) >= from && weeksBack(w) < to).map(adjustedOf)))
   const now = block(0, 4)
   if (now === null) return null
   const prev4 = block(4, 8)
   const prev12 = block(12, 16)
-  const recent = upTo.slice(-4)
+  const recent = upTo.filter((w) => weeksBack(w) < 4)
   const heat = mean(known(recent.map((w) => (w.efAdjusted !== null && w.ef !== null ? w.efAdjusted - w.ef : null))))
   const delta4w = prev4 === null ? null : round2(now - prev4)
   return {

@@ -120,13 +120,28 @@ function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string
 type ListBlock =
   | { kind: 'current'; week: WeekRow }
   | { kind: 'month'; key: string; label: string; km: number; runs: number; weeks: WeekRow[] }
+  | { kind: 'pause'; key: string; label: string }
 
-/** A month heading totals the weeks under it, so its km is the sum of the cards it heads. */
-function listBlocks(weeks: WeekRow[]): ListBlock[] {
+const monthIndex = (key: string) => Number(key.slice(0, 4)) * 12 + Number(key.slice(5, 7)) - 1
+const monthKey = (index: number) => `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`
+
+/** Empty months between two run months, newest first: a break says it is one rather than vanish. */
+function pauseBlock(newer: string, older: string): ListBlock | null {
+  const months = monthIndex(newer) - monthIndex(older) - 1
+  if (months < 1) return null
+  const [first, last] = [monthKey(monthIndex(older) + 1), monthKey(monthIndex(newer) - 1)]
+  const name = (key: string) => formatDate(`${key}-01`, { precision: 'month', year: 'never' })
+  return { kind: 'pause', key: `pause-${first}`, label: t.activities.pause(months === 1 ? name(first) : `${name(first)} – ${name(last)}`, first.slice(0, 4), months) }
+}
+
+/** A month heading totals the weeks under it, this week's included, so its km is the month's. */
+export function listBlocks(weeks: WeekRow[]): ListBlock[] {
   const blocks: ListBlock[] = []
+  let current: WeekRow | null = null
   for (const week of weeks) {
     if (week.isCurrent) {
       blocks.push({ kind: 'current', week })
+      current = week
       continue
     }
     const key = week.key.slice(0, 7)
@@ -136,8 +151,12 @@ function listBlocks(weeks: WeekRow[]): ListBlock[] {
       open.km += week.totalKm
       open.runs += week.items.length
     } else {
+      const previous = [...blocks].reverse().find((block) => block.kind === 'month')
+      const gap = previous?.kind === 'month' ? pauseBlock(previous.key, key) : null
+      if (gap) blocks.push(gap)
       const label = formatDate(`${key}-01`, { precision: 'month', year: 'always', style: 'full' })
-      blocks.push({ kind: 'month', key, label, km: week.totalKm, runs: week.items.length, weeks: [week] })
+      const withCurrent = current && current.key.slice(0, 7) === key ? current : null
+      blocks.push({ kind: 'month', key, label, km: week.totalKm + (withCurrent?.totalKm ?? 0), runs: week.items.length + (withCurrent?.items.length ?? 0), weeks: [week] })
     }
   }
   return blocks
@@ -471,7 +490,9 @@ export function ActivityListClient({
             ) : blocks ? (
               <div className="flex flex-col gap-3.5">
                 {shown!.map((block) =>
-                  block.kind === 'current' ? (
+                  block.kind === 'pause' ? (
+                    <p key={block.key} className="px-1 py-1 text-[13px] text-muted-foreground" data-testid="month-pause">{block.label}</p>
+                  ) : block.kind === 'current' ? (
                     // Its km and runs, not the plan: Today and Plan show the week against plan.
                     <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-1 pb-2">

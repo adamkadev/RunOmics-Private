@@ -41,7 +41,7 @@ describe('POST /api/internal/stale-sync-check', () => {
     expect(await res.json()).toEqual({ sent: true, alert: { hoursSinceSync: 80 } })
     expect(sendPush).toHaveBeenCalledWith('always', {
       title: 'No data synced in a while',
-      body: 'Your last sync was 80h ago – check that sync is still running.',
+      body: 'Your last sync was 80 h ago – check that sync is still running.',
       link: '/settings',
       tag: 'stale-sync',
     })

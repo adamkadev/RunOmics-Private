@@ -57,6 +57,8 @@ const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-2 grid-cols-[30px_44px_
 interface Props {
   activity: ActivityDetailView
   plannedRepPace?: NumberRange | null
+  /** Overview's rep table already grades the reps, so the laps stay plain rows here. */
+  repsOnOverview?: boolean
 }
 
 function signed(delta: number): string {
@@ -325,14 +327,14 @@ function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: bo
   )
 }
 
-export function KmSplits({ activity, plannedRepPace = null }: Props) {
+export function KmSplits({ activity, plannedRepPace = null, repsOnOverview = false }: Props) {
   const splits = activity.splits
   const [view, setView] = useState<View>(splits && isStructured(splits) ? 'laps' : 'km')
   const viewTabs = useSegmentedTabs<View>({ ids: VIEWS, value: view, onChange: setView })
 
   if (!splits || splits.length === 0) return null
 
-  const set = repSet(splits, plannedRepPace)
+  const set = repsOnOverview ? null : repSet(splits, plannedRepPace)
   const lapsOnly = splits.every((s) => s.type === 'lap')
   // An interval the watch auto-lapped inside (a workout's 8 km step, or the
   // whole run) gives its auto laps, kept for the kilometres they are; the

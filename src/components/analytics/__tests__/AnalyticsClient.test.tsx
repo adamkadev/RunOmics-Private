@@ -7,6 +7,7 @@ import { addDays, isoDate } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 import { AnalyticsClient, type AnalyticsBoardData } from '../AnalyticsClient'
 import { weekBarFill } from '../VolumeTab'
+import { ZoneKey, qualityNote } from '../IntensityTab'
 
 const TODAY = '2026-09-26'
 const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
@@ -68,7 +69,7 @@ const data: AnalyticsBoardData = {
     { date: day(20), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, 3600, null, null].map((t) => (t === null ? null : Math.round(4 * t + 200))) },
     { date: day(100), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, null, null, null].map((t) => (t === null ? null : Math.round(3.9 * t + 190))) },
   ],
-  weeklyAvgKm: 26.4,
+  reprise: false,
   ytd: {
     km: 1394,
     vsLastYear: { km: 1394, lastYearKm: 640, since: null },
@@ -202,10 +203,10 @@ describe('Analytics (v4.5)', () => {
     expect(coach().getAttribute('data-tone')).toBe('pos')
   })
 
-  it('dates the header range by the period chosen', async () => {
+  it('dates the header range by the period chosen, the same on every tab', async () => {
     await renderBoard()
     const cases = [
-      { tab: 'fitness', card: 'form-card', ranges: ['Aug 30 – Sep 26, 2026', 'Jul 5 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
+      { tab: 'fitness', card: 'form-card', ranges: ['Aug 31 – Sep 26, 2026', 'Jul 6 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
       { tab: 'volume', card: 'weekly-card', ranges: ['Aug 31 – Sep 26, 2026', 'Jul 6 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
     ] as const
     for (const { tab, card, ranges } of cases) {
@@ -248,9 +249,9 @@ describe('Analytics (v4.5)', () => {
 
   it('widens the Form strip with the period, and resets the range', async () => {
     await renderBoard()
-    expect(screen.getByTestId('form-strip').children).toHaveLength(28)
+    expect(screen.getByTestId('form-strip').children).toHaveLength(27)
     fireEvent.click(screen.getByRole('radio', { name: '12 weeks' }))
-    expect(screen.getByTestId('form-strip').children.length).toBeLessThan(28)
+    expect(screen.getByTestId('form-strip').children.length).toBeLessThan(27)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
   })
 
@@ -301,7 +302,7 @@ describe('Analytics (v4.5)', () => {
     // Fitness rose: good news, an arrow and its size.
     expect(screen.getByTestId('fitness-delta').firstElementChild!.getAttribute('style')).toContain('var(--good)')
     const bands = [...screen.getByTestId('form-strip').querySelectorAll<HTMLElement>('[data-band]')]
-    expect(bands).toHaveLength(28)
+    expect(bands).toHaveLength(27)
     for (const bar of bands) expect(bar.style.background).toMatch(/^color-mix\(in srgb, var\(--form-band-fill-(fresh|neutral|tired)\) var\(--form-fill\), transparent\)$/)
     expect(card.className).toContain('[--form-fill:70%]')
     expect(card.className).toContain('dark:[--form-fill:60%]')
@@ -323,6 +324,7 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('vo2-link').textContent).toContain('55.0')
     expect(screen.getByTestId('performance-summary').textContent).toContain('−1.0 in 12 weeks')
     expect(screen.getByTestId('performance-summary').textContent).toContain(`4:23${t.units.perKm}`)
+    expect(screen.getByTestId('performance-summary').textContent).toContain(' since Jul 6')
     // Slower is amber, faster --good, by the same helper everywhere.
     for (const delta of screen.getAllByTestId('prediction-delta')) expect(delta.getAttribute('style')).toContain('var(--tone-caution)')
     // VO2max fell by 1 in 12 weeks: warn on the meaning line, the value stays ink.
@@ -389,11 +391,9 @@ describe('Analytics (v4.5)', () => {
     expect(loss('cool').getAttribute('style')).toContain('var(--pos)')
     expect(loss('mild').textContent).toBe('+4 s')
     expect(loss('mild').getAttribute('style')).toContain('var(--muted-foreground)')
-    expect(row('hot').textContent).toContain(t.analytics.cards.heatCost.noRuns)
-    // The best band is the zero, marked; a band without runs is an empty dashed track, never drawn like the best.
+    expect(screen.queryByTestId('heat-hot')).toBeNull()
+    expect(screen.getByTestId('heat-untested').textContent).toBe(t.analytics.cards.heatCost.noRunsIn([t.analytics.charts.heatImpact.bands.hot!]))
     expect(within(row('cool')).getByTestId('heat-zero').style.background).toBe('var(--pos)')
-    expect(within(row('hot')).getByTestId('heat-empty').className).toContain('border-dashed')
-    expect(within(row('cool')).queryByTestId('heat-empty')).toBeNull()
     expect(screen.getByTestId('heat-key').textContent).toBe(t.analytics.cards.heatCost.barKey)
     expect(screen.getByTestId('heat-card').innerHTML).not.toContain('var(--accent)')
   })
@@ -409,10 +409,9 @@ describe('Analytics (v4.5)', () => {
     expect(done.length).toBeGreaterThan(0)
     for (const bar of done) expect(bar.style.background).toBe('var(--data-done)')
     const current = bars.querySelector<HTMLElement>('[data-current]')!
-    expect(current.style.background).toBe('var(--accent)')
+    expect(current.style.background).toBe('var(--data-done-soft)')
     expect(current.style.outline).toBe('1.5px dashed var(--accent)')
-    // The one weekly average, as a stat with its unit.
-    expect(screen.getByTestId('weekly-card').textContent).toContain(`26${t.analytics.cards.weekly.underAvg(12)}`)
+    expect(screen.getByTestId('weekly-card').textContent).toContain(t.analytics.cards.weekly.underAvg(11))
     // This week, dashed in the one "this week" style and never flagged over:
     // its first runs are all of its distance so far.
     const longRun = screen.getByTestId('long-run-bars').querySelector<HTMLElement>('[data-current]')!
@@ -481,6 +480,15 @@ describe('Analytics (v4.5)', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'a year' }))
     expect(figures().slice(0, 2)).toEqual([['Z1', '26.0 h'], ['Z2', '156 h']])
   })
+
+  it('counts the planned sessions run against the plan, so done, extra and missed add up', () => {
+    expect(qualityNote({ onPlan: 12, extra: 2, planned: 14 })).toBe(`${t.analytics.cards.quality.ofPlanned(12, 14)} · ${t.analytics.cards.quality.extra(2)}`)
+  })
+
+  it('leaves out a zone the window never reached', () => {
+    render(<ZoneKey zoneHours={[1, 4, 2, 0, 0]} held={false} windowHours={[1, 4, 2, 0, 0]} />)
+    expect(screen.getAllByTestId('zone-key-item').map((item) => item.firstElementChild!.textContent)).toEqual(['Z1', 'Z2', 'Z3'])
+  })
 })
 
 describe('the trends the watch syncs', () => {
@@ -538,7 +546,7 @@ describe('the v4.5 colour rules', () => {
     expect(weekBarFill(row(30, 30), false, true)).toBe('var(--data-done)')
     expect(weekBarFill(row(10, 30), false, true)).toBeNull()
     expect(weekBarFill(row(10, null), false, false)).toBe('var(--data-done)')
-    expect(weekBarFill(row(10, 30), true, true)).toBe('var(--accent)')
+    expect(weekBarFill(row(10, 30), true, true)).toBe('var(--data-done-soft)')
   })
 
   it('gives no card its own period pills or date arrows', () => {
@@ -567,7 +575,7 @@ describe('a week with nothing run (v4.6)', () => {
     const rows = weekRows(weeksWithGap, [], window, TODAY)
     render(
       <>
-        <VolumeTab rows={rows} live onShift={() => {}} ytd={null} weeklyAvgKm={null} />
+        <VolumeTab rows={rows} live onShift={() => {}} ytd={null} />
         <IntensityTab rows={rows} live onShift={() => {}} plan={[]} />
       </>,
     )
@@ -697,7 +705,7 @@ describe('Year to date on Volume', () => {
       />,
     )
     const goals = within(goal.container)
-    const volume = within(render(<VolumeTab rows={rows} live onShift={() => {}} ytd={ytd} weeklyAvgKm={null} />).container)
+    const volume = within(render(<VolumeTab rows={rows} live onShift={() => {}} ytd={ytd} />).container)
     return { goals, volume }
   }
 
@@ -792,7 +800,7 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({})
     expect(screen.getByTestId('load-trend-value').textContent).toBe('412')
     expect(screen.getByTestId('load-ratio').textContent).toBe('1.13')
-    expect(screen.getByTestId('load-card').textContent).toContain(t.analytics.cards.loadTrend.ratioSafe(0.8, 1.3))
+    expect(screen.getByTestId('load-card').textContent).toContain(t.analytics.cards.loadTrend.ratioSafe('0.8', '1.3'))
   })
 
   it('says the load is in range today in the coach read, and the days above it as earlier ones', async () => {

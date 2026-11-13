@@ -50,6 +50,7 @@ export function CheckInReadiness({ today, words }: { today: string; words: Readi
           {concern && <p className="text-footnote text-muted-foreground">{t.wellness.readiness.why}</p>}
         </div>
       )}
+      {!headline && body && <p className="text-[15px] leading-5 tracking-[-0.015rem] text-[var(--text-2)] [text-wrap:pretty]" data-testid="readiness-body">{body}</p>}
     </>
   )
 }

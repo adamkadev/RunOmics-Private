@@ -30,10 +30,10 @@ export function ReturnProgressView({ progress, today }: { progress: ReturnProgre
         <section className="space-y-2">
           <SectionDivider as="h2" className="px-0.5">{r.reached}</SectionDivider>
           <ol className={cardClass({ padding: 'none', className: 'divide-y divide-border px-3.5 py-0.5' })}>
-            {progress.milestones.map((milestone) => {
+            {[...progress.milestones].sort((a, b) => a.date.localeCompare(b.date)).map((milestone) => {
               const row = (
                 <>
-                  <span className="flex size-[30px] items-center justify-center rounded-full bg-accent text-accent-foreground" aria-hidden>
+                  <span className="flex size-[30px] items-center justify-center text-foreground" aria-hidden>
                     <Check className="size-4" strokeWidth={2.5} />
                   </span>
                   <span className="min-w-0 truncate text-sm font-semibold text-foreground">{r.milestones[milestone.key]}</span>

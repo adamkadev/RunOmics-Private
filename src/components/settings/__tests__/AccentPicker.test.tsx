@@ -10,7 +10,7 @@ const GAP_PX: Record<string, number> = { 'gap-2.5': 10, 'gap-4': 16 }
  * main's px-4, the group row's px-4 and its 1px borders.
  */
 const NARROWEST_ROW_PX = 375 - 32 - 32 - 2
-const SWATCH_PX = 30
+const SWATCH_PX = 56
 const TARGET_PX = 44
 
 function swatchRow(): HTMLElement {
@@ -21,9 +21,10 @@ function swatchRow(): HTMLElement {
 }
 
 describe('AccentPicker swatch row', () => {
-  it('renders one swatch per accent and no custom wheel', () => {
+  it('renders one named swatch per accent and no custom wheel', () => {
     render(<AccentPicker />)
     expect(screen.getAllByRole('button')).toHaveLength(ACCENT_IDS.length)
+    expect(screen.getAllByTestId('accent-name').map((name) => name.textContent)).toEqual(['Teal', 'Cyan', 'Heather'])
   })
 
   it('never wraps, so no swatch is orphaned onto a second row', () => {
@@ -39,13 +40,13 @@ describe('AccentPicker swatch row', () => {
     expect(gap, `swatch row uses an unbudgeted gap: ${row.className}`).toBe('gap-4')
 
     for (const button of screen.getAllByRole('button')) {
-      expect(button.classList.contains('size-[30px]')).toBe(true)
+      expect(button.classList.contains('w-14')).toBe(true)
       expect(button.classList.contains('hit-44')).toBe(true)
     }
     expect(SWATCH_PX + GAP_PX[gap!]!).toBeGreaterThanOrEqual(TARGET_PX)
 
     const count = screen.getAllByRole('button').length
-    const needed = count * SWATCH_PX + (count - 1) * GAP_PX[gap!]! + (TARGET_PX - SWATCH_PX)
+    const needed = count * SWATCH_PX + (count - 1) * GAP_PX[gap!]!
     expect(needed).toBeLessThanOrEqual(NARROWEST_ROW_PX)
   })
 })

@@ -6,6 +6,36 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Design review, rounds 1-8 (one PR). **Good has its own green**, apart from the teal accent (dark `#5ad06a`,
+  light `#2f7a2a`); Z4 and Z5 move clear of Heather, which stays as it is. Bars judged against a plan, this week's
+  included, take a neutral fill; a posted share card says its result in ink with a fixed-colour mark.
+- **One number per metric.** VO2max reads the precise daily value everywhere; every Analytics tab shares one
+  week-aligned range and its changes say "since …"; Race and Analytics share one 12-week prediction trend; Goals and
+  Milestones one km to go; Today's deltas say "in 7 days"; Athlete shows the measured resting HR; the 3+ runs streak
+  and Milestones' "active weeks in a row" are named apart.
+- **One pace target per workout**: the plan's pace guide grades the title, the reps, Splits and the share card. The
+  verdict sits above the tabs on a 220 pt map, Overview carries one rep table (pace against the guide, then HR) and
+  Splits lists plain laps under it. One session name and one planned distance on Today, Plan and the route
+  generator; a run's name drops the plan's distance.
+- **Done, planned, projected**: Plan's week strip is solid for done and dashed for planned with km on each bar, the
+  block's week under way half full; All time writes "so far" in ink and "on pace for" in grey; predictions are
+  "within reach", in grey; Home runs labels its finish-time bars and timer.
+- **Reprise**: while the plan's first block after a long break runs, Consistency opens on "Since your return", the
+  hub's streak starts there, All time drops the year-on-year change, labels the break and averages the months run,
+  Athlete shows VO2max without grade or percentile, Analytics keeps the 5 km prediction alone, Today says when
+  form will show, and Activities says how long the break was. A checkpoint after a cycle with under four weeks of
+  running is a starting point, with no comparison.
+- **Follow-up layouts.** Progress is one grouped list under the race or block: a line and a value per page.
+  Plan's header card adds the cycle line that opens the checkpoint. Athlete's zones card gives ranges only, with how
+  they are set, and leaves time in zones to Analytics. Settings asks for the account once, in an Account card, and
+  names its accent swatches; the avatar on Today opens Settings. The share sheet puts its Route / Stats / Photo switch
+  above the preview and keeps one height. The route generator opens on where to tap, its buttons waiting for a route.
+  The map keeps one button for what it shows: the heat / districts layer moved into the filters sheet.
+- Smaller: quality sessions add up with "missed"; a run/walk is held to the run/walks on its route; comeback
+  milestones in date order; the retire-from-workouts tick only on a pair that carried a workout; an empty Race page
+  points to Races & goals as Goals does.
+- Copy: districts and vVO2max in English, spaced units ("14 h ago", "43 s", "1 h 40"), curly apostrophes, "Effort
+  6/10" and "Compétitions" in French, clock times without "min".
 - Sparse data never shows a zero as a result: the checkpoint says "New" where the previous cycle had no run, a
   quality-sessions card with nothing done and nothing planned is hidden, easy vs hard reads short times in minutes
   and hides a part that rounds to nothing, and the run list only counts zone time with an LTHR or a Training Effect

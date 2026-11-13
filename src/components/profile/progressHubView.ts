@@ -77,7 +77,8 @@ export interface StreakWeek {
 export const STREAK_STRIP_WEEKS = 26
 const STRIP_MIN_PCT = 20
 
-export function streakStrip(days: readonly HeatmapDay[], today: string, target: number): StreakWeek[] {
+/** From a reprise's first week back when there is one: the weeks of the break would be an empty strip. */
+export function streakStrip(days: readonly HeatmapDay[], today: string, target: number, since: string | null = null): StreakWeek[] {
   const thisMonday = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
   const runsByWeek = new Map<string, number>()
   for (const day of days) {
@@ -85,9 +86,10 @@ export function streakStrip(days: readonly HeatmapDay[], today: string, target: 
     const monday = isoDate(startOfWeek(new Date(`${day.date}T00:00:00`)))
     runsByWeek.set(monday, (runsByWeek.get(monday) ?? 0) + day.sessionCount)
   }
+  const fromMonday = since ? isoDate(startOfWeek(new Date(`${since}T00:00:00`))) : null
   const mondays = Array.from({ length: STREAK_STRIP_WEEKS }, (_, i) =>
     isoDate(addDays(new Date(`${thisMonday}T00:00:00`), -7 * (STREAK_STRIP_WEEKS - 1 - i))),
-  )
+  ).filter((monday) => !fromMonday || monday >= fromMonday)
   const max = Math.max(1, ...mondays.map((m) => runsByWeek.get(m) ?? 0))
   return mondays.map((monday) => {
     const runs = runsByWeek.get(monday) ?? 0
@@ -126,6 +128,8 @@ export interface HubInput {
   streakWeeks: number
   shoes: ShoeStats[]
   coaching?: CoachingOverview | null
+  /** A reprise's first run back: no grade or percentile, and the streak counted from it. */
+  repriseSince?: string | null
 }
 
 function runsThisWeek(activities: HubInput['activities'], today: string): number {
@@ -258,9 +262,9 @@ export function progressHubView(input: HubInput): ProgressHubView {
     vo2max:
       vo2Value !== null
         ? {
-            value: Math.round(vo2Value),
-            grade: input.vo2Grade ?? null,
-            delta: vo2Window.length >= 2 ? Math.round(vo2Window.at(-1)!.vo2max - vo2Window[0]!.vo2max) : null,
+            value: Math.round(vo2Value * 10) / 10,
+            grade: input.repriseSince ? null : (input.vo2Grade ?? null),
+            delta: vo2Window.length >= 2 ? Math.round((vo2Window.at(-1)!.vo2max - vo2Window[0]!.vo2max) * 10) / 10 : null,
             series: vo2Window.map((s) => s.vo2max),
             thresholdPaceSecPerKm: input.athlete.thresholdPaceSecPerKm ?? null,
             lthrBpm: input.athlete.lthrBpm ?? null,
@@ -278,7 +282,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       activeDays: activeDaysInYear(input.heatmapDays, input.today),
       streakWeeks: input.streakWeeks,
       thisWeek: { runs: runsThisWeek(input.activities, input.today), target: WEEKLY_RUN_TARGET },
-      strip: streakStrip(input.heatmapDays, input.today, WEEKLY_RUN_TARGET),
+      strip: streakStrip(input.heatmapDays, input.today, WEEKLY_RUN_TARGET, input.repriseSince ?? null),
     },
     shoes: input.shoes
       .filter((s) => !s.retired)

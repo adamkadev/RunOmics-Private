@@ -1,12 +1,15 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { routeCells, routeOutline, overlap, type Coord } from '@/domain/activity/routeShape'
 import type { Activity } from '@/domain/activity/types'
+import { isRunWalk } from '@/domain/activity/runWalk'
 import { distanceKm, round } from '@/lib/math'
 
 export interface RouteRun {
   activityId: string
   date: string
   paceSecPerKm: number
+  /** A run/walk is held to the run/walks on the route, not to a continuous run's pace. */
+  runWalk?: boolean
 }
 
 export interface RecurringRoute {
@@ -108,6 +111,7 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
       activityId: a.id,
       date: a.date.slice(0, 10),
       paceSecPerKm: Math.round(a.paceSecPerKm!),
+      ...(isRunWalk(a, null) ? { runWalk: true } : {}),
     })),
     bestPaceSecPerKm: Math.round(best.paceSecPerKm!),
     bestActivityId: best.id,

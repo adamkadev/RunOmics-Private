@@ -29,7 +29,7 @@ describe('shareStats', () => {
   it('reads Distance, Time, Pace, Avg HR, units apart from the values', () => {
     expect(shareStats(RUN)).toEqual([
       { key: 'distance', value: '10.0', unit: ' km', label: 'Distance' },
-      { key: 'time', value: '57:33', unit: ' min', label: 'Time' },
+      { key: 'time', value: '57:33', unit: '', label: 'Time' },
       { key: 'pace', value: '5:44', unit: ' /km', label: 'Pace' },
       { key: 'hr', value: '153', unit: ' bpm', label: 'Avg HR' },
     ])
@@ -167,7 +167,7 @@ describe('an interval session (design review, Oct 2026)', () => {
   })
 
   it('says how far off the target the reps ran, in seconds per km, or that they were on it', () => {
-    expect(shareRepResult({ ...RUN, reps: { ...REPS, paceSecPerKm: 256 } })).toBe('9 s/km under target')
+    expect(shareRepResult({ ...RUN, reps: { ...REPS, paceSecPerKm: 256 } })).toBe('Reps 9 s/km faster than target')
     expect(shareRepResult({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } })).toBeNull()
     expect(shareRepResult({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })).toBe('On target')
     expect(shareRepResult({ ...RUN, reps: { ...REPS, target: null } })).toBeNull()

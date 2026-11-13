@@ -137,10 +137,10 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
     expect(shareActivity(run, null, null, null).reps?.target).toBeNull()
   })
 
-  it('takes the target from the repeat\'s effort step when the name sets none', () => {
-    const blocks = [{ kind: 'repeat', steps: [{ kind: 'effort', target: { paceSecPerKm: { min: 262.4, max: 268.6 } } }] }]
-    const session = { ...SESSION, structure: undefined, blocks } as unknown as WorkoutPrescription
-    expect(shareActivity(run, session).reps?.target).toEqual({ min: 262, max: 269 })
+  it('takes the pace guide of the repeat\'s effort step over the point the name sets', () => {
+    const blocks = [{ kind: 'repeat', steps: [{ kind: 'effort', target: { paceSecPerKm: { min: 262.4, max: 268.6 }, hrBpm: { min: 160, max: 168 } } }] }]
+    expect(shareActivity(run, { ...SESSION, blocks } as unknown as WorkoutPrescription).reps?.target).toEqual({ min: 262, max: 269 })
+    expect(shareActivity(run, { ...SESSION, structure: undefined, blocks } as unknown as WorkoutPrescription).reps?.target).toEqual({ min: 262, max: 269 })
   })
 
   it('titles the card with the session\'s name as the plan shows it', () => {

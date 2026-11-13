@@ -25,8 +25,12 @@ export interface ReplayRun {
 export interface ReplayLabels {
   title: string
   subtitle: string
-  running: (n: number) => string
+  running: (n: number, of: number) => string
   finished: (n: number) => string
+  /** Under the finish-time bars, which start empty and would read as a progress bar. */
+  histogram: string
+  /** Over the timer, which would read as a time of day. */
+  elapsed: string
 }
 
 export interface ReplayScene {
@@ -183,14 +187,18 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
   ctx.fillText(scene.labels.subtitle, side, 196 * u)
 
   const footer = h - bottom + 60 * u
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'
+  ctx.font = `500 ${26 * u}px ${scene.font}`
+  ctx.fillText(scene.labels.elapsed, side, footer)
   ctx.fillStyle = '#ffffff'
   ctx.font = `700 ${96 * u}px ${scene.font}`
   ctx.fillText(formatClock(Math.min(seconds, scene.maxSeconds)), side, footer + 80 * u)
   ctx.textAlign = 'right'
   ctx.font = `600 ${36 * u}px ${scene.font}`
-  ctx.fillStyle = rgbCss(accent)
+  // A count, not a status: ink, never the accent.
+  ctx.fillStyle = '#ffffff'
   const finished = scene.runs.length - running
-  ctx.fillText(running > 0 ? scene.labels.running(running) : scene.labels.finished(finished), w - side, footer + 80 * u)
+  ctx.fillText(running > 0 ? scene.labels.running(running, scene.runs.length) : scene.labels.finished(finished), w - side, footer + 80 * u)
 
   const all = finishBins(scene.runs.map((r) => r.duration), Infinity, BIN_SECONDS, scene.binCount)
   const done = finishBins(scene.runs.map((r) => r.duration), seconds, BIN_SECONDS, scene.binCount)
@@ -201,8 +209,9 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
   const barW = (w - side * 2 - gap * (scene.binCount - 1)) / scene.binCount
   for (let i = 0; i < scene.binCount; i++) {
     const x = side + i * (barW + gap)
-    ctx.fillStyle = 'rgba(255,255,255,0.08)'
-    ctx.fillRect(x, histTop, barW, histH)
+    const whole = (all[i]! / peak) * histH
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'
+    ctx.fillRect(x, histTop + histH - whole, barW, whole)
     const fill = (done[i]! / peak) * histH
     ctx.fillStyle = rgbCss(accent)
     ctx.fillRect(x, histTop + histH - fill, barW, fill)
@@ -211,6 +220,8 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
   ctx.font = `500 ${26 * u}px ${scene.font}`
   ctx.textAlign = 'left'
   ctx.fillText('0:00', side, histTop + histH + 38 * u)
+  ctx.textAlign = 'center'
+  ctx.fillText(scene.labels.histogram, w / 2, histTop + histH + 38 * u)
   ctx.textAlign = 'right'
   const lastBin = scene.binCount * BIN_SECONDS
   ctx.fillText(`${formatClock(Math.min(lastBin, scene.maxSeconds)).replace(/:\d\d$/, '')}`, w - side, histTop + histH + 38 * u)

@@ -16,7 +16,7 @@ export function formatDuration(seconds: number): string {
 
 /** From an hour, to the minute ("1:07" h); under it the seconds stay, as a 5K's time is read. */
 export function formatDurationRounded(seconds: number): { value: string; unit: string } {
-  if (Math.round(seconds) < 3600) return { value: formatClock(seconds), unit: t.units.min }
+  if (Math.round(seconds) < 3600) return { value: formatClock(seconds), unit: '' }
   const totalMinutes = Math.round(seconds / 60)
   const h = Math.floor(totalMinutes / 60)
   const m = totalMinutes % 60
@@ -27,7 +27,8 @@ export function formatDurationWords(seconds: number): string {
   const totalMinutes = Math.round(seconds / 60)
   const h = Math.floor(totalMinutes / 60)
   const m = totalMinutes % 60
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')} ${t.units.hour}` : `${m} ${t.units.min}`
+  if (h === 0) return `${m} ${t.units.min}`
+  return m > 0 ? `${h} ${t.units.hour} ${String(m).padStart(2, '0')}` : `${h} ${t.units.hour}`
 }
 
 export function formatClock(seconds: number): string {
@@ -102,8 +103,9 @@ export function formatNumber(value: number, maxDecimals = 1): string {
 }
 
 /** Whole kilometres on every screen, so a prescription never rounds one way here and another there. */
+/** "7.5", "2.9", "12": the session card, the week bars and Plan round a planned distance alike. */
 export function formatPlannedKm(km: number): string {
-  return formatKm(km)
+  return formatKm(km, km < 10 && Math.round(km * 10) % 10 !== 0 ? 1 : 0)
 }
 
 export function formatRanKm(km: number): string {

@@ -18,7 +18,8 @@ export function WearBar({
 }: {
   totalKm: number
   maxKm: number
-  tickKm?: number
+  /** null draws no tick: a pair that never carried a workout has no workouts to retire. */
+  tickKm?: number | null
   tickLabel?: string
   limitLabel?: string
   retired?: boolean
@@ -28,8 +29,8 @@ export function WearBar({
   const scale = Math.max(totalKm, maxKm, 1)
   const status = shoeWearStatus({ totalKm, maxKm })
   const fill = retired ? 100 : (totalKm / scale) * 100
-  const threshold = tickKm ?? maxKm * RETIRE_FROM_WORKOUTS_SHARE
-  const tick = maxKm > 0 && !retired ? (threshold / scale) * 100 : null
+  const threshold = tickKm === null ? null : (tickKm ?? maxKm * RETIRE_FROM_WORKOUTS_SHARE)
+  const tick = threshold !== null && maxKm > 0 && !retired ? (threshold / scale) * 100 : null
   const limit = maxKm > 0 && !retired && totalKm > maxKm ? (maxKm / scale) * 100 : null
   const color = retired ? 'var(--muted-foreground)' : WEAR_COLOR[status]
   const label = limit !== null && limitLabel ? { at: limit, text: limitLabel, tone: 'text-foreground' } : tick !== null && tickLabel ? { at: tick, text: tickLabel, tone: 'text-muted-foreground' } : null

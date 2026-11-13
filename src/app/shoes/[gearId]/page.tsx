@@ -87,6 +87,7 @@ export default async function ShoeDetailPage({
   const lastWornDate = shoe.activities[0]?.date ?? null
   const weeksWorn = weeksInRotation(shoe.firstUsedDate, lastWornDate)
   const avgRunKm = shoe.activities.length > 0 ? shoe.totalKm / shoe.activities.length : null
+  const carriedWorkouts = shoe.activities.some((a) => a.type !== 'Base')
 
   const runOutLine = shoeProjection(shoe, weeksRemaining)
 
@@ -196,8 +197,8 @@ export default async function ShoeDetailPage({
             <WearBar
               totalKm={shoe.totalKm}
               maxKm={shoe.maxKm}
-              tickKm={shoe.alertThresholdKm}
-              tickLabel={d.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}
+              tickKm={carriedWorkouts ? shoe.alertThresholdKm : null}
+              tickLabel={carriedWorkouts ? d.retireFromWorkouts(formatKm(shoe.alertThresholdKm)) : undefined}
               limitLabel={d.limitTick(formatKm(shoe.maxKm))}
               size="md"
             />

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
-import { ActivityListClient, activitiesView } from '../ActivityListClient'
+import { ActivityListClient, activitiesView, listBlocks } from '../ActivityListClient'
 import { encodeRouteThumb } from '@/domain/activity/routeThumb'
 import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
 import { notePopNavigation, popNavigationHandled } from '@/lib/popNavigation'
@@ -417,5 +417,17 @@ describe('List and Map', () => {
 
     expect(screen.getByRole('tab', { name: t.activities.view.map }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByTestId('global-map')).toBeInTheDocument()
+  })
+})
+
+describe('listBlocks', () => {
+  const week = (key: string, km: number, isCurrent = false) =>
+    ({ key, isCurrent, totalKm: km, items: [{}], label: key, easyPct: null }) as unknown as Parameters<typeof listBlocks>[0][number]
+
+  it("counts this week in its month, and says how long a break was rather than skip it", () => {
+    const blocks = listBlocks([week('2026-10-26', 4, true), week('2026-10-19', 3), week('2026-04-06', 6)])
+    expect(blocks.map((b) => b.kind)).toEqual(['current', 'month', 'pause', 'month'])
+    expect(blocks[1]).toMatchObject({ key: '2026-10', km: 7, runs: 2 })
+    expect(blocks[2]).toMatchObject({ label: t.activities.pause(`${formatDate('2026-05-01', { precision: 'month', year: 'never' })} – ${formatDate('2026-09-01', { precision: 'month', year: 'never' })}`, '2026', 5) })
   })
 })

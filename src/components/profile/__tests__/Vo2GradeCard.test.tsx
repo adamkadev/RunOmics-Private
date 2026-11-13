@@ -110,3 +110,11 @@ describe('Vo2GradeTodayRow (G3)', () => {
     expect(screen.getByTestId('vo2-grade-today')).toBeInTheDocument()
   })
 })
+
+describe('Vo2GradeCard during a reprise', () => {
+  it('shows the value alone, with no grade or percentile', () => {
+    render(<Vo2GradeCard view={GRADED} reprise />)
+    expect(screen.queryByTestId('grade-letter')).toBeNull()
+    expect(screen.getByTestId('grade-after-reprise').textContent).toBe(t.vo2Grade.afterReprise)
+  })
+})

@@ -78,7 +78,8 @@ export const fr = {
   },
 
   dates: {
-    monthShortYear: (month: string, year2: string) => `${month} ${year2}`,
+    // In full: "janv. 26" reads as 26 January.
+    monthShortYear: (month: string, year2: string) => `${month} 20${year2}`,
   },
 
   // Des états, pas des adjectifs : l’app ne sait pas qui la lit, et « Fatigué » accorde au masculin.
@@ -108,6 +109,7 @@ export const fr = {
     regainedGrade: 'Note retrouvée',
     upFrom: (grade: string) => `en hausse (avant : ${grade})`,
     downFrom: (grade: string, daysOff: number | null) => (daysOff ? `En baisse après ${daysOff} jours sans courir (avant : ${grade})` : `En baisse (avant : ${grade})`),
+    afterReprise: 'La note et le percentile reviendront après ton bloc de reprise.',
     calibrating: 'Calibrage',
     gradeIn: (n: number) => `Note dans ${n} sortie${n > 1 ? 's' : ''}`,
     gradeAfter: 'Note après 4 semaines de sorties avec cardio',
@@ -152,14 +154,15 @@ export const fr = {
   },
 
   consistency: {
-    ranges: { '3m': '3M', '6m': '6M', '1y': '1A' },
-    rangesSpoken: { '3m': '3 mois', '6m': '6 mois', '1y': '1 an' },
+    ranges: { since: 'Depuis ta reprise', '3m': '3M', '6m': '6M', '1y': '1A' },
+    rangesSpoken: { since: 'Depuis ta reprise', '3m': '3 mois', '6m': '6 mois', '1y': '1 an' },
     rangeLabel: 'Période',
     streakEyebrow: 'Série hebdomadaire',
     weeks: (weeks: number) => (weeks > 1 ? 'semaines' : 'semaine'),
-    streakRule: (target: number, best: number) => `${target}+ sorties par semaine · record ${best}`,
+    streakRule: (target: number, best: number) => `${target}+ sorties par semaine · record ${best}, depuis le début`,
     thisWeek: 'Cette semaine',
-    thisWeekRuns: (runs: number, target: number) => `${runs} sur ${target}`,
+    thisWeekRuns: (runs: number) => `${runs} faite${runs > 1 ? 's' : ''}`,
+    keeps: (runs: number) => `encore ${runs} pour la garder`,
     planned: (sessions: number) => `${sessions} prévue${sessions > 1 ? 's' : ''}`,
     thisWeekLabel: (runs: number, target: number) => `Cette semaine : ${runs} sortie${runs > 1 ? 's' : ''} sur ${target}`,
     weeksOnTarget: 'semaines à l’objectif',
@@ -175,6 +178,7 @@ export const fr = {
     anchor: (day: string) => `Le ${day} est ton point d’ancrage`,
     anchorWeeks: (weeks: number, of: number) => `, ${weeks} semaine${weeks > 1 ? 's' : ''} sur ${of}.`,
     restDay: (day: string) => `Le ${day} reste un jour de repos.`,
+    mostOften: (days: string[]) => `${new Intl.ListFormat('fr', { type: 'conjunction' }).format(days).replace(/^./, (c) => c.toUpperCase())} reviennent le plus souvent.`,
     sheet: {
       title: (week: string) => `Semaine du ${week}`,
       summary: (runs: number, km: string, time: string) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km · ${time}`,
@@ -283,9 +287,12 @@ export const fr = {
       year: 'Année',
       type: 'Type',
       filters: {
-        button: 'Filtres',
-        buttonActive: (n: number) => `Filtres, ${n} actif${n > 1 ? 's' : ''}`,
-        title: 'Filtres',
+        layer: 'Calque',
+        layerHeat: 'Chaleur',
+        layerDistricts: 'Quartiers',
+        button: 'Carte et filtres',
+        buttonActive: (n: number) => `Carte et filtres, ${n} filtre${n > 1 ? 's' : ''} actif${n > 1 ? 's' : ''}`,
+        title: 'Carte et filtres',
         reset: 'Réinitialiser',
         all: 'Tout',
         show: (n: number) => `Afficher ${n} sortie${n > 1 ? 's' : ''}`,
@@ -313,7 +320,6 @@ export const fr = {
         reachStat: 'Rayon médian',
       },
       districts: {
-        layersButton: 'Afficher les quartiers',
         legend: 'Couverture des quartiers',
         fog: 'Brouillard',
         partly: 'En partie',
@@ -477,6 +483,7 @@ export const fr = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Infos de version copiées',
     sections: {
+      account: 'Compte',
       profile: 'Profil · depuis ta montre',
       appearance: 'Apparence',
       data: 'Données',
@@ -591,7 +598,7 @@ export const fr = {
       viewRun: 'Voir la sortie ›',
     },
     rowAction: {
-      signIn: 'Se connecter ›',
+      needsAccount: 'Compte requis',
     },
     appearance: {
       themeLabel: 'Thème',
@@ -599,7 +606,7 @@ export const fr = {
       auto: 'Auto',
       dark: 'Sombre',
       // Le fond du mode clair.
-      glowLabel: "Lueur d'arrière-plan",
+      glowLabel: "Lueur d’arrière-plan",
       glowHint: 'Couleur derrière le haut de chaque page',
       reducedTransparencyNote: ' · désactivé tant que Réduire la transparence est activé',
     },
@@ -620,7 +627,7 @@ export const fr = {
       signingIn: 'Connexion…',
       error: 'Connexion impossible, réessaie.',
       notConfigured: "La connexion n’est pas disponible pour le moment.",
-      signInToManage: 'Connecte-toi pour les gérer',
+      unlocks: 'Connecte-toi pour exporter tes sorties et recevoir un rappel avant tes séances.',
     },
     athlete: {
       thresholdPace: 'Allure seuil',
@@ -668,9 +675,8 @@ export const fr = {
     },
     profile: {
       readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
-      // « Seuil 172 · max 189 »: « FC seuil » would cut the row's name.
-      lthr: (bpm: number) => `Seuil ${bpm}`,
-      maxHr: (bpm: number) => `max ${bpm}`,
+      lthr: (bpm: number) => `seuil ${bpm}`,
+      maxHr: (bpm: number) => `FC max ${bpm}`,
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
@@ -720,12 +726,14 @@ export const fr = {
         in: 'Charge dans la zone',
         above: 'Charge au-dessus de la zone',
       },
-      buildingBack: 'Reprise – pas encore de lecture',
+      buildingBack: 'Reprise',
+      formLater: 'Ta forme s’affichera après quelques semaines de sorties régulières.',
       loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimée` : state),
       ctl: 'Condition',
       atl: 'Fatigue',
       // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
       deltaWeek: (n: number, days: number) => `${n} en ${days} j`,
+      steady: (days: number) => `stable en ${days} j`,
       fallback: {
         below: (acute: number, lo: number, hi: number, fresh = false) => ({
           headline: fresh ? 'La fatigue est retombée. Il est temps de reconstruire.' : 'La charge est sous ta zone. Il est temps de reconstruire.',
@@ -926,7 +934,7 @@ export const fr = {
       loadTrend: {
         aboutEstimated: "Ta charge aiguë : les 7 derniers jours de charge, calculée par l’app à partir de la fréquence cardiaque et de la durée de chaque sortie puisque ta montre n’en envoie pas, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
         about: "Ta charge aiguë : les 7 derniers jours de charge mesurée par ta montre, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
-        ratioSafe: (lo: number, hi: number) => `ratio · sûr ${lo}–${hi}`,
+        ratioSafe: (lo: string, hi: string) => `ratio · sûr ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 jour' : `${days} jours`) : Math.round(days / 7) === 1 ? '1 semaine' : `${Math.round(days / 7)} semaines`),
         today: 'aujourd’hui',
         onDay: (date: string) => `le ${date}`,
@@ -957,6 +965,7 @@ export const fr = {
         threshold: 'Allure seuil',
         easyPace: 'Allure facile',
         in12w: (delta: string) => `${delta} en 12 semaines`,
+        since: (note: string, date: string) => `${note} depuis le ${date}`,
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
@@ -967,6 +976,7 @@ export const fr = {
         title: 'Prédictions de course',
         caption: (period: string) => `écart sur ${period}`,
         about: 'Les temps de course prédits par ta montre. La ligne sous chacun est la tendance de la période, plus rapide en haut.',
+        unlockLater: 'Le 10 km et plus s’afficheront quand tu courras 20 min sans marcher.',
         count: (n: number): string => (n === 4 ? 'Chacune des quatre' : n === 3 ? 'Chacune des trois' : n === 2 ? 'Chacune des deux' : 'La prédiction'),
         slipped: (who: string, range: string, period: string) => `${who} a reculé de ${range} sur ${period}.`,
         improved: (who: string, range: string, period: string) => `${who} a gagné ${range} sur ${period}.`,
@@ -1013,7 +1023,7 @@ export const fr = {
       paceCurve: {
         title: 'Courbe allure-durée',
         caption: 'meilleure allure pour chaque durée',
-        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d'avant, lue dans l'enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D' : l'allure la plus rapide que tu tiens sans t'épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D' est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
+        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d’avant, lue dans l’enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D' : l’allure la plus rapide que tu tiens sans t’épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D' est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
         cs: 'Vitesse critique',
         dPrime: (m: number) => `D' ${m} m`,
         noThreshold: 'Ajustée sur tes meilleurs efforts de 3 à 20 min : à peu près l’allure que tu tiendrais 30 à 40 minutes.',
@@ -1036,7 +1046,7 @@ export const fr = {
         little: 'La température t’a peu coûté jusqu’ici : moins de 5 s/km à FC égale.',
         noWarm: 'Pas encore de footing au-dessus de 20 °C pour mesurer le coût de la chaleur.',
         best: 'meilleure',
-        noRuns: 'aucune sortie',
+        noRunsIn: (bands: string[]) => `Pas encore de sortie facile à ${new Intl.ListFormat('fr', { type: 'disjunction' }).format(bands)}.`,
         plus: (s: number) => `+${s} s`,
         barKey: 'Barre plus longue : plus de s/km perdues face à ta meilleure tranche.',
         fastest: (band: string) => `Ton allure est la plus rapide entre ${band}.`,
@@ -1063,7 +1073,7 @@ export const fr = {
       ytd: {
         title: "Depuis janvier",
         shortOf: (km: string, goal: string) => `${km} km de retard sur ${goal} à ce rythme`,
-        overOf: (km: string, goal: string) => `${km} km d'avance sur ${goal} à ce rythme`,
+        overOf: (km: string, goal: string) => `${km} km d’avance sur ${goal} à ce rythme`,
       },
       longRun: {
         title: 'Part de la sortie longue',
@@ -1105,7 +1115,7 @@ export const fr = {
         plannedLegend: 'Prévue',
         missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
         missed: 'Manquée',
-        ofPlanned: (n: number) => `sur ${n} prévues`,
+        ofPlanned: (done: number, planned: number) => `${done} sur ${planned} prévues`,
       },
       zoneRanges: {
         title: 'Plages de zones',
@@ -1172,6 +1182,7 @@ export const fr = {
   },
 
   activities: {
+    pause: (months: string, year: string, count: number) => `Pause · ${months} ${year} · ${count} mois`,
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
     // Not « Toutes »: it pushes the fourth chip under the filter button at 393 pt.
     all: 'Tout',
@@ -1191,7 +1202,7 @@ export const fr = {
       ofRuns: (n: number, total: number) => `${n} sur ${total} sortie${total > 1 ? 's' : ''}`,
     },
     view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
-    groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Courses' },
+    groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Compétitions' },
     filter: {
       title: 'Filtrer et trier',
       reset: 'Réinitialiser',
@@ -1211,7 +1222,7 @@ export const fr = {
         races: ' · les totaux ne comptent que les courses',
       },
       clear: 'Effacer',
-      sortedBy: { oldest: "plus anciennes d'abord", longest: "plus longues d'abord", fastest: "plus rapides d'abord" } as Record<string, string>,
+      sortedBy: { oldest: "plus anciennes d’abord", longest: "plus longues d’abord", fastest: "plus rapides d’abord" } as Record<string, string>,
     },
     sort: {
       label: 'Trier',
@@ -1222,7 +1233,7 @@ export const fr = {
       fastest: 'Rapides',
     },
     row: {
-      rpeValue: (n: number) => `RPE ${n}`,
+      rpeValue: (n: number) => `Effort ${n}/10`,
     },
   },
 
@@ -1270,9 +1281,8 @@ export const fr = {
       showReps: 'Allure des fractions',
       // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
       repPaceStat: 'Allure fractions',
-      // La ligne d’accent sous l’en-tête d’une séance de fractionné : « 9 s/km sous la cible ».
       secPerKm: (n: number) => `${n} s/km`,
-      underTarget: 'sous la cible',
+      fasterThanTarget: (gap: string) => `Blocs ${gap} plus rapides que la cible`,
       onTarget: 'dans la cible',
       formatTitle: 'Format',
       formatLabels: {
@@ -1516,7 +1526,7 @@ export const fr = {
       lapTitle: 'Tours',
       wholeRun: 'Sortie entière',
       lapNumber: (n: number) => `Tour ${n}`,
-      noLapsPressed: "Aucun tour n'a été déclenché sur cette sortie. Les allures au km montrent comment ton allure a évolué.",
+      noLapsPressed: "Aucun tour n’a été déclenché sur cette sortie. Les allures au km montrent comment ton allure a évolué.",
       seeKmSplits: 'Voir les allures au km',
       cols: {
         km: 'Km',
@@ -1586,12 +1596,7 @@ export const fr = {
       targetFromPlan: 'objectif issu de ton plan',
       hit: 'atteint',
       short: 'manqué',
-      running: (month: string, km: string, pace: string) => `${month} · ${km}, ${pace}`,
-      pace: {
-        ahead: 'en avance',
-        on_track: 'dans les temps',
-        behind: 'en retard',
-      },
+      running: (month: string, km: string) => `${month} pour l’instant · ${km} km`,
       km: (actual: string, target: string) => `${actual} / ${target}`,
     },
     season: {
@@ -1622,7 +1627,9 @@ export const fr = {
     subtitle: (runs: number, since: string) => `${runs} sorties depuis un même départ · depuis ${since}`,
     spot: (runs: number) => `${runs} sorties`,
     spots: 'Points de départ',
-    running: (n: number) => `${n} encore en course`,
+    running: (n: number, of: number) => `${n} sur ${of} encore dehors`,
+    histogram: 'Sorties terminées, par durée',
+    elapsed: 'Écoulé',
     finished: (n: number) => `${n} sortie${n > 1 ? 's' : ''} terminée${n > 1 ? 's' : ''}`,
     canvasLabel: (runs: number) => `${runs} sorties qui partent toutes du même point en même temps`,
     play: 'Lecture',
@@ -1646,7 +1653,11 @@ export const fr = {
     fromMonth: (month: string) => `depuis ${month}`,
     yearLabel: (year: number, perMonth: string) => `${year} : ${perMonth} km par mois`,
     monthly: 'Km par mois',
+    pause: 'pause',
+    monthsRun: (n: number) => `sur ${n} mois courus`,
     best: (km: string, month: string) => `meilleur ${km} · ${month}`,
+    soFar: (month: string, km: string) => `${month} · ${km} km pour l’instant`,
+    onPace: (km: string) => `à ce rythme ${km}`,
     longestRun: 'Plus longue sortie',
     biggestWeek: 'Plus grosse semaine',
     distance: 'Distance',
@@ -1679,7 +1690,7 @@ export const fr = {
     roles: { daily: 'quotidienne', workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
     easy: 'Facile',
-    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure', avgHr: 'FC' },
+    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure moy.', avgHr: 'FC moy.' },
     lastRuns: 'Dernières sorties',
     neverUsed: 'Jamais utilisée',
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
@@ -1772,7 +1783,17 @@ export const fr = {
   profile: {
     hub: {
       goalsSeason: 'Objectifs & saison',
-      streakOf: (weeks: number, target: number) => `semaine${weeks > 1 ? 's' : ''} d'affilée · ${target} sortie${target > 1 ? 's' : ''} et plus`,
+      groupSeason: 'Cette saison',
+      groupYou: 'Toi',
+      groupGear: 'Matériel et totaux',
+      kmOfGoal: (km: string, goal: string) => `${km} / ${goal} km`,
+      onPaceFor: (km: string) => `à ce rythme ${km} km`,
+      better: (n: number) => `${n} en progrès`,
+      streakValue: (weeks: number) => `${weeks} sem. d’affilée`,
+      noStreakShort: 'pas encore de série',
+      recordCount: (n: number) => `${n} distance${n > 1 ? 's' : ''}`,
+      exploredIn: (place: string) => `Exploré · ${place}`,
+      streakOf: (weeks: number, target: number) => `semaine${weeks > 1 ? 's' : ''} d’affilée · ${target} sortie${target > 1 ? 's' : ''} et plus`,
       noStreak: (target: number) => `Pas encore de série · ${target} sortie${target > 1 ? 's' : ''} et plus`,
       runsThisWeek: (runs: number, target: number) => `${runs} sur ${target} cette semaine`,
       records: 'Records',
@@ -1788,7 +1809,7 @@ export const fr = {
       predictedShort: 'prédit',
       targetShort: 'objectif',
       shortAtPace: (km: string) => `${km} km de retard à ce rythme`,
-      overAtPace: (km: string) => `${km} km d'avance à ce rythme`,
+      overAtPace: (km: string) => `${km} km d’avance à ce rythme`,
       noRace: 'Aucune course prévue',
       currentBlock: 'Bloc en cours',
       blockWeek: (week: number, total: number) => `Bloc · semaine ${week} sur ${total}`,
@@ -1818,7 +1839,7 @@ export const fr = {
     },
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
-      streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
+      streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} active${weeks > 1 ? 's' : ''} d’affilée`,
       // Reads before the milestone's date; a longer phrase is cut beside it.
       streakDetail: (since: string) => `En cours · chaque semaine depuis le ${since}`,
       record: (label: string) => `Record ${label}`,
@@ -1832,22 +1853,13 @@ export const fr = {
     },
     trainingZones: {
       title: 'Zones d’entraînement',
-      viewLabel: 'Temps en zones sur',
-      week: '1S',
-      fourWeeks: '4S',
-      weekSpoken: 'Cette semaine',
-      fourWeeksSpoken: '4 dernières semaines',
+      fromThreshold: (bpm: number) => `depuis la FC seuil ${bpm}`,
+      fromMax: (bpm: number) => `depuis la FC max ${bpm}`,
       columnZone: 'Zone',
       columnPace: 'Allure /km',
       columnHr: 'Fréq. cardiaque',
-      columnHrShort: 'FC',
-      columnTime: 'Temps',
-      noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
-      noSessionsRecent: 'Aucune séance enregistrée sur ces 4 semaines.',
-      hard: (pct: string) => `Intense ${pct}`,
-      verdict: { inRange: 'dans la cible', tooModerate: 'trop de modéré', tooHard: 'trop d’intense' },
-      totalLine: (duration: string) => `${duration} au total · objectif 80 / 20`,
-      soFar: 'semaine en cours',
+      hrOnly: 'Zones à la FC : en course/marche, l’allure ne dit pas l’effort.',
+      timeInZones: 'Temps en zones · Analyses',
       estimatedPaces: (effort: string, date: string) => `Allures estimées par VDOT à partir de ton ${effort} du ${date} : la montre ne donne pas d’allure seuil à jour.`,
     },
   },
@@ -1872,6 +1884,8 @@ export const fr = {
       routes: 'Parcours',
     },
     recurring: {
+      runWalk: 'séance course/marche',
+      equalBest: 'égal',
       showAll: (n: number) => `Voir les ${n} parcours`,
       runCount: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
       trailKey: 'Allure par sortie · plus haute = plus rapide',
@@ -1894,7 +1908,7 @@ export const fr = {
     },
     cols: { distance: 'Distance', best: 'Record', predicted: 'Prédit' },
     gapSeconds: (s: number) => `${s} s`,
-    faster: (gap: string) => `${gap} plus rapide`,
+    faster: (gap: string) => `${gap} à portée`,
     slower: (gap: string) => `${gap} plus lent`,
     atPotential: 'à ton potentiel',
     allEfforts: (distance: string) => `Tous les efforts sur ${distance} ›`,
@@ -2049,9 +2063,9 @@ export const fr = {
     split: 'Passage',
     pace: 'Allure',
     finish: 'Arrivée',
-    title: 'Course',
-    noneTitle: 'Aucune course prévue',
-    none: 'Ajoute une course dans Garmin Connect : ta prédiction et ton allure cible apparaîtront ici après la synchro.',
+    title: 'Prochaine compétition',
+    noneTitle: 'Aucune compétition prévue',
+    none: 'Ajoute-la dans Garmin Connect ou ici : ta prédiction et ton allure cible apparaîtront après la synchro.',
     formTitle: 'Forme le jour de la course',
     formToday: (tsb: string) => `Aujourd’hui ${tsb}.`,
     formCaption: 'Prévue à partir des séances planifiées jusqu’à la course, à la charge que portent tes sorties de chaque type.',
@@ -2089,7 +2103,8 @@ export const fr = {
     perWeek: 'par semaine',
     vs: (value: string) => `contre ${value}`,
     notEnough: 'Pas assez de données',
-    nothingBefore: 'Nouveau',
+    nothingBefore: 'premier cycle',
+    startingPoint: (date: string) => `Ton point de départ : on comparera ces valeurs au bilan du ${date}.`,
     lastReading: (date: string) => `Dernière mesure ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min en ${sessions} séance${sessions > 1 ? 's' : ''} pour l’instant`,
     noCheck: 'Pas de test ce cycle',
@@ -2132,7 +2147,7 @@ export const fr = {
       fitnessEnd: 'Condition en fin de cycle',
       fitnessToday: 'Condition aujourd’hui',
     },
-    units: { runs: 'sorties', perBeat: 'm/batt.' },
+    units: { runs: 'sorties', perBeat: 'm par battement' },
     tile: {
       inProgress: (week: number, date: string) => `Cycle · semaine ${week} sur 12 · bilan ${date}`,
       complete: (n: number) => `Cycle ${n} terminé : place au bilan`,
@@ -2345,16 +2360,13 @@ export const fr = {
         off_guide: 'Hors du guide d’allure',
         unreadable: 'Non lue',
       },
-      verdictDetail: {
-        under: 'Chaque fraction s’est stabilisée bien sous la cible, à l’allure du guide.',
-        on_target: 'Chaque fraction s’est stabilisée à la cible ou en dessous, sans toucher le plafond.',
-        over: 'Une fraction s’est stabilisée au-dessus de la cible ou a touché le plafond.',
-        off_guide: 'Les fractions se sont éloignées du guide d’allure : elles ne disent rien de lui.',
-        unreadable: 'Ni tours ni fréquence cardiaque pour lire les fractions.',
-      },
-      band: (target: number, ceiling: number) => `Cible ${target} · plafond ${ceiling}`,
+      offGuideFaster: 'Plus rapide que le guide',
+      offGuideSlower: 'Plus lent que le guide',
+      guideLine: (repClass: string, guide: string) => `${repClass} · guide d’allure ${guide} /km`,
+      slower: 'plus lent',
+      faster: 'plus rapide',
       cols: { rep: 'n°', pace: 'Allure', hr: 'FC', peak: 'Pic' },
-      footnote: (minute: number, guide: string) => `La FC réagit en retard : chaque fraction est lue à partir de la ${minute}ᵉ minute. Guide d’allure ${guide} /km.`,
+      footnote: (minute: number, target: number, ceiling: number) => `FC lue à partir de la ${minute}ᵉ minute de chaque fraction · cible ${target} · plafond ${ceiling} bpm`,
     },
   },
 

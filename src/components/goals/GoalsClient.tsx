@@ -1,5 +1,6 @@
 'use client'
 
+import { GOALS_RACES_HREF } from './goalsHref'
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -17,7 +18,6 @@ export function defaultGoalsYear(years: readonly number[], today: string): numbe
   return years.includes(current) ? current : years[0]
 }
 
-const GOALS_RACES_HREF = '/settings#goals-races'
 
 const STEP_BTN =
   'hit-44 flex size-9 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-35'

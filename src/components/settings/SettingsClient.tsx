@@ -111,6 +111,15 @@ export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device
     return (
       <div className="flex flex-col gap-3.5">
         <SettingsHeader />
+        {/* One account card says what signing in gives: the rows it unlocks only say they need it. */}
+        <Section title={t.settings.sections.account} testId="account-card">
+          <div className={`${GROUP_CARD} flex flex-col gap-3.5 px-4 py-4`}>
+            <p className="text-sm text-muted-foreground text-pretty">{t.settings.auth.unlocks}</p>
+            <Button variant="primary" onClick={handleSignIn} disabled={signingIn} className="h-11 w-full rounded-xl text-sm">
+              {signingIn ? t.settings.auth.signingIn : t.settings.auth.signIn}
+            </Button>
+          </div>
+        </Section>
         <AppearanceSection />
         <ProfileSection zones={zones} />
 
@@ -128,20 +137,19 @@ export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device
                 </p>
               </div>
             </div>
-            {/* The export is owner-only, so signed out the row asks for the sign-in. */}
-            <button type="button" onClick={handleSignIn} className={`${GROUP_ROW} transition-colors hover:bg-[var(--surface-2)]`}>
+            <div className={GROUP_ROW} data-testid="export-row">
               <span className="min-w-0 truncate text-sm text-foreground">{t.settings.dataExport.title}</span>
-              <span className="shrink-0 text-sm font-medium text-accent-text">{t.settings.rowAction.signIn}</span>
-            </button>
+              <span className="shrink-0 text-sm text-muted-foreground">{t.settings.rowAction.needsAccount}</span>
+            </div>
           </div>
         </Section>
 
         <Section title={t.settings.sections.notifications}>
-          <div className={`${GROUP_CARD} flex flex-col gap-3.5 px-4 py-4`}>
-            <p className="text-sm text-muted-foreground">{t.settings.auth.signInToManage}</p>
-            <Button variant="primary" onClick={handleSignIn} disabled={signingIn} className="h-11 w-full rounded-xl text-sm">
-              {signingIn ? t.settings.auth.signingIn : t.settings.auth.signIn}
-            </Button>
+          <div className={GROUP_CARD}>
+            <div className={GROUP_ROW} data-testid="notifications-row">
+              <span className="min-w-0 truncate text-sm text-foreground">{t.settings.sections.notifications}</span>
+              <span className="shrink-0 text-sm text-muted-foreground">{t.settings.rowAction.needsAccount}</span>
+            </div>
           </div>
         </Section>
 
@@ -248,8 +256,8 @@ function AppearanceSection() {
 export function zonesSummary(zones: Zones | undefined): string | null {
   const p = t.settings.profile
   const parts = [
-    zones?.lthrBpm !== undefined ? p.lthr(zones.lthrBpm) : null,
     zones?.maxHrBpm !== undefined ? p.maxHr(zones.maxHrBpm) : null,
+    zones?.lthrBpm !== undefined ? p.lthr(zones.lthrBpm) : null,
   ].filter((part): part is string => part !== null)
   return parts.length > 0 ? parts.join(' · ') : null
 }

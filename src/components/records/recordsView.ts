@@ -95,10 +95,14 @@ export function trailBars(route: RecurringRoute): TrailBar[] {
 export type RouteLatest =
   | { kind: 'new-best'; date: string }
   | { kind: 'behind'; run: RouteRun; gapSeconds: number }
+  | { kind: 'run-walk'; run: RouteRun }
 
+/** Like with like: a run/walk against the run/walks on the route, a run against the runs. */
 export function routeLatest(route: RecurringRoute): RouteLatest | null {
   const latest = route.runs[route.runs.length - 1]
   if (!latest) return null
   if (latest.activityId === route.bestActivityId) return { kind: 'new-best', date: latest.date }
-  return { kind: 'behind', run: latest, gapSeconds: latest.paceSecPerKm - route.bestPaceSecPerKm }
+  const peers = route.runs.filter((run) => run !== latest && !!run.runWalk === !!latest.runWalk)
+  if (peers.length === 0) return latest.runWalk ? { kind: 'run-walk', run: latest } : { kind: 'behind', run: latest, gapSeconds: latest.paceSecPerKm - route.bestPaceSecPerKm }
+  return { kind: 'behind', run: latest, gapSeconds: latest.paceSecPerKm - Math.min(...peers.map((run) => run.paceSecPerKm)) }
 }

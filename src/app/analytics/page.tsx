@@ -1,3 +1,4 @@
+import { getReprise } from '@/application/usecases/GetReprise'
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { appTodayIso } from '@/lib/calendarDate'
 import { getVO2maxReadings } from '@/application/usecases/GetVO2maxHistory'
@@ -12,7 +13,6 @@ import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances'
-import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 import { analyticsYtd } from '../_data/analyticsYtd'
@@ -66,8 +66,8 @@ export default async function AnalyticsPage() {
     heat: getHeatImpact(),
     balance: getLoadBalance(),
     paceBests: getPaceBests(),
-    weeklyAvgKm: weeklyAverageKm(activities, today),
     ytd: analyticsYtd(activities, yearData, today),
+    reprise: getReprise(today) !== null,
   }
 
   return <AnalyticsClient data={board} today={today} />

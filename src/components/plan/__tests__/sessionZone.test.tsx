@@ -77,7 +77,7 @@ describe('one session colour across the week', () => {
 
     const bars = [...container.querySelectorAll<HTMLElement>('[data-bar-state="planned"], [data-bar-state="done"]')]
     const types = [...RUNS.map((r) => r.type), ...PLANNED.map((p) => p.type)]
-    expect(bars.map((bar) => bar.style.background)).toEqual(types.map((type) => zoneColor(sessionZone({ type }))))
+    expect(bars.map((bar) => (bar.dataset.barState === 'planned' ? bar.style.borderColor : bar.style.background))).toEqual(types.map((type) => zoneColor(sessionZone({ type }))))
   })
 
   it('names the contradicting session after its type, not its label', async () => {

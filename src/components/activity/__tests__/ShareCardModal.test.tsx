@@ -113,9 +113,9 @@ describe('ShareCardModal', () => {
     expect(screen.queryByRole('button', { name: 'Copy image' })).toBeNull()
   })
 
-  it('has no page dots under the preview: the design picker comes straight after it', () => {
+  it('puts the design picker right above the preview, the choice before what it changes', () => {
     open()
-    expect(screen.getByTestId('share-preview').nextElementSibling?.getAttribute('aria-label')).toBe('Design')
+    expect(screen.getByTestId('share-preview').previousElementSibling?.getAttribute('aria-label')).toBe('Design')
   })
 
   // A card that changes height per tab makes the controls under it jump.
@@ -164,11 +164,10 @@ describe('ShareCardModal', () => {
     expect(screen.getByRole('button', { name: 'Copy image' })).toBeEnabled()
   })
 
-  it('sizes the sheet to what it holds, the buttons right under the options', () => {
+  it('keeps one sheet height on every tab, the buttons right under the options', () => {
     open()
     const sheet = screen.getByTestId('share-sheet')
-    expect(sheet.className).toContain('max-h-full')
-    expect(sheet.className).not.toMatch(/(^|\s)h-full/)
+    expect(sheet.className).toContain('h-[calc(100%-44px)]')
     expect(sheet.className).toContain('rounded-t-[var(--radius-sheet-large)]')
     expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
   })

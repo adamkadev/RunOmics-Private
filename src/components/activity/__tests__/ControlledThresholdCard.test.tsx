@@ -24,12 +24,20 @@ const view: ControlledRunView = {
 }
 
 describe('ControlledThresholdCard', () => {
-  it("reads each rep's heart rate from minute 3 against the target and ceiling, under the session's verdict", () => {
+  it("puts each rep's pace against the plan's guide, then its heart rate from minute 3 against the target and ceiling", () => {
     render(<ControlledThresholdCard view={view} />)
 
     expect(screen.getByTestId('controlled-verdict').textContent).toBe(t.coaching.controlledRun.verdicts.over)
-    expect(screen.getByText(t.coaching.controlledRun.band(169, 173))).toBeTruthy()
     expect(screen.getAllByTestId('controlled-rep').map((row) => row.textContent)).toEqual(['14:36166170', '24:35171174'])
-    expect(screen.getByText(/minute 3|3ᵉ minute/)).toBeTruthy()
+    expect(screen.getAllByTestId('pace-track').every((track) => !track.querySelector('[data-off]'))).toBe(true)
+    expect(screen.getByText(t.coaching.controlledRun.footnote(3, 169, 173))).toBeTruthy()
+  })
+
+  it('says which way the reps left the guide', () => {
+    const fast = { ...view, reading: { ...view.reading, verdict: 'off_guide' as const, reps: [{ ...view.reading.reps[0]!, paceSecPerKm: 262 }] } }
+    render(<ControlledThresholdCard view={fast} />)
+
+    expect(screen.getByTestId('controlled-verdict').textContent).toBe(t.coaching.controlledRun.offGuideFaster)
+    expect(screen.getByTestId('pace-track').querySelector('[data-off]')).not.toBeNull()
   })
 })

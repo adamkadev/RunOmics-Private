@@ -120,15 +120,16 @@ describe('the phase card', () => {
     expect(card.textContent).toContain(`${weekOf.before} 1 ${weekOf.after}`)
     // Sep 9 to Nov 29 is 81 days: 12 weeks.
     expect(card.textContent).toContain(t.plan.phase.raceInWeeks('10K', 12))
-    expect(within(card).queryByRole('link')).toBeNull()
+    expect(within(card).getByTestId('phase-cycle').getAttribute('href')).toBe('/plan/checkpoint')
   })
 
-  it('draws a segment per week of the phase, the weeks so far in the accent', () => {
+  it('draws a segment per week of the phase, the weeks done in the accent and the one under way half full', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    const segments = screen.getByTestId('phase-segments').children
+    const segments = [...screen.getByTestId('phase-segments').children]
     expect(segments).toHaveLength(5)
-    expect([...segments].filter((s) => s.hasAttribute('data-done'))).toHaveLength(1)
+    expect(segments.filter((s) => s.hasAttribute('data-done'))).toHaveLength(0)
+    expect(segments.findIndex((s) => s.hasAttribute('data-current'))).toBe(0)
   })
 
   it('counts general preparation inside the block when the plan has no race', () => {
@@ -139,7 +140,8 @@ describe('the phase card', () => {
     expect(within(card).getByRole('heading').textContent).toBe(t.plan.weekPurpose.generalPreparation)
     // The block's Sep 7 to Oct 4, not the season's Aug 31: four weeks, this the first.
     const weekOf = t.plan.phase.weekOf(4)
-    expect(card.textContent).toBe(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 1 ${weekOf.after}`)
+    expect(card.textContent).toContain(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 1 ${weekOf.after}`)
+    expect(within(card).getByTestId('phase-cycle').textContent).toMatch(/^Cycle week \d+ of 12 · checkpoint /)
     expect(within(card).getByRole('link').getAttribute('href')).toBe('/plan/checkpoint')
   })
 
@@ -193,25 +195,24 @@ describe('the day selector', () => {
     expect(day(TODAY).className).toContain('state-today')
   })
 
-  it('draws each day as a bar as long as its km, in its colour, and rest as a stub', () => {
+  it('draws each day as a bar as long as its km, in its colour, with its km over it, and nothing on a rest day', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
-    // 5 px a km, capped at 68 px.
     expect(bar('2026-09-07').style.height).toBe(`${Math.round(4.79 * 5)}px`)
     expect(bar('2026-09-07').style.background).toBe('var(--zone-3)')
-    expect(bar('2026-09-12').style.height).toBe('68px')
-    // The long run shares the easy blue.
-    expect(bar('2026-09-12').style.background).toBe('var(--zone-2)')
-    expect(bar('2026-09-10').getAttribute('data-bar-state')).toBe('rest')
-    expect(bar('2026-09-10').style.height).toBe('5px')
+    expect(bar('2026-09-12').style.height).toBe('54px')
+    expect(bar('2026-09-12').style.borderColor).toBe('var(--zone-2)')
+    expect(bar('2026-09-12').getAttribute('data-bar-state')).toBe('planned')
+    expect(within(day('2026-09-12')).getByTestId('day-km').textContent).toBe('18')
+    expect(day('2026-09-10').querySelector('[data-bar-state]')).toBeNull()
   })
 
-  it('names each day by its session letter, a dash on a rest day', () => {
+  it('names each day by its session letter, and a rest day by nothing', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
     expect(day('2026-09-07').textContent).toContain(t.plan.typeLetters.Tempo)
     expect(day('2026-09-12').textContent).toContain(t.plan.typeLetters.long)
-    expect(day('2026-09-10').textContent).toContain('–')
+    expect(day('2026-09-10').textContent).not.toContain('–')
   })
 
   it('draws a missed session as a dashed amber outline', () => {
@@ -239,7 +240,7 @@ describe('a session still to come', () => {
     const card = screen.getByTestId('plan-workout-workout-threshold')
     expect(card.textContent).toContain(t.activityTypes.Threshold)
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
-    expect(within(card).getByTestId('plan-amount').textContent).toContain(`1:00 ${t.units.hour}`)
+    expect(within(card).getByTestId('plan-amount').textContent).toContain(`1 ${t.units.hour}`)
     expect(card.textContent).not.toContain(t.plan.session.targetPace('4:25–4:30'))
     expect(within(card).getByTestId('workout-steps').textContent).toContain('4:25–4:30 /km')
     expect(within(card).queryByTestId('plan-status')).toBeNull()

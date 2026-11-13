@@ -28,12 +28,17 @@ describe('getRacePageData', () => {
   })
 
   it("keeps Garmin's prediction while its series is current", async () => {
-    repos.predictions.mockReturnValue([{ date: '2026-10-23', '10k': 3050 }, { date: '2026-10-24', '10k': 3040 }])
+    repos.predictions.mockReturnValue([
+      { date: '2026-08-02', '10k': 3100 },
+      { date: '2026-08-03', '10k': 3090 },
+      { date: '2026-10-23', '10k': 3050 },
+      { date: '2026-10-24', '10k': 3040 },
+    ])
 
     const data = await getRacePageData(TODAY)
 
     expect(data).toMatchObject({ predictedSeconds: 3040, estimate: null })
-    expect(data!.trend.map((p) => p.seconds)).toEqual([3050, 3040])
+    expect(data!.trend.map((p) => p.seconds)).toEqual([3090, 3050, 3040])
   })
 
   it('estimates by VDOT from the best effort of the last 120 days once Garmin has gone quiet for a fortnight', async () => {

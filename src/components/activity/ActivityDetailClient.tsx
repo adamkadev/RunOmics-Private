@@ -63,6 +63,7 @@ interface Props {
   share?: ReactNode
   chartZones?: ChartZones | null
   plannedRepPace?: NumberRange | null
+  repsOnOverview?: boolean
 }
 
 const TAB_IDS = ['overview', 'intervals', 'charts', 'dynamics'] as const
@@ -157,6 +158,7 @@ export function ActivityDetailClient({
   share,
   chartZones = null,
   plannedRepPace = null,
+  repsOnOverview = false,
 }: Props) {
   const type = shownType ?? activity.type
   // In ?tab=, so going back from Charts or Dynamics lands on it again.
@@ -250,6 +252,35 @@ export function ActivityDetailClient({
 
       <StatStrip stats={stats} />
 
+      {/* Above the tabs: it reads the whole run, so every tab keeps it. */}
+      <RunVerdict activity={activity} type={type} tone={verdictTone} aiVerdict={aiVerdict}>
+        {activity.hrUntrusted ? (
+          <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')} data-testid="run-hr-untrusted">
+            {t.activity.dataQuality.hrUntrusted[activity.hrUntrusted]}
+          </span>
+        ) : (
+          !activity.avgHeartRate && (
+            <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
+          )
+        )}
+        <span className={RUN_CHIP_CLASS} data-testid="run-effort">
+          {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
+        </span>
+        {activity.weather &&
+          conditionsChips(activity.weather).map((text) => (
+            <span key={text} className={RUN_CHIP_CLASS} data-testid="run-conditions">
+              {text}
+            </span>
+          ))}
+        <RunShoe
+          activityId={activity.id}
+          shoe={shoe}
+          options={shoeOptions}
+          garminUrl={isWatchId(activity.id) && !activity.gearPending ? garminActivityUrl(activity.id) : null}
+        />
+        <ActivityNotes activityId={activity.id} />
+      </RunVerdict>
+
       {tabs.length > 1 && (
         <StickyBar ref={stripRef} top="var(--sticky-top, var(--top-scrim))" className="-mb-2">
           <SegmentedTabs
@@ -274,34 +305,6 @@ export function ActivityDetailClient({
       >
         {tab === 'overview' && (
           <>
-            {/* Under the tabs, not over them: the strip then sits in the first screen and each tab starts there. */}
-            <RunVerdict activity={activity} type={type} tone={verdictTone} aiVerdict={aiVerdict}>
-              {activity.hrUntrusted ? (
-                <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')} data-testid="run-hr-untrusted">
-                  {t.activity.dataQuality.hrUntrusted[activity.hrUntrusted]}
-                </span>
-              ) : (
-                !activity.avgHeartRate && (
-                  <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
-                )
-              )}
-              <span className={RUN_CHIP_CLASS} data-testid="run-effort">
-                {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
-              </span>
-              {activity.weather &&
-                conditionsChips(activity.weather).map((text) => (
-                  <span key={text} className={RUN_CHIP_CLASS} data-testid="run-conditions">
-                    {text}
-                  </span>
-                ))}
-              <RunShoe
-                activityId={activity.id}
-                shoe={shoe}
-                options={shoeOptions}
-                garminUrl={isWatchId(activity.id) && !activity.gearPending ? garminActivityUrl(activity.id) : null}
-              />
-              <ActivityNotes activityId={activity.id} />
-            </RunVerdict>
             {recordsFirst && bestEfforts}
             {extras}
             <PaceHrPreview
@@ -322,7 +325,7 @@ export function ActivityDetailClient({
           </>
         )}
 
-        {tab === 'intervals' && <KmSplits activity={activity} plannedRepPace={plannedRepPace} />}
+        {tab === 'intervals' && <KmSplits activity={activity} plannedRepPace={plannedRepPace} repsOnOverview={repsOnOverview} />}
 
         {tab === 'charts' && (
           <ChartStack

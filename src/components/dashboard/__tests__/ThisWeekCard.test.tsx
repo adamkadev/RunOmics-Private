@@ -33,12 +33,11 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     vi.useRealTimers()
   })
 
-  it('scales km to the week\'s largest day, 92 px tall (Liquid Glass v3: a 120 pt area), never under 8', () => {
+  it('scales km to the week\'s largest day, 66 px tall, and draws nothing on a day without a run', () => {
     const bars = thisWeekBars(WEEK, TODAY, {})
     expect(bars.map((b) => b.day.state)).toEqual(['done', 'planned', 'planned', 'rest', 'rest', 'rest', 'planned'])
-    expect(bars[6]!.height).toBe(92)
-    expect(bars[3]!.height).toBe(3)
-    // A run day carries its run km above the bar, like a planned one.
+    expect(bars[6]!.height).toBe(66)
+    expect(bars[3]!.height).toBe(0)
     expect(bars[0]!.label).toBe('8')
     expect(bars[1]!.label).toBe('10')
   })

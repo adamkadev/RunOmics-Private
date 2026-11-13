@@ -103,6 +103,14 @@ describe('KmSplits', () => {
     expect(screen.getByText('1/2')).toBeInTheDocument()
   })
 
+  it('leaves the reps as plain laps when Overview grades them', () => {
+    const reps = [split('interval_active', 240, 516, 140), split('interval_recovery', 60, 120), split('interval_active', 240, 471, 142)]
+    render(<KmSplits activity={activityWith(reps)} plannedRepPace={{ min: 470, max: 525 }} repsOnOverview />)
+
+    expect(screen.queryByTestId('interval-set')).toBeNull()
+    expect(screen.queryByTestId('rep-track')).toBeNull()
+  })
+
   it('totals every split row', () => {
     const { container } = render(
       <KmSplits activity={activityWith([split('lap', 300, 1000, 150), split('lap', 300, 1000, 150)])} />,

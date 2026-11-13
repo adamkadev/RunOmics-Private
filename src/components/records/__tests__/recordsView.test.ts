@@ -120,4 +120,14 @@ describe('routeLatest', () => {
   it('calls it a new best when the latest run is the best', () => {
     expect(routeLatest(route([330, 316], 1))).toEqual({ kind: 'new-best', date: '2026-01-02' })
   })
+
+  it('holds a run/walk to the run/walks on the route, and names one with none before it', () => {
+    const mixed = route([383, 568, 560], 0)
+    mixed.runs[1]!.runWalk = true
+    mixed.runs[2]!.runWalk = true
+    expect(routeLatest(mixed)).toMatchObject({ kind: 'behind', gapSeconds: -8 })
+    const first = route([383, 568], 0)
+    first.runs[1]!.runWalk = true
+    expect(routeLatest(first)).toMatchObject({ kind: 'run-walk' })
+  })
 })

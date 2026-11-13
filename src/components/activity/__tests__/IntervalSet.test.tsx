@@ -59,6 +59,14 @@ describe('IntervalSet', () => {
     expect(screen.getByText(`${t.activity.splits.intervalTypes.interval_warmup} 2.00 ${t.units.km}`)).toBeInTheDocument()
   })
 
+  it('reads a warm-up the watch split into laps as one row', () => {
+    const laps = [1700, 1000, 1000].map((distanceM) => ({ type: 'interval_warmup' as const, durationSec: distanceM * 0.36, distanceM, avgSpeedMs: 2.78, avgHr: 140, laps: [] }))
+    render(<IntervalSet set={{ ...SET, warmups: laps }} />)
+
+    expect(screen.getByText(`${t.activity.splits.intervalTypes.interval_warmup} 3.70 ${t.units.km}`)).toBeInTheDocument()
+    expect(screen.queryByText(`${t.activity.splits.intervalTypes.interval_warmup} 1.00 ${t.units.km}`)).toBeNull()
+  })
+
   it('lists strides after the run they follow, counted rather than graded', () => {
     const stride = (n: number, durationSec: number) => ({ number: n, durationSec, distanceM: 95, paceSecPerKm: Math.round((durationSec / 95) * 1000), avgHr: 155, recovery: null })
     const body = { type: 'interval_active' as const, durationSec: 2900, distanceM: 8000, avgSpeedMs: 2.76, avgHr: 142, laps: [] }

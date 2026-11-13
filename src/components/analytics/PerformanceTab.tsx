@@ -97,8 +97,9 @@ export function timeLabels(dates: string[]): string[] {
 /** VO₂max's home is Athlete & zones: its stat here is a summary that opens it. */
 const VO2_HOME = '/athlete'
 
-function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null }) {
+function SummaryStrip({ vo2, threshold, easy, since }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null; since: string }) {
   const s = t.analytics.cards.summary
+  const dated = (note: string | null) => (note === null ? null : s.since(note, since))
   const cells = [
     vo2 && {
       label: s.vo2max,
@@ -123,11 +124,11 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       label: s.threshold,
       value: formatClock(threshold.now),
       unit: t.units.perKm,
-      note: thresholdWords(threshold.delta),
+      note: dated(thresholdWords(threshold.delta)),
       tone: threshold.delta !== null && Math.abs(Math.round(threshold.delta)) < THRESHOLD_FLAT_SEC ? STAT_TONE.flat : STAT_TONE[deltaTone('pace', threshold.delta)],
       href: null,
     },
-    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
+    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: dated(shiftWords(easy.delta, PACE_FLAT_SEC)), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
   ].filter((c) => !!c)
   if (!cells.length) return null
   return (
@@ -168,10 +169,13 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
   )
 }
 
-function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]; window: DayWindow; period: LoadPeriod; race: GoalRaceInput | null }) {
+/** A comeback's run/walk says nothing yet about a 10 km or longer. */
+const REPRISE_DISTANCES = new Set(['5k'])
+
+function PredictionsCard({ days, window, period, race, reprise = false }: { days: PredictionDay[]; window: DayWindow; period: LoadPeriod; race: GoalRaceInput | null; reprise?: boolean }) {
   const s = t.analytics.cards.predictions
   const names = t.records.distances
-  const rows = predictionRows(days, window)
+  const rows = predictionRows(days, window).filter((row) => !reprise || REPRISE_DISTANCES.has(row.distance))
   if (!rows.length) return null
   const trend = predictionTrend(rows)
   const words = t.analytics.cards.period.words[period]!
@@ -245,6 +249,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
           {bare(race.date)} · {s.inDays(race.daysUntil)}
         </span>
       )}
+      {reprise && <p className="pt-1.5 text-xs text-muted-foreground" data-testid="predictions-later">{s.unlockLater}</p>}
     </Card>
   )
 }
@@ -460,7 +465,10 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
       </ChartScrub>
       <Legend className="gap-x-4">
         <LegendItem swatch="line" color="var(--foreground)">{s.adjusted}</LegendItem>
-        <LegendItem swatch="dash" color="var(--muted-foreground)">{s.measured}</LegendItem>
+        {/* Where no heat was taken out the two lines are one, and a key for the hidden one would point at nothing. */}
+        {view.measured.some((m, i) => m != null && view.adjusted[i] != null && Math.abs(m - view.adjusted[i]!) >= 0.005) && (
+          <LegendItem swatch="dash" color="var(--muted-foreground)">{s.measured}</LegendItem>
+        )}
       </Legend>
       {rpe && (
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-border pt-3" data-testid="rpe-row">
@@ -490,16 +498,15 @@ export function heatColor(row: { best: boolean; cost: number | null }): string {
   return row.cost !== null && row.cost > HEAT_WARN_SEC ? 'var(--warn)' : 'var(--muted-foreground)'
 }
 
-/**
- * Each band's bar is the seconds a km it loses against your best temperature band at the same heart rate. A band
- * without runs has a dashed, empty track: drawn like the best band's, it would read as the best.
- */
+/** Each band's bar is the seconds a km it loses against your best temperature band at the same heart rate. */
 function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   const s = t.analytics.cards.heatCost
   const view = heatView(data)
   if (!view) return null
   const labels = t.analytics.charts.heatImpact.bands
   const range = view.warm ? (view.warm.lo === view.warm.hi ? `${view.warm.hi}` : `${view.warm.lo}–${view.warm.hi}`) : null
+  // A band without a run is a sentence, not an empty row: three of five read as a broken card.
+  const empty = view.rows.filter((row) => row.pace === null).map((row) => labels[row.id] ?? row.id)
   return (
     <Card className="gap-2.5" testId="heat-card">
       <CardHead title={s.title} caption={s.caption(view.refHeartRate)} about={s.about} />
@@ -528,15 +535,12 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
         })()}
       </div>
       <div className="flex flex-col gap-2.5">
-        {view.rows.map((row) => {
+        {view.rows.flatMap((row) => (row.pace === null ? [] : [{ ...row, pace: row.pace }])).map((row) => {
           const color = heatColor(row)
           return (
             <div key={row.id} className="grid grid-cols-[60px_minmax(0,1fr)_96px] items-center gap-3 text-[13px] sm:grid-cols-[72px_minmax(0,1fr)_110px] sm:gap-3.5" data-testid={`heat-${row.id}`}>
               <span className="whitespace-nowrap text-[var(--text-2)]">{labels[row.id]}</span>
-              <div
-                className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-muted-foreground' : 'relative h-2 rounded-full bg-[var(--line-2)]'}
-                data-testid={row.pace === null ? 'heat-empty' : undefined}
-              >
+              <div className="relative h-2 rounded-full bg-[var(--line-2)]">
                 {row.best ? (
                   <span aria-hidden className="absolute left-0 top-1/2 size-2.5 -translate-y-1/2 rounded-full" style={{ background: color }} data-testid="heat-zero" />
                 ) : (
@@ -544,23 +548,16 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
                 )}
               </div>
               <span className="text-right">
-                {row.pace === null ? (
-                  <>
-                    <b className="font-semibold text-foreground">—</b> <span className="text-muted-foreground">{s.noRuns}</span>
-                  </>
-                ) : (
-                  <>
-                    <b className="font-semibold text-foreground">{formatClock(row.pace)}</b>{' '}
-                    <span style={{ color }} data-testid="heat-loss">
-                      {row.best ? s.best : s.plus(row.cost!)}
-                    </span>
-                  </>
-                )}
+                <b className="font-semibold text-foreground">{formatClock(row.pace)}</b>{' '}
+                <span style={{ color }} data-testid="heat-loss">
+                  {row.best ? s.best : s.plus(row.cost!)}
+                </span>
               </span>
             </div>
           )
         })}
       </div>
+      {empty.length > 0 && <p className="text-xs text-muted-foreground" data-testid="heat-untested">{s.noRunsIn(empty)}</p>}
       <p className="pt-1 text-xs text-muted-foreground" data-testid="heat-key">{s.barKey}</p>
     </Card>
   )
@@ -578,16 +575,17 @@ export interface PerformanceTabProps {
   race: GoalRaceInput | null
   heat: HeatImpactData | null
   paceBests: RunBests[]
+  reprise?: boolean
 }
 
-export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, predictions, race, heat, paceBests }: PerformanceTabProps) {
+export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, predictions, race, heat, paceBests, reprise = false }: PerformanceTabProps) {
   const inWindow = weeksIn(weeks, window)
   const easy = paceShift(inWindow, (w) => w.easyPace)
   const workout = paceShift(inWindow, (w) => w.hardPace)
   return (
     <div className="flex flex-col gap-3.5">
-      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} />
-      <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} />
+      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={bare(window.start)} />
+      <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} reprise={reprise} />
       <PaceCurveCard runs={paceBests} window={window} period={period} threshold={threshold} onShift={onShift} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />
       <EfficiencyCard allWeeks={weeks} weeks={inWindow} end={window.end} onShift={onShift} />

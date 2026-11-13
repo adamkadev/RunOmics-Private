@@ -12,16 +12,17 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { cardClass } from '@/components/ui/Card'
+import { checkpointCycle } from '@/domain/training/cycleCheckpoint'
 import { CHECKPOINT_HREF } from '@/components/checkpoint/checkpointHref'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatClock, formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { formatClock, formatDate, formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { sessionTitle } from './sessionTitle'
 import { dayKind, kindLetter } from './sessionKind'
-import { formatWeekKm, planWeekTarget } from './weekPlanDays'
+import { planWeekTarget } from './weekPlanDays'
 import { generalBlockWeek, phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
@@ -42,33 +43,36 @@ function proposalLine(proposal: BlockGuideProposal): string {
   return p.guideProposal(p.repClass[proposal.repClass], range(proposal.guide), range(proposal.proposedGuide), p.proposalSource[proposal.source])
 }
 
-function PhaseCard({ name, week, total, race, href, proposals = [] }: { name: string; week: number; total: number; race: string | null; href?: string; proposals?: BlockGuideProposal[] }) {
+/** Block, its weeks and the 12-week cycle in one card, the cycle line opening the checkpoint. */
+function PhaseCard({ name, week, total, race, cycle, proposals = [] }: { name: string; week: number; total: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
-    <section className={cardClass({ padding: 'none', clickable: !!href, className: 'relative flex flex-col gap-2.5 px-3.5 py-3' })} data-testid="phase-line">
+    <section className={cardClass({ padding: 'none', className: 'relative flex flex-col gap-2.5 px-3.5 py-3' })} data-testid="phase-line">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="text-headline text-foreground">
-          {href ? (
-            <Link href={href} className="flex items-center gap-1 after:absolute after:inset-0">
-              {name}
-              <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
-            </Link>
-          ) : name}
-        </h2>
+        <h2 className="text-headline text-foreground">{name}</h2>
         <p className="text-xs text-muted-foreground">
           {week === 0 ? p.leadIn : `${weekOf.before} ${week} ${weekOf.after}`}
           {race && ` · ${race}`}
         </p>
       </div>
       <div aria-hidden className="flex gap-[3px]" data-testid="phase-segments">
+        {/* The week under way is half full: a full bar would say the block is done. */}
         {Array.from({ length: total }, (_, i) => (
-          <span key={i} data-done={i < week || undefined} className={cn('h-[5px] flex-1 rounded-full', i < week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
+          <span key={i} data-done={i < week - 1 || undefined} data-current={i === week - 1 || undefined} className={cn('relative h-[5px] flex-1 overflow-hidden rounded-full', i < week - 1 ? 'bg-accent' : 'bg-[var(--line-2)]')}>
+            {i === week - 1 && <span className="absolute inset-y-0 left-0 w-1/2 bg-accent" />}
+          </span>
         ))}
       </div>
       {proposals.map((proposal) => (
         <p key={`${proposal.source}:${proposal.repClass}`} className="text-xs text-muted-foreground" data-testid="phase-proposal">{proposalLine(proposal)}</p>
       ))}
+      {cycle && (
+        <Link href={CHECKPOINT_HREF} className="hit-44 flex items-center justify-between gap-2 border-t border-border pt-2.5 text-[13px] text-foreground" data-testid="phase-cycle">
+          {cycle}
+          <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+        </Link>
+      )}
     </section>
   )
 }
@@ -128,7 +132,7 @@ function comingUpRows(
         summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null,
         summary.durationSeconds ? formatDurationWords(summary.durationSeconds) : null,
       ]
-      return { key: workout.key, date, title: summary.title, detail: detail.filter(Boolean).join(' · '), color: kind.color }
+      return { key: workout.key, date, title: summary.shortTitle, detail: detail.filter(Boolean).join(' · '), color: kind.color }
     })
   })
 }
@@ -213,6 +217,11 @@ export function WeekView({
   }, [coaching, planPhaseRanges, firstDay])
   const words = useCoachWords(coaching !== null)
   const blockName = phase?.span.key === 'general' ? words?.block.name || null : null
+  const cycleLine = useMemo(() => {
+    if (!coaching) return null
+    const cycle = checkpointCycle(coaching.plan.macrocycleStartDate ?? coaching.plan.block.startDate, today)
+    return cycle.mode === 'rolling' || cycle.complete ? null : t.checkpoint.tile.inProgress(cycle.week, formatDate(cycle.current.end, { style: 'bare' }))
+  }, [coaching, today])
   const race = useMemo(() => {
     const next = planRace(coaching, nextRace, today)
     return next ? raceCountdown(next, today) : null
@@ -240,14 +249,14 @@ export function WeekView({
       if (k?.kind !== 'quality') continue
       const workout = selectedWorkouts(date, byDatePlanned, byDateCoach, trainingZones)[0]
       if (!workout) continue
-      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).title, color: k.text }
+      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).shortTitle, color: k.text }
     }
     return null
   })()
 
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
-    const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).title)
+    const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).shortTitle)
     const session = fitWorkouts[0] ?? null
     const planned = session ? plannedText(session, title) : null
     dayCard = (
@@ -302,7 +311,7 @@ export function WeekView({
           week={phase.week}
           total={phase.total}
           race={race}
-          href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined}
+          cycle={cycleLine}
           proposals={phase.span.key === 'general' ? words?.block.guideProposals : undefined}
         />
       )}
@@ -329,7 +338,7 @@ export function WeekView({
         {/* Km only: Coming up and the selector count the runs. */}
         <p className="text-[13px] tabular-nums text-muted-foreground" data-testid="week-summary">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
-          {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatWeekKm(planKm))}`}
+          {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatPlannedKm(planKm))}`}
         </p>
       </div>
 

@@ -17,19 +17,20 @@ const c = HUE
  */
 export const ZONE_HEX = {
   light: ['#61788f', '#2f74e0', '#6a52d9', '#ae3cc2', '#d63a77'],
-  dark: ['#8a9bb0', '#5b9cf5', '#8f7cf0', '#c77ae6', '#f07aa8'],
+  dark: ['#8a9bb0', '#5b9cf5', '#8f7cf0', '#c565f8', '#f4438f'],
 } as const
 
 /**
  * Status only, never a category: a delta takes one by what it means, not by
- * which way it moved (fatigue +6 is warn, fitness +4 is pos). Good is mint, to
- * match the default accent rather than add a third green. Light neg clears
+ * which way it moved (fatigue +6 is warn, fitness +4 is pos). Good is a green
+ * of its own, apart from the teal accent, so a judged value never reads as a
+ * button (design review, round 8). Light neg clears
  * 4.5:1 on its own 12 % tint (a missed day's "✕ 10 km"); dark neg is a soft
  * coral so an error does not read as Z5.
  */
 export const STATUS_HEX = {
   light: { pos: c.semGreenLight, warn: '#9a5b00', neg: '#c0352a' },
-  dark: { pos: '#2dd4a7', warn: '#f0b73c', neg: '#ff8a80' },
+  dark: { pos: '#5ad06a', warn: '#f0b73c', neg: '#ff8a80' },
 } as const
 
 export const DATA_DONE_HEX = { light: '#2a2e33', dark: '#a9b0b8' } as const

@@ -60,4 +60,14 @@ describe('the heatmap filters sheet', () => {
     expect(screen.queryByRole('region', { name: t.pages.map.type })).toBeNull()
     expect(screen.getByRole('region', { name: t.pages.map.year })).toBeInTheDocument()
   })
+
+  it('switches the layer at once from the same sheet', () => {
+    const onToggle = vi.fn()
+    render(<HeatFilterSheet types={['Base']} years={['2026']} value={NO_HEAT_FILTERS} count={count} onApply={vi.fn()} onClose={() => {}} layer={{ districts: false, onToggle }} />)
+    expect(screen.getByTestId('layer-heat')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('layer-heat'))
+    expect(onToggle).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('layer-districts'))
+    expect(onToggle).toHaveBeenCalledTimes(1)
+  })
 })

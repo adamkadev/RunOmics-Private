@@ -32,12 +32,13 @@ export function AccentPicker() {
             key={option.id}
             type="button"
             onClick={() => persistAccent(option.id)}
-            aria-label={label}
-            title={label}
             aria-pressed={active}
-            style={{ backgroundColor: option[mode].acc, boxShadow: active ? RING.selected : RING.idle }}
-            className="hit-44 size-[30px] shrink-0 rounded-full transition-transform active:scale-90"
-          />
+            className="hit-44 flex w-14 shrink-0 flex-col items-center gap-1 transition-transform active:scale-90"
+          >
+            <span aria-hidden style={{ backgroundColor: option[mode].acc, boxShadow: active ? RING.selected : RING.idle }} className="size-[30px] rounded-full" />
+            {/* Named, so the choice says what it is before it is made. */}
+            <span className={active ? 'text-[11px] font-semibold text-foreground' : 'text-[11px] text-muted-foreground'} data-testid="accent-name">{label}</span>
+          </button>
         )
       })}
     </div>

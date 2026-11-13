@@ -11,10 +11,8 @@ import { getCycleCheckpoint } from '@/application/usecases/GetCycleCheckpoint'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
+import { getReprise } from '@/application/usecases/GetReprise'
 import { ProgressHub } from '@/components/profile/ProgressHub'
-import { ExploredCard } from '@/components/explore/ExploredCard'
-import { HomeRunsTile } from '@/components/homeRuns/HomeRunsTile'
-import { CheckpointTile } from '@/components/checkpoint/Checkpoint'
 import { checkpointTileView } from '@/components/checkpoint/checkpointView'
 import { progressHubView } from '@/components/profile/progressHubView'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -46,23 +44,14 @@ export default async function ProfilePage() {
     streakWeeks: getWeeklyStreakData(new Date(`${today}T12:00:00`))?.currentWeeks ?? 0,
     shoes: data.shoes,
     coaching: getCoachingOverview(today),
+    repriseSince: getReprise(today)?.since ?? null,
   })
 
   // Only the summaries reach the page: no home, no tracks. The area run in last leads.
-  const [latest, ...others] = [...getExploredAreas()].sort((a, b) => b.lastRunDate.localeCompare(a.lastRunDate))
-  const explored = latest ? (
-    <ExploredCard
-      areaId={latest.area.id}
-      areaName={latest.area.name}
-      summary={latest.summary}
-      others={others.map(({ area, summary }) => ({ id: area.id, name: area.name, summary }))}
-    />
-  ) : undefined
+  const [latest] = [...getExploredAreas()].sort((a, b) => b.lastRunDate.localeCompare(a.lastRunDate))
+  const explored = latest ? { name: latest.area.name, pct: latest.summary.pct, complete: latest.summary.complete, total: latest.summary.total } : null
+  const tile = checkpointTileView(getCycleCheckpoint(today), today)
+  const homeRuns = getHomeRunsSummary()
 
-  const checkpoint = <CheckpointTile view={checkpointTileView(getCycleCheckpoint(today), today)} />
-
-  const homeRunsSummary = getHomeRunsSummary()
-  const homeRuns = homeRunsSummary ? <HomeRunsTile summary={homeRunsSummary} /> : undefined
-
-  return <ProgressHub view={view} explored={explored} checkpoint={checkpoint} homeRuns={homeRuns} />
+  return <ProgressHub view={view} explored={explored} checkpoint={{ line: tile.line, better: tile.summary?.good ?? null }} homeRuns={homeRuns ? { runCount: homeRuns.runCount } : null} />
 }

@@ -77,13 +77,20 @@ describe('consistencyView', () => {
     ])
   })
 
-  it('finds the anchor day and a weekday hardly run', () => {
+  it('finds the anchor day, and names no rest day while several days tie at the least', () => {
     const view = consistencyView('6m', INPUT)
-    // Every week runs Tuesday on; Monday never.
     expect(view.weekdays[1]).toBe(13)
     expect(view.weekdays[0]).toBe(0)
     expect(view.anchor).toBe(1)
-    expect(view.restDay).toBe(0)
+    expect(view.restDay).toBeNull()
+  })
+
+  it('opens a reprise on its first run back, and names the days most run rather than an anchor on a few weeks', () => {
+    const view = consistencyView('since', { ...INPUT, since: '2026-09-29' })
+    expect(view.weeks[0]!.start).toBe('2026-09-28')
+    expect(view.weeksCounted).toBe(3)
+    expect(view.anchor).toBeNull()
+    expect(view.topDays).toEqual([1, 2, 3])
   })
 
   it('is empty without a run', () => {
@@ -139,7 +146,9 @@ describe('Consistency', () => {
     expect(screen.getByText(t.consistency.streakRule(3, 9))).toBeTruthy()
     const thisWeek = screen.getByTestId('consistency-this-week')
     expect(thisWeek.querySelectorAll('[data-filled]')).toHaveLength(0)
-    expect(thisWeek.textContent).toContain(`${t.consistency.thisWeekRuns(0, 3)} · ${t.consistency.planned(2)}`)
+    expect(thisWeek.querySelectorAll('.rounded-full')).toHaveLength(2)
+    expect(thisWeek.textContent).toContain(`${t.consistency.thisWeekRuns(0)} · ${t.consistency.planned(2)}`)
+    expect(screen.getByTestId('streak-keep').textContent).toBe(t.consistency.keeps(3))
     expect(screen.getByTestId('consistency-stats').textContent).toContain('12/13')
   })
 

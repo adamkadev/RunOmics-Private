@@ -1,3 +1,4 @@
+import { yearDistanceKm } from '@/domain/activity/distance'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
@@ -210,16 +211,14 @@ export function findNextMilestones(
     })
   }
 
-  const yearKm = activitiesAscByDate
-    .filter((a) => Number(a.date.slice(0, 4)) === year)
-    .reduce((sum, a) => sum + a.distanceKm, 0)
+  // The rounded year total Goals subtracts from, so both pages print the same km to go.
+  const yearKm = yearDistanceKm(activitiesAscByDate, year)
   const distanceTier = distanceTiers.find((tier) => tier > yearKm)
   if (distanceTier !== undefined) {
     next.push({
       kind: 'distance-tier',
       label: t.profile.milestones.distanceTier(formatKm(distanceTier)),
-      // Rounded up: "0 to go" would be a milestone already passed.
-      remaining: Math.ceil(distanceTier - yearKm),
+      remaining: distanceTier - yearKm,
       progress: yearKm / distanceTier,
     })
   }

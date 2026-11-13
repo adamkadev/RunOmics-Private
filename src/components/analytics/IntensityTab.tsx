@@ -61,10 +61,12 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
 }
 
 /** In a stacked week Z3 and Z4 read as one colour, so each zone is named with its hours. */
-function ZoneKey({ zoneHours, held }: { zoneHours: number[]; held: boolean }) {
+/** A zone the window never reached is left out: "Z5 0.0 h" reads as a result. */
+export function ZoneKey({ zoneHours, held, windowHours }: { zoneHours: number[]; held: boolean; windowHours: number[] }) {
+  const shown = windowHours.flatMap((hours, z) => (hours > 0 ? [z] : []))
   return (
     <div className="grid grid-cols-5 gap-2" data-testid="zone-key" data-held={held || undefined}>
-      {ZONE_COLOR.map((color, z) => (
+      {shown.map((z) => ({ z, color: ZONE_COLOR[z]! })).map(({ z, color }) => (
         <span key={z} className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground" data-testid="zone-key-item">
           <LegendItem swatch="square" color={color}>
             {t.trainingZones.zoneNumber(z + 1)}
@@ -134,7 +136,7 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
       </ChartScrub>
       <div className="flex flex-col gap-2.5">
         <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
-        <ZoneKey zoneHours={held !== null && view.weeks[held] ? view.weeks[held]!.hours : view.zoneHours} held={held !== null} />
+        <ZoneKey zoneHours={held !== null && view.weeks[held] ? view.weeks[held]!.hours : view.zoneHours} held={held !== null} windowHours={view.zoneHours} />
       </div>
     </Card>
   )
@@ -250,15 +252,20 @@ function weekSquare(dots: QualityDot[]): { state: 'done' | 'missed' | 'planned' 
   return { state: 'none', count: 0, style: { background: 'var(--track)' } }
 }
 
+/** "9 of 10 planned · 1 extra": the planned ones run, so it adds up with "1 missed" beside it. */
+export function qualityNote(totals: { onPlan: number; extra: number; planned: number | null }): string {
+  const s = t.analytics.cards.quality
+  return [totals.planned ? s.ofPlanned(totals.onPlan, totals.planned) : null, totals.extra > 0 && totals.planned ? s.extra(totals.extra) : null]
+    .filter(Boolean)
+    .join(' · ')
+}
+
 function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; plan: PlanWeekInput[] }) {
   const s = t.analytics.cards.quality
   const view = qualityView(rows, plan)
   if (!view || view.avg === null) return null
   const { totals } = view
-  // "of 10 planned · 1 extra", beside the done count.
-  const note = [totals.planned ? s.ofPlanned(totals.planned) : null, totals.extra > 0 && totals.planned ? s.extra(totals.extra) : null]
-    .filter(Boolean)
-    .join(' · ')
+  const note = qualityNote(totals)
   const squares = view.weeks.map(weekSquare)
   return (
     <Card testId="quality-card">
