@@ -19,7 +19,7 @@ import { t } from '@/i18n'
 /** Holds a long replay's detail at 1080 × 1920. */
 const BITRATE = 8_000_000
 
-/** 'all', or a year: "2025". */
+/** 'all', or the year shown: "2026". */
 type Period = string
 
 interface PeriodTab {
@@ -28,13 +28,22 @@ interface PeriodTab {
   runs: HomeRun[]
 }
 
-/** All, then each year with runs, newest first, so a past year can be replayed; none when they all fall in one year. */
-export function homeRunPeriods(runs: HomeRun[]): PeriodTab[] {
-  const years = [...new Set(runs.map((run) => run.date.slice(0, 4)))].sort().reverse()
-  if (years.length < 2) return []
+/** The runs a start point needs to be replayed at all (GetHomeRuns): a year takes over from the last one at the same count. */
+export const YEAR_MIN_RUNS = 21
+
+/**
+ * All, and one year: this one once it holds more than 20 runs, last year until then, so January never replays three
+ * runs. None when the year would hold every run.
+ */
+export function homeRunPeriods(runs: HomeRun[], today: string): PeriodTab[] {
+  const inYear = (year: number) => runs.filter((run) => run.date.startsWith(String(year)))
+  const current = Number(today.slice(0, 4))
+  const thisYear = inYear(current)
+  const [year, yearRuns] = thisYear.length >= YEAR_MIN_RUNS ? [current, thisYear] : [current - 1, inYear(current - 1)]
+  if (yearRuns.length === 0 || yearRuns.length === runs.length) return []
   return [
     { id: 'all', label: t.homeRuns.periodAll, runs },
-    ...years.map((year) => ({ id: year, label: year, runs: runs.filter((run) => run.date.startsWith(year)) })),
+    { id: String(year), label: String(year), runs: yearRuns },
   ]
 }
 
@@ -58,11 +67,11 @@ export function HomeRunsSubtitle({ spots }: { spots: HomeRunSpot[] }) {
   )
 }
 
-export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
+export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: string }) {
   const accentId = useAccent()
   const [spotIdx, setSpotIdx] = useHomeRunSpot(spots)
   const spot = spots[spotIdx]!
-  const periods = useMemo(() => homeRunPeriods(spot.runs), [spot])
+  const periods = useMemo(() => homeRunPeriods(spot.runs, today), [spot, today])
   const [period, setPeriod] = useState<Period>('all')
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(true)
@@ -166,7 +175,7 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
   return (
     <div className="flex flex-col items-center gap-3.5">
       {periods.length > 0 && (
-        <div className={cn(SEGMENTED_TRACK_CLASS, 'w-full max-w-[420px] overflow-x-auto')} role="group" aria-label={t.homeRuns.periods} data-testid="home-runs-periods">
+        <div className={cn(SEGMENTED_TRACK_CLASS, 'w-full max-w-[420px]')} role="group" aria-label={t.homeRuns.periods} data-testid="home-runs-periods">
           {periods.map((tab) => (
             <button
               key={tab.id}

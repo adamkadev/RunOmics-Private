@@ -228,8 +228,9 @@ Blender.
 
 - **Start point** (`homeSpots`, `GetHomeRuns`): runs whose first point is within 200 m of the busiest start, more
   than 20 runs. Nothing is trimmed around the start: the site is private.
-- **Periods**: All, then each year with runs, newest first, each a labelled tab with its count, so a past year can be
-  replayed; no row when every run falls in one year. On the page the clock and the count sit above the map, since the title is the page's; the
+- **Periods**: All and one year, each a labelled tab with its count. The year is the current one once it holds more
+  than 20 runs (the start point's own minimum), last year until then, so January never replays three runs; no row
+  when that year would hold every run. On the page the clock and the count sit above the map, since the title is the page's; the
   video keeps its own title. With more than one start point (up to three), a second row under the periods switches
   between them, kept in the URL as `?start=2` so the page's subtitle follows it.
 - **Timing** (`pointSeconds`): the stored routes carry no timestamps, so each point's time comes from
