@@ -97,9 +97,21 @@ export function timeLabels(dates: string[]): string[] {
 /** VO₂max's home is Athlete & zones: its stat here is a summary that opens it. */
 const VO2_HOME = '/athlete'
 
-function SummaryStrip({ vo2, threshold, easy, since }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null; since: string }) {
+/** `since` null is a comeback, dated from the return; two pace tiles saying the same words say them once, as `shared`. */
+export function paceNotes(threshold: PaceShift | null, easy: PaceShift | null, since: string | null): { threshold: string | null; easy: string | null; shared: string | null } {
   const s = t.analytics.cards.summary
-  const dated = (note: string | null) => (note === null ? null : s.since(note, since))
+  const dated = (note: string | null) => (note === null ? null : since === null ? s.sinceReturn(note) : s.since(note, since))
+  const thresholdNote = threshold && dated(thresholdWords(threshold.delta))
+  const easyNote = easy && dated(shiftWords(easy.delta, PACE_FLAT_SEC))
+  return thresholdNote && thresholdNote === easyNote
+    ? { threshold: null, easy: null, shared: thresholdNote }
+    : { threshold: thresholdNote, easy: easyNote, shared: null }
+}
+
+function SummaryStrip({ vo2, threshold, easy, since }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null; since: string | null }) {
+  const s = t.analytics.cards.summary
+  const notes = paceNotes(threshold, easy, since)
+  const shared = notes.shared
   const cells = [
     vo2 && {
       label: s.vo2max,
@@ -124,11 +136,11 @@ function SummaryStrip({ vo2, threshold, easy, since }: { vo2: ReturnType<typeof 
       label: s.threshold,
       value: formatClock(threshold.now),
       unit: t.units.perKm,
-      note: dated(thresholdWords(threshold.delta)),
+      note: notes.threshold,
       tone: threshold.delta !== null && Math.abs(Math.round(threshold.delta)) < THRESHOLD_FLAT_SEC ? STAT_TONE.flat : STAT_TONE[deltaTone('pace', threshold.delta)],
       href: null,
     },
-    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: dated(shiftWords(easy.delta, PACE_FLAT_SEC)), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
+    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: notes.easy, tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
   ].filter((c) => !!c)
   if (!cells.length) return null
   return (
@@ -165,6 +177,11 @@ function SummaryStrip({ vo2, threshold, easy, since }: { vo2: ReturnType<typeof 
           )
         })}
       </StatGrid>
+      {shared && (
+        <p className="pt-2 text-right text-xs text-muted-foreground" data-testid="summary-shared-delta">
+          {shared}
+        </p>
+      )}
     </section>
   )
 }
@@ -584,7 +601,7 @@ export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, 
   const workout = paceShift(inWindow, (w) => w.hardPace)
   return (
     <div className="flex flex-col gap-3.5">
-      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={bare(window.start)} />
+      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={reprise ? null : bare(window.start)} />
       <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} reprise={reprise} />
       <PaceCurveCard runs={paceBests} window={window} period={period} threshold={threshold} onShift={onShift} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />

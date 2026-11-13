@@ -139,7 +139,7 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
   const swipeHandlers = useSwipeNavigation(() => shift(-1), () => shift(1), { canNext: !atPresent || canGoForward })
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 pb-14 lg:pb-0">
       <header className="flex items-center justify-between gap-4">
         <h1 className="min-w-0 text-display text-foreground">{t.pages.plan.title}</h1>
         <SegmentedTabs

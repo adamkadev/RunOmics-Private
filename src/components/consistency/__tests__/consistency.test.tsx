@@ -258,6 +258,14 @@ describe('Consistency', () => {
     const { dot, step } = dotGeometry(53)
     expect(dot).toBeLessThan(step)
     expect(dotGeometry(27).dot).toBe(9)
+    expect(dotGeometry(27).width).toBe(9)
+  })
+
+  it('widens a comeback’s few weeks to fill the chart', () => {
+    const { dot, width, step } = dotGeometry(3)
+    expect(dot).toBe(9)
+    expect(width).toBe(48)
+    expect(step * 2 + width).toBe(324)
   })
 
   it('says so when there is nothing to show', () => {

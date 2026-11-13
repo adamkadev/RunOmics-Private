@@ -20,6 +20,8 @@ export interface CompareRow {
   note: string | null
   /** What stands in for the delta when one side is missing. */
   missing: string | null
+  /** Said on its own in place of the value, the comparison and the delta when this cycle has no reading. */
+  absent: string | null
 }
 
 export interface CompareSection {
@@ -32,7 +34,8 @@ export interface CompareSection {
 
 export interface CheckpointPageView {
   eyebrow: string
-  range: string
+  /** The cycle compared with; the current cycle's dates are on the status card. */
+  range: string | null
   status: {
     title: string
     detail: string | null
@@ -66,8 +69,8 @@ interface RowSpec<T> {
   metric: DeltaMetric | null
   context?: DeltaContext
   note?: (pair: Pair<T>) => string | null
-  /** Said when this cycle has no reading, in place of the generic "not enough data". */
-  none?: string
+  /** Said in place of the whole row when this cycle has no reading. */
+  absent?: (pair: Pair<T>) => string
 }
 
 function row<T>(spec: RowSpec<T>): CompareRow {
@@ -77,7 +80,8 @@ function row<T>(spec: RowSpec<T>): CompareRow {
   const baseline = pair.previous === null || spec.value(pair.previous) === 0 ? null : pair.previous
   const previous = baseline === null ? null : spec.value(baseline)
   const change = current !== null && previous !== null ? current - previous : null
-  const missing = current === null ? (spec.none ?? s().notEnough) : previous === null ? s().nothingBefore : null
+  const absent = current === null && spec.absent ? spec.absent(pair) : null
+  const missing = absent !== null ? null : current === null ? s().notEnough : previous === null ? s().nothingBefore : null
   return {
     key: spec.key,
     label: spec.label,
@@ -90,6 +94,7 @@ function row<T>(spec: RowSpec<T>): CompareRow {
     scored: spec.metric !== null,
     note: spec.note?.(pair) ?? null,
     missing,
+    absent,
   }
 }
 
@@ -164,8 +169,8 @@ function sections(data: CycleCheckpoint): CompareSection[] {
       format: (check) => formatDuration(check.seconds),
       delta: signedSeconds,
       metric: 'race',
-      none: s().noCheck,
-      note: (pair) => (pair.current ? `${s().vdot(formatDecimal(pair.current.vdot, 1))} · ${bare(pair.current.date)}` : pair.previous ? `${s().vdot(formatDecimal(pair.previous.vdot, 1))} · ${bare(pair.previous.date)}` : null),
+      absent: (pair) => (pair.previous ? `${s().noCheck} · ${s().lastCheck(bare(pair.previous.date), formatDuration(pair.previous.seconds))}` : s().noCheck),
+      note: (pair) => (pair.current ? bare(pair.current.date) : null),
     }))
   }
   if (data.vo2max) {
@@ -200,7 +205,7 @@ function asStartingPoint(section: CompareSection): CompareSection {
     ...section,
     rows: section.rows
       .filter((r) => r.current !== null)
-      .map((r) => ({ ...r, previous: null, delta: null, direction: null, tone: 'flat' as const, missing: null })),
+      .map((r) => ({ ...r, previous: null, delta: null, direction: null, tone: 'flat' as const, missing: null, absent: null })),
   }
 }
 
@@ -232,7 +237,6 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
   const starting = data.previousRunWeeks < MIN_BASELINE_WEEKS
   const built = starting ? sections(data).map(asStartingPoint).filter((section) => section.rows.length > 0) : sections(data)
   const compared = built.some((section) => section.rows.some((r) => r.previous !== null))
-  const current = formatDateRange(cycle.current.start, cycle.current.end)
   const scored = built.flatMap((section) => section.rows).filter((r) => r.scored && r.delta !== null)
   const summary = scored.length > 0
     ? { good: scored.filter((r) => r.tone === 'good').length, worse: scored.filter((r) => r.tone === 'worse').length, flat: scored.filter((r) => r.tone === 'flat').length }
@@ -240,7 +244,7 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
 
   return {
     eyebrow,
-    range: compared ? s().against(current, formatDateRange(cycle.previous.start, cycle.previous.end)) : current,
+    range: compared ? (cycle.mode === 'rolling' ? s().againstBefore : s().againstPrevious)(formatDateRange(cycle.previous.start, cycle.previous.end, { year: 'always' })) : null,
     status: starting && cycle.mode !== 'rolling' && !cycle.complete ? { ...status, note: s().startingPoint(formatDate(cycle.current.end)) } : status,
     summary: starting ? null : summary,
     sections: built,

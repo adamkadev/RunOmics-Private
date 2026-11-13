@@ -185,23 +185,6 @@ function findRouteHref(workout: PlanWorkoutView): string | null {
   return exploreRouteHref({ km, paceSecPerKm: planPaceSecPerKm(workout), date: workout.date, from: 'plan' })
 }
 
-export function NextKeySessionCard({ weekday, title, color, onSelect }: { weekday: string; title: string; color: string; onSelect?: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className="flex w-full items-center justify-between gap-3 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] px-4 py-3 text-left transition-transform duration-100 ease-out active:scale-[0.98]"
-      data-testid="next-key-session"
-    >
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.06em]" style={{ color }}>{t.plan.nextKeySession}</span>
-        <span className="truncate text-sm font-semibold text-foreground">{`${weekday} · ${title}`}</span>
-      </span>
-      <ChevronRight size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />
-    </button>
-  )
-}
-
 // An effort line reads "Z2 easy · 5:10-6:27 /km".
 const EFFORT_PACE = /(\d{1,2}:\d{2})[-–](\d{1,2}:\d{2})\s*\/km$/
 
@@ -348,24 +331,16 @@ export function DoneDayCard({
   )
 }
 
-export function RestDayCard({ date, next, covered = true }: { date: string; next: { weekday: string; title: string } | null; covered?: boolean }) {
+export function RestDayCard({ date, covered = true }: { date: string; covered?: boolean }) {
   const r = t.plan.restCard
   return (
     <section
       data-testid="plan-rest-day"
       data-covered={String(covered)}
-      className="flex items-center justify-between gap-3 rounded-[18px] border border-dashed border-border px-4 py-3"
+      className="flex flex-col gap-0.5 rounded-[18px] border border-dashed border-border px-4 py-3"
     >
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{`${formatWeekday(date, true)} · ${r.eyebrow}`}</p>
-        <h2 className="text-[17px] font-semibold leading-tight text-foreground">{covered ? r.title : t.plan.dayCard.notPlanned}</h2>
-      </div>
-      {next && (
-        <p className="flex min-w-0 flex-col items-end text-right text-xs text-muted-foreground" data-testid="rest-next">
-          <span className="whitespace-nowrap">{r.next(next.weekday)}</span>
-          <span className="max-w-full truncate">{next.title}</span>
-        </p>
-      )}
+      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{`${formatWeekday(date, true)} · ${r.eyebrow}`}</p>
+      <h2 className="text-[17px] font-semibold leading-tight text-foreground">{covered ? r.title : t.plan.dayCard.notPlanned}</h2>
     </section>
   )
 }

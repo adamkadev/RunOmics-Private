@@ -97,8 +97,12 @@ export function formatClock(seconds: number): string {
   return `${h}:${pad(m)}:${pad(s % 60)}`
 }
 
+/** `page` leaves the title to the page and puts the clock at the top, clear of the tab bar; `video` stands alone. */
+export type ReplayLayout = 'page' | 'video'
+
 /** Draws the replay at `seconds` of run time filling a w × h canvas. */
-export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, seconds: number, w: number, h: number): void {
+export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, seconds: number, w: number, h: number, layout: ReplayLayout = 'video'): void {
+  const onPage = layout === 'page'
   const u = Math.min(w, h * (9 / 16)) / 1080
   const accent = hexToRgb(scene.accent)
   ctx.save()
@@ -106,8 +110,8 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
   ctx.fillStyle = BACKGROUND
   ctx.fillRect(0, 0, w, h)
 
-  const top = 250 * u
-  const bottom = 430 * u
+  const top = (onPage ? 220 : 250) * u
+  const bottom = (onPage ? 290 : 430) * u
   const side = 60 * u
   const boxW = w - side * 2
   const boxH = Math.max(1, h - top - bottom)
@@ -179,14 +183,16 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
 
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
-  ctx.fillStyle = '#ffffff'
-  ctx.font = `700 ${72 * u}px ${scene.font}`
-  ctx.fillText(scene.labels.title, side, 140 * u)
-  ctx.fillStyle = 'rgba(255,255,255,0.6)'
-  ctx.font = `500 ${36 * u}px ${scene.font}`
-  ctx.fillText(scene.labels.subtitle, side, 196 * u)
+  if (!onPage) {
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `700 ${72 * u}px ${scene.font}`
+    ctx.fillText(scene.labels.title, side, 140 * u)
+    ctx.fillStyle = 'rgba(255,255,255,0.6)'
+    ctx.font = `500 ${36 * u}px ${scene.font}`
+    ctx.fillText(scene.labels.subtitle, side, 196 * u)
+  }
 
-  const footer = h - bottom + 60 * u
+  const footer = onPage ? 70 * u : h - bottom + 60 * u
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
   ctx.font = `500 ${26 * u}px ${scene.font}`
   ctx.fillText(scene.labels.elapsed, side, footer)
@@ -203,7 +209,7 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
   const all = finishBins(scene.runs.map((r) => r.duration), Infinity, BIN_SECONDS, scene.binCount)
   const done = finishBins(scene.runs.map((r) => r.duration), seconds, BIN_SECONDS, scene.binCount)
   const peak = Math.max(1, ...all)
-  const histTop = footer + 130 * u
+  const histTop = onPage ? h - bottom + 50 * u : footer + 130 * u
   const histH = 150 * u
   const gap = 8 * u
   const barW = (w - side * 2 - gap * (scene.binCount - 1)) / scene.binCount

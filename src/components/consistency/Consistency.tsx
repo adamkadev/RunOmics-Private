@@ -85,11 +85,17 @@ const CHART_W = 324
 /** Room around the dots for the tapped week's outline. */
 const PAD = 4
 
-/** `step` is the distance between columns, `pitch` between rows. */
-export function dotGeometry(columns: number): { dot: number; step: number; pitch: number } {
+/** Up to this many weeks, a comeback's first ones, each column widens to share the chart. */
+const WIDE_UP_TO = 12
+const WIDE_MAX = 48
+const WIDE_GAP = 8
+
+/** `dot` is a run's height and `width` its width, `step` the distance between columns, `pitch` between rows. */
+export function dotGeometry(columns: number): { dot: number; width: number; step: number; pitch: number } {
   const dot = Math.min(9, CHART_W / Math.max(1, columns) - 2)
-  const step = columns > 1 ? (CHART_W - dot) / (columns - 1) : 0
-  return { dot, step, pitch: dot + dot / 3 }
+  const width = columns <= WIDE_UP_TO ? Math.min(WIDE_MAX, (CHART_W - WIDE_GAP * (columns - 1)) / Math.max(1, columns)) : dot
+  const step = columns > 1 ? (CHART_W - width) / (columns - 1) : 0
+  return { dot, width, step, pitch: dot + dot / 3 }
 }
 
 /** Null is a week under target: an outline only, since a dark fill disappears on the dark card. */
@@ -101,7 +107,7 @@ export function runDotFill(week: Pick<ConsistencyWeek, 'onTarget' | 'current'>):
 function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; selected: string | null; onSelect: (week: string) => void }) {
   const c = t.consistency
   const { weeks, target } = view
-  const { dot, step, pitch } = dotGeometry(weeks.length)
+  const { dot, width, step, pitch } = dotGeometry(weeks.length)
   const rows = Math.max(target + 1, ...weeks.map((week) => week.runs + week.planned))
   const height = rows * pitch - pitch + dot
   const gap = pitch - dot
@@ -156,9 +162,9 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
             >
               {/* The whole column is the target, not only its dots. */}
               <rect
-                x={x(i) - Math.max(step - dot, 0) / 2 - 1}
+                x={x(i) - Math.max(step - width, 0) / 2 - 1}
                 y={-PAD}
-                width={Math.max(step, dot) + 2}
+                width={Math.max(step, width) + 2}
                 height={height + 2 * PAD}
                 rx={3}
                 fill="transparent"
@@ -169,13 +175,13 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
               />
               {Array.from({ length: week.runs }, (_, k) => (
                 fill ? (
-                  <rect key={`r${k}`} x={x(i)} y={y(k)} width={dot} height={dot} rx={dot / 3} fill={fill} data-testid="run-dot" />
+                  <rect key={`r${k}`} x={x(i)} y={y(k)} width={width} height={dot} rx={dot / 3} fill={fill} data-testid="run-dot" />
                 ) : (
                   <rect
                     key={`r${k}`}
                     x={x(i) + 0.5}
                     y={y(k) + 0.5}
-                    width={dot - 1}
+                    width={width - 1}
                     height={dot - 1}
                     rx={dot / 3}
                     fill="none"
@@ -190,7 +196,7 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
                   key={`p${k}`}
                   x={x(i) + 0.5}
                   y={y(week.runs + k) + 0.5}
-                  width={dot - 1}
+                  width={width - 1}
                   height={dot - 1}
                   rx={dot / 3}
                   fill="none"
@@ -207,7 +213,7 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
       {withOthers && (
         <svg viewBox={`${-PAD} 0 ${CHART_W + 2 * PAD} ${dot}`} className="block h-auto w-full overflow-visible" aria-hidden data-testid="others-row">
           {weeks.map((week, i) =>
-            week.others > 0 ? <circle key={week.start} cx={x(i) + dot / 2} cy={dot / 2} r={dot / 3} fill="var(--zone-1)" data-testid="other-mark" /> : null,
+            week.others > 0 ? <circle key={week.start} cx={x(i) + width / 2} cy={dot / 2} r={dot / 3} fill="var(--zone-1)" data-testid="other-mark" /> : null,
           )}
         </svg>
       )}
@@ -216,7 +222,7 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
           <span
             className="absolute inset-y-0 rounded-full bg-accent"
             data-testid="streak-underline"
-            style={{ left: pct(x(streak[0]!)), right: `calc(100% - ${pct(x(streak.at(-1)!) + dot)})` }}
+            style={{ left: pct(x(streak[0]!)), right: `calc(100% - ${pct(x(streak.at(-1)!) + width)})` }}
           />
         )}
       </div>

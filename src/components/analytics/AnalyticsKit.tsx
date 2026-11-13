@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { GlassLayers } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatMonthShortYear } from '@/lib/formatters'
 import { linePath } from '@/lib/linePath'
 import type { DeltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
@@ -101,9 +101,11 @@ export const STAT_TONE: Record<DeltaTone, StatTone> = { good: 'pos', worse: 'war
 export { Legend, LegendItem } from '@/components/ui/Legend'
 
 /** Start, middle and end of a window, the end read as Today while it is. */
+/** A window across a new year reads "Nov ’25 · May ’26 · Nov ’26", so no tick could be any year. */
 export function windowLabels(dates: string[], live: boolean): string[] {
   if (!dates.length) return []
-  const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
+  const spansYears = dates[0]!.slice(0, 4) !== dates[dates.length - 1]!.slice(0, 4)
+  const bare = (iso: string) => (spansYears ? formatMonthShortYear(iso) : formatDate(iso, { style: 'bare', year: 'never' }))
   const mid = dates[Math.floor((dates.length - 1) / 2)]!
   return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
 }

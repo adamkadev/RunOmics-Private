@@ -157,7 +157,7 @@ export const en = {
     rangeLabel: 'Window',
     streakEyebrow: 'Weekly streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
-    streakRule: (target: number, best: number) => `${target}+ runs a week · best ${best}, all time`,
+    streakRule: (target: number, best: number) => `${target}+ runs a week · best streak ${best} week${best === 1 ? '' : 's'}`,
     thisWeek: 'This week',
     thisWeekRuns: (runs: number) => `${runs} done`,
     keeps: (runs: number) => `${runs} more keeps it`,
@@ -713,7 +713,8 @@ export const en = {
       // Under the read-only height and weight. No brand in the words: the data is
       // imported JSON, and the brand can change.
       readOnly: 'From your watch – edit in your watch app.',
-      // The Athlete & zones row's value: "Max HR 200 · threshold 179".
+      heartRate: 'Heart rate',
+      // The heart rate row's value: "Max HR 200 · threshold 179".
       lthr: (bpm: number) => `threshold ${bpm}`,
       maxHr: (bpm: number) => `Max HR ${bpm}`,
     },
@@ -969,8 +970,9 @@ export const en = {
         // The Volume tab's read: the long run first, then the plan, then the average.
         volumeTab: {
           longRunOver: (n: number, of: number) => `Your long run was over 35% of its week in ${n} of ${of} weeks.`,
-          underPlan: (hit: number, of: number) => `On plan in only ${hit} of ${of} weeks.`,
-          onPlan: (hit: number, of: number) => `On plan in ${hit} of ${of} weeks.`,
+          // The card's stat already counts the weeks: the headline says what to do with them.
+          underPlan: 'Get back to the planned km each week before adding anything.',
+          onPlan: 'Keep running the weeks as the plan sets them.',
           average: (km: string) => `Averaging ${km} km a week.`,
           avgRow: (km: string, n: number) => `${km} km a week on average over ${n} finished week${n === 1 ? '' : 's'}.`,
           onPlanRow: (hit: number, of: number) => `${hit} of ${of} planned weeks at 90% of the plan or more.`,
@@ -1059,6 +1061,7 @@ export const en = {
         in12w: (delta: string) => `${delta} in 12 weeks`,
         // A change names its window, so it never reads as the checkpoint's own.
         since: (note: string, date: string) => `${note} since ${date}`,
+        sinceReturn: (note: string) => `${note} since your return`,
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
@@ -1699,7 +1702,7 @@ export const en = {
     // The compact top bar's, short enough to sit beside the ‹ 2026 › stepper.
     barTitle: 'Goals',
     empty: 'No goals configured yet.',
-    emptyHow: 'Set a distance for the year, target times and your races in Settings → Races & goals.',
+    emptyHow: 'Set a distance for the year, target times and your races.',
     emptyAction: 'Open Races & goals',
     noGoalYear: (year: number) => `No goal set for ${year}`,
     back: 'Progress',
@@ -1772,8 +1775,9 @@ export const en = {
     back: 'Progress',
     tileDetail: (runs: number, since: string) => `${runs} runs from your usual start since ${since}, replayed together`,
     subtitle: (runs: number, since: string) => `${runs} runs from one start · since ${since}`,
-    spot: (runs: number) => `${runs} runs`,
-    spots: 'Start points',
+    periods: 'Runs shown',
+    periodAll: 'All',
+    period: (label: string, runs: number) => `${label} · ${runs}`,
     running: (n: number, of: number) => `${n} of ${of} still out`,
     histogram: 'Runs finished, by duration',
     elapsed: 'Elapsed',
@@ -1839,7 +1843,7 @@ export const en = {
     runs: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
     overLimit: 'Over limit, consider retiring',
     since: (brand: string, month: string) => `${brand} · since ${month}`,
-    roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
+    roles: { workouts: 'workouts', intervals: 'intervals', races: 'races' },
     shareOfDistance: 'share of distance',
     easy: 'Easy',
     // One row of four in the km card: short labels.
@@ -2094,14 +2098,9 @@ export const en = {
       // Runs or km, the unit the milestone's own title already names.
       toGo: (n: string) => `${n} to go`,
     },
-    cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },
+    cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted', gap: 'Gap' },
     // A gap under a minute: "5s".
     gapSeconds: (s: number) => `${s} s`,
-    // A prediction is what could be run, not what was.
-    faster: (gap: string) => `${gap} within reach`,
-    slower: (gap: string) => `${gap} slower`,
-    // The prediction is the best to the second: run already at potential.
-    atPotential: 'at potential',
     allEfforts: (distance: string) => `All ${distance} efforts ›`,
     topEfforts: (n: number, distance: string) => `Top ${n} ${distance} efforts ›`,
     missing: (distances: string[], link: boolean) =>
@@ -2127,6 +2126,7 @@ export const en = {
     runningPerWeek: 'Minutes running per week',
     // A bar's label: the week's Monday.
     weekOf: (date: string) => `Week of ${date}`,
+    thisWeek: 'this wk',
     minutes: (n: number) => `${n} min`,
     nothingYet: 'No run since the return yet.',
     celebration: 'Since your return',
@@ -2287,7 +2287,8 @@ export const en = {
     title: '12-week checkpoint',
     cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: 'Last 12 weeks',
-    against: (current: string, previous: string) => `${current} vs ${previous}`,
+    againstPrevious: (range: string) => `vs previous cycle · ${range}`,
+    againstBefore: (range: string) => `vs the 12 weeks before · ${range}`,
     weekOf: (week: number) => `Cycle week ${week} of 12`,
     complete: (n: number) => `Cycle ${n} complete`,
     dueIn: (date: string, days: number) =>
@@ -2307,8 +2308,8 @@ export const en = {
     startingPoint: (date: string) => `Your starting point: these values are compared at the checkpoint on ${date}.`,
     lastReading: (date: string) => `Last reading ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min in ${sessions} session${sessions === 1 ? '' : 's'} so far`,
-    noCheck: 'No check this cycle',
-    vdot: (value: string) => `VDOT ${value}`,
+    noCheck: 'No 5K check this cycle',
+    lastCheck: (date: string, time: string) => `last ${date}, ${time}`,
     sections: {
       volume: {
         title: 'Volume',
@@ -2324,7 +2325,7 @@ export const en = {
       },
       markers: {
         title: 'Fitness markers',
-        about: 'The latest 5K check of each cycle, a 5K race or a time trial, with the VDOT it implies, and Garmin’s VO₂max and threshold estimates as they stood at the end of each cycle. Threshold HR has no better direction, so it is shown but not scored.',
+        about: 'The latest 5K check of each cycle, a 5K race or a time trial, and Garmin’s VO₂max and threshold estimates as they stood at the end of each cycle. Threshold HR has no better direction, so it is shown but not scored.',
       },
       recovery: {
         title: 'Recovery and load',
@@ -2411,8 +2412,6 @@ export const en = {
 
   plan: {
     today: 'Today',
-    // Under the day card.
-    nextKeySession: 'Next key session',
     prevPeriod: 'Previous',
     nextPeriod: 'Next',
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -2457,7 +2456,6 @@ export const en = {
     restCard: {
       eyebrow: 'Rest',
       title: 'Rest day',
-      next: (weekday: string) => `Next: ${weekday}`,
       finishedEyebrow: 'Block finished',
       finished: (done: number, total: number) => `${done} of ${total} sessions`,
     },
@@ -2478,7 +2476,8 @@ export const en = {
       Race: 'R',
     } as Record<string, string>,
     phase: {
-      weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
+      weekOf: (total: number) => ({ before: 'Block', after: `of ${total}` }),
+      cycle: (week: number, date: string) => `Cycle ${week} of 12 · checkpoint ${date}`,
       // The part week before a block's first Monday.
       leadIn: 'Lead-in week',
       generalShort: 'General prep',
@@ -2503,7 +2502,9 @@ export const en = {
       // days it covers, and the month's own total is said beside it.
       planCovers: (from: string, to: string) => `${from} – ${to}`,
       monthTotal: (km: string) => `${km} km this month`,
-      nextKey: 'Next key session',
+      plannedWord: 'planned',
+      plannedKm: (km: string) => `${km} km planned`,
+      noneAfter: (date: string) => `No sessions planned after ${date}`,
       weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,
     },
     daySelector: 'Days of the week',
