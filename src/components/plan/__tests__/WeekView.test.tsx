@@ -123,12 +123,13 @@ describe('the phase card', () => {
     expect(within(card).queryByRole('link')).toBeNull()
   })
 
-  it('draws a segment per week of the phase, the weeks so far in the accent', () => {
+  it('draws a segment per week of the phase, the weeks done in the accent and the one under way half full', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    const segments = screen.getByTestId('phase-segments').children
+    const segments = [...screen.getByTestId('phase-segments').children]
     expect(segments).toHaveLength(5)
-    expect([...segments].filter((s) => s.hasAttribute('data-done'))).toHaveLength(1)
+    expect(segments.filter((s) => s.hasAttribute('data-done'))).toHaveLength(0)
+    expect(segments.findIndex((s) => s.hasAttribute('data-current'))).toBe(0)
   })
 
   it('counts general preparation inside the block when the plan has no race', () => {

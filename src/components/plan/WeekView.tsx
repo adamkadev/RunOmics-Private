@@ -62,8 +62,11 @@ function PhaseCard({ name, week, total, race, href, proposals = [] }: { name: st
         </p>
       </div>
       <div aria-hidden className="flex gap-[3px]" data-testid="phase-segments">
+        {/* The week under way is half full: a full bar would say the block is done. */}
         {Array.from({ length: total }, (_, i) => (
-          <span key={i} data-done={i < week || undefined} className={cn('h-[5px] flex-1 rounded-full', i < week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
+          <span key={i} data-done={i < week - 1 || undefined} data-current={i === week - 1 || undefined} className={cn('relative h-[5px] flex-1 overflow-hidden rounded-full', i < week - 1 ? 'bg-accent' : 'bg-[var(--line-2)]')}>
+            {i === week - 1 && <span className="absolute inset-y-0 left-0 w-1/2 bg-accent" />}
+          </span>
         ))}
       </div>
       {proposals.map((proposal) => (
