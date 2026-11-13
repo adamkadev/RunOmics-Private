@@ -864,6 +864,7 @@ export const fr = {
         headline: {
           positive: 'Ta charge se transforme en vitesse.',
           positiveSteadyLoad: (last: string) => `La vitesse a progressé sur ${last}.`,
+          easyFaster: (s: number, within: string) => `Ton footing est ${s} s/km plus rapide ${within}.`,
           cautionLoadUp: (slipped: string, plural: boolean) => `La charge monte, mais ${slipped} ${plural ? 'ont' : 'a'} reculé.`,
           caution: (last: string) => `La vitesse a reculé sur ${last}.`,
           neutral: (last: string) => `La vitesse est stable sur ${last}.`,

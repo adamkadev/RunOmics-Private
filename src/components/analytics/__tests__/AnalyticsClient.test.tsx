@@ -646,6 +646,17 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
     expect(readHeadline({ ...view, loadUp: true }, '12w')).toBe(s.headline.positive)
   })
 
+  it('claims no speed a slipped read contradicts, naming the gain that holds', async () => {
+    const { readHeadline } = await import('../coachReadTabs')
+    const s = t.analytics.cards.coachRead
+    const easy = { key: 'easy' as const, trend: 'improving' as const, pace: 522, delta: -30 }
+    const predictions = { key: 'predictions' as const, trend: 'declining' as const, slower: 1, faster: 0, count: 1 }
+    const efficiency = { key: 'efficiency' as const, trend: 'improving' as const, value: 1.1, delta: 0.05 }
+    const view = { tone: 'positive' as const, loadUp: true, signals: [easy, predictions, efficiency] }
+    expect(readHeadline(view, '4w')).toBe(s.headline.easyFaster(30, s.within['4w']!))
+    expect(readHeadline({ ...view, signals: [predictions, efficiency] }, '4w')).toBe(s.headline.mixed('Aerobic efficiency', false, 'race predictions', true))
+  })
+
   it('gives aerobic efficiency its unit and what the change means', async () => {
     const { signalRows } = await import('../coachReadTabs')
     const s = t.analytics.cards.coachRead

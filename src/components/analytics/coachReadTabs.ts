@@ -190,8 +190,13 @@ export function readHeadline(view: CoachReadView, period: Period): string {
   const improved = named(speed.filter((sig) => sig.trend === 'improving').map((sig) => sig.key))
   const slipped = named(speed.filter((sig) => sig.trend === 'declining').map((sig) => sig.key))
   switch (view.tone) {
-    case 'positive':
-      return view.loadUp ? s.positive : s.positiveSteadyLoad(last)
+    case 'positive': {
+      if (!slipped.names) return view.loadUp ? s.positive : s.positiveSteadyLoad(last)
+      // A read that slipped forbids the general speed claim: say the gain that holds instead.
+      const easy = speed.find((sig) => sig.key === 'easy' && sig.trend === 'improving')
+      if (easy?.key === 'easy') return s.easyFaster(Math.round(Math.abs(easy.delta)), t.analytics.cards.coachRead.within[period]!)
+      return s.mixed(capitalized(improved.names), improved.plural, slipped.names, slipped.plural)
+    }
     case 'caution':
       return view.loadUp ? s.cautionLoadUp(slipped.names, slipped.plural) : s.caution(last)
     case 'neutral':

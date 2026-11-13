@@ -916,6 +916,7 @@ export const en = {
         headline: {
           positive: 'Your load is turning into speed.',
           positiveSteadyLoad: (last: string) => `Speed has improved over ${last}.`,
+          easyFaster: (s: number, within: string) => `Your easy pace is ${s} s/km faster ${within}.`,
           // Names only the reads that slipped.
           cautionLoadUp: (slipped: string, plural: boolean) => `Load is up, but ${slipped} ${plural ? 'have' : 'has'} slipped.`,
           caution: (last: string) => `Speed has slipped over ${last}.`,
