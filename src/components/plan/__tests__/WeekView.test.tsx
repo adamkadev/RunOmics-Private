@@ -248,11 +248,11 @@ describe('a session still to come', () => {
 
   it('titles it by its set under the naming rules, its type left to the eyebrow', () => {
     const coachingPlan = plan()
-    coachingPlan.weeks[0]!.workouts[0]!.title = 'Threshold · 3 × 8′ @ 4:25'
+    coachingPlan.weeks[0]!.workouts[0]!.title = 'Threshold · 3 × 8′ · target 4:25'
     renderWeek({ coaching: overview({ coachingPlan }), trainingZones: ZONES })
 
     const card = screen.getByTestId('plan-workout-workout-threshold')
-    expect(within(card).getByRole('heading').textContent).toBe('3 × 8′ @ 4:25')
+    expect(within(card).getByRole('heading').textContent).toBe('3 × 8′ · target 4:25')
     expect(card.textContent?.toUpperCase()).toContain(t.activityTypes.Threshold.toUpperCase())
   })
 
@@ -400,13 +400,13 @@ describe('a day that is over', () => {
     const user = userEvent.setup()
     renderWeek({
       activities: [activity({ ...TEMPO, type: 'Threshold', description: 'Easy run' })],
-      planned: [{ date: '2026-09-07', name: 'Threshold · 3 × 8′ @ 4:25', type: 'Threshold', distanceM: 10_000 }],
+      planned: [{ date: '2026-09-07', name: 'Threshold · 3 × 8′ · target 4:25', type: 'Threshold', distanceM: 10_000 }],
     })
 
     await user.click(day('2026-09-07'))
     const card = screen.getByTestId('plan-day-done-2026-09-07')
     expect(within(card).getByRole('heading').textContent).toBe('Easy run')
-    expect(within(card).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}10 ${t.units.km} · 3 × 8′ @ 4:25`)
+    expect(within(card).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}10 ${t.units.km} · 3 × 8′ · target 4:25`)
   })
 
   it('says a run nothing was planned for was not planned', async () => {

@@ -115,10 +115,10 @@ describe('an interval session (design review, Oct 2026)', () => {
   })
 
   it('leads with the reps\' pace, the plan\'s, and how far off it ran', () => {
-    expect(shareRepHero({ ...RUN, reps: REPS })).toEqual({ eyebrow: 'Rep pace · 3 × 8′', pace: '4:24', unit: '/km', target: 'target 4:25 · −0:01' })
+    expect(shareRepHero({ ...RUN, reps: REPS })).toEqual({ eyebrow: 'Rep pace · 3 × 8′', pace: '4:24', unit: '/km', target: 'target 4:25 · −1 s' })
     // Inside the band: the target alone, with nothing to answer for.
     expect(shareRepHero({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })!.target).toBe('target 4:20–4:30')
-    expect(shareRepHero({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } })!.target).toBe('target 4:20–4:30 · +0:05')
+    expect(shareRepHero({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } })!.target).toBe('target 4:20–4:30 · +5 s')
     expect(shareRepHero({ ...RUN, reps: { ...REPS, target: null } })!.target).toBeNull()
     expect(shareRepHero(RUN)).toBeNull()
   })

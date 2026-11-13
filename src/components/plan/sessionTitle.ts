@@ -16,8 +16,18 @@ TYPE_WORDS.set('vo2max', 'VO2Max')
  */
 export function sessionTitle(name: string | null | undefined, type: ActivityType | null | undefined): string | null {
   const trimmed = name?.trim() ?? ''
-  if (!type) return trimmed || null
+  if (!type) return trimmed ? displayName(trimmed) : null
   if (!trimmed) return t.activityTypes[type]
   const named = TYPE_WORDS.get(trimmed.toLowerCase())
-  return named && named !== type ? t.activityTypes[type] : trimmed
+  return named && named !== type ? t.activityTypes[type] : displayName(trimmed)
+}
+
+/**
+ * One notation for a session's name, whoever wrote it: "4 × 5′" with spaces, and the pace a name carries after
+ * " @ " said as the target it was ("3 × 8′ · target 4:36"), never as if the run hit it.
+ */
+export function displayName(name: string): string {
+  return name
+    .replace(/(\d+)\s*[×x]\s*(?=\d)/g, '$1 × ')
+    .replace(/ @ (\d{1,2}:[0-5]\d)(?=$|\s)/g, (_, pace: string) => ` · ${t.plan.session.targetPace(pace)}`)
 }

@@ -1001,7 +1001,8 @@ body {
 body {
   color: var(--foreground);
   line-height: 1.5;
-  font-variant-numeric: tabular-nums;
+  /* No page-wide tabular-nums: it sets the hyphen in a figure-wide slot ("Devant - les - Ponts", "12 - week").
+     Columns and counters that must not shift say tabular-nums themselves. */
   overflow-x: hidden;
   -webkit-user-select: none;
   user-select: none;

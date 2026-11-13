@@ -178,6 +178,7 @@ describe('getAllRoutes', () => {
       totalCount: 0,
       totalKm: 0,
       years: [],
+      untracked: [{ type: 'Base', year: '2026', distanceKm: 10 }],
     })
   })
 
@@ -204,6 +205,7 @@ describe('getMapShellData', () => {
       totalCount: 3,
       totalKm: 30,
       years: ['2025', '2026'],
+      untracked: [],
     })
   })
 })

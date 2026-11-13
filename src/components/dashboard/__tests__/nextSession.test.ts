@@ -75,15 +75,15 @@ describe('sessionCard', () => {
 // The card names a session by the coach's short name, where it has one.
 describe('a session named under the naming rules', () => {
   const named = (date: string): WorkoutPrescription => ({
-    ...prescription(date, 'Threshold · 3 × 8′ @ 4:25', 10_665),
+    ...prescription(date, 'Threshold · 3 × 8′ · target 4:25', 10_665),
     type: 'threshold',
     shortName: 'Threshold 3×8′',
   })
 
   it('is the short name on the card', () => {
     const next = findNextSession('2026-10-05', [view(named('2026-10-06'))], [])
-    expect(next).toMatchObject({ title: 'Threshold 3×8′', workout: { title: 'Threshold · 3 × 8′ @ 4:25', shortName: 'Threshold 3×8′' } })
-    expect(sessionCard('2026-10-05', null, null, next)!.title).toBe('Threshold 3×8′')
+    expect(next).toMatchObject({ title: 'Threshold 3 × 8′', workout: { title: 'Threshold · 3 × 8′ · target 4:25', shortName: 'Threshold 3×8′' } })
+    expect(sessionCard('2026-10-05', null, null, next)!.title).toBe('Threshold 3 × 8′')
   })
 })
 

@@ -148,9 +148,10 @@ function repOffset(pace: number, target: { min: number; max: number }): number {
 function repDelta(pace: number, target: { min: number; max: number }): string | null {
   const off = repOffset(pace, target)
   if (off === 0) return null
+  // The app's one gap form: "−5 s" under a minute, "−2:23" past it, never "−0:05".
   const sign = off > 0 ? '+' : '−'
   const abs = Math.abs(off)
-  return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
+  return abs < 60 ? `${sign}${abs} s` : `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
 }
 
 export interface ShareRepChip {

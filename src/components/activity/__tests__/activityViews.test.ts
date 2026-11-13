@@ -92,7 +92,7 @@ const SPLITS = [
 
 const SESSION = {
   type: 'threshold',
-  title: 'Threshold · 3 × 8′ @ 4:25',
+  title: 'Threshold · 3 × 8′ · target 4:25',
   structure: { reps: 3, repMinutes: 8, targetPace: '4:25' },
   blocks: [],
 } as unknown as WorkoutPrescription
@@ -102,7 +102,7 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
 
   it('takes the coach\'s name and kind for the session the run matched', () => {
     const card = shareActivity(run, SESSION)
-    expect(card.sessionTitle).toBe('Threshold · 3 × 8′ @ 4:25')
+    expect(card.sessionTitle).toBe('Threshold · 3 × 8′ · target 4:25')
     expect(card.type).toBe('Threshold')
   })
 
@@ -144,8 +144,8 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
   })
 
   it('titles the card with the session\'s name as the plan shows it', () => {
-    const legacy = { ...SESSION, title: 'Threshold 3 x 7:40', structure: undefined } as unknown as WorkoutPrescription
-    expect(shareActivity(run, legacy).sessionTitle).toBe('Threshold 3 x 7:40')
+    const legacy = { ...SESSION, title: 'Threshold 3 × 7:40', structure: undefined } as unknown as WorkoutPrescription
+    expect(shareActivity(run, legacy).sessionTitle).toBe('Threshold 3 × 7:40')
     const strides = {
       type: 'easy',
       title: 'Strides 6 x 20s',
