@@ -152,7 +152,7 @@ export function PaceCurveCard({ runs, window, period, threshold, onShift }: {
       </div>
       <Legend className="gap-x-4">
         <LegendItem swatch="line" color="var(--foreground)">{s.now[period]}</LegendItem>
-        <LegendItem swatch="dash" color="var(--muted-foreground)">{s.before[period]}</LegendItem>
+        {rows.some((r) => r.before) && <LegendItem swatch="dash" color="var(--muted-foreground)">{s.before[period]}</LegendItem>}
         {csPace !== null && <LegendItem swatch="dash" color="var(--zone-4)">{s.cs}</LegendItem>}
       </Legend>
     </Card>

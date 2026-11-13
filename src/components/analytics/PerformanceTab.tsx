@@ -465,7 +465,10 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
       </ChartScrub>
       <Legend className="gap-x-4">
         <LegendItem swatch="line" color="var(--foreground)">{s.adjusted}</LegendItem>
-        <LegendItem swatch="dash" color="var(--muted-foreground)">{s.measured}</LegendItem>
+        {/* Where no heat was taken out the two lines are one, and a key for the hidden one would point at nothing. */}
+        {view.measured.some((m, i) => m != null && view.adjusted[i] != null && Math.abs(m - view.adjusted[i]!) >= 0.005) && (
+          <LegendItem swatch="dash" color="var(--muted-foreground)">{s.measured}</LegendItem>
+        )}
       </Legend>
       {rpe && (
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-border pt-3" data-testid="rpe-row">
