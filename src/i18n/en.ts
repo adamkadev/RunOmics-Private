@@ -2096,6 +2096,7 @@ export const en = {
     runningPerWeek: 'Minutes running per week',
     // A bar's label: the week's Monday.
     weekOf: (date: string) => `Week of ${date}`,
+    thisWeek: 'this wk',
     minutes: (n: number) => `${n} min`,
     nothingYet: 'No run since the return yet.',
     celebration: 'Since your return',
@@ -2380,8 +2381,6 @@ export const en = {
 
   plan: {
     today: 'Today',
-    // Under the day card.
-    nextKeySession: 'Next key session',
     prevPeriod: 'Previous',
     nextPeriod: 'Next',
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -2426,7 +2425,6 @@ export const en = {
     restCard: {
       eyebrow: 'Rest',
       title: 'Rest day',
-      next: (weekday: string) => `Next: ${weekday}`,
       finishedEyebrow: 'Block finished',
       finished: (done: number, total: number) => `${done} of ${total} sessions`,
     },
@@ -2447,7 +2445,8 @@ export const en = {
       Race: 'R',
     } as Record<string, string>,
     phase: {
-      weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
+      weekOf: (total: number) => ({ before: 'Block', after: `of ${total}` }),
+      cycle: (week: number, date: string) => `Cycle ${week} of 12 · checkpoint ${date}`,
       // The part week before a block's first Monday.
       leadIn: 'Lead-in week',
       generalShort: 'General prep',
@@ -2472,7 +2471,9 @@ export const en = {
       // days it covers, and the month's own total is said beside it.
       planCovers: (from: string, to: string) => `${from} – ${to}`,
       monthTotal: (km: string) => `${km} km this month`,
-      nextKey: 'Next key session',
+      plannedWord: 'planned',
+      plannedKm: (km: string) => `${km} km planned`,
+      noneAfter: (date: string) => `No sessions planned after ${date}`,
       weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,
     },
     daySelector: 'Days of the week',
