@@ -409,7 +409,7 @@ describe('Analytics (v4.5)', () => {
     expect(done.length).toBeGreaterThan(0)
     for (const bar of done) expect(bar.style.background).toBe('var(--data-done)')
     const current = bars.querySelector<HTMLElement>('[data-current]')!
-    expect(current.style.background).toBe('var(--accent)')
+    expect(current.style.background).toBe('var(--data-done-soft)')
     expect(current.style.outline).toBe('1.5px dashed var(--accent)')
     // The one weekly average, as a stat with its unit.
     expect(screen.getByTestId('weekly-card').textContent).toContain(`26${t.analytics.cards.weekly.underAvg(12)}`)
@@ -538,7 +538,7 @@ describe('the v4.5 colour rules', () => {
     expect(weekBarFill(row(30, 30), false, true)).toBe('var(--data-done)')
     expect(weekBarFill(row(10, 30), false, true)).toBeNull()
     expect(weekBarFill(row(10, null), false, false)).toBe('var(--data-done)')
-    expect(weekBarFill(row(10, 30), true, true)).toBe('var(--accent)')
+    expect(weekBarFill(row(10, 30), true, true)).toBe('var(--data-done-soft)')
   })
 
   it('gives no card its own period pills or date arrows', () => {

@@ -12,7 +12,8 @@ const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
 /** A week the plan never asked for is a neutral grey, so "below plan" and "unplanned" never share a swatch. */
 const DONE = 'var(--data-done)'
-const CURRENT = 'var(--accent)'
+// The week in progress is judged against its plan too: a soft neutral fill, the dashed accent outline says "now".
+const CURRENT = 'var(--data-done-soft)'
 const BELOW_PLAN_OUTLINE = '1.5px solid var(--data-done)'
 const UNPLANNED = 'var(--neutral-bar)'
 const MISSED_OUTLINE = '1.5px dashed var(--axis-text)'

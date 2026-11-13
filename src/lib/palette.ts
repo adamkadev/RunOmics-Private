@@ -79,7 +79,7 @@ export const HUE = {
   roEmeraldLift:  '#14b886',
 
   /** Text grade on a light ground: the dark-mode values fail as text on white (#34d399 is 1.8:1). */
-  semGreenLight:  '#0f7a52',
+  semGreenLight:  '#2f7a2a',
   semOrangeLight: '#c2560f',
   semBlueLight:   '#2563eb',
   semRedLight:    '#d1453f',
