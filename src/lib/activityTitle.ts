@@ -84,7 +84,8 @@ export function sessionLabel(title: string): string {
   const dash = /\s[-–—]\s/.exec(name)
   if (dash) {
     const garmin = name.slice(dash.index + dash[0].length)
-    if (isStructure(garmin)) return notation(garmin)
+    // "Metz - Easy · 6 km + 6 strides": a place before the workout's own name, which reads as that name would.
+    if (isStructure(garmin)) return /^\p{L}/u.test(garmin) ? sessionLabel(garmin) : notation(garmin)
   }
   if (/^\d/.test(name)) return isStructure(name) ? notation(name) : name
   const match = /^(\p{L}[^\d]*?)[\s·:,\-–—]+(\d.*)$/u.exec(name)

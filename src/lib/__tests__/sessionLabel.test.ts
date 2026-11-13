@@ -9,6 +9,7 @@ describe('sessionLabel', () => {
     expect(sessionLabel('VO₂ max · 5 × 3′ @ 3:55')).toBe('5 × 3′ @ 3:55')
     expect(sessionLabel('Easy · 54 min + 6 strides')).toBe('Easy run + 6 strides')
     expect(sessionLabel('Easy · 6 km + 6 strides')).toBe('Easy run + 6 strides')
+    expect(sessionLabel('Hoenheim - Easy · 6 km + 6 strides')).toBe('Easy run + 6 strides')
     expect(sessionLabel('Seuil · 3 × 8′ @ 4:20')).toBe('3 × 8′ @ 4:20')
   })
 
