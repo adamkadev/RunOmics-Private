@@ -22,12 +22,7 @@ export function sessionTitle(name: string | null | undefined, type: ActivityType
   return named && named !== type ? t.activityTypes[type] : displayName(trimmed)
 }
 
-/**
- * One notation for a session's name, whoever wrote it: "4 × 5′" with spaces, and the pace a name carries after
- * " @ " said as the target it was ("3 × 8′ · target 4:36"), never as if the run hit it.
- */
+/** One notation for a session's name, whoever wrote it: "4 × 5′" with spaces, the pace kept after " @ ". */
 export function displayName(name: string): string {
-  return name
-    .replace(/(\d+)\s*[×x]\s*(?=\d)/g, '$1 × ')
-    .replace(/ @ (\d{1,2}:[0-5]\d)(?=$|\s)/g, (_, pace: string) => ` · ${t.plan.session.targetPace(pace)}`)
+  return name.replace(/(\d+)\s*[×x]\s*(?=\d)/g, '$1 × ')
 }

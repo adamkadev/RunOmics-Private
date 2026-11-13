@@ -92,7 +92,7 @@ const SPLITS = [
 
 const SESSION = {
   type: 'threshold',
-  title: 'Threshold · 3 × 8′ · target 4:25',
+  title: 'Threshold · 3 × 8′ @ 4:25',
   structure: { reps: 3, repMinutes: 8, targetPace: '4:25' },
   blocks: [],
 } as unknown as WorkoutPrescription
@@ -102,7 +102,7 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
 
   it('takes the coach\'s name and kind for the session the run matched', () => {
     const card = shareActivity(run, SESSION)
-    expect(card.sessionTitle).toBe('Threshold · 3 × 8′ · target 4:25')
+    expect(card.sessionTitle).toBe('Threshold · 3 × 8′ @ 4:25')
     expect(card.type).toBe('Threshold')
   })
 
