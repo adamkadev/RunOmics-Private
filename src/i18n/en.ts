@@ -1767,6 +1767,9 @@ export const en = {
     yearLabel: (year: number, perMonth: string) => `${year}: ${perMonth} km a month`,
     monthly: 'Monthly km',
     best: (km: string, month: string) => `best ${km} · ${month}`,
+    // Done in ink, the projection in grey: a month under way is not its total yet.
+    soFar: (month: string, km: string) => `${month} · ${km} km so far`,
+    onPace: (km: string) => `on pace for ${km}`,
     longestRun: 'Longest run',
     biggestWeek: 'Biggest week',
     // The label over each total, its unit inline.

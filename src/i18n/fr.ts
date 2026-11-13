@@ -1648,6 +1648,8 @@ export const fr = {
     yearLabel: (year: number, perMonth: string) => `${year} : ${perMonth} km par mois`,
     monthly: 'Km par mois',
     best: (km: string, month: string) => `meilleur ${km} · ${month}`,
+    soFar: (month: string, km: string) => `${month} · ${km} km pour l’instant`,
+    onPace: (km: string) => `à ce rythme ${km}`,
     longestRun: 'Plus longue sortie',
     biggestWeek: 'Plus grosse semaine',
     distance: 'Distance',

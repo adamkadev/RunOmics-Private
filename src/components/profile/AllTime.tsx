@@ -103,7 +103,7 @@ export function YearRows({ years, currentYear, since }: { years: AllTimeYear[]; 
 
 /** In px. */
 const MONTHLY_H = 110
-const MONTHS_SHOWN = 18
+const MONTHS_SHOWN = 24
 /** In km. */
 const SCALE_STEPS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000]
 /** More lines would crowd a 110 px chart. */
@@ -162,11 +162,6 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
                   {i > 0 && m.key.endsWith('-01') && (
                     <span aria-hidden className="absolute -left-[2px] inset-y-0 w-px bg-[var(--line-2)]" data-testid="january-divider" />
                   )}
-                  {m.partial && m.projectedKm !== null && m.projectedKm > m.km && (
-                    <span className="mb-1 text-caption font-semibold leading-none tabular-nums text-accent-text" data-testid="month-projection">
-                      {formatKm(m.projectedKm)}
-                    </span>
-                  )}
                   {isBest && (
                     <span className="mb-1 text-caption font-semibold leading-none tabular-nums text-foreground" data-testid="best-value">
                       {formatKm(m.km)}
@@ -176,7 +171,7 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
                     <span
                       data-testid="month-bar"
                       data-month={m.key}
-                      className="relative box-border block w-full rounded-[3px] border-[1.5px] border-dashed border-accent"
+                      className="relative box-border block w-full rounded-[3px] border-[1.5px] border-dashed border-[var(--axis-text)]"
                       style={{ height: px(m.projectedKm ?? m.km) }}
                     >
                       <span data-testid="month-so-far" className="absolute inset-x-0 bottom-0 block rounded-[2px] bg-accent" style={{ height: px(m.km) }} />
@@ -200,6 +195,14 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
             <span key={m.key} className={cn('min-w-0', m.partial && 'font-semibold text-accent-text')}>{initial(m.key)}</span>
           ))}
         </div>
+        {now && (
+          <p className="ml-7 mt-2 flex flex-wrap justify-between gap-x-3 text-[12.5px] tabular-nums" data-testid="month-so-far-line">
+            <span className="text-foreground">{a.soFar(formatDate(`${now.key}-01`, { precision: 'month', year: 'never' }), formatKm(now.km))}</span>
+            {now.projectedKm !== null && now.projectedKm > now.km && (
+              <span className="text-muted-foreground" data-testid="month-projection">{a.onPace(formatKm(now.projectedKm))}</span>
+            )}
+          </p>
+        )}
         <div className="ml-7 mt-2.5 grid gap-[3px] border-t border-border pt-2.5 text-caption leading-[14px] text-muted-foreground" style={grid} data-testid="monthly-years">
           {years.map((y) => (
             <span key={y.year} className="min-w-0 whitespace-nowrap" style={{ gridColumn: `span ${y.months}` }} data-testid="monthly-year">

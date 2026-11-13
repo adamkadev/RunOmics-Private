@@ -31,19 +31,20 @@ describe('AllTime monthly km', () => {
     const bars = Object.fromEntries(screen.getAllByTestId('month-bar').map((bar) => [bar.dataset.month, bar.style.height]))
     expect(bars).toEqual({ '2026-08': '55px', '2026-09': '107px', '2026-10': '75px' })
     expect(screen.getByTestId('month-so-far').style.height).toBe('17px')
-    expect(screen.getByTestId('month-projection').textContent).toBe('137')
+    expect(screen.getByTestId('month-so-far-line').textContent).toContain(t.allTime.soFar('Oct', '31'))
+    expect(screen.getByTestId('month-projection').textContent).toBe(t.allTime.onPace('137'))
     expect(screen.getByTestId('monthly-years').textContent).toBe('2026')
   })
 
-  it('draws the last 18 months, the best with its value, the month under way dashed', () => {
-    const runs = Array.from({ length: 24 }, (_, i) => {
-      const d = new Date(Date.UTC(2024, 10 + i, 10)).toISOString().slice(0, 10)
+  it('draws the last 24 months, the best with its value, the month under way dashed', () => {
+    const runs = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(Date.UTC(2024, 4 + i, 10)).toISOString().slice(0, 10)
       return run(d, d.startsWith('2026-04') ? 236 : 100)
     })
     render(<AllTime view={allTimeView(runs, '2026-10-07')} />)
     const bars = screen.getAllByTestId('month-bar')
-    expect(bars).toHaveLength(18)
-    expect(bars[0]!.dataset.month).toBe('2025-05')
+    expect(bars).toHaveLength(24)
+    expect(bars[0]!.dataset.month).toBe('2024-11')
     const best = bars.find((bar) => bar.dataset.best)!
     expect(best.dataset.month).toBe('2026-04')
     expect(best.style.background).toBe('var(--data-done)')
@@ -52,10 +53,10 @@ describe('AllTime monthly km', () => {
     expect(bars[0]!.style.background).toBe('var(--band)')
     expect(bars.find((bar) => bar.dataset.month === '2026-03')!.style.background).toBe('var(--data-done)')
     expect(screen.getByTestId('month-so-far').className).toContain('bg-accent')
-    // 2025 spans May–Dec (8 months), 2026 Jan–Oct (10).
-    expect(screen.getAllByTestId('january-divider')).toHaveLength(1)
+    expect(screen.getAllByTestId('january-divider')).toHaveLength(2)
     expect(screen.getAllByTestId('monthly-year').map((y) => [y.textContent, y.style.gridColumn])).toEqual([
-      ['2025', 'span 8'],
+      ['2024', 'span 2'],
+      ['2025', 'span 12'],
       ['2026', 'span 10'],
     ])
     expect(screen.getByTestId('monthly-header').textContent).toBe(t.allTime.best('236', 'Apr ’26'))
