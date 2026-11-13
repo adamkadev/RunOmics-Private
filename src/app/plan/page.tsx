@@ -2,6 +2,7 @@ import { getActivities } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
+import { getMonthKmGoals } from '@/application/usecases/GetGoalsData'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getAthleteProfile } from '@/application/usecases/GetAthleteProfile'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
@@ -42,6 +43,7 @@ export default async function PlanPage() {
       hrZoneBoundsBpm={athlete.hrZoneBoundsBpm ?? null}
       coaching={coaching ? planCoachingView(coaching) : null}
       returnProgress={returnProgress?.ongoing ? returnProgress : null}
+      monthKmGoals={await getMonthKmGoals()}
       today={today}
       // Only whether there is one: the area and the runs stay on the server.
       exploreAvailable={getExploreHome() !== null}

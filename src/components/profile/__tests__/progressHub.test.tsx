@@ -209,7 +209,7 @@ describe('ProgressHub as a list', () => {
     expect(screen.getByTestId('checkpoint-row').getAttribute('href')).toBe('/plan/checkpoint')
     expect(screen.getByTestId('checkpoint-row-value').textContent).toBe(t.profile.hub.better(6))
     expect(screen.getByTestId('checkpoint-row-value').getAttribute('style')).toContain('var(--pos)')
-    expect(screen.getByTestId('checkpoint-row')).toHaveTextContent(t.profile.hub.checkpointLine(5, formatDate('2027-01-03', { style: 'bare' })))
+    expect(screen.getByTestId('checkpoint-row')).toHaveTextContent(t.profile.hub.checkpointLine(5, formatDate('2027-01-03', { style: 'bare', year: 'never' })))
     expect(screen.getByRole('link', { name: t.profile.hub.settings }).getAttribute('href')).toBe('/settings')
   })
 
@@ -267,7 +267,7 @@ describe('the hub rows that draw their data', () => {
   })
 
   it('puts the return first with its bar, and the cycle week as the checkpoint value without a line under it', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} comeback={{ minutes: 6, goal: 10 }} checkpoint={{ line: 'Cycle week 3 of 12', better: null, inProgress: { week: 3, end: '2027-01-03' } }} />)
+    render(<ProgressHub view={progressHubView(INPUT)} comeback={{ minutes: 6, goal: 10 }} checkpoint={{ line: 'Week 3 of 12', better: null, inProgress: { week: 3, end: '2027-01-03' } }} />)
     const rows = [...within(screen.getByTestId('hub-season')).getAllByRole('link')].map((row) => row.getAttribute('data-testid'))
     expect(rows[0]).toBe('comeback-row')
     expect(screen.getByTestId('comeback-row-value').textContent).toBe(t.profile.hub.comebackValue(6))
@@ -276,10 +276,11 @@ describe('the hub rows that draw their data', () => {
     expect(screen.getByTestId('checkpoint-row')).not.toHaveTextContent('Cycle week')
   })
 
-  it('reads the return against the next step of 10, 20 or 30 minutes, and none before a minute or once it is over', () => {
+  it('reads the return against the next step above it, reached past the last, and none before a minute or once it is over', () => {
     expect(returnStep({ longestSec: 370, ongoing: true })).toEqual({ minutes: 6, goal: 10 })
     expect(returnStep({ longestSec: 12 * 60, ongoing: true })).toEqual({ minutes: 12, goal: 20 })
-    expect(returnStep({ longestSec: 31 * 60, ongoing: true })).toEqual({ minutes: 31, goal: 30 })
+    expect(returnStep({ longestSec: 34 * 60, ongoing: true })).toEqual({ minutes: 34, goal: 40 })
+    expect(returnStep({ longestSec: 45 * 60, ongoing: true })).toEqual({ minutes: 45, goal: null })
     expect(returnStep({ longestSec: 30, ongoing: true })).toBeNull()
     expect(returnStep({ longestSec: 600, ongoing: false })).toBeNull()
     expect(returnStep(null)).toBeNull()

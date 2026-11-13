@@ -1776,10 +1776,11 @@ export const en = {
     pageTitle: 'Home runs',
     back: 'Progress',
     tileDetail: (runs: number, since: string) => `${runs} runs from your usual start since ${since}, replayed together`,
-    subtitle: (runs: number, since: string) => `${runs} runs from one start · since ${since}`,
+    subtitle: (runs: number, since: string, place: string | null) => (place ? `${runs} runs from ${place} · since ${since}` : `${runs} runs · since ${since}`),
     periods: 'Runs shown',
     spots: 'Start points',
     spot: (runs: number) => `${runs} runs`,
+    spotNamed: (place: string, runs: number) => `${place} · ${runs}`,
     periodAll: 'All',
     period: (label: string, runs: number) => `${label} · ${runs}`,
     running: (n: number, of: number) => `${n} of ${of} still out`,
@@ -1964,14 +1965,15 @@ export const en = {
       kmOfGoal: (km: string, goal: string) => `${km} / ${goal} km`,
       onPaceFor: (km: string) => `on pace for ${km} km`,
       better: (n: number) => `${n} better`,
-      // The checkpoint row: the cycle's week, then the checkpoint's date.
+      // The checkpoint row: the week of the 12, then the checkpoint's date.
       checkpointWeek: (week: number) => `week ${week} of 12`,
-      checkpointLine: (week: number, date: string) => `week ${week} of 12 · ${date}`,
+      checkpointLine: (week: number, date: string) => `week ${week} of 12 · checkpoint ${date}`,
       newestRecord: (date: string) => `newest · ${date}`,
       homeRunsDetail: (runs: string, date: string) => `${runs} · last ${date}`,
-      // The return row: the longest non-stop run since the break, and the next step of 10, 20 or 30 minutes.
+      // The return row: the longest non-stop run since the break, and the next step of 10, 20, 30 or 40 minutes.
       comebackValue: (minutes: number) => `${minutes} min non-stop`,
       comebackNext: (minutes: number) => `next: ${minutes} min`,
+      comebackDone: 'step reached',
       // U+2011: a value's tabular figures set an ASCII hyphen a figure wide ("1 - week").
       streakValue: (weeks: number) => `${weeks}\u2011week streak`,
       noStreakShort: 'no streak yet',
@@ -2292,16 +2294,14 @@ export const en = {
     title: '12\u2011week checkpoint',
     // The page's large title, on one line beside the back button.
     pageTitle: 'Checkpoint',
-    cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: 'Last 12 weeks',
-    againstPrevious: (range: string) => `vs previous cycle · ${range}`,
     againstBefore: (range: string) => `vs the 12 weeks before · ${range}`,
-    weekOf: (week: number) => `Cycle week ${week} of 12`,
-    complete: (n: number) => `Cycle ${n} complete`,
+    weekOf: (week: number) => `Week ${week} of 12`,
+    complete: '12 weeks complete',
     dueIn: (date: string, days: number) =>
       days <= 0 ? 'Checkpoint today' : days === 1 ? 'Checkpoint tomorrow' : days < 14 ? `Checkpoint ${date} · in ${days} days` : `Checkpoint ${date} · in ${Math.round(days / 7)} weeks`,
     reached: (date: string) => `Checkpoint ${date}`,
-    nextBegan: (n: number, date: string) => `Cycle ${n} began ${date}; it takes over here next week.`,
+    nextBegan: (date: string) => `The next 12 weeks began ${date}; they take over here next week.`,
     rolling: 'No coach plan to count cycles from, so this sets your last 12 full weeks against the 12 before them.',
     tooEarly: 'No week of this cycle is over yet: the weekly figures start on Monday.',
     better: (n: number) => `${n} better`,
@@ -2312,7 +2312,7 @@ export const en = {
     vs: (value: string) => `vs ${value}`,
     notEnough: 'Not enough data',
     nothingBefore: 'first cycle',
-    startingPoint: (date: string) => `Your starting point: these values are compared at the checkpoint on ${date}.`,
+    startingPoint: 'Your starting point: these values are compared at the checkpoint.',
     lastReading: (date: string) => `Last reading ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min in ${sessions} session${sessions === 1 ? '' : 's'} so far`,
     noCheck: 'No 5K check this cycle',
@@ -2357,8 +2357,8 @@ export const en = {
     },
     units: { runs: 'runs', perBeat: 'm/beat' },
     tile: {
-      inProgress: (week: number, date: string) => `Cycle week ${week} of 12 · checkpoint ${date}`,
-      complete: (n: number) => `Cycle ${n} complete: time to review it`,
+      inProgress: (week: number, date: string) => `Week ${week} of 12 · checkpoint ${date}`,
+      complete: '12 weeks complete: time to review them',
       rolling: 'Your last 12 weeks against the 12 before',
     },
   },
@@ -2485,7 +2485,7 @@ export const en = {
     } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Block', after: `of ${total}` }),
-      cycle: (week: number, date: string) => `Cycle ${week} of 12 · checkpoint ${date}`,
+      checkpoint: (week: number, date: string) => `Week ${week} of 12 · checkpoint ${date}`,
       // The part week before a block's first Monday.
       leadIn: 'Lead-in week',
       generalShort: 'General prep',
@@ -2504,11 +2504,10 @@ export const en = {
       phaseWeeks: (phase: string, n: number) => `${phase} · ${n} week${n !== 1 ? 's' : ''}`,
       // The legend's one blue entry.
       easyLong: 'Easy / Long',
-      // The plan's km over the days it covers, not a goal for the month.
-      kmOf: (ran: string, plan: string) => `${ran} of ${plan} km planned`,
-      // Where the plan starts partway through the month, the comparison is over the
-      // days it covers, and the month's own total is said beside it.
-      planCovers: (from: string, to: string) => `${from} – ${to}`,
+      // The month's goal is the Goals page's; without one, the plan's km is what the run is set against.
+      runGoal: (ran: string, goal: string) => `${ran} km run · goal ${goal}`,
+      runPlanned: (ran: string, plan: string) => `${ran} km run · ${plan} planned`,
+      planCovers: (from: string, to: string) => `Plan covers ${from} – ${to}`,
       monthTotal: (km: string) => `${km} km this month`,
       plannedWord: 'planned',
       plannedKm: (km: string) => `${km} km planned`,

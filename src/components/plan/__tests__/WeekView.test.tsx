@@ -27,7 +27,6 @@ function activity(overrides: Partial<PlanRun> & Pick<PlanRun, 'id' | 'date' | 't
     durationSeconds: 1_500,
     paceSecPerKm: 300,
     avgHeartRate: 160,
-    zonePercents: [],
     shownType: overrides.type,
     ...overrides,
   }
@@ -142,7 +141,7 @@ describe('the phase card', () => {
     // The block's Sep 7 to Oct 4, not the season's Aug 31: four weeks, this the first.
     const weekOf = t.plan.phase.weekOf(4)
     expect(card.textContent).toContain(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 1 ${weekOf.after}`)
-    expect(within(card).getByTestId('phase-cycle').textContent).toMatch(/^Cycle \d+ of 12 · checkpoint [A-Z][a-z]{2} \d+$/)
+    expect(within(card).getByTestId('phase-cycle').textContent).toMatch(/^Week \d+ of 12 · checkpoint [A-Z][a-z]{2} \d+$/)
     expect(within(card).getByRole('link').getAttribute('href')).toBe('/plan/checkpoint')
   })
 
@@ -235,11 +234,11 @@ describe('the day selector', () => {
 })
 
 describe('a session still to come', () => {
-  it('heads its card with the day and the session type, then its title with its amount beside it, its pace only in the steps', () => {
+  it('heads its card with the day and its state, then its title with its amount beside it, its pace only in the steps', () => {
     renderWeek({ coaching: overview(), trainingZones: ZONES })
 
     const card = screen.getByTestId('plan-workout-workout-threshold')
-    expect(card.textContent).toContain(t.activityTypes.Threshold)
+    expect(within(card).getByTestId('day-eyebrow').textContent).toBe(`Wed 9 · ${t.sessionState.planned}`)
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
     expect(within(card).getByTestId('plan-amount').textContent).toContain(`1 ${t.units.hour}`)
     expect(card.textContent).not.toContain(t.plan.session.targetPace('4:25–4:30'))
@@ -326,16 +325,17 @@ describe('a day that is over', () => {
   it('reads planned against done, with a way into the run', async () => {
     const user = userEvent.setup()
     renderWeek({
-      activities: [activity({ ...TEMPO, zonePercents: [null, null, 68] })],
+      activities: [activity(TEMPO)],
       planned: [{ date: '2026-09-07', name: 'Tempo', type: 'Tempo', distanceM: 5_000 }],
     })
 
     await user.click(day('2026-09-07'))
     const card = screen.getByTestId('plan-day-done-2026-09-07')
+    expect(within(card).getByTestId('day-eyebrow').textContent).toBe(`Mon 7 · ${t.sessionState.done}`)
     // The run's title names the session already: the plan's line keeps to its amount.
     expect(within(card).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}5 ${t.units.km}`)
     const done = within(card).getByTestId('done-line').textContent
-    expect(done).toContain(`4.8 ${t.units.km} · 5:00 /km · Z3 68%`)
+    expect(done).toContain(`4.8 ${t.units.km} · 5:00 /km · 160 ${t.units.bpm}`)
     expect(within(card).getByRole('img', { name: t.plan.dayCard.asPlanned })).toBeInTheDocument()
     expect(within(card).getByRole('link', { name: t.plan.dayCard.viewActivity }).getAttribute('href')).toBe('/activities/a-tempo')
   })
@@ -540,13 +540,14 @@ describe('the coach’s words', () => {
     vi.restoreAllMocks()
   })
 
-  it('names general preparation after the coach’s block, with no focus under it', async () => {
+  it('names general preparation once, over the coach’s block, with no focus under it', async () => {
     serve(WORDS)
     renderWeek({ coaching: overview({ coachingPlan: { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined } }) })
 
     const card = screen.getByTestId('phase-line')
     expect(await within(card).findByText('Reprise en douceur')).toBeInTheDocument()
     expect(within(card).getByRole('heading').textContent).not.toContain(t.plan.weekPurpose.generalPreparation)
+    expect(within(card).getByTestId('phase-eyebrow').textContent).toBe(t.plan.month.phaseEnds(t.plan.phase.generalShort, 'Oct 4'))
     expect(card).not.toHaveTextContent('On démarre doucement.')
     expect(card).not.toHaveTextContent(WORDS.block.focus)
   })

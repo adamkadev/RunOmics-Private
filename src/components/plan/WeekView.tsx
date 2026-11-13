@@ -43,12 +43,18 @@ function proposalLine(proposal: BlockGuideProposal): string {
   return p.guideProposal(p.repClass[proposal.repClass], range(proposal.guide), range(proposal.proposedGuide), p.proposalSource[proposal.source])
 }
 
-/** Block, its weeks and the 12-week cycle in one card, the cycle line opening the checkpoint. */
-function PhaseCard({ name, week, total, race, cycle, proposals = [] }: { name: string; week: number; total: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
+/** Phase over block, its weeks and the 12-week count in one card, the count's line opening the checkpoint. */
+function PhaseCard({ phase, name, week, total, race, cycle, proposals = [] }: { phase: string | null; name: string; week: number; total: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
     <section className={cardClass({ padding: 'none', className: 'relative flex flex-col gap-2.5 px-3.5 py-3' })} data-testid="phase-line">
+      {phase && (
+        <p className="-mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-text" data-testid="phase-eyebrow">
+          <span aria-hidden className="size-1.5 rounded-full bg-accent" />
+          {phase}
+        </p>
+      )}
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 className="text-headline text-foreground">{name}</h2>
         <p className="text-xs text-muted-foreground">
@@ -204,7 +210,7 @@ export function WeekView({
   const cycleLine = useMemo(() => {
     if (!coaching) return null
     const cycle = checkpointCycle(coaching.plan.macrocycleStartDate ?? coaching.plan.block.startDate, today)
-    return cycle.mode === 'rolling' || cycle.complete ? null : t.plan.phase.cycle(cycle.week, formatDate(cycle.current.end, { style: 'bare', year: 'never' }))
+    return cycle.mode === 'rolling' || cycle.complete ? null : t.plan.phase.checkpoint(cycle.week, formatDate(cycle.current.end, { style: 'bare', year: 'never' }))
   }, [coaching, today])
   const race = useMemo(() => {
     const next = planRace(coaching, nextRace, today)
@@ -281,6 +287,7 @@ export function WeekView({
     <div className="flex flex-col gap-3.5">
       {phase && (
         <PhaseCard
+          phase={blockName && t.plan.month.phaseEnds(phase.span.shortName, formatDate(phase.span.endDate, { style: 'bare', year: 'never' }))}
           name={blockName ?? phase.span.name}
           week={phase.week}
           total={phase.total}

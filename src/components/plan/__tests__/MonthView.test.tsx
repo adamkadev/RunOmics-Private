@@ -8,7 +8,7 @@ import { t } from '@/i18n'
 import { MonthView } from '../MonthView'
 
 function run(id: string, date: string, distanceKm: number, type: PlanRun['type'] = 'Base'): PlanRun {
-  return { id, date, type, description: '', distanceKm, durationSeconds: 2_700, paceSecPerKm: 320, avgHeartRate: 140, zonePercents: [], shownType: type }
+  return { id, date, type, description: '', distanceKm, durationSeconds: 2_700, paceSecPerKm: 320, avgHeartRate: 140, shownType: type }
 }
 
 const TODAY = '2026-10-19'
@@ -25,7 +25,7 @@ const RANGES: PlanPhaseRange[] = [
   { phase: 'build', startDate: '2026-10-12', endDate: '2026-11-22' },
 ]
 
-function renderMonth(onSelectDay = vi.fn(), { runs = RUNS, planned = PLANNED }: { runs?: PlanRun[]; planned?: PlannedWorkout[] } = {}) {
+function renderMonth(onSelectDay = vi.fn(), { runs = RUNS, planned = PLANNED, goalKm = null }: { runs?: PlanRun[]; planned?: PlannedWorkout[]; goalKm?: number | null } = {}) {
   const byDate = new Map<string, PlanRun[]>()
   for (const a of runs) byDate.set(a.date, [a])
   render(
@@ -35,6 +35,7 @@ function renderMonth(onSelectDay = vi.fn(), { runs = RUNS, planned = PLANNED }: 
       byDate={byDate}
       byDatePlanned={new Map(planned.map((p) => [p.date, p]))}
       planPhaseRanges={RANGES}
+      goalKm={goalKm}
       today={TODAY}
       atPresent
       onToday={() => {}}
@@ -167,30 +168,29 @@ describe('the legend and the summary', () => {
     expect(screen.getByTestId('legend-easy').querySelector<HTMLElement>('span')!.style.background).toBe('var(--zone-2)')
   })
 
-  it('reads the month’s own km against its plan, the phase left to its rows', () => {
-    renderMonth()
+  it('reads the month’s km against its goal, and the plan’s days and km on a line of their own', () => {
+    renderMonth(vi.fn(), { goalKm: 120 })
 
-    const summary = screen.getByTestId('month-summary')
-    expect(summary.textContent).toContain(t.plan.month.kmOf('18', '53'))
+    const covers = t.plan.month.planCovers(formatDate('2026-10-13', { style: 'bare', year: 'never' }), formatDate('2026-10-25', { style: 'bare', year: 'never' }))
+    expect(screen.getByTestId('month-km').textContent).toBe(t.plan.month.runGoal('18', '120'))
+    expect(screen.getByTestId('month-plan').textContent).toBe(`${covers} · ${t.plan.month.plannedKm('53')}`)
+    expect(screen.getByTestId('month-plan-fill').style.width).toBe('15%')
   })
 
   it('compares the plan’s own days, and says the month’s total beside them', () => {
     renderMonth()
 
-    const km = screen.getByTestId('month-km').textContent!
-    expect(km).toContain(t.plan.month.kmOf('18', '53'))
-    expect(km).toContain(
+    expect(screen.getByTestId('month-km').textContent).toBe(t.plan.month.runPlanned('18', '53'))
+    expect(screen.getByTestId('month-plan').textContent).toBe(
       t.plan.month.planCovers(formatDate('2026-10-13', { style: 'bare', year: 'never' }), formatDate('2026-10-25', { style: 'bare', year: 'never' })),
     )
-    expect(km).not.toContain(t.plan.month.monthTotal('18'))
   })
 
   it('counts a run between the plan’s first and last day though no session was set for it', () => {
     renderMonth(vi.fn(), { runs: [...RUNS, run('d', '2026-10-15', 5), run('e', '2026-10-05', 7)] })
 
-    const km = screen.getByTestId('month-km').textContent!
-    expect(km).toContain(t.plan.month.kmOf('23', '53'))
-    expect(km).toContain(t.plan.month.monthTotal('30'))
+    expect(screen.getByTestId('month-km').textContent).toBe(t.plan.month.runPlanned('23', '53'))
+    expect(screen.getByTestId('month-plan').textContent).toContain(t.plan.month.monthTotal('30'))
   })
 
   it('leaves the caption out when the plan runs through the whole month', () => {
@@ -202,7 +202,7 @@ describe('the legend and the summary', () => {
     }))
     renderMonth(vi.fn(), { planned, runs: [...RUNS, run('d', '2026-10-01', 4)] })
 
-    const km = screen.getByTestId('month-km').textContent!
-    expect(km).toBe(t.plan.month.kmOf('22', '25'))
+    expect(screen.getByTestId('month-km').textContent).toBe(t.plan.month.runPlanned('22', '25'))
+    expect(screen.queryByTestId('month-plan')).toBeNull()
   })
 })

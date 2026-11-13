@@ -184,13 +184,13 @@ export interface HubSlots {
   explored?: { name: string; pct: number } | null
   homeRuns?: { runCount: number; lastDate: string; preview: string } | null
   /** A return from a break: the longest non-stop run against the next step. */
-  comeback?: { minutes: number; goal: number } | null
+  comeback?: { minutes: number; goal: number | null } | null
 }
 
 function checkpointRow(checkpoint: NonNullable<HubSlots['checkpoint']>): { value?: string; detail?: string } {
   const h = t.profile.hub
   const cycle = checkpoint.inProgress
-  if (checkpoint.better) return { value: h.better(checkpoint.better), detail: cycle ? h.checkpointLine(cycle.week, formatDate(cycle.end, { style: 'bare' })) : checkpoint.line }
+  if (checkpoint.better) return { value: h.better(checkpoint.better), detail: cycle ? h.checkpointLine(cycle.week, formatDate(cycle.end, { style: 'bare', year: 'never' })) : checkpoint.line }
   return cycle ? { value: h.checkpointWeek(cycle.week) } : { detail: checkpoint.line }
 }
 
@@ -230,8 +230,8 @@ export function ProgressHub({ view, checkpoint = null, explored = null, homeRuns
             href="/records?tab=return"
             label={t.returnProgress.cardTitle}
             value={h.comebackValue(comeback.minutes)}
-            line={<DataBar pct={(comeback.minutes / comeback.goal) * 100} color="var(--accent)" testId="comeback-bar" />}
-            detail={h.comebackNext(comeback.goal)}
+            line={<DataBar pct={comeback.goal === null ? 100 : (comeback.minutes / comeback.goal) * 100} color="var(--accent)" testId="comeback-bar" />}
+            detail={comeback.goal === null ? h.comebackDone : h.comebackNext(comeback.goal)}
             testId="comeback-row"
           />
         )}

@@ -55,6 +55,13 @@ export function useHomeRunSpot(spots: readonly HomeRunSpot[]): [number, (index: 
   return [index, (next) => setParam(next === 0 ? null : String(next + 1))]
 }
 
+/** The start's name only where there is a choice of starts: one home needs no name. */
+function spotPlace(spots: readonly HomeRunSpot[], spot: HomeRunSpot): string | null {
+  return spots.length > 1 ? spot.place : null
+}
+
+const spotLabel = (spot: HomeRunSpot) => (spot.place ? t.homeRuns.spotNamed(spot.place, spot.runs.length) : t.homeRuns.spot(spot.runs.length))
+
 /** The page's subtitle, for the start point shown. */
 export function HomeRunsSubtitle({ spots }: { spots: HomeRunSpot[] }) {
   const [index] = useHomeRunSpot(spots)
@@ -62,7 +69,7 @@ export function HomeRunsSubtitle({ spots }: { spots: HomeRunSpot[] }) {
   if (!spot) return null
   return (
     <p className="text-sm text-muted-foreground" data-testid="home-runs-subtitle">
-      {t.homeRuns.subtitle(spot.runs.length, formatDate(spot.firstDate, { precision: 'month', year: 'always' }))}
+      {t.homeRuns.subtitle(spot.runs.length, formatDate(spot.firstDate, { precision: 'month', year: 'always' }), spotPlace(spots, spot))}
     </p>
   )
 }
@@ -88,13 +95,13 @@ export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: 
     font: pageFonts().display,
     labels: {
       title: t.homeRuns.title,
-      subtitle: t.homeRuns.subtitle(runs.length, formatDate(runs[0]!.date, { precision: 'month', year: 'always' })),
+      subtitle: t.homeRuns.subtitle(runs.length, formatDate(runs[0]!.date, { precision: 'month', year: 'always' }), spotPlace(spots, spot)),
       running: t.homeRuns.running,
       finished: t.homeRuns.finished,
       histogram: t.homeRuns.histogram,
       elapsed: t.homeRuns.elapsed,
     },
-  }), [runs, accentId])
+  }), [runs, accentId, spots, spot])
 
   useEffect(() => {
     void canvasVideoEncoder(REPLAY_WIDTH, REPLAY_HEIGHT, BITRATE).then(setEncoder)
@@ -174,40 +181,39 @@ export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: 
 
   return (
     <div className="flex flex-col items-center gap-3.5">
-      {periods.length > 0 && (
-        <div className={cn(SEGMENTED_TRACK_CLASS, 'w-full max-w-[420px]')} role="group" aria-label={t.homeRuns.periods} data-testid="home-runs-periods">
-          {periods.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              aria-pressed={tab.id === period}
-              className={cn('h-[30px] whitespace-nowrap px-3 text-[13px] tabular-nums', SEGMENTED_FILL_SEGMENT_CLASS, tab.id === period ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS)}
-              onClick={() => {
-                setPeriod(tab.id)
-                restart()
-              }}
-            >
-              {t.homeRuns.period(tab.label, tab.runs.length)}
-            </button>
-          ))}
-        </div>
-      )}
-      {/* Up to three start points; the periods above are the one shown. */}
       {spots.length > 1 && (
-        <div className={SEGMENTED_TRACK_CLASS} role="group" aria-label={t.homeRuns.spots} data-testid="home-runs-spots">
+        <div className={cn(SEGMENTED_TRACK_CLASS, 'w-full max-w-[420px]')} role="group" aria-label={t.homeRuns.spots} data-testid="home-runs-spots">
           {spots.map((s, i) => (
             <button
               key={i}
               type="button"
               aria-pressed={i === spotIdx}
-              className={cn('h-[26px] whitespace-nowrap px-3 text-[13px] tabular-nums', i === spotIdx ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS)}
+              className={cn('h-[30px] whitespace-nowrap px-3 text-[13px] tabular-nums', SEGMENTED_FILL_SEGMENT_CLASS, i === spotIdx ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS)}
               onClick={() => {
                 setSpotIdx(i)
                 setPeriod('all')
                 restart()
               }}
             >
-              {t.homeRuns.spot(s.runs.length)}
+              {spotLabel(s)}
+            </button>
+          ))}
+        </div>
+      )}
+      {periods.length > 0 && (
+        <div className={SEGMENTED_TRACK_CLASS} role="group" aria-label={t.homeRuns.periods} data-testid="home-runs-periods">
+          {periods.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={tab.id === period}
+              className={cn('h-[26px] whitespace-nowrap px-3 text-[13px] tabular-nums', tab.id === period ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS)}
+              onClick={() => {
+                setPeriod(tab.id)
+                restart()
+              }}
+            >
+              {t.homeRuns.period(tab.label, tab.runs.length)}
             </button>
           ))}
         </div>

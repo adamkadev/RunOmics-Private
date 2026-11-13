@@ -105,7 +105,7 @@ describe('French design review copy', () => {
   it('writes the plan phase card, the week line and the race tile', () => {
     expect(fr.plan.phase.raceInWeeks('Semi', 29)).toBe('Semi dans 29 sem.')
     expect(fr.plan.phase.raceInDays('Semi', 0)).toBe('Semi aujourd’hui')
-    expect(fr.plan.phase.cycle(5, '3 janv.')).toBe('Cycle 5 sur 12 · bilan 3 janv.')
+    expect(fr.plan.phase.checkpoint(5, '3 janv.')).toBe('Sem. 5 sur 12 · bilan 3 janv.')
     expect(fr.profile.hub.inDays(1)).toBe('demain')
     expect(fr.profile.hub.inDays(155)).toBe('dans 155 jours')
   })

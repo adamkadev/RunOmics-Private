@@ -32,6 +32,8 @@ interface Props {
   hrZoneBoundsBpm: readonly number[] | null
   coaching: PlanCoachingView | null
   returnProgress?: ReturnProgress | null
+  /** "YYYY-MM" to the Goals page's km for that month; empty without a distance goal. */
+  monthKmGoals?: Readonly<Record<string, number>>
   /** The date the page was prerendered on; see useToday. */
   today: string
   exploreAvailable?: boolean
@@ -49,7 +51,7 @@ export function planDateParam(value: string | null): string | null {
 const monthKeyOf = (date: string) => date.slice(0, 7)
 
 /** No `?date=` is today, following it over midnight; no `?view=` is the week. */
-export function PlanClient({ activities, crossTraining = [], plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, returnProgress = null, today: serverToday, exploreAvailable = false }: Props) {
+export function PlanClient({ activities, crossTraining = [], plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, returnProgress = null, monthKmGoals = {}, today: serverToday, exploreAvailable = false }: Props) {
   const today = useToday(serverToday)
   const [viewParam, setViewParam] = useUrlParam('view')
   const [dateParam, setDateParam] = useUrlParam('date')
@@ -194,6 +196,7 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
             byDateCoach={byDateCoach}
             coaching={coaching}
             planPhaseRanges={planPhaseRanges}
+            goalKm={monthKmGoals[monthKey] ?? null}
             today={today}
             atPresent={atPresent}
             onToday={goToday}

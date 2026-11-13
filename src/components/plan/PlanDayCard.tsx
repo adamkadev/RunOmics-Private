@@ -9,11 +9,10 @@ import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { SKIP_REASONS, type SkipReason } from '@/domain/wellness/checkIn'
 import { Toast, useToast } from '@/components/ui/Toast'
 import type { PlanRun } from './planRun'
-import { sessionZone } from '@/lib/colors'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
 import type { PlanFit } from '@/domain/training/planFit'
 import { sessionLabel } from '@/lib/activityTitle'
-import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { formatClock, formatDurationWords, formatPace, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { ButtonLink } from '@/components/ui/Button'
 import { useCoachWords } from '@/components/coaching/useCoachWords'
@@ -21,7 +20,7 @@ import { coachNotesFor } from './coachNotes'
 import { exploreRouteHref, planRouteKm } from '@/components/explore/exploreHref'
 import { planPaceSecPerKm } from './planPace'
 import type { PlanWorkoutView } from './planWorkoutView'
-import { kindLabel, type DayKind } from './sessionKind'
+import type { DayKind } from './sessionKind'
 import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
 import { workoutSummary } from './workoutSummary'
 
@@ -31,13 +30,15 @@ const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
 const PROFILE_HEIGHT: Record<StepTone, number> = { ease: 14, recovery: 14, work: 44 }
 
-function Eyebrow({ date, kind }: { date: string; kind: DayKind | null }) {
+/** The day and its state: the title already names the session. */
+function Eyebrow({ date, kind, state }: { date: string; kind: DayKind | null; state: string }) {
   return (
     <p
       className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em]"
       style={{ color: kind?.text ?? 'var(--muted-foreground)' }}
+      data-testid="day-eyebrow"
     >
-      <span>{[formatWeekday(date, true), kind ? kindLabel(kind.type, kind.kind) : null].filter(Boolean).join(' · ')}</span>
+      <span>{`${formatWeekday(date, true)} · ${state}`}</span>
     </p>
   )
 }
@@ -94,7 +95,7 @@ export function PlannedWorkoutCard({
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
       <div className="flex items-start justify-between gap-2">
-        <Eyebrow date={workout.date} kind={kind} />
+        <Eyebrow date={workout.date} kind={kind} state={t.sessionState.planned} />
         {notes && (
           <button
             type="button"
@@ -284,10 +285,9 @@ export function DoneDayCard({
   /** The day the session was run instead, a day either side. */
   ranOn?: string | null
 }) {
-  const zone = sessionZone({ type: kind?.type })
   return (
     <section data-testid={`plan-day-done-${date}`} className={CARD}>
-      <Eyebrow date={date} kind={kind} />
+      <Eyebrow date={date} kind={kind} state={acts.length > 0 || ranOn ? t.sessionState.done : t.sessionState.missed} />
       <Title>{title}</Title>
       <div className="mt-3 border-t border-border pt-1.5">
         <Line label={t.plan.dayCard.planned} testId="planned-line">
@@ -300,22 +300,19 @@ export function DoneDayCard({
         ) : acts.length === 0 ? (
           <MissedLine date={date} />
         ) : (
-          acts.map((a, i) => {
-            const share = a.zonePercents[zone - 1] ?? undefined
-            return (
-              <Line key={a.id} label={t.plan.dayCard.done} testId="done-line">
-                <span className="font-semibold">{`${formatRanKm(a.distanceKm)} ${t.units.km}`}</span>
-                {[
-                  a.paceSecPerKm !== null ? formatPace(a.paceSecPerKm) : null,
-                  share !== undefined ? `${t.trainingZones.zoneNumber(zone)} ${formatPercent(share)}` : null,
-                ]
-                  .filter(Boolean)
-                  .map((part) => ` · ${part}`)
-                  .join('')}
-                {fit && i === acts.length - 1 && <FitMark fit={fit} />}
-              </Line>
-            )
-          })
+          acts.map((a, i) => (
+            <Line key={a.id} label={t.plan.dayCard.done} testId="done-line">
+              <span className="font-semibold">{`${formatRanKm(a.distanceKm)} ${t.units.km}`}</span>
+              {[
+                a.paceSecPerKm !== null ? formatPace(a.paceSecPerKm) : null,
+                a.avgHeartRate !== null ? `${Math.round(a.avgHeartRate)} ${t.units.bpm}` : null,
+              ]
+                .filter(Boolean)
+                .map((part) => ` · ${part}`)
+                .join('')}
+              {fit && i === acts.length - 1 && <FitMark fit={fit} />}
+            </Line>
+          ))
         )}
       </div>
       {acts.map((a) => (
