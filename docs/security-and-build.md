@@ -95,9 +95,9 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
 - `goalEntries/{year}`: one document per `20xx` season, an optional `annualDistanceKm` (up to 15,000)
   and a `targets` map of `5k`, `10k`, `half` and `marathon` to seconds or null (finish); or
   `{ removed: true }` to hide that year of `goals.json`. Owner only.
-- `runShoes/{activityId}` and `shoeSettings/default`: the owner's shoe for a run and the default
-  shoe, each only a `gearId` of 1 to 64 letters, digits, `_` or `-`; `shoeSettings` takes no other
-  document id. Gear is the owner's alone to change.
+- `runShoes/{activityId}` and `shoeSettings/default`: the owner's shoe for a run and the retired
+  default shoe, which the app no longer reads or writes; each only a `gearId` of 1 to 64 letters,
+  digits, `_` or `-`; `shoeSettings` takes no other document id. Gear is the owner's alone to change.
 - `pushTokens/{token}`: the document's id is its token, with a `userAgent`, an `updatedAt` and
   optional `categories`, a map of `training`, `shoes` and `records` to booleans. Create, update
   and delete only; nothing on a phone reads the list.
@@ -166,7 +166,7 @@ What leaves the app, and from where:
   start point as picked, any via points, the loop length and seed, and the avoid spots near the loop
   as polygons. Its logs replace every coordinate with `#`.
 - **Firebase** (Google). Auth handles the Google sign-in. Firestore holds what the athletes write
-  (`activityNotes`, `wellness`, `routeNames`, `avoidSpots`, `runShoes`, `shoeSettings`), the push tokens and the server's own
+  (`activityNotes`, `wellness`, `routeNames`, `avoidSpots`, `runShoes`), the push tokens and the server's own
   records (`jobEvents`, `aiInsights`, `aiStatus`, `aiBudget`, `clientErrors`, `notifications`). FCM delivers the
   pushes: a title and a body, such as today's session, a run's name and distance, a shoe's
   kilometres, a PR, form or a Gemini verdict. On the second athlete's deployment, ops pushes are

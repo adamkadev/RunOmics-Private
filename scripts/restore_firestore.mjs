@@ -47,12 +47,6 @@ export const COLLECTIONS = [
     valid: (_id, doc) => isGearId(doc.gearId),
   },
   {
-    name: 'shoeSettings',
-    file: 'shoe_choices.json',
-    key: 'settings',
-    valid: (id, doc) => id === 'default' && isGearId(doc.gearId),
-  },
-  {
     name: 'raceEntries',
     file: 'race_entries.json',
     key: 'races',

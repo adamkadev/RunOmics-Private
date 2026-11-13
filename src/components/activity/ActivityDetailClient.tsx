@@ -52,7 +52,7 @@ interface Props {
   aiVerdict: Insight | null
   verdictTone: VerdictTone
   dynamicsBaseline: DynamicsBaseline | null
-  shoe?: (ShoeOption & { source?: 'choice' | 'default' }) | null
+  shoe?: (ShoeOption & { source?: 'choice' }) | null
   /** The active shoes the owner can pick for this run. */
   shoeOptions?: ShoeOption[]
   similarRuns?: SimilarRunsData | null

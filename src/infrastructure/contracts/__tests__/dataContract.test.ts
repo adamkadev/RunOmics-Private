@@ -55,7 +55,6 @@ describe('the data contract', () => {
     expect(errors()).toEqual([])
     expect(warnings().map((p) => `${p.file} ${p.path}`)).toEqual([
       'shoe_choices.json $.runs.1.gearId',
-      'shoe_choices.json $.settings',
       'sync_meta.json $.warnings',
       'sync_meta.json $.seriesFreshness',
     ])

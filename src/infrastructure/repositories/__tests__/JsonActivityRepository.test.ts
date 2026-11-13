@@ -103,7 +103,7 @@ describe('getAllActivities', () => {
       }
     })
 
-    it('counts each run toward the shoe the owner picked, and a run Garmin gave none toward the default shoe', () => {
+    it('counts each run toward the shoe the owner picked, and leaves a run Garmin gave none without one', () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), 'activities-root-'))
       fs.mkdirSync(path.join(root, 'activities'))
       fs.writeFileSync(path.join(root, 'activities', 'index.json'), JSON.stringify({ months: ['2026-10'] }))
@@ -122,7 +122,8 @@ describe('getAllActivities', () => {
         const byId = new Map(getAllActivities().map((a) => [a.id, a]))
 
         expect(byId.get('picked')).toMatchObject({ gearId: 'a', gearSource: 'choice' })
-        expect(byId.get('bare')).toMatchObject({ gearId: 'b', gearSource: 'default' })
+        expect(byId.get('bare')).toMatchObject({ gearId: null })
+        expect(byId.get('bare')!.gearSource).toBeUndefined()
       } finally {
         fs.rmSync(root, { recursive: true, force: true })
       }

@@ -1835,12 +1835,6 @@ export const en = {
   },
 
   shoes: {
-    defaultShoe: {
-      label: 'Default shoe',
-      none: 'None',
-      hint: 'Counts every run Garmin gives no shoe, from the pair’s first use. Mileage follows after the next sync.',
-      saved: 'Saved. Mileage updates after the next sync.',
-    },
     listCheckedAt: (date: string) => `Shoe list last refreshed from Garmin on ${date}`,
     // The gap is what All time counts beyond the shoes: runs Garmin gave no shoe.
     tracked: (km: string, without: string | null) => (without ? `${km} km on shoes (${without} km without a shoe)` : `${km} km on shoes`),

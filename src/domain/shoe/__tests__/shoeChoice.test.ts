@@ -15,7 +15,7 @@ describe('withShoeChoices', () => {
   it('counts a picked run toward the picked shoe, over Garmin’s, and drops its pending mark', () => {
     const [picked, untouched] = withShoeChoices(
       [run('1', '2026-10-20', 'trail', { gearPending: true }), run('2', '2026-10-21', 'trail')],
-      { runs: new Map([['1', 'road']]), defaultGearId: null },
+      { runs: new Map([['1', 'road']]) },
       SHOES,
     )
 
@@ -24,28 +24,22 @@ describe('withShoeChoices', () => {
     expect(untouched).toEqual(run('2', '2026-10-21', 'trail'))
   })
 
-  it('fills only the runs Garmin gave no shoe with the default, from the pair’s first use on', () => {
-    const [shod, bare, early] = withShoeChoices(
-      [run('1', '2026-10-20', 'trail'), run('2', '2026-10-21T07:00:00', null), run('3', '2026-02-01', null)],
-      { runs: new Map(), defaultGearId: 'road' },
-      SHOES,
-    )
+  it('leaves a run Garmin gave no shoe without one', () => {
+    const runs = [run('1', '2026-10-21', null)]
 
-    expect(shod!.gearId).toBe('trail')
-    expect(bare).toMatchObject({ gearId: 'road', gearSource: 'default' })
-    expect(early!.gearId).toBeNull()
+    expect(withShoeChoices(runs, { runs: new Map([['2', 'road']]) }, SHOES)).toEqual(runs)
   })
 
-  it('ignores a pick or a default naming a shoe the list does not have', () => {
+  it('ignores a pick naming a shoe the list does not have', () => {
     const runs = [run('1', '2026-10-20', null), run('2', '2026-10-21', 'trail')]
 
-    expect(withShoeChoices(runs, { runs: new Map([['2', 'gone']]), defaultGearId: 'gone' }, SHOES)).toEqual(runs)
+    expect(withShoeChoices(runs, { runs: new Map([['2', 'gone']]) }, SHOES)).toEqual(runs)
   })
 
   it('leaves the runs as they are without a shoe list, as on a watch that never had one', () => {
     const runs = [run('1', '2026-10-20', null)]
 
-    expect(withShoeChoices(runs, { runs: new Map([['1', 'road']]), defaultGearId: 'road' }, [])).toBe(runs)
+    expect(withShoeChoices(runs, { runs: new Map([['1', 'road']]) }, [])).toBe(runs)
     expect(withShoeChoices(runs, NO_SHOE_CHOICES, SHOES)).toBe(runs)
   })
 })

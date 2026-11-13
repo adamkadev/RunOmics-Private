@@ -7,9 +7,9 @@ const gearIdOf = (doc: unknown) => {
   return typeof gearId === 'string' && gearId !== '' ? gearId : null
 }
 
-/** From the nightly copy of Firestore's runShoes and shoeSettings: a pick made today counts after the next sync. */
+/** From the nightly copy of Firestore's runShoes: a pick made today counts after the next sync. */
 export function getShoeChoices(): ShoeChoices {
-  const file = readJsonFile<{ runs?: unknown; settings?: unknown } | null>(dataPath('shoe_choices.json'), null)
+  const file = readJsonFile<{ runs?: unknown } | null>(dataPath('shoe_choices.json'), null)
   if (!file) return NO_SHOE_CHOICES
   const runs = new Map<string, string>()
   if (typeof file.runs === 'object' && file.runs !== null) {
@@ -18,6 +18,5 @@ export function getShoeChoices(): ShoeChoices {
       if (gearId) runs.set(activityId, gearId)
     }
   }
-  const settings = typeof file.settings === 'object' && file.settings !== null ? (file.settings as Record<string, unknown>) : {}
-  return { runs, defaultGearId: gearIdOf(settings.default) }
+  return { runs }
 }

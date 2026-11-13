@@ -1706,12 +1706,6 @@ export const fr = {
   },
 
   shoes: {
-    defaultShoe: {
-      label: 'Chaussure par défaut',
-      none: 'Aucune',
-      hint: 'Compte chaque sortie sans chaussure côté Garmin, dès la première utilisation de la paire. Le kilométrage suit après la prochaine synchro.',
-      saved: 'Enregistré. Le kilométrage suit après la prochaine synchro.',
-    },
     listCheckedAt: (date: string) => `Liste des chaussures mise à jour depuis Garmin le ${date}`,
     tracked: (km: string, without: string | null) => (without ? `${km} km sur tes chaussures (${without} km sans chaussure)` : `${km} km sur tes chaussures`),
     addLabel: 'Ajouter une paire dans l’app de ta montre',

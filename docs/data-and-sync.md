@@ -133,8 +133,8 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   failure counts the night as partial. Once Connect's token has expired the step is skipped
   (see [Connect token expiry](#connect-token-expiry)).
 - **Shoe picks** (`shoe_choices.json`). The owner picks a run's shoe on its page (Firestore
-  `runShoes/{activityId}`) and a default shoe on Shoes (`shoeSettings/default`), both owner-only
-  in `firestore.rules`. `GET /api/internal/shoe-choices` returns `{ runs, settings }` and the
+  `runShoes/{activityId}`), owner-only in `firestore.rules`. A run Garmin gave no shoe stays without
+  one. `GET /api/internal/shoe-choices` returns `{ runs }` and the
   workflow commits it like the notes. The app reads the copy when it loads the runs: a pick wins
   over Garmin's shoe, and the default fills a run Garmin gave none, from the pair's first use on.
   The stored `gearId` is never rewritten, so a pick can be undone and Garmin's answer comes back.
@@ -176,7 +176,7 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
   next sync (the Sync button, or the night). The coach's dump warns when Firestore holds edits the
   mirror lacks.
 - **Restoring from the backups** (`scripts/restore_firestore.mjs`). Puts `activityNotes`, `wellness`,
-  `routeNames`, `avoidSpots`, `runShoes`, `shoeSettings`, `raceEntries` and `goalEntries` back from those seven files, with the Admin SDK. It is a dry run by
+  `routeNames`, `avoidSpots`, `runShoes`, `raceEntries` and `goalEntries` back from those seven files, with the Admin SDK. It is a dry run by
   default: it reads each collection and reports, per collection, how many documents are missing, how
   many differ from the backup and how many already match. `--apply` writes the missing and differing
   ones (a whole-document `set`). It only upserts: a document that is in Firestore but not in the backup
@@ -367,7 +367,7 @@ estimates by VDOT, Records predicts by Riegel and Goals shows none.
 | Training status and load | The local TRIMP estimate after 3 days | Covered (G2) |
 | Threshold pace and pace zones | The VDOT estimate after 8 weeks | Covered (G2) |
 | Race predictions (Race, Records, Goals) | VDOT on Race, Riegel on Records, none on Goals after 14 days | Covered (G2) |
-| Each run's shoe (`gearId`) | The default shoe, or the owner's pick on the run page | Covered (G3) |
+| Each run's shoe (`gearId`) | The owner's pick on the run page | Covered (G3) |
 | Shoe list (`shoes.json`) | The stored list, frozen; Shoes says since when | Partial (G3) |
 | Garmin calendar (`planned_workouts/`) | The coach's plan on Plan; the morning push still reads the calendar | Partial (N8) |
 | Upcoming races (`upcoming_races.json`) | The stored list, edited, hidden and added to in Settings → Races & goals | Covered (G4) |

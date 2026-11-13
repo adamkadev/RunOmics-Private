@@ -21,7 +21,7 @@ export interface ShoeOption {
 interface Props {
   activityId: string
   /** The shoe the figures count this run toward, as of the last sync. */
-  shoe: (ShoeOption & { source?: 'choice' | 'default' }) | null
+  shoe: (ShoeOption & { source?: 'choice' }) | null
   /** The active shoes the owner can pick from; empty for an athlete without any. */
   options: ShoeOption[]
   /** Where a visitor changes the shoe: the run in Garmin Connect, when it has one there. */

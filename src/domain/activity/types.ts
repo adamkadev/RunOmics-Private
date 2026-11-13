@@ -100,8 +100,8 @@ export interface Activity {
   /** Time spent running, walk breaks and stops left out; absent until a reprocess. */
   runningSec?: number | null
   gearId: string | null
-  /** Set when the shoe is the owner's pick in the app, or the default shoe filling a run Garmin gave none. */
-  gearSource?: 'choice' | 'default'
+  /** Set when the shoe is the owner's pick in the app. */
+  gearSource?: 'choice'
   gearPending?: true
   weather: ActivityWeather | null
 }
