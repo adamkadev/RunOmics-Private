@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { allTimeView } from '@/application/usecases/GetAllTime'
 import { t } from '@/i18n'
-import { AllTime, monthlyScale } from '../AllTime'
+import { AllTime, monthlyScale, pauseRuns } from '../AllTime'
 
 const run = (date: string, distanceKm: number) => ({ id: `a-${date}`, date, distanceKm, durationSeconds: distanceKm * 330 })
 
@@ -65,14 +65,13 @@ describe('AllTime monthly km', () => {
 
 describe('AllTime by year (3.0)', () => {
   it('compares km a month, this year with its change on last year in pos, and gives each year\'s totals under it', () => {
-    // 2025: 800 km over its 8 months from May, 100 a month; 2026: 1,125 over 9, 125 a month.
     const runs = [run('2025-05-10', 400), run('2025-12-10', 400), run('2026-02-10', 900), run('2026-09-01', 225)]
     render(<AllTime view={allTimeView(runs, '2026-09-20')} />)
-    expect(screen.getByTestId('year-change').textContent).toBe('+25%')
+    expect(screen.getByTestId('year-change').textContent).toBe('+41%')
     expect(screen.getByTestId('year-change').className).toContain('text-[var(--pos)]')
     expect(screen.getAllByTestId('year-totals').map((line) => line.textContent)).toEqual([
-      t.allTime.yearTotals('1,125', 2),
-      `${t.allTime.yearTotals('800', 2)} · ${t.allTime.fromMonth('May')}`,
+      `${t.allTime.yearTotals('1,125', 2)} · ${t.allTime.monthsRun(2)}`,
+      `${t.allTime.yearTotals('800', 2)} · ${t.allTime.fromMonth('May')} · ${t.allTime.monthsRun(2)}`,
     ])
   })
 
@@ -92,5 +91,16 @@ describe('AllTime by year (3.0)', () => {
     const [longest, week] = screen.getAllByTestId('all-time-best')
     expect(longest!.getAttribute('href')).toBe('/activities/a-2026-04-14')
     expect(week!.getAttribute('href')).toBe('/activities?week=2026-04-13')
+  })
+})
+
+describe('AllTime across a break', () => {
+  it('labels three or more empty months as one break, and leaves a reprise year unjudged against its break year', () => {
+    const runs = [run('2025-10-10', 60), run('2026-01-10', 61), run('2026-02-10', 40), run('2026-10-10', 30)]
+    const view = allTimeView(runs, '2026-11-12')
+    expect([...pauseRuns(view.monthly)]).toEqual([[5, 7]])
+    render(<AllTime view={view} reprise />)
+    expect(screen.getAllByTestId('month-pause')).toHaveLength(1)
+    expect(screen.queryByTestId('year-change')).toBeNull()
   })
 })

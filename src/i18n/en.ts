@@ -1765,6 +1765,8 @@ export const en = {
     fromMonth: (month: string) => `from ${month}`,
     yearLabel: (year: number, perMonth: string) => `${year}: ${perMonth} km a month`,
     monthly: 'Monthly km',
+    pause: 'break',
+    monthsRun: (n: number) => `over ${n} month${n === 1 ? '' : 's'} run`,
     best: (km: string, month: string) => `best ${km} · ${month}`,
     // Done in ink, the projection in grey: a month under way is not its total yet.
     soFar: (month: string, km: string) => `${month} · ${km} km so far`,

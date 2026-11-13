@@ -5,6 +5,7 @@ import { appTodayIso } from '@/lib/calendarDate'
 import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
+import { getReprise } from '@/application/usecases/GetReprise'
 
 export const revalidate = 3600
 
@@ -14,7 +15,8 @@ export const metadata = {
 
 export default async function AllTimePage() {
   await loadData()
-  const view = getAllTime(appTodayIso())
+  const today = appTodayIso()
+  const view = getAllTime(today)
   const a = t.allTime
   return (
     <div className="space-y-3">
@@ -27,7 +29,7 @@ export default async function AllTimePage() {
           </p>
         )}
       </div>
-      <AllTime view={view} />
+      <AllTime view={view} reprise={getReprise(today) !== null} />
     </div>
   )
 }

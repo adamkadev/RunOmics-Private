@@ -78,7 +78,8 @@ export const fr = {
   },
 
   dates: {
-    monthShortYear: (month: string, year2: string) => `${month} ${year2}`,
+    // In full: "janv. 26" reads as 26 January.
+    monthShortYear: (month: string, year2: string) => `${month} 20${year2}`,
   },
 
   // Des états, pas des adjectifs : l’app ne sait pas qui la lit, et « Fatigué » accorde au masculin.
@@ -1646,6 +1647,8 @@ export const fr = {
     fromMonth: (month: string) => `depuis ${month}`,
     yearLabel: (year: number, perMonth: string) => `${year} : ${perMonth} km par mois`,
     monthly: 'Km par mois',
+    pause: 'pause',
+    monthsRun: (n: number) => `sur ${n} mois courus`,
     best: (km: string, month: string) => `meilleur ${km} · ${month}`,
     soFar: (month: string, km: string) => `${month} · ${km} km pour l’instant`,
     onPace: (km: string) => `à ce rythme ${km}`,
