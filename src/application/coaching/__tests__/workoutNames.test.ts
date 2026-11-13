@@ -49,8 +49,8 @@ function easy(overrides: Partial<BootstrapWorkoutDraft> = {}): BootstrapWorkoutD
   return {
     date: '2026-10-08',
     type: 'easy',
-    title: 'Easy · 54 min + 6 strides',
-    shortName: 'Easy + strides',
+    title: 'Easy run + 6 strides',
+    shortName: 'Easy + 6 strides',
     structure: { extras: ['6 strides'] },
     description: 'Easy running with six short accelerations.',
     blocks: STRIDES,
@@ -66,6 +66,12 @@ describe('a workout name (design review, Oct 2026)', () => {
     expect(check(easy())).not.toThrow()
     expect(check(easy({ title: 'Recovery run', shortName: 'Recovery run', structure: undefined, blocks: continuous({ distanceMeters: 9_046, paceSecPerKm: { min: 330, max: 384 } }) }))).not.toThrow()
     expect(check(easy({ type: 'long_run', title: 'Long run', shortName: 'Long run', structure: undefined, blocks: continuous({ distanceMeters: 13_000 }) }))).not.toThrow()
+  })
+
+  it('names an easy run with strides by its type, " + " and how many, its easy part shown beside it', () => {
+    expect(check(easy())).not.toThrow()
+    expect(check(easy({ title: 'Easy · 54 min + 6 strides' }))).not.toThrow()
+    expect(check(easy({ title: 'Strides 6 + Easy run' }))).toThrow(/the type first/)
   })
 
   it('fits 28 characters, and says how to make it fit', () => {
@@ -112,7 +118,7 @@ describe('a workout name (design review, Oct 2026)', () => {
     expect(check(threshold({ title: 'Threshold · 3 × 8′ @ 4:10' }))).toThrow(/@ 4:10 is not a pace the blocks prescribe/)
     // 8.5 km is about 51 minutes: "54 min" belongs to the 9 km body.
     const shorter: WorkoutBlock[] = [{ kind: 'effort', target: { distanceMeters: 8_500, paceSecPerKm: { min: 330, max: 384 } } }, STRIDES[1]!]
-    expect(check(easy({ blocks: shorter }))).toThrow(/54 min is not the length of a block/)
+    expect(check(easy({ title: 'Easy · 54 min + 6 strides', blocks: shorter }))).toThrow(/54 min is not the length of a block/)
     expect(check(easy({ title: 'Easy · 51 min + 6 strides', blocks: shorter }))).not.toThrow()
     expect(check(easy({ title: 'Easy · 9 km + 6 strides', blocks: shorter }))).toThrow(/9 km is not the distance of a block/)
     expect(check(easy({ title: 'Easy · 8.5 km + 6 strides', blocks: shorter }))).not.toThrow()
