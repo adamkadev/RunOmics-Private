@@ -955,6 +955,7 @@ export const fr = {
           side === 'high' ? `au-dessus de la base ${lo}–${hi}` : side === 'low' ? `sous la base ${lo}–${hi}` : `dans la base ${lo}–${hi}`,
         ok: 'OK',
         check: 'À surveiller',
+        short: 'Court',
       },
       loadTrend: {
         aboutEstimated: "Ta charge aiguë : les 7 derniers jours de charge, calculée par l’app à partir de la fréquence cardiaque et de la durée de chaque sortie puisque ta montre n’en envoie pas, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",

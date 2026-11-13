@@ -869,12 +869,13 @@ describe('Load trend and Recovery (v5.4)', () => {
     expect(screen.getByTestId('form-sleep').textContent).toContain(c.duration(425))
     expect(screen.getByTestId('form-sleep').textContent).toContain(c.sleepWeek(c.duration(425)))
     expect(screen.getByTestId('form-hrv').textContent).toContain(`68 ${t.units.ms}`)
-    expect(screen.getByTestId('form-night').textContent).toContain(c.ok)
+    expect(screen.getByTestId('form-sleep').textContent).toContain(c.ok)
+    expect(screen.getByTestId('form-hrv').textContent).toContain(c.ok)
   })
 
   it('leaves the sleep row out without a tracker', async () => {
     await renderWith({ recovery: steady })
-    expect(screen.queryByTestId('form-night')).toBeNull()
+    expect(screen.queryByTestId('form-sleep')).toBeNull()
   })
 
   it('lets the coach read take resting HR above its baseline into account', async () => {

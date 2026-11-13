@@ -271,9 +271,12 @@ export interface NightReading {
   asleepMinutes?: number
 }
 
+/** A night this far under the seven-night mean is short: a few minutes under it is noise, not a flag. */
+const SHORT_NIGHT_MIN = 30
+
 export interface OvernightView {
   /** The window's last night asleep, and the mean of the seven nights to it, in minutes. */
-  sleep: { last: number; week: number } | null
+  sleep: { last: number; week: number; short: boolean } | null
   hrv: RestingHrReading | null
   /** Only a low HRV is a flag: a high one is a rested athlete. */
   out: boolean
@@ -284,9 +287,8 @@ export function overnightView(nights: NightReading[], window: DayWindow): Overni
 
   const slept = inWindow.flatMap((n) => (n.asleepMinutes === undefined ? [] : [{ date: n.date, minutes: n.asleepMinutes }]))
   const lastNight = slept.at(-1)
-  const sleep = lastNight
-    ? { last: lastNight.minutes, week: Math.round(mean(slept.filter((n) => daysBetween(n.date, lastNight.date) < 7).map((n) => n.minutes))) }
-    : null
+  const week = lastNight ? Math.round(mean(slept.filter((n) => daysBetween(n.date, lastNight.date) < 7).map((n) => n.minutes))) : 0
+  const sleep = lastNight ? { last: lastNight.minutes, week, short: week - lastNight.minutes >= SHORT_NIGHT_MIN } : null
 
   const hrvDays = nights.flatMap((n) => (n.hrvMs === undefined ? [] : [{ date: n.date, value: n.hrvMs }]))
   const lastHrv = hrvDays.filter((d) => d.date >= window.start && d.date <= window.end).at(-1)

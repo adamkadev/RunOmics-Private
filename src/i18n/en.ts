@@ -1019,6 +1019,7 @@ export const en = {
           side === 'high' ? `above ${lo}–${hi} baseline` : side === 'low' ? `below ${lo}–${hi} baseline` : `inside ${lo}–${hi} baseline`,
         ok: 'OK',
         check: 'Check',
+        short: 'Short',
       },
       loadTrend: {
         aboutEstimated: 'Your acute load: the last 7 days of training load, which the app works out from each run’s heart rate and time as your watch sends none, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
