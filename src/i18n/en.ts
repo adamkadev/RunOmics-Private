@@ -769,8 +769,8 @@ export const en = {
       // Said in place of the load line while a break has left nothing to read it against.
       buildingBack: 'Comeback',
       formLater: 'Your form shows once you have run regularly for a few weeks.',
-      // "Estimated" where the watch rates no load and the app did the arithmetic itself.
-      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimated` : state),
+      // Where the watch rates no load and the app did the arithmetic itself.
+      estimatedNote: 'Estimated load',
       ctl: 'Fitness',
       atl: 'Fatigue',
       // "↘ 2 in 7 days" under a tile: a rolling window, not the calendar week.
@@ -916,6 +916,7 @@ export const en = {
         headline: {
           positive: 'Your load is turning into speed.',
           positiveSteadyLoad: (last: string) => `Speed has improved over ${last}.`,
+          easyFaster: (s: number, within: string) => `Your easy pace is ${s} s/km faster ${within}.`,
           // Names only the reads that slipped.
           cautionLoadUp: (slipped: string, plural: boolean) => `Load is up, but ${slipped} ${plural ? 'have' : 'has'} slipped.`,
           caution: (last: string) => `Speed has slipped over ${last}.`,
@@ -1018,6 +1019,7 @@ export const en = {
           side === 'high' ? `above ${lo}–${hi} baseline` : side === 'low' ? `below ${lo}–${hi} baseline` : `inside ${lo}–${hi} baseline`,
         ok: 'OK',
         check: 'Check',
+        short: 'Short',
       },
       loadTrend: {
         aboutEstimated: 'Your acute load: the last 7 days of training load, which the app works out from each run’s heart rate and time as your watch sends none, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
@@ -1061,7 +1063,6 @@ export const en = {
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
-        flat: (signed: string) => `${signed} · flat`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {

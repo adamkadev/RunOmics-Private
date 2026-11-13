@@ -61,4 +61,14 @@ describe('weekStripDays', () => {
     expect(strip[3]!.isToday).toBe(true)
     expect(strip[3]!.label).toContain(t.sessionState.today)
   })
+
+  it('dims a day with no run, a session moved off it included, but never today or a day to come', () => {
+    const week: WeekTarget['days'] = [
+      ...days,
+      { date: '2026-09-25', ranKm: 0, runs: 0, plannedKm: 8, plannedSessions: 1, type: 'Base', state: 'done', ranOn: '2026-09-26' },
+      { date: '2026-09-26', ranKm: 0, runs: 0, plannedKm: 10, plannedSessions: 1, type: 'Base', state: 'planned' },
+      { date: '2026-09-27', ranKm: 0, runs: 0, plannedKm: 11, plannedSessions: 1, type: 'Base', state: 'planned' },
+    ]
+    expect(weekStripDays(week, '2026-09-26', kinds).map((d) => d.idle)).toEqual([false, false, true, true, true, false, false])
+  })
 })

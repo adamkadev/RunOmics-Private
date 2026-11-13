@@ -172,9 +172,9 @@ describe('overnightView', () => {
     expect(overnightView([], dayWindow(TODAY, '4w'))).toBeNull()
   })
 
-  it('gives the last night asleep and the mean of the seven to it', () => {
+  it('gives the last night asleep and the mean of the seven to it, short well under that mean', () => {
     const view = overnightView(nights(10, (i) => ({ asleepMinutes: i === 9 ? 360 : 420 })), dayWindow(TODAY, '4w'))!
-    expect(view.sleep).toEqual({ last: 360, week: Math.round((360 + 6 * 420) / 7) })
+    expect(view.sleep).toEqual({ last: 360, week: Math.round((360 + 6 * 420) / 7), short: true })
     expect(view.hrv).toBeNull()
   })
 

@@ -112,8 +112,9 @@ describe('D1 Load', () => {
     const view = statusView(days, dayWindow(TODAY, '4w'))!
     expect(view.current).toBe('productive')
     expect(view.count).toBe(13)
-    expect(view.days).toBe(27)
-    expect(view.cells).toHaveLength(27)
+    expect(view.days).toBe(28)
+    expect(view.cells).toHaveLength(28)
+    expect(view.cells[0]!.status).toBeNull()
     expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
   })
 
@@ -460,6 +461,10 @@ describe('paceNotes', () => {
     const notes = paceNotes({ now: 261, delta: 0 }, { now: 350, delta: -20 }, 'Aug 24')
     expect(notes.shared).toBeNull()
     expect(notes.easy).toBe(t.analytics.cards.summary.since(t.analytics.cards.summary.faster('20 s'), 'Aug 24'))
+  })
+
+  it('names the direction of a threshold change of a few seconds', () => {
+    expect(paceNotes({ now: 261, delta: -4 }, null, 'Oct 19').threshold).toBe(t.analytics.cards.summary.since(t.analytics.cards.summary.faster('4 s'), 'Oct 19'))
   })
 
   it('dates a comeback’s change from the return', () => {

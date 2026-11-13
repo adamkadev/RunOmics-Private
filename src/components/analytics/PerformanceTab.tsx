@@ -56,17 +56,9 @@ export function shiftWords(delta: number | null, flatBelow = 1): string | null {
   return delta > 0 ? s.slower(changeAmount(delta)) : s.faster(changeAmount(delta))
 }
 
-/** Under this a threshold move is "flat": grey "+4 s · flat", not an amber slowdown. */
+/** Under this a threshold move stays grey, not an amber slowdown, though its words still name the direction. */
 const THRESHOLD_FLAT_SEC = 5
 
-/** Threshold's note: "no change", "+4 s · flat" under 5 s, else "9 s slower". */
-export function thresholdWords(delta: number | null): string | null {
-  if (delta === null) return null
-  const r = Math.round(delta)
-  if (r === 0) return t.analytics.cards.summary.same
-  if (Math.abs(r) < THRESHOLD_FLAT_SEC) return t.analytics.cards.summary.flat(signedChange(r)!)
-  return shiftWords(delta, PACE_FLAT_SEC)
-}
 
 /** "+33 s", "−1:10", or "0 s": a signed change that fits its column. */
 export function signedChange(delta: number | null): string | null {
@@ -101,7 +93,8 @@ const VO2_HOME = '/athlete'
 export function paceNotes(threshold: PaceShift | null, easy: PaceShift | null, since: string | null): { threshold: string | null; easy: string | null; shared: string | null } {
   const s = t.analytics.cards.summary
   const dated = (note: string | null) => (note === null ? null : since === null ? s.sinceReturn(note) : s.since(note, since))
-  const thresholdNote = threshold && dated(thresholdWords(threshold.delta))
+  // Even a few seconds name their direction: "4 s faster", never "flat".
+  const thresholdNote = threshold && dated(shiftWords(threshold.delta))
   const easyNote = easy && dated(shiftWords(easy.delta, PACE_FLAT_SEC))
   return thresholdNote && thresholdNote === easyNote
     ? { threshold: null, easy: null, shared: thresholdNote }

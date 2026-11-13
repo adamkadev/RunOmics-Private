@@ -12,6 +12,9 @@ export function aLieu(name: string): string {
   return `${article[1]!.toLowerCase() === 'le' ? 'au' : 'aux'} ${article[2]}`
 }
 
+/** A sentence ending on an abbreviated month ("29 oct.") takes no second full stop. */
+const sentence = (text: string) => text.replace(/\.\.$/, '.')
+
 /** "+6" as "up 6", "−23" as "down 23", "0" as level. */
 function moveWords(delta: string, up: string, down: string, level: string): string {
   const sign = delta.charAt(0)
@@ -726,7 +729,7 @@ export const fr = {
       },
       buildingBack: 'Reprise',
       formLater: 'Ta forme s’affichera après quelques semaines de sorties régulières.',
-      loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimée` : state),
+      estimatedNote: 'Charge estimée',
       ctl: 'Condition',
       atl: 'Fatigue',
       // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
@@ -864,6 +867,7 @@ export const fr = {
         headline: {
           positive: 'Ta charge se transforme en vitesse.',
           positiveSteadyLoad: (last: string) => `La vitesse a progressé sur ${last}.`,
+          easyFaster: (s: number, within: string) => `Ton footing est ${s} s/km plus rapide ${within}.`,
           cautionLoadUp: (slipped: string, plural: boolean) => `La charge monte, mais ${slipped} ${plural ? 'ont' : 'a'} reculé.`,
           caution: (last: string) => `La vitesse a reculé sur ${last}.`,
           neutral: (last: string) => `La vitesse est stable sur ${last}.`,
@@ -905,7 +909,7 @@ export const fr = {
         efficiencyDown: (value: string, delta: string, within: string) => `Efficacité aérobie ${value} m par battement, ${delta} ${within} : moins de distance à chaque battement.`,
         efficiencyLevel: (value: string, ago: string) => `Efficacité aérobie ${value} m par battement, comme ${ago}.`,
         volume: (delta: string) => `${delta} km par rapport à la même date l’an dernier.`,
-        volumeSince: (delta: string, since: string) => `${delta} km par rapport à l’an dernier aux mêmes dates, depuis le ${since}.`,
+        volumeSince: (delta: string, since: string) => sentence(`${delta} km par rapport à l’an dernier aux mêmes dates, depuis le ${since}.`),
         volumeTab: {
           longRunOver: (n: number, of: number) => `Ta sortie longue a dépassé 35 % de sa semaine ${n} semaine${n > 1 ? 's' : ''} sur ${of}.`,
           underPlan: 'Reviens d’abord aux km prévus chaque semaine avant d’ajouter quoi que ce soit.',
@@ -914,9 +918,9 @@ export const fr = {
           avgRow: (km: string, n: number) => `${km} km par semaine en moyenne sur ${n} semaine${n > 1 ? 's' : ''} terminée${n > 1 ? 's' : ''}.`,
           onPlanRow: (hit: number, of: number) => `${hit} semaine${hit > 1 ? 's' : ''} planifiée${hit > 1 ? 's' : ''} sur ${of} à 90 % du plan ou plus.`,
           longRunRow: (n: number) => (n === 0 ? 'Aucune semaine avec une sortie longue au-delà de 35 %.' : `${n} semaine${n > 1 ? 's' : ''} avec une sortie longue au-delà de 35 %.`),
-          missedRow: (n: number, from: string, to: string) => `${n} séances prévues manquées entre le ${from} et le ${to}.`,
+          missedRow: (n: number, from: string, to: string) => sentence(`${n} séances prévues manquées entre le ${from} et le ${to}.`),
           missedRows: (n: number, stretches: number, from: string, to: string) =>
-            `${n} séances prévues manquées en ${stretches} périodes, la dernière entre le ${from} et le ${to}.`,
+            sentence(`${n} séances prévues manquées en ${stretches} périodes, la dernière entre le ${from} et le ${to}.`),
         },
         intensityTab: {
           inRange: (easy: number) => `Intensité dans la cible : ${easy} % du temps en facile.`,
@@ -954,6 +958,7 @@ export const fr = {
           side === 'high' ? `au-dessus de la base ${lo}–${hi}` : side === 'low' ? `sous la base ${lo}–${hi}` : `dans la base ${lo}–${hi}`,
         ok: 'OK',
         check: 'À surveiller',
+        short: 'Court',
       },
       loadTrend: {
         aboutEstimated: "Ta charge aiguë : les 7 derniers jours de charge, calculée par l’app à partir de la fréquence cardiaque et de la durée de chaque sortie puisque ta montre n’en envoie pas, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
@@ -970,7 +975,7 @@ export const fr = {
         above: ['La charge est ', 'au-dessus de ta zone sûre', '. Lève le pied 3 à 4 jours.'] as [string, string, string],
         below: ['La charge est ', 'sous ta zone sûre', '. La condition va commencer à baisser.'] as [string, string, string],
         wentOver: (days: number, last: string) =>
-          days === 1 ? ` Plus tôt sur la période, un jour au-dessus, le ${last}.` : ` Plus tôt sur la période, ${days} jours au-dessus, le dernier le ${last}.`,
+          sentence(days === 1 ? ` Plus tôt sur la période, un jour au-dessus, le ${last}.` : ` Plus tôt sur la période, ${days} jours au-dessus, le dernier le ${last}.`),
       },
       status: {
         title: "Statut d’entraînement",
@@ -994,7 +999,6 @@ export const fr = {
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
-        flat: (signed: string) => `${signed} · stable`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {

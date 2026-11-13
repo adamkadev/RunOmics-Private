@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
+import { readinessEyebrow, verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
 import { formBand } from '@/domain/training/formBand'
@@ -85,10 +85,8 @@ export function ReadinessCard({
   const band = formBand(status.tsbNow)
   // After a long break form is the break itself, so it gets no number until there is a reading.
   const showForm = !status.buildingBack
-  // Neutral goes unsaid: the Form number says it, and the eyebrow keeps to the load.
-  const bandWord = showForm && band !== 'neutral' ? t.formBand[band] : null
-  // Building back there is no reading at all, so no load line and none of the tone's own either.
-  const line = status.buildingBack ? s.buildingBack : load ? s.loadLine(s.loadState[load.state], load.estimated) : s.lineByTone[tone]
+  // One status: the Form number already says the band.
+  const line = readinessEyebrow(status, load?.state ?? null)
   const fresh = band === 'fresh' || band === 'veryFresh'
   const loadWords = load ? s.fallback[load.state](load.acute, load.lo, load.hi, fresh) : null
   const fallback = loadWords && load?.state === 'in' && reason ? { ...loadWords, headline: reasonHeadline(reason) } : loadWords
@@ -108,7 +106,7 @@ export function ReadinessCard({
       <div className="pointer-events-none relative flex flex-col gap-2.5">
         <CheckInReadiness
           today={today}
-          words={{ tone, color, band: bandWord, line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
+          words={{ tone, color, line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
         />
 
         {/* A flat row under a hairline: tiles inside the card read as cards within a card. */}
@@ -127,6 +125,11 @@ export function ReadinessCard({
             sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
         </div>
+        {load?.estimated && (
+          <p className="-mt-1 text-footnote text-muted-foreground" data-testid="readiness-estimated">
+            {s.estimatedNote}
+          </p>
+        )}
       </div>
     </section>
   )
