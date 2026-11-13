@@ -20,6 +20,8 @@ export interface ShoeStats {
   nearingLimit: boolean
   /** The session type worn in most often. */
   mainType?: ActivityType | null
+  /** Worn for any session but an easy run: only then is the "retire from workouts" tick a rule that applies. */
+  carriedWorkouts?: boolean
 }
 
 export function getShoeStats(): ShoeStats[] {
@@ -64,6 +66,7 @@ export function getShoeStats(): ShoeStats[] {
         wearPercent: wearPercent({ totalKm, maxKm: info.maxKm, retired: info.retired }),
         nearingLimit: !info.retired && totalKm >= info.alertThresholdKm,
         mainType: [...(typesByGear.get(gearId) ?? new Map<ActivityType, number>())].sort((x, y) => y[1] - x[1])[0]?.[0] ?? null,
+        carriedWorkouts: [...(typesByGear.get(gearId)?.keys() ?? [])].some((type) => type !== 'Base'),
       }
     })
     .sort((a, b) => Number(a.retired) - Number(b.retired) || b.totalKm - a.totalKm)

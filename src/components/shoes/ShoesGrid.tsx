@@ -70,8 +70,8 @@ function RotationRow({ shoe, context, tickLabel }: { shoe: ShoeStats; context: s
       <WearBar
         totalKm={shoe.totalKm}
         maxKm={shoe.maxKm}
-        tickKm={shoe.alertThresholdKm}
-        tickLabel={tickLabel ? t.shoes.detail.retireFromWorkouts(formatKm(shoe.alertThresholdKm)) : undefined}
+        tickKm={shoe.carriedWorkouts ? shoe.alertThresholdKm : null}
+        tickLabel={tickLabel && shoe.carriedWorkouts ? t.shoes.detail.retireFromWorkouts(formatKm(shoe.alertThresholdKm)) : undefined}
         limitLabel={t.shoes.detail.limitTick(formatKm(shoe.maxKm))}
         className="mt-3"
       />
@@ -106,7 +106,8 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
   }
 
   const active = shoes.filter((shoe) => !shoe.retired).sort((a, b) => b.wearPercent - a.wearPercent)
-  const sharedTickKm = active.length > 0 && active.every((shoe) => shoe.alertThresholdKm === active[0]!.alertThresholdKm) ? active[0]!.alertThresholdKm : null
+  const ticked = active.filter((shoe) => shoe.carriedWorkouts)
+  const sharedTickKm = ticked.length > 0 && ticked.every((shoe) => shoe.alertThresholdKm === ticked[0]!.alertThresholdKm) ? ticked[0]!.alertThresholdKm : null
   const retired = shoes
     .filter((shoe) => shoe.retired)
     .sort((a, b) => (b.lastUsedDate ?? '').localeCompare(a.lastUsedDate ?? ''))
