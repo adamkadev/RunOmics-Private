@@ -287,9 +287,12 @@ export const en = {
       year: 'Year',
       type: 'Type',
       filters: {
-        button: 'Filters',
-        buttonActive: (n: number) => `Filters, ${n} on`,
-        title: 'Filters',
+        layer: 'Layer',
+        layerHeat: 'Heat',
+        layerDistricts: 'Districts',
+        button: 'Map and filters',
+        buttonActive: (n: number) => `Map and filters, ${n} filter${n === 1 ? '' : 's'} on`,
+        title: 'Map and filters',
         reset: 'Reset',
         all: 'All',
         show: (n: number) => `Show ${n} run${n === 1 ? '' : 's'}`,
@@ -323,7 +326,6 @@ export const en = {
       // around it, by how much of each the runs have covered.
       districts: {
         // The layers button: a toggle, pressed while the layer shows.
-        layersButton: 'Show districts',
         legend: 'District coverage',
         fog: 'Fog',
         partly: 'Partly',

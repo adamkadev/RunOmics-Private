@@ -287,9 +287,12 @@ export const fr = {
       year: 'Année',
       type: 'Type',
       filters: {
-        button: 'Filtres',
-        buttonActive: (n: number) => `Filtres, ${n} actif${n > 1 ? 's' : ''}`,
-        title: 'Filtres',
+        layer: 'Calque',
+        layerHeat: 'Chaleur',
+        layerDistricts: 'Quartiers',
+        button: 'Carte et filtres',
+        buttonActive: (n: number) => `Carte et filtres, ${n} filtre${n > 1 ? 's' : ''} actif${n > 1 ? 's' : ''}`,
+        title: 'Carte et filtres',
         reset: 'Réinitialiser',
         all: 'Tout',
         show: (n: number) => `Afficher ${n} sortie${n > 1 ? 's' : ''}`,
@@ -317,7 +320,6 @@ export const fr = {
         reachStat: 'Rayon médian',
       },
       districts: {
-        layersButton: 'Afficher les quartiers',
         legend: 'Couverture des quartiers',
         fog: 'Brouillard',
         partly: 'En partie',

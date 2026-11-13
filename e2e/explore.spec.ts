@@ -39,19 +39,22 @@ async function tapMap(page: Page, x: number, y: number, done: () => Promise<void
   }).toPass({ timeout: 20_000 })
 }
 
-test('the layers button switches to Districts, remembers it, and a link opens a quartier', async ({ page }) => {
+test('the map sheet switches to Districts, remembers it, and a link opens a district', async ({ page }) => {
   await page.goto('/activities?view=map')
-  const layers = page.getByTestId('layers-button')
-  await expect(layers).toHaveAttribute('aria-pressed', 'false')
+  await page.getByTestId('map-menu').click()
+  await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'false')
 
-  await layers.click()
-  await expect(layers).toHaveAttribute('aria-pressed', 'true')
+  await page.getByTestId('layer-districts').click()
+  await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('Escape')
   await expect(page.getByTestId('districts-legend')).toContainText('Complete')
-  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 quartiers complete/, { timeout: 30_000 })
+  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 districts complete/, { timeout: 30_000 })
   await expect(page).toHaveURL(/\/activities\?view=map$/)
 
   await page.reload()
-  await expect(page.getByTestId('layers-button')).toHaveAttribute('aria-pressed', 'true')
+  await page.getByTestId('map-menu').click()
+  await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('Escape')
 
   await page.goto('/activities?view=map&layer=districts&quartier=demo-southfield')
   const sheet = page.getByTestId('quartier-sheet')
@@ -90,7 +93,7 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
   const panel = page.getByTestId('route-generator')
   await expect(panel.getByTestId('route-footnote')).toHaveText('Tap the map where you’ll start.')
   expect(request).toBeNull()
-  await panel.getByRole('button', { name: 'Start inside the quartier' }).click()
+  await panel.getByRole('button', { name: 'Start inside the district' }).click()
   // The labels show while loops load; the mocked climb only once they're in.
   await expect(panel.getByTestId('route-stats')).toContainText('+24 m')
   expect(request).not.toBeNull()
@@ -173,7 +176,7 @@ test('a tap on a quartier opens its sheet', async ({ page }) => {
   const tracks = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/map/routes')
   await page.goto('/activities?view=map&layer=districts')
   expect((await tracks).ok()).toBe(true)
-  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 quartiers complete/, { timeout: 30_000 })
+  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 districts complete/, { timeout: 30_000 })
   const sheet = page.getByTestId('quartier-sheet')
   await tapMap(page, 0.5, 0.5, async () => {
     await expect(sheet).toBeVisible({ timeout: 1_500 })
