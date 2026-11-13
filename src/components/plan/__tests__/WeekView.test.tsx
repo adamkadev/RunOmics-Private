@@ -120,7 +120,7 @@ describe('the phase card', () => {
     expect(card.textContent).toContain(`${weekOf.before} 1 ${weekOf.after}`)
     // Sep 9 to Nov 29 is 81 days: 12 weeks.
     expect(card.textContent).toContain(t.plan.phase.raceInWeeks('10K', 12))
-    expect(within(card).queryByRole('link')).toBeNull()
+    expect(within(card).getByTestId('phase-cycle').getAttribute('href')).toBe('/plan/checkpoint')
   })
 
   it('draws a segment per week of the phase, the weeks done in the accent and the one under way half full', () => {
@@ -140,7 +140,8 @@ describe('the phase card', () => {
     expect(within(card).getByRole('heading').textContent).toBe(t.plan.weekPurpose.generalPreparation)
     // The block's Sep 7 to Oct 4, not the season's Aug 31: four weeks, this the first.
     const weekOf = t.plan.phase.weekOf(4)
-    expect(card.textContent).toBe(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 1 ${weekOf.after}`)
+    expect(card.textContent).toContain(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 1 ${weekOf.after}`)
+    expect(within(card).getByTestId('phase-cycle').textContent).toMatch(/^Cycle week \d+ of 12 · checkpoint /)
     expect(within(card).getByRole('link').getAttribute('href')).toBe('/plan/checkpoint')
   })
 
