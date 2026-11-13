@@ -176,9 +176,9 @@ describe('the hub without a race, a goal or PBs', () => {
     expect(screen.getByTestId('race-tile').textContent).toBe(t.profile.hub.noRace)
   })
 
-  it('opens the years from a goal-less year card', () => {
+  it('opens the years from a goal-less year row', () => {
     render(<ProgressHub view={progressHubView(sparse)} />)
-    const year = screen.getByTestId('year-hero')
+    const year = screen.getByTestId('year-row')
     expect(year.getAttribute('href')).toBe('/all-time')
     expect(year.textContent).toContain(t.profile.hub.thisYear)
   })
@@ -190,114 +190,38 @@ describe('the hub without a race, a goal or PBs', () => {
   })
 })
 
-describe('ProgressHub (3.0)', () => {
-  it('opens each sub-page: the race its page, the year Goals, the records, a tile per page, Settings from the gear', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
+describe('ProgressHub as a list', () => {
+  it('leads with the race, then one row per page in three groups, each opening its page', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} checkpoint={{ line: 'Cycle week 5 of 12', better: 6 }} explored={{ name: 'Hoenheim', pct: 20, complete: 1, total: 21 }} homeRuns={{ runCount: 155 }} />)
 
     expect(screen.getByTestId('race-tile').getAttribute('href')).toBe('/race')
-    expect(screen.getByTestId('year-hero').getAttribute('href')).toBe('/goals')
-    expect(within(screen.getByTestId('records-tile')).getAllByRole('link')[0]!.getAttribute('href')).toBe('/records')
-    expect(screen.getAllByTestId('record')).toHaveLength(3)
-    expect(screen.getByTestId('vo2-row').getAttribute('href')).toBe('/athlete')
-    expect(screen.getByTestId('consistency-tile').getAttribute('href')).toBe('/consistency')
-    expect(screen.getByTestId('all-time').getAttribute('href')).toBe('/all-time')
-    expect(screen.getAllByTestId('shoe-row').map((row) => row.getAttribute('href'))).toEqual(['/shoes/p', '/shoes/v'])
-    expect(screen.getByTestId('shoes-all').getAttribute('href')).toBe('/shoes')
+    const rows = (group: string) => [...within(screen.getByTestId(group)).getAllByRole('link')].map((row) => row.getAttribute('data-testid'))
+    expect(rows('hub-season')).toEqual(['year-row', 'checkpoint-row', 'consistency-row'])
+    expect(rows('hub-you')).toEqual(['records-row', 'athlete-row', 'explored-row', 'home-runs-row'])
+    expect(rows('hub-gear')).toEqual(['shoes-row', 'all-time-row'])
+    expect(screen.getByTestId('year-row').getAttribute('href')).toBe('/goals')
+    expect(screen.getByTestId('checkpoint-row').getAttribute('href')).toBe('/plan/checkpoint')
+    expect(screen.getByTestId('checkpoint-row-value').textContent).toBe(t.profile.hub.better(6))
     expect(screen.getByRole('link', { name: t.profile.hub.settings }).getAttribute('href')).toBe('/settings')
-    expect(screen.getByTestId('settings-gear').className).toContain('size-11')
   })
 
-  it('leads with the race as one row: eyebrow with the countdown, the name, the predicted time', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    expect(screen.getByTestId('race-eyebrow').textContent).toContain(t.profile.hub.inDays(64))
-    expect(screen.getByTestId('race-predicted').textContent).toBe('42:10')
-    expect(screen.queryByTestId('race-gap')).toBeNull()
-  })
+  it('gives each row one value: the year against its goal, the streak, the newest record, VO2max, the pair to replace, the totals', () => {
+    const view = progressHubView(INPUT)
+    render(<ProgressHub view={view} />)
 
-  it('names the race on its own line, never cut', () => {
-    const spotlight = { ...INPUT.spotlight!, race: { date: '2027-05-08', name: 'ING Night Marathon Luxembourg', distance: 'Half-Marathon', targetSeconds: 5700 }, predictedSeconds: 5600 }
-    render(<ProgressHub view={progressHubView({ ...INPUT, spotlight })} />)
-    expect(screen.getByTestId('race-name').textContent).toBe('ING Night Marathon Luxembourg')
-    expect(screen.getByTestId('race-name').className).not.toContain('truncate')
-  })
-
-  it('reads the year against its goal, the verdict across, a tick where this pace lands', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const verdict = screen.getByTestId('projection-verdict')
-    expect(verdict.textContent).toBe(t.profile.hub.shortAtPace('69'))
-    expect(verdict.getAttribute('style')).toContain('var(--warn)')
-    expect(screen.getByTestId('projection-tick').getAttribute('style')).toContain('var(--warn)')
-  })
-
-  it('tags the newest record NEW in the good-status green, its time in text ink', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const labels = screen.getAllByTestId('latest-record')
-    expect(labels).toHaveLength(1)
-    expect(labels[0]!.textContent).toBe(t.profile.hub.newRecord)
-    expect(labels[0]!.className).toContain('text-[var(--pos)]')
-    expect(screen.getByTestId('records').textContent).toContain(t.profile.hub.recordLabels.half)
-  })
-
-  it('tags a shoe that needs replacing soon, and draws its bar in warn', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const [pegasus, vomero] = screen.getAllByTestId('shoe-row')
-    expect(pegasus!.textContent).toContain(`· ${t.shoes.status.watch.toLowerCase()}`)
-    expect(pegasus!.querySelector<HTMLElement>('[data-testid="bar-fill"]')!.style.background).toBe('var(--warn)')
-    expect(vomero!.querySelector('[data-testid="shoe-status"]')).toBeNull()
-  })
-
-  it('draws the last 26 weeks as a strip, the week under way an outline', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const strip = screen.getByTestId('streak-strip')
-    expect(strip.children).toHaveLength(26)
-    const last = strip.children[25] as HTMLElement
-    expect(last.hasAttribute('data-current')).toBe(true)
-    expect(last.style.border).toContain('dashed')
-    expect(screen.getByTestId('consistency-tile').textContent).not.toMatch(/active days/)
-    expect(screen.getByTestId('consistency-this-week').textContent).toBe(t.profile.hub.runsThisWeek(progressHubView(INPUT).consistency.thisWeek.runs, 3))
-    expect(screen.getByTestId('records-tile').textContent).toContain(t.profile.hub.vo2Delta('1'))
-  })
-
-  it('previews Consistency as the weekly streak and this week against the target', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const tile = screen.getByTestId('consistency-tile')
-    expect(within(tile).getByTestId('streak-weeks').textContent).toBe(String(INPUT.streakWeeks))
-    expect(tile.textContent).toContain(t.profile.hub.streakOf(INPUT.streakWeeks, 3))
-    expect(screen.queryByTestId('heatmap')).toBeNull()
+    expect(screen.getByTestId('year-row-value').textContent).toBe(t.profile.hub.kmOfGoal('1,394', '2,000'))
+    expect(screen.getByTestId('year-row-value').getAttribute('style')).toContain('var(--warn)')
+    expect(screen.getByTestId('consistency-row-value').textContent).toBe(t.profile.hub.streakValue(INPUT.streakWeeks))
+    expect(screen.getByTestId('records-row-value').textContent).toBe(`${t.profile.hub.recordLabels.half} 1:39:28`)
+    expect(screen.getByTestId('athlete-row-value').textContent).toBe(`${t.profile.hub.vo2max} 55.0`)
+    expect(screen.getByTestId('shoes-row').getAttribute('href')).toBe('/shoes/p')
+    expect(screen.getByTestId('shoes-row-value').textContent).toBe(t.shoes.status.watch.toLowerCase())
+    expect(screen.getByTestId('all-time-row-value').textContent).toBe('2,509 km')
   })
 
   it('says there is no streak yet rather than leading with 0', () => {
     render(<ProgressHub view={progressHubView({ ...INPUT, streakWeeks: 0 })} />)
-    const tile = screen.getByTestId('consistency-tile')
-    expect(within(tile).queryByTestId('streak-weeks')).toBeNull()
-    expect(within(tile).getByTestId('streak-none').textContent).toBe(t.profile.hub.noStreak(3))
-    expect(within(tile).getByTestId('streak-strip')).toBeInTheDocument()
-  })
-
-  it('previews Goals without a second distance chart', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const card = screen.getByTestId('year-hero')
-    expect(card.textContent).toContain(t.profile.hub.goalsSeason)
-    expect(within(card).queryByTestId('current-line')).toBeNull()
-  })
-
-  it('shows this year and last on the All time card', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    expect(screen.getAllByTestId('year-row').map((row) => row.textContent)).toEqual([expect.stringContaining('2026'), expect.stringContaining('2025')])
-  })
-
-  it('puts the Explored card beside Consistency when the page gives one', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} explored={<section data-testid="explored-slot" />} />)
-    const columns = [...screen.getByTestId('progress-columns').children]
-    expect(columns.map((child) => child.getAttribute('data-testid'))).toEqual(['consistency-tile', 'explored-slot'])
-  })
-
-  it('keeps Consistency alone in its row without one', () => {
-    const { container } = render(<ProgressHub view={progressHubView(INPUT)} />)
-    const columns = [...screen.getByTestId('progress-columns').children]
-    expect(columns.map((child) => child.getAttribute('data-testid'))).toEqual(['consistency-tile'])
-    const { container: empty } = render(<ProgressHub view={progressHubView(INPUT)} explored={undefined} />)
-    expect(empty.innerHTML).toBe(container.innerHTML)
+    expect(screen.getByTestId('consistency-row-value').textContent).toBe(t.profile.hub.noStreakShort)
   })
 })
 

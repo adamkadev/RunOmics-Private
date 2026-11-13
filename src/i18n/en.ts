@@ -1916,6 +1916,16 @@ export const en = {
     hub: {
       // The year card is the way into Goals, not a second copy of its chart.
       goalsSeason: 'Goals & season',
+      groupSeason: 'This season',
+      groupYou: 'You',
+      groupGear: 'Gear & totals',
+      kmOfGoal: (km: string, goal: string) => `${km} / ${goal} km`,
+      onPaceFor: (km: string) => `on pace for ${km} km`,
+      better: (n: number) => `${n} better`,
+      streakValue: (weeks: number) => `${weeks}-week streak`,
+      noStreakShort: 'no streak yet',
+      recordCount: (n: number) => `${n} distance${n === 1 ? '' : 's'}`,
+      exploredIn: (place: string) => `Explored · ${place}`,
       // English keeps "week streak" for any count; French needs it to pluralise.
       streakOf: (weeks: number, target: number) => `week streak · ${target}+ runs`,
       noStreak: (target: number) => `No streak yet · ${target}+ runs`,

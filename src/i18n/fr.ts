@@ -1780,6 +1780,16 @@ export const fr = {
   profile: {
     hub: {
       goalsSeason: 'Objectifs & saison',
+      groupSeason: 'Cette saison',
+      groupYou: 'Toi',
+      groupGear: 'Matériel et totaux',
+      kmOfGoal: (km: string, goal: string) => `${km} / ${goal} km`,
+      onPaceFor: (km: string) => `à ce rythme ${km} km`,
+      better: (n: number) => `${n} en progrès`,
+      streakValue: (weeks: number) => `${weeks} sem. d’affilée`,
+      noStreakShort: 'pas encore de série',
+      recordCount: (n: number) => `${n} distance${n > 1 ? 's' : ''}`,
+      exploredIn: (place: string) => `Exploré · ${place}`,
       streakOf: (weeks: number, target: number) => `semaine${weeks > 1 ? 's' : ''} d’affilée · ${target} sortie${target > 1 ? 's' : ''} et plus`,
       noStreak: (target: number) => `Pas encore de série · ${target} sortie${target > 1 ? 's' : ''} et plus`,
       runsThisWeek: (runs: number, target: number) => `${runs} sur ${target} cette semaine`,
