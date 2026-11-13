@@ -30,6 +30,7 @@ All notable changes to this project are documented in this file.
   they are set, and leaves time in zones to Analytics. Settings asks for the account once, in an Account card, and
   names its accent swatches; the avatar on Today opens Settings. The share sheet puts its Route / Stats / Photo switch
   above the preview and keeps one height. The route generator opens on where to tap, its buttons waiting for a route.
+  The map keeps one button for what it shows: the heat / districts layer moved into the filters sheet.
 - Smaller: quality sessions add up with "missed"; a run/walk is held to the run/walks on its route; comeback
   milestones in date order; the retire-from-workouts tick only on a pair that carried a workout; an empty Race page
   points to Races & goals as Goals does.
