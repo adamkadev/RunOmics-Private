@@ -7,6 +7,10 @@ All notable changes to this project are documented in this file.
 ### Interface
 
 - The VO2max grade page shows the precise daily value (57.4), as Analytics and the hub do, not the profile's whole number.
+- Design review, round 9 (pages). Plan's week says Saturday once, its bars named "Block 4 of 4" and "Cycle 5 of 12";
+  the month ends where the plan does, future weeks read "8.7 planned", and the reprise bars name their weeks. Records
+  reads Best · Predicted · Gap with years on every date; Home runs labels All · 2026 · Nov with the clock at the top;
+  Checkpoint names the cycle compared with; moderate intensity is a grey-blue; Settings shows heart rate read-only.
 - Design review, rounds 1-8 (one PR). **Good has its own green**, apart from the teal accent (dark `#5ad06a`,
   light `#2f7a2a`); Z4 and Z5 move clear of Heather, which stays as it is. Bars judged against a plan, this week's
   included, take a neutral fill; a posted share card says its result in ink with a fixed-colour mark.
