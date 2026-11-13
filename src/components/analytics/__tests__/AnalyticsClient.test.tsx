@@ -85,9 +85,25 @@ async function renderBoard() {
   await screen.findByTestId('form-card')
 }
 
-async function openTab(name: string, card: string) {
+function pickPeriod(name: string | undefined) {
+  fireEvent.click(screen.getByTestId('period-button'))
+  fireEvent.click(within(screen.getByTestId('period-menu')).getByRole('radio', { name }))
+}
+
+const shownPeriod = () => screen.getByTestId('period-button').querySelector('span:not(.sr-only)')?.textContent
+
+function periods() {
+  fireEvent.click(screen.getByTestId('period-button'))
+  const shown = within(screen.getByTestId('period-menu')).getAllByRole('radio').map((r) => r.textContent)
+  fireEvent.keyDown(document, { key: 'Escape' })
+  return shown
+}
+
+async function openTab(name: string, card: string, period?: '4w' | '12w' | '1y') {
   await act(async () => screen.getByRole('tab', { name }).click())
   await screen.findByTestId(card)
+  // The period carries over from the tab before: a test reading a tab at its own default sets it.
+  if (period) pickPeriod(t.analytics.cards.period.words[period])
 }
 
 describe('Analytics (v4.5)', () => {
@@ -99,17 +115,19 @@ describe('Analytics (v4.5)', () => {
   })
   afterAll(() => vi.useRealTimers())
 
-  it('keeps the tab and a chosen period in the URL, leaving the defaults out', async () => {
+  it('keeps the period when the tab changes, in the URL unless it is the tab\'s default', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.volume, 'weekly-card')
-    expect(window.location.search).toBe('?tab=volume')
-    fireEvent.click(screen.getByRole('radio', { name: t.analytics.cards.period.words['1y'] }))
+    expect(window.location.search).toBe('?tab=volume&period=4w')
+    pickPeriod(t.analytics.cards.period.words['1y'])
     expect(window.location.search).toBe('?tab=volume&period=1y')
     await openTab(t.analytics.tabs.fitness, 'form-card')
-    expect(window.location.search).toBe('')
+    expect(window.location.search).toBe('?period=1y')
+    expect(shownPeriod()).toBe('1Y')
+    pickPeriod(t.analytics.cards.period.words['12w'])
     await openTab(t.analytics.tabs.volume, 'weekly-card')
-    expect(window.location.search).toBe('?tab=volume&period=1y')
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('1Y')
+    expect(window.location.search).toBe('?tab=volume')
+    expect(shownPeriod()).toBe('12W')
   })
 
   it('opens the tab and period a link names, and the default for one it does not know', async () => {
@@ -117,12 +135,12 @@ describe('Analytics (v4.5)', () => {
     render(<AnalyticsClient data={data} today={TODAY} />)
     await screen.findByTestId('weekly-card')
     expect(screen.getByRole('tab', { selected: true }).textContent).toBe(t.analytics.tabs.volume)
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4W')
+    expect(shownPeriod()).toBe('4W')
     cleanup()
     window.history.replaceState(null, '', '/analytics?tab=nope&period=2y')
     await renderBoard()
     expect(screen.getByRole('tab', { selected: true }).textContent).toBe(t.analytics.tabs.fitness)
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4W')
+    expect(shownPeriod()).toBe('4W')
   })
 
   it('names its tabs in whole words', async () => {
@@ -137,20 +155,21 @@ describe('Analytics (v4.5)', () => {
 
   it('has one period control per tab, 4 wk / 12 wk / 1 yr on all four', async () => {
     await renderBoard()
-    const periods = () => within(screen.getByRole('radiogroup')).getAllByRole('radio').map((r) => r.textContent)
-    expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
+    expect(screen.getAllByTestId('period-button')).toHaveLength(1)
     expect(periods()).toEqual(['4W', '12W', '1Y'])
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4W')
+    expect(shownPeriod()).toBe('4W')
     await openTab(t.analytics.tabs.performance, 'predictions-card')
     expect(periods()).toEqual(['4W', '12W', '1Y'])
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('12W')
+    // Load's 4 weeks carry over.
+    expect(shownPeriod()).toBe('4W')
+    pickPeriod(t.analytics.cards.period.words['12w'])
     expect(screen.getByTestId('predictions-card').textContent).toContain('change in 12 weeks')
     await openTab(t.analytics.tabs.volume, 'weekly-card')
     expect(periods()).toEqual(['4W', '12W', '1Y'])
     // First Monday to today.
     expect(screen.getByTestId('analytics-range').textContent).toMatch(/^Jul 6 – Sep 26, 2026$/)
     await openTab(t.analytics.tabs.health, 'easy-hard-card')
-    expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
+    expect(screen.getAllByTestId('period-button')).toHaveLength(1)
   })
 
   it('reads each tab over its own period, and says which', async () => {
@@ -167,7 +186,7 @@ describe('Analytics (v4.5)', () => {
 
     // Performance, at its 12 weeks: easy pace faster, threshold and the predictions slower; Garmin's two estimates
     // share a vote, so it reads mixed and names each side.
-    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    await openTab(t.analytics.tabs.performance, 'predictions-card', '12w')
     expect(coach().textContent).toContain(s.eyebrow)
     expect(headline()).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
     fireEvent.click(screen.getByTestId('coach-read-why'))
@@ -183,22 +202,22 @@ describe('Analytics (v4.5)', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     // The period control is the read's period too.
-    fireEvent.click(screen.getByRole('radio', { name: '4 weeks' }))
+    pickPeriod('4 weeks')
     expect(coach().textContent).toContain(s.eyebrow)
 
     // Volume: its own claim, the plan first. Every week made its 44 km plan,
     // this one already; the 16 km long run, over 35% of 40-42 km in every
     // finished week, leads the case.
-    await openTab(t.analytics.tabs.volume, 'weekly-card')
+    await openTab(t.analytics.tabs.volume, 'weekly-card', '12w')
     expect(coach().textContent).toContain(s.eyebrow)
-    expect(headline()).toBe(s.volumeTab.onPlan(12, 12))
+    expect(headline()).toBe(s.volumeTab.onPlan)
     expect(coach().getAttribute('data-tone')).toBe('pos')
     fireEvent.click(screen.getByTestId('coach-read-why'))
     expect(screen.getByRole('dialog').querySelector('li')!.textContent).toBe(s.volumeTab.longRunRow(11))
     fireEvent.keyDown(document, { key: 'Escape' })
 
     // Intensity: the one easy / moderate / hard verdict.
-    await openTab(t.analytics.tabs.health, 'easy-hard-card')
+    await openTab(t.analytics.tabs.health, 'easy-hard-card', '12w')
     expect(headline()).toBe(s.intensityTab.inRange(84))
     expect(coach().getAttribute('data-tone')).toBe('pos')
   })
@@ -212,8 +231,8 @@ describe('Analytics (v4.5)', () => {
     for (const { tab, card, ranges } of cases) {
       await openTab(t.analytics.tabs[tab], card)
       for (const [i, period] of (['4w', '12w', '1y'] as const).entries()) {
-        fireEvent.click(screen.getByRole('radio', { name: t.analytics.cards.period.words[period] }))
-        expect(screen.getByRole('radio', { checked: true }).textContent).toBe(t.analytics.cards.period.short[period])
+        pickPeriod(t.analytics.cards.period.words[period])
+        expect(shownPeriod()).toBe(t.analytics.cards.period.short[period])
         expect(screen.getByTestId('analytics-range').textContent).toBe(ranges[i])
       }
     }
@@ -249,9 +268,9 @@ describe('Analytics (v4.5)', () => {
 
   it('widens the Form strip with the period, and resets the range', async () => {
     await renderBoard()
-    expect(screen.getByTestId('form-strip').children).toHaveLength(27)
-    fireEvent.click(screen.getByRole('radio', { name: '12 weeks' }))
-    expect(screen.getByTestId('form-strip').children.length).toBeLessThan(27)
+    expect(screen.getByTestId('form-strip').querySelectorAll('[data-band]')).toHaveLength(27)
+    pickPeriod('12 weeks')
+    expect(screen.getByTestId('form-strip').querySelectorAll('[data-band]').length).toBeLessThan(27)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
   })
 
@@ -310,7 +329,7 @@ describe('Analytics (v4.5)', () => {
 
   it("names the goal race under the predictions, and measures its gap to target", async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    await openTab(t.analytics.tabs.performance, 'predictions-card', '12w')
     const card = screen.getByTestId('predictions-card')
     expect(screen.getByTestId('predictions-race').textContent).toBe('10 km race: Nov 29 · 64 days')
     expect(card.textContent).not.toMatch(/\d\.\d{3}/)
@@ -336,7 +355,7 @@ describe('Analytics (v4.5)', () => {
 
   it('draws each prediction as one line, the sparkline next to its time', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    await openTab(t.analytics.tabs.performance, 'predictions-card', '12w')
     // Distance, spacer, sparkline up against the time, time with its change.
     expect(screen.getByTestId('predictions-grid').className).toContain('sm:grid-cols-[120px_1fr_minmax(0,360px)_auto]')
     for (const row of screen.getByTestId('predictions-grid').children) {
@@ -349,7 +368,7 @@ describe('Analytics (v4.5)', () => {
 
   it('fits the pace trend to its paces and labels three of them', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'pace-trend-card')
+    await openTab(t.analytics.tabs.performance, 'pace-trend-card', '12w')
     const labels = [...screen.getByTestId('pace-axis').children].map((el) => el.textContent)
     expect(labels).toHaveLength(3)
     for (const label of labels) expect(label).toMatch(/^\d{1,2}:\d\d$/)
@@ -359,7 +378,7 @@ describe('Analytics (v4.5)', () => {
 
   it('fits critical speed to the 3-20 min bests and sets it against threshold pace and the weeks before', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'pace-curve-card')
+    await openTab(t.analytics.tabs.performance, 'pace-curve-card', '12w')
     expect(screen.getByTestId('critical-speed').textContent).toBe(`4:10${t.units.perKm}`)
     expect(screen.getByTestId('pace-curve-sentence').textContent).toBe(
       [...t.analytics.cards.paceCurve.faster(13, '4:23'), ...t.analytics.cards.paceCurve.changed('6 s', true, '12 weeks')].join(''),
@@ -368,7 +387,7 @@ describe('Analytics (v4.5)', () => {
 
   it('draws the prediction sparklines faster up', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    await openTab(t.analytics.tabs.performance, 'predictions-card', '12w')
     // The 5K got slower over the window, so its line ends lower (a larger y).
     const d = screen.getByTestId('prediction-5k').querySelector('path')!.getAttribute('d')!
     const ys = [...d.matchAll(/[ML][\d.]+,([\d.]+)/g)].map((m) => Number(m[1]))
@@ -377,7 +396,7 @@ describe('Analytics (v4.5)', () => {
 
   it('draws heat cost as seconds lost vs the best band: best in pos, over 10 s warn, less muted', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'heat-card')
+    await openTab(t.analytics.tabs.performance, 'heat-card', '12w')
     const row = (id: string) => screen.getByTestId(`heat-${id}`)
     const bar = (id: string) => within(row(id)).queryByTestId('heat-bar')
     const loss = (id: string) => within(row(id)).getByTestId('heat-loss')
@@ -400,7 +419,7 @@ describe('Analytics (v4.5)', () => {
 
   it('ticks the plan on each week and dashes the current one', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.volume, 'weekly-card')
+    await openTab(t.analytics.tabs.volume, 'weekly-card', '12w')
     const bars = screen.getByTestId('weekly-bars')
     expect(bars.children).toHaveLength(12)
     expect(screen.getAllByTestId('plan-tick')).toHaveLength(12)
@@ -425,7 +444,7 @@ describe('Analytics (v4.5)', () => {
 
   it('keeps one large title above the tabs across a switch', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    await openTab(t.analytics.tabs.performance, 'predictions-card', '12w')
     expect(document.querySelectorAll('h1')).toHaveLength(1)
     const after = screen.getByTestId('analytics-title')
     expect(after.getAttribute('style')).toBeNull()
@@ -440,7 +459,7 @@ describe('Analytics (v4.5)', () => {
     vi.stubGlobal('scrollTo', scrollTo)
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 1 })
     try {
-      await openTab(t.analytics.tabs.performance, 'predictions-card')
+      await openTab(t.analytics.tabs.performance, 'predictions-card', '12w')
       expect(scrollTo.mock.calls.some(([opts]) => (opts as ScrollToOptions).top === 0)).toBe(true)
     } finally {
       Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
@@ -450,7 +469,7 @@ describe('Analytics (v4.5)', () => {
 
   it('links the zone ranges instead of repeating the zone table', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.health, 'zones-card')
+    await openTab(t.analytics.tabs.health, 'zones-card', '12w')
     expect(screen.getByTestId('zone-ranges-link').getAttribute('href')).toBe('/athlete')
     // This week keeps full-strength zone colours and takes the one "this week" mark used on Volume: the dashed
     // accent outline.
@@ -463,7 +482,7 @@ describe('Analytics (v4.5)', () => {
   // Z3 and Z4 read as one colour in a stacked week.
   it('names every zone under Time in zones with its hours, and follows a held week', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.health, 'zones-card')
+    await openTab(t.analytics.tabs.health, 'zones-card', '12w')
     const key = () => screen.getByTestId('zone-key')
     const figures = () => within(key()).getAllByTestId('zone-key-item').map((item) => [item.firstElementChild!.textContent, item.querySelector('b')!.textContent])
     // Twelve weeks of 0.5 / 3 / 0.17 / 0.42 / 0.08 h.
@@ -477,7 +496,7 @@ describe('Analytics (v4.5)', () => {
     expect(key().hasAttribute('data-held')).toBe(false)
     expect(figures()[1]).toEqual(['Z2', '36.0 h'])
     // A year's hours, as distances: a decimal under 100 and none above.
-    fireEvent.click(screen.getByRole('radio', { name: 'a year' }))
+    pickPeriod('a year')
     expect(figures().slice(0, 2)).toEqual([['Z1', '26.0 h'], ['Z2', '156 h']])
   })
 
@@ -501,7 +520,7 @@ describe('the trends the watch syncs', () => {
   it('shows running form with only what the watch measured', async () => {
     render(<AnalyticsClient data={{ ...data, weeks: weeks.map((w, i) => ({ ...w, cadenceSpm: 170 + (i % 4) })) }} today={TODAY} />)
     await screen.findByTestId('form-card')
-    await openTab(t.analytics.tabs.performance, 'pace-trend-card')
+    await openTab(t.analytics.tabs.performance, 'pace-trend-card', '12w')
     const rows = [...screen.getByTestId('running-form-card').querySelectorAll('[data-testid^="form-"]')].map((el) => el.getAttribute('data-testid'))
     expect(rows).toEqual(['form-cadence'])
   })
@@ -510,16 +529,16 @@ describe('the trends the watch syncs', () => {
     const hr = weeks.map((w, i) => ({ ...w, easyAvgHr: i > 55 ? 146 : 150, hardAvgHr: 170, apparentTempC: 10 + (i % 10) }))
     render(<AnalyticsClient data={{ ...data, weeks: hr }} today={TODAY} />)
     await screen.findByTestId('form-card')
-    await openTab(t.analytics.tabs.health, 'heart-rate-card')
+    await openTab(t.analytics.tabs.health, 'heart-rate-card', '12w')
     expect(screen.getByTestId('heart-rate-sentence').textContent).toBe(t.analytics.charts.hrTrend.reading.down(4))
     expect(screen.getByTestId('felt-strip').children).toHaveLength(12)
   })
 
   it('leaves both out on a watch without them', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'pace-trend-card')
+    await openTab(t.analytics.tabs.performance, 'pace-trend-card', '12w')
     expect(screen.queryByTestId('running-form-card')).toBeNull()
-    await openTab(t.analytics.tabs.health, 'easy-hard-card')
+    await openTab(t.analytics.tabs.health, 'easy-hard-card', '12w')
     expect(screen.queryByTestId('heart-rate-card')).toBeNull()
   })
 })

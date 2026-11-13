@@ -1,6 +1,6 @@
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import type { RecurringRoute, RouteRun } from '@/application/usecases/GetRecurringRoutes'
-import { formatDuration } from '@/lib/formatters'
+import { MINUS, PLUS_MINUS, formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export const RECORD_TABS = ['best', 'milestones', 'return', 'routes'] as const
@@ -29,13 +29,11 @@ export type PredictionGap =
   | { kind: 'at'; text: string }
   | { kind: 'slower'; text: string }
 
-/** `at`: Garmin's predictor and the Riegel fallback can land on the best to the second. */
+/** Predicted minus best, so the time within reach reads negative; `at`: the predictors can land on the best to the second. */
 export function predictionGap(bestSeconds: number, predictedSeconds: number): PredictionGap {
   const gap = Math.round(bestSeconds) - Math.round(predictedSeconds)
-  if (gap === 0) return { kind: 'at', text: t.records.atPotential }
-  return gap > 0
-    ? { kind: 'faster', text: t.records.faster(formatGap(gap)) }
-    : { kind: 'slower', text: t.records.slower(formatGap(gap)) }
+  if (gap === 0) return { kind: 'at', text: `${PLUS_MINUS}${t.records.gapSeconds(0)}` }
+  return gap > 0 ? { kind: 'faster', text: `${MINUS}${formatGap(gap)}` } : { kind: 'slower', text: `+${formatGap(gap)}` }
 }
 
 export function effortGap(seconds: number, bestSeconds: number): string | null {

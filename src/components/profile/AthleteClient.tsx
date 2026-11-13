@@ -3,6 +3,7 @@
 import type { AthletePageView } from './athleteView'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { BackButton } from '@/components/ui/BackButton'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { AthleteStats } from './ProfileAthleteStats'
 import { ProfileHrZones } from './ProfileHrZones'
 import { Vo2GradeCard } from './Vo2GradeCard'
@@ -34,11 +35,9 @@ export function AthleteClient({ athlete, vo2Grade, fitnessAge, paceZones, lastSy
 
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="mb-1.5">
-        <BackButton label={p.back} fallbackHref="/profile" />
-        <h1 className="text-display text-foreground">{p.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{source}</p>
-      </header>
+      <PageHeader back={<BackButton label={p.back} fallbackHref="/profile" />} title={p.title} className="mb-1.5">
+        <p className="text-sm text-muted-foreground">{source}</p>
+      </PageHeader>
 
       {vo2Grade && <Vo2GradeCard view={vo2Grade} reprise={reprise} />}
       {fitnessAge && <FitnessAgeCard view={fitnessAge} reprise={reprise} />}

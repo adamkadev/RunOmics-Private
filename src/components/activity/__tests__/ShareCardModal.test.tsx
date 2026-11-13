@@ -103,14 +103,14 @@ describe('ShareCardModal', () => {
     expect(checked('Background')).toBe('Light')
   })
 
-  it('shows Share with Copy image beside it, or Download where files cannot be shared', () => {
+  it('shows Share with Copy beside it, or Download where files cannot be shared', () => {
     const { unmount } = open()
     expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Copy image' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy()
     unmount()
     open({ canShareFiles: false, canCopyImage: false })
     expect(screen.getByRole('button', { name: 'Download' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Copy image' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull()
   })
 
   it('puts the design picker right above the preview, the choice before what it changes', () => {
@@ -119,7 +119,7 @@ describe('ShareCardModal', () => {
   })
 
   // A card that changes height per tab makes the controls under it jump.
-  it('keeps one 4:5 card box, and one option row, on every tab', async () => {
+  it('keeps one 4:5 card box, and the buttons pinned under the options, on every tab', async () => {
     open()
     // jsdom drops a min() width; the box's ratio, margin and corners are what it can read.
     const box = () => {
@@ -131,7 +131,7 @@ describe('ShareCardModal', () => {
     for (const tab of ['Stats', 'Photo', 'Route']) {
       await userEvent.click(screen.getByRole('radio', { name: tab }))
       expect(box()).toEqual(first)
-      expect(screen.getByTestId('share-options').style.minHeight).toBe('52px')
+      expect(screen.getByTestId('share-sheet-body').nextElementSibling).toBe(screen.getByTestId('share-actions'))
     }
   })
 
@@ -148,28 +148,34 @@ describe('ShareCardModal', () => {
   it('makes the empty photo frame the picker, and shares nothing until a photo is chosen', async () => {
     open()
     await userEvent.click(screen.getByRole('radio', { name: 'Photo' }))
-    expect(screen.getByTestId('share-photo-picker').textContent).toBe('Choose photoThis frame is the exact crop')
-    // The option row offers the same choice, where Dark and Light sit on the other tabs.
-    expect(within(screen.getByTestId('share-options')).getByRole('button', { name: 'Choose photo' }).style.height).toBe('44px')
-    expect(screen.getByRole('button', { name: 'Share' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Copy image' })).toBeDisabled()
+    expect(screen.getByTestId('share-photo-picker').textContent).toBe('Choose photoThe frame shows the final crop')
+    expect(screen.getAllByRole('button', { name: /Choose photo/ })).toHaveLength(1)
+    expect(screen.queryByTestId('share-options')).toBeNull()
+    const share = screen.getByRole('button', { name: 'Share' })
+    const copy = screen.getByRole('button', { name: 'Copy' })
+    expect(share).toBeDisabled()
+    expect(copy).toBeDisabled()
+    for (const button of [share, copy]) {
+      expect(button.className).toContain('bg-[var(--fill-3)]')
+      expect(button.className).toContain('disabled:text-muted-foreground')
+      expect(button.className).toContain('disabled:opacity-100')
+    }
     // A photo covers the whole card: there is no background to pick.
     expect(screen.queryByRole('radiogroup', { name: 'Background' })).toBeNull()
 
     await userEvent.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['x'], 'run.jpg', { type: 'image/jpeg' }))
-    const replace = await screen.findByRole('button', { name: 'Replace photo' })
+    const replace = await within(screen.getByTestId('share-options')).findByRole('button', { name: 'Replace photo' })
     expect(replace.style.height).toBe('44px')
     expect(screen.queryByTestId('share-photo-picker')).toBeNull()
     expect(screen.getByRole('button', { name: 'Share' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Copy image' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeEnabled()
   })
 
-  it('keeps one sheet height on every tab, the buttons right under the options', () => {
+  it('keeps one sheet height on every tab', () => {
     open()
     const sheet = screen.getByTestId('share-sheet')
     expect(sheet.className).toContain('h-[calc(100%-44px)]')
     expect(sheet.className).toContain('rounded-t-[var(--radius-sheet-large)]')
-    expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
   })
 
   it('is the sheets\' glass, the scroll inside it, the card opaque', () => {
@@ -180,6 +186,8 @@ describe('ShareCardModal', () => {
     expect([...sheet.querySelectorAll(':scope > i')].map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
     expect(sheet.className).not.toContain('overflow-y-auto')
     expect(screen.getByTestId('share-sheet-body').className).toContain('overflow-y-auto')
+    expect(screen.getByTestId('share-sheet-body').contains(screen.getByTestId('share-preview'))).toBe(false)
+    expect(screen.getByTestId('share-sheet-body').contains(screen.getByTestId('share-actions'))).toBe(false)
     expect(screen.getByTestId('share-preview').closest('.lg')).toBe(sheet)
     expect(screen.getByTestId('share-preview').querySelector('canvas')).not.toBeNull()
   })
@@ -215,7 +223,7 @@ describe('ShareCardModal', () => {
 
   it('gives the close button a 44 pt target', () => {
     open()
-    const close = screen.getByRole('button', { name: t.activity.shareCard.close })
+    const close = screen.getByRole('button', { name: t.common.close })
     expect(close.className).toContain('h-11')
     expect(close.className).toContain('w-11')
     expect(close.className).toContain('bg-[var(--sheet-fill)]')
@@ -230,7 +238,7 @@ describe('ShareCardModal', () => {
   // So an interval session can be shared as an easy run's card.
   it("offers an interval session's rep pace as a switch, on every tab; off, the card is drawn without the reps", async () => {
     open({ activity: REP_RUN })
-    const toggle = screen.getByRole('switch', { name: 'Rep pace' })
+    const toggle = screen.getByRole('switch', { name: 'Show rep pace' })
     expect(toggle).toHaveAttribute('aria-checked', 'true')
     expect(lastDrawn().reps?.count).toBe(3)
 
@@ -241,24 +249,24 @@ describe('ShareCardModal', () => {
 
     // Still there, and still off, on Stats and Photo, which draw the rep pace too.
     await userEvent.click(screen.getByRole('radio', { name: 'Stats' }))
-    expect(screen.getByRole('switch', { name: 'Rep pace' })).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByRole('switch', { name: 'Show rep pace' })).toHaveAttribute('aria-checked', 'false')
     expect(lastDrawn().reps).toBeNull()
 
-    await userEvent.click(screen.getByRole('switch', { name: 'Rep pace' }))
+    await userEvent.click(screen.getByRole('switch', { name: 'Show rep pace' }))
     expect(lastDrawn().reps?.count).toBe(3)
   })
 
   it('opens the rep pace on every time, like the background', async () => {
     const { unmount } = open({ activity: REP_RUN })
-    await userEvent.click(screen.getByRole('switch', { name: 'Rep pace' }))
+    await userEvent.click(screen.getByRole('switch', { name: 'Show rep pace' }))
     unmount()
     open({ activity: REP_RUN })
-    expect(screen.getByRole('switch', { name: 'Rep pace' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('switch', { name: 'Show rep pace' })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('offers no rep-pace switch on a run without reps', () => {
     open()
-    expect(screen.queryByRole('switch', { name: 'Rep pace' })).toBeNull()
+    expect(screen.queryByRole('switch', { name: 'Show rep pace' })).toBeNull()
     expect(screen.queryByTestId('share-reps')).toBeNull()
   })
 })

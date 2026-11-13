@@ -43,16 +43,28 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
             <ol className="flex items-end gap-2">
               {weeks.map((week, i) => {
                 const minutes = Math.round(week.runningSec / 60)
+                const current = i === weeks.length - 1
                 const label = `${r.weekOf(formatDate(week.weekStart, { style: 'bare', now }))}: ${r.minutes(minutes)}`
                 return (
                   <li key={week.weekStart} className="flex max-w-9 flex-1 flex-col items-stretch gap-1" title={label} aria-label={label} data-testid="return-week">
                     <span className="flex items-end" style={{ height: BAR_AREA_PX }} aria-hidden>
                       <span
-                        className={cn('block w-full rounded-t-[4px]', minutes === 0 ? 'bg-[var(--track)]' : i === weeks.length - 1 ? 'bg-accent' : 'bg-[var(--data-done)]')}
-                        style={{ height: minutes > 0 ? Math.max(4, (week.runningSec / peak) * BAR_AREA_PX) : 2 }}
+                        data-current={current || undefined}
+                        className={cn(
+                          'box-border block w-full rounded-t-[4px]',
+                          current ? 'border-[1.5px] border-dashed border-accent bg-accent/15' : minutes === 0 ? 'bg-[var(--track)]' : 'bg-[var(--data-done)]',
+                        )}
+                        style={{ height: minutes > 0 || current ? Math.max(current ? 8 : 4, (week.runningSec / peak) * BAR_AREA_PX) : 2 }}
                       />
                     </span>
                     <span className="text-center text-[11px] tabular-nums text-muted-foreground" aria-hidden>{minutes}</span>
+                    <span
+                      className={cn('text-center text-[11px] leading-tight', current ? 'font-semibold text-accent-text' : 'text-muted-foreground')}
+                      aria-hidden
+                      data-testid="return-week-label"
+                    >
+                      {current ? r.thisWeek : formatDate(week.weekStart, { style: 'bare', year: 'never' })}
+                    </span>
                   </li>
                 )
               })}

@@ -82,6 +82,7 @@ function WhySheet({ read, eyebrow, onClose }: { read: TabRead; eyebrow: string; 
   return (
     <Sheet
       onClose={onClose}
+      title={eyebrow}
       titleId={titleId}
       testId="why-sheet"
       bodyClassName="flex flex-col gap-3.5"
@@ -91,10 +92,7 @@ function WhySheet({ read, eyebrow, onClose }: { read: TabRead; eyebrow: string; 
         </ButtonLink>
       }
     >
-      <VerdictEyebrow tone={read.tone} className="[&>span:first-child]:hidden">{eyebrow}</VerdictEyebrow>
-      <h2 id={titleId} className="text-title-3 text-foreground text-pretty">
-        {read.headline}
-      </h2>
+      <h3 className="pt-2 text-title-3 text-foreground text-pretty">{read.headline}</h3>
       <ul className="flex flex-col">
         {read.rows.map((row, i) => {
           const direction = row.direction ?? TREND_DIRECTION[row.trend]

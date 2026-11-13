@@ -48,7 +48,7 @@ export interface ProgressHubView {
     lthrBpm: number | null
     grade: { letter: string; topPercent: number | null } | null
   } | null
-  records: { key: string; label: string; seconds: number; recent: boolean }[]
+  records: { key: string; label: string; seconds: number; date: string | null }[]
   consistency: {
     weeks: HeatCell[][]
     activeDays: number
@@ -56,7 +56,7 @@ export interface ProgressHubView {
     thisWeek: { runs: number; target: number }
     strip: StreakWeek[]
   }
-  shoes: { gearId: string; name: string; km: number; maxKm: number; status: WearStatus }[]
+  shoes: { gearId: string; name: string; km: number; maxKm: number; wearPct: number; status: WearStatus }[]
   allTime: {
     km: number
     runs: number
@@ -141,7 +141,6 @@ const HUB_RECORDS = ['1k', '5k', '10k', 'half']
 /** 12 weeks, the window Analytics reads VO2max's change over. */
 const VO2_WINDOW_DAYS = 84
 const HEAT_WEEKS = 12
-const NEW_RECORD_DAYS = 30
 
 function raceName(race: NextRaceSpotlight['race']): string | null {
   const name = raceDisplayName(race)
@@ -219,8 +218,6 @@ export function progressHubView(input: HubInput): ProgressHubView {
   const records = HUB_RECORDS.map((key) => input.records.find((r) => r.key === key)).filter(
     (r): r is RecordEntry & { seconds: number } => !!r && r.seconds !== null,
   )
-  const newSince = isoDate(addDays(new Date(`${input.today}T00:00:00`), -NEW_RECORD_DAYS))
-  const latestDate = records.reduce<string | null>((max, r) => (r.date && (!max || r.date > max) ? r.date : max), null)
 
   const firstYear = input.sinceDate ? Number(input.sinceDate.slice(0, 4)) : year
   const yoy = input.prevYear ? yearOverYear(input.activities, input.today) : null
@@ -274,7 +271,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       key: r.key,
       label: r.label,
       seconds: r.seconds,
-      recent: r.date !== null && r.date === latestDate && r.date >= newSince,
+      date: r.date,
     })),
     consistency: {
       weeks: heatWeeks(input.heatmapDays, input.today),
@@ -287,7 +284,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
     shoes: input.shoes
       .filter((s) => !s.retired)
       .sort((a, b) => b.totalKm - a.totalKm)
-      .map((s) => ({ gearId: s.gearId, name: s.name, km: Math.round(s.totalKm), maxKm: s.maxKm, status: wearStatus(s.wearPercent) })),
+      .map((s) => ({ gearId: s.gearId, name: s.name, km: Math.round(s.totalKm), maxKm: s.maxKm, wearPct: s.wearPercent, status: wearStatus(s.wearPercent) })),
     allTime: {
       km: Math.round(input.allTime.distanceKm),
       runs: input.allTime.sessionCount,
@@ -299,4 +296,14 @@ export function progressHubView(input: HubInput): ProgressHubView {
       }),
     },
   }
+}
+
+const RETURN_STEPS_MIN = [10, 20, 30]
+
+/** The longest non-stop run since a return against the next step of 10, 20 or 30 minutes; null before a minute of it. */
+export function returnStep(progress: { longestSec: number; ongoing: boolean } | null): { minutes: number; goal: number } | null {
+  if (!progress?.ongoing) return null
+  const minutes = Math.floor(progress.longestSec / 60)
+  if (minutes < 1) return null
+  return { minutes, goal: RETURN_STEPS_MIN.find((step) => step > minutes) ?? RETURN_STEPS_MIN.at(-1)! }
 }

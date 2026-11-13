@@ -14,7 +14,21 @@ function Dialog() {
   )
 }
 
+function QuietDialog() {
+  const ref = useFocusTrap<HTMLDivElement>({ initial: 'container' })
+  return (
+    <div ref={ref} role="dialog" aria-modal="true" data-testid="quiet">
+      <button>first</button>
+    </div>
+  )
+}
+
 describe('useFocusTrap', () => {
+  it('can focus the dialog itself on mount, so no control shows a ring', () => {
+    render(<QuietDialog />)
+    expect(screen.getByTestId('quiet')).toHaveFocus()
+  })
+
   it('moves focus to the first focusable element on mount', () => {
     render(<Dialog />)
     expect(screen.getByText('first')).toHaveFocus()

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChevronDown } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { cardClass } from '@/components/ui/Card'
@@ -13,7 +12,10 @@ import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 import { EFFORT_LIST_FIRST, allEffortsLabel, effortGap, predictionGap } from './recordsView'
 
-const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_76px_84px] items-center gap-2'
+const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_64px_56px_44px] items-center gap-2'
+const ROW_GRID_NO_PREDICTION = 'grid grid-cols-[minmax(0,1fr)_76px] items-center gap-2'
+
+const DATE = { style: 'bare', year: 'always' } as const
 
 function medalClass(i: number): string {
   if (i === 0) return cn(STATUS.gold.dot, 'text-black/80')
@@ -22,24 +24,23 @@ function medalClass(i: number): string {
   return 'bg-[var(--track)] text-muted-foreground'
 }
 
+// Within reach is the status the column reports, so only it takes the colour.
 const GAP_TONE = {
-  faster: 'text-muted-foreground',
+  faster: 'text-delta-good',
   at: 'text-muted-foreground',
   slower: 'text-muted-foreground',
 } as const
 
-function PredictedCell({ best, prediction }: { best: number | null; prediction: RacePrediction | undefined }) {
-  if (!prediction) return <span className="text-right text-sm text-subtle">–</span>
-  const gap = best !== null ? predictionGap(best, prediction.predictedSeconds) : null
+function PredictedCells({ best, prediction }: { best: number; prediction: RacePrediction | undefined }) {
+  if (!prediction) return <><span /><span /></>
+  const gap = predictionGap(best, prediction.predictedSeconds)
   return (
-    <span className="flex flex-col items-end gap-px">
-      <span className="text-sm tabular-nums text-muted-foreground">{formatDuration(Math.round(prediction.predictedSeconds))}</span>
-      {gap && (
-        <span data-testid="prediction-gap" className={cn('whitespace-nowrap text-caption', GAP_TONE[gap.kind])}>
-          {gap.text}
-        </span>
-      )}
-    </span>
+    <>
+      <span className="text-right text-sm tabular-nums text-muted-foreground">{formatDuration(Math.round(prediction.predictedSeconds))}</span>
+      <span data-testid="prediction-gap" className={cn('whitespace-nowrap text-right text-xs font-medium tabular-nums', GAP_TONE[gap.kind])}>
+        {gap.text}
+      </span>
+    </>
   )
 }
 
@@ -59,6 +60,10 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
   const missing = ranked.filter((r) => r.seconds === null)
   const missingText = t.records.missing(missing.map((r) => r.label), missing.some((r) => predictionByKey.has(r.key)))
 
+  // Only the rows drawn: a prediction for a distance with no record yet left two empty columns.
+  const predicted = ranked.some((r) => r.seconds !== null && predictionByKey.has(r.key))
+  const grid = predicted ? ROW_GRID : ROW_GRID_NO_PREDICTION
+
   const toggle = (key: string) => {
     setExpandedKey(expandedKey === key ? null : key)
     setShowAll(false)
@@ -66,10 +71,15 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
 
   return (
     <section className={cardClass({ padding: 'none', className: 'px-4 py-1' })}>
-      <div className={cn(ROW_GRID, EYEBROW_CLASS, 'border-b border-border py-2.5 text-muted-foreground')}>
+      <div className={cn(grid, EYEBROW_CLASS, 'border-b border-border py-2.5 text-muted-foreground')}>
         <span>{t.records.cols.distance}</span>
         <span className="text-right">{t.records.cols.best}</span>
-        <span className="text-right">{t.records.cols.predicted}</span>
+        {predicted && (
+          <>
+            <span className="text-right">{t.records.cols.predicted}</span>
+            <span className="text-right">{t.records.cols.gap}</span>
+          </>
+        )}
       </div>
       {ranked.filter((r): r is RecordEntry & { seconds: number } => r.seconds !== null).map((r, index) => {
         const prediction = predictionByKey.get(r.key)
@@ -82,19 +92,9 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
 
         const label = (
           <div className="min-w-0">
-            <p className="flex items-center gap-1 truncate text-subhead font-semibold text-foreground">
-              {r.label}
-              {expandable && (
-                <ChevronDown
-                  aria-hidden
-                  size={14}
-                  strokeWidth={2.2}
-                  className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')}
-                />
-              )}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {r.date && <span>{formatDate(r.date, { style: 'bare' })} · </span>}
+            <p className="truncate text-subhead font-semibold text-foreground">{r.label}</p>
+            <p className="text-xs text-muted-foreground">
+              {r.date && <span>{formatDate(r.date, DATE)} · </span>}
               <span>{r.official ? t.records.raceTag : t.records.trainingTag}</span>
             </p>
           </div>
@@ -107,17 +107,17 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
                 type="button"
                 onClick={() => toggle(r.key)}
                 aria-expanded={isExpanded}
-                className={cn(ROW_GRID, 'min-h-14.5 w-full py-2.5 text-left')}
+                className={cn(grid, 'min-h-14.5 w-full py-2.5 text-left')}
               >
                 {label}
                 <span className="text-right text-base font-bold tabular-nums text-foreground">{formatDuration(r.seconds)}</span>
-                <PredictedCell best={r.seconds} prediction={prediction} />
+                {predicted && <PredictedCells best={r.seconds} prediction={prediction} />}
               </button>
             ) : (
-              <div className={cn(ROW_GRID, 'min-h-14.5 py-2.5')}>
+              <div className={cn(grid, 'min-h-14.5 py-2.5')}>
                 {label}
                 <span className="text-right text-base font-bold tabular-nums text-foreground">{formatDuration(r.seconds)}</span>
-                <PredictedCell best={r.seconds} prediction={prediction} />
+                {predicted && <PredictedCells best={r.seconds} prediction={prediction} />}
               </div>
             )}
 
@@ -144,7 +144,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
                         </span>
                         {/* The date tells apart two efforts from the same session. */}
                         <span className="block truncate text-xs text-muted-foreground" title={e.eventName}>
-                          {[e.eventName, formatDate(e.date, { style: 'bare' })].filter(Boolean).join(' · ')}
+                          {[e.eventName, formatDate(e.date, DATE)].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                     </Link>

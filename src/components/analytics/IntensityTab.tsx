@@ -29,7 +29,7 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
   const status = view.status === 'inRange' ? s.inRange : view.status === 'tooModerate' ? s.tooModerate : s.tooHard
   const parts = [
     { label: s.easy, sec: view.easySec, pct: view.easyPct, color: ZONE_COLOR[1]! },
-    { label: s.moderate, sec: view.moderateSec, pct: view.moderatePct, color: ZONE_COLOR[2]! },
+    { label: s.moderate, sec: view.moderateSec, pct: view.moderatePct, color: 'var(--zone-moderate)' },
     { label: s.hard, sec: view.hardSec, pct: view.hardPct, color: ZONE_COLOR[3]! },
   ]
   const shown = parts.filter((p) => p.sec > 0)

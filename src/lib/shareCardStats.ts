@@ -2,7 +2,7 @@ import type { Activity, ActivityType } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { formatClock, formatDate, formatDurationRounded, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { activityTitle } from '@/lib/activityTitle'
+import { activityTitle, namedType } from '@/lib/activityTitle'
 
 export type ShareActivity = Pick<
   Activity,
@@ -33,16 +33,25 @@ export interface ShareReps {
   windows: [number, number][]
 }
 
-/** A rep session is titled by its set, "3 × 8′"; its type leads the subtitle. */
-export function shareCardTitle(activity: ShareActivity): string {
+/** "Footing · 4 × 6′": the type word its name leads with, then a set. */
+const TYPED_SET = /^(\p{L}[^\d]*?)[\s·:,\-–—]+(\d.*×.*)$/u
+
+/** A session's set as the title and its type for the subtitle, the same on every card whoever runs it. */
+function nameParts(activity: ShareActivity): { title: string; type: string | null } {
   const reps = activity.reps
-  if (reps) return `${reps.count} × ${repLength(reps.repSeconds)}`
-  return activity.sessionTitle?.trim() || activityTitle(activity)
+  if (reps) return { title: `${reps.count} × ${repLength(reps.repSeconds)}`, type: activity.type ? t.activityTypes[activity.type] : null }
+  const name = activity.sessionTitle?.trim() || activityTitle(activity)
+  const typed = namedType(name) ? TYPED_SET.exec(name) : null
+  return typed ? { title: typed[2]!.trim(), type: typed[1]!.trim() } : { title: name, type: null }
 }
 
+export function shareCardTitle(activity: ShareActivity): string {
+  return nameParts(activity).title
+}
+
+/** "Threshold · Wed, Nov 11 · Hoenheim": the type only where the title gave it up for the set. */
 export function shareCardSubtitle(activity: ShareActivity, place: string | null | undefined): string {
-  const type = activity.reps && activity.type ? t.activityTypes[activity.type] : null
-  return [type, formatDate(activity.date.slice(0, 10)), place].filter(Boolean).join(' · ')
+  return [nameParts(activity).type, formatDate(activity.date.slice(0, 10)), place].filter(Boolean).join(' · ')
 }
 
 export type ShareStatKey = 'repPace' | 'distance' | 'time' | 'pace' | 'hr'
@@ -114,7 +123,7 @@ export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
   const target = targetBand(reps.target)
   const off = reps.target ? repDelta(reps.paceSecPerKm, reps.target) : null
   return {
-    eyebrow: s.repPace(reps.count, repLength(reps.repSeconds)),
+    eyebrow: s.repPace,
     pace: formatClock(reps.paceSecPerKm),
     unit: t.units.perKm,
     target: target ? [s.target(target), off].filter(Boolean).join(' · ') : null,
@@ -148,9 +157,10 @@ function repOffset(pace: number, target: { min: number; max: number }): number {
 function repDelta(pace: number, target: { min: number; max: number }): string | null {
   const off = repOffset(pace, target)
   if (off === 0) return null
+  // The app's one gap form: "−5 s" under a minute, "−2:23" past it, never "−0:05".
   const sign = off > 0 ? '+' : '−'
   const abs = Math.abs(off)
-  return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
+  return abs < 60 ? `${sign}${abs} s` : `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
 }
 
 export interface ShareRepChip {
@@ -185,6 +195,29 @@ export interface ShareZoneRow {
   from?: number
   /** Whole percent: the rows always sum to 100. */
   percent: number
+  /** The zone whose colour and name it takes, where a sliver merged into a bigger neighbour above it. */
+  tint?: number
+}
+
+export function zoneTint(row: Pick<ShareZoneRow, 'zone' | 'tint'>): number {
+  return row.tint ?? row.zone
+}
+
+/** Under this a segment is a sliver on the bar and a lone legend entry. */
+const MIN_ROW_PERCENT = 5
+
+/** A sliver joins the zone above, or below when last, so the easy row stays whole; the bigger part keeps its colour. */
+export function mergeSlivers(rows: readonly ShareZoneRow[]): ShareZoneRow[] {
+  const out = [...rows]
+  for (;;) {
+    const i = out.findIndex((row) => row.percent < MIN_ROW_PERCENT)
+    if (i < 0 || out.length < 2) return out
+    const j = i < out.length - 1 ? i + 1 : i - 1
+    const [low, high] = i < j ? [out[i]!, out[j]!] : [out[j]!, out[i]!]
+    const tint = zoneTint(out[j]!)
+    const merged: ShareZoneRow = { zone: high.zone, from: low.from ?? low.zone, percent: low.percent + high.percent }
+    out.splice(Math.min(i, j), 2, tint === merged.zone ? merged : { ...merged, tint })
+  }
 }
 
 export function zoneName(row: Pick<ShareZoneRow, 'zone' | 'from'>): string {
@@ -239,11 +272,16 @@ export function shareZones(activity: ShareActivity): ShareZones | null {
   const s = t.activity.shareCard
   const percents = percentsTo100(seconds)
   // Z1 and Z2 in one row: five rows took a third legend line, which the rep pace cut.
-  const rows: ShareZoneRow[] = [
+  const rows = mergeSlivers([
     { zone: 2, from: 1, percent: percents[0]! + percents[1]! },
     ...percents.slice(2).map((percent, i) => ({ zone: i + 3, percent })),
-  ].filter((row) => row.percent > 0)
+  ].filter((row) => row.percent > 0))
   const zones = headlineZones(activity.type)
+  // An easy run that spent most of its time harder leads with that zone, not with a small "32% easy".
+  const harder = [2, 3, 4].reduce((top, i) => (percents[i]! > percents[top]! ? i : top), 2)
+  if (zones?.[0] === 1 && percents[harder]! > percents[0]! + percents[1]!) {
+    return { rows, headline: { percent: percents[harder]!, label: s.inZone(harder + 1) } }
+  }
   if (zones) {
     const percent = zones.reduce((sum, z) => sum + (percents[z - 1] ?? 0), 0)
     const label = zones.length > 1 ? s.easyZones(zones[0]!, zones[zones.length - 1]!) : s.inZone(zones[0]!)

@@ -17,9 +17,6 @@ export default async function CheckpointPage() {
   const view = checkpointView(getCycleCheckpoint(today), today)
 
   return (
-    <div className="space-y-4">
-      <BackButton label={t.nav.items.plan} fallbackHref="/plan" />
-      <Checkpoint view={view} />
-    </div>
+    <Checkpoint view={view} back={<BackButton label={t.nav.items.plan} fallbackHref="/plan" />} />
   )
 }

@@ -204,9 +204,9 @@ describe('the archive under its months', () => {
     const months = screen.getAllByTestId('month')
     expect(months).toHaveLength(2)
     expect(months[0]!.textContent).toContain(formatDate('2026-09-01', { precision: 'month', year: 'always', style: 'full' }))
-    expect(within(months[0]!).getByTestId('month-line').textContent).toBe(`35 ${t.units.km} · ${t.activities.weekLine.runs(2)}`)
-    // Aug 31 - Sep 6 starts in August, so it counts there.
-    expect(within(months[1]!).getByTestId('month-line').textContent).toBe(`25 ${t.units.km} · ${t.activities.weekLine.runs(3)}`)
+    // Aug 31 - Sep 6 sits under August, but its Sep 1 run counts in September, by its date, as Plan counts it.
+    expect(within(months[0]!).getByTestId('month-line').textContent).toBe(`43 ${t.units.km} · ${t.activities.weekLine.runs(3)}`)
+    expect(within(months[1]!).getByTestId('month-line').textContent).toBe(`17 ${t.units.km} · ${t.activities.weekLine.runs(2)}`)
     for (const line of screen.getAllByTestId('past-week-line')) expect(line.textContent).toMatch(new RegExp(t.activities.weekLine.runs(1)))
   })
 
@@ -421,13 +421,32 @@ describe('List and Map', () => {
 })
 
 describe('listBlocks', () => {
-  const week = (key: string, km: number, isCurrent = false) =>
-    ({ key, isCurrent, totalKm: km, items: [{}], label: key, easyPct: null }) as unknown as Parameters<typeof listBlocks>[0][number]
+  const week = (key: string, runs: [string, number][], isCurrent = false) =>
+    ({
+      key,
+      isCurrent,
+      totalKm: runs.reduce((sum, [, km]) => sum + km, 0),
+      items: runs.map(([date, distanceKm]) => ({ date, distanceKm })),
+      label: key,
+      easyPct: null,
+    }) as unknown as Parameters<typeof listBlocks>[0][number]
 
   it("counts this week in its month, and says how long a break was rather than skip it", () => {
-    const blocks = listBlocks([week('2026-10-26', 4, true), week('2026-10-19', 3), week('2026-04-06', 6)])
+    const blocks = listBlocks([week('2026-10-26', [['2026-10-27', 4]], true), week('2026-10-19', [['2026-10-20', 3]]), week('2026-04-06', [['2026-04-07', 6]])])
     expect(blocks.map((b) => b.kind)).toEqual(['current', 'month', 'pause', 'month'])
     expect(blocks[1]).toMatchObject({ key: '2026-10', km: 7, runs: 2 })
     expect(blocks[2]).toMatchObject({ label: t.activities.pause(`${formatDate('2026-05-01', { precision: 'month', year: 'never' })} – ${formatDate('2026-09-01', { precision: 'month', year: 'never' })}`, '2026', 5) })
+  })
+
+  it('counts a month by date, as Plan does: a Sunday in the last week of the month before is the new month\'s', () => {
+    const blocks = listBlocks([
+      week('2026-11-09', [['2026-11-10', 8]], true),
+      week('2026-11-02', [['2026-11-03', 10]]),
+      week('2026-10-26', [['2026-10-27', 5], ['2026-11-01', 15]]),
+    ])
+    expect(blocks.filter((b) => b.kind === 'month')).toMatchObject([
+      { key: '2026-11', km: 33, runs: 3 },
+      { key: '2026-10', km: 5, runs: 1 },
+    ])
   })
 })

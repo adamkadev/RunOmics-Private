@@ -51,4 +51,17 @@ describe('buildReplayScene', () => {
     expect(texts.map((t) => t.text)).toEqual(expect.arrayContaining(['by duration', 'elapsed']))
     expect(texts.find((t) => t.text === '2 of 2 out')?.fill).toBe('#ffffff')
   })
+
+  it('leaves the title to the page and puts the clock above the map on the page', () => {
+    const scene = buildReplayScene(runs, { accent: '#ff7a1a', font: 'sans-serif', labels: { ...labels, title: 'Home runs' } })
+    const texts: { text: string; y: number }[] = []
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get: (target, key) => (key === 'fillText' ? (text: string, _x: number, y: number) => texts.push({ text, y }) : key in target ? target[key as string] : () => ({ addColorStop: () => {} })),
+      set: (target, key, value) => ((target[key as string] = value), true),
+    }) as unknown as CanvasRenderingContext2D
+    drawReplay(ctx, scene, 300, 1080, 1920, 'page')
+
+    expect(texts.map((t) => t.text)).not.toContain('Home runs')
+    expect(texts.find((t) => t.text === '2 of 2 out')!.y).toBeLessThan(400)
+  })
 })

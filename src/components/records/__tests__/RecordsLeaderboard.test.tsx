@@ -4,6 +4,7 @@ import { RecordsLeaderboard } from '../RecordsLeaderboard'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { STATUS } from '@/lib/statusColors'
+import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const record = (key: string, label: string, seconds: number, official = false): RecordEntry => ({
@@ -30,19 +31,38 @@ const TOP: TopEfforts = {
 const PREDICTIONS = [prediction('1k', 206), prediction('1mile', 345), prediction('5k', 1222)]
 
 describe('RecordsLeaderboard', () => {
-  it('heads the columns and gives each distance its best, its prediction and the gap', () => {
+  it('heads the columns and gives each distance its best, its prediction and the gap alone', () => {
     render(<RecordsLeaderboard records={RECORDS} topEfforts={TOP} predictions={PREDICTIONS} />)
 
     expect(screen.getByText(t.records.cols.predicted)).toBeInTheDocument()
+    expect(screen.getByText(t.records.cols.gap)).toBeInTheDocument()
     const gaps = screen.getAllByTestId('prediction-gap')
-    expect(gaps.map((g) => g.textContent)).toEqual([
-      t.records.faster(t.records.gapSeconds(5)),
-      t.records.atPotential,
-      t.records.faster(t.records.gapSeconds(20)),
-    ])
-    expect(gaps[0]!.className).not.toContain('var(--pos)')
+    expect(gaps.map((g) => g.textContent)).toEqual(['−5 s', '±0 s', '−20 s'])
+    expect(gaps[0]!.className).toContain('text-delta-good')
     expect(gaps[1]!.className).toContain('text-muted-foreground')
     expect(screen.getByText(t.records.raceTag)).toBeInTheDocument()
+  })
+
+  it('dates every row with its year', () => {
+    render(<RecordsLeaderboard records={RECORDS} topEfforts={TOP} predictions={PREDICTIONS} />)
+
+    expect(screen.getAllByText(`${formatDate('2026-06-16', { style: 'bare', year: 'always' })} ·`, { exact: false })).toHaveLength(3)
+  })
+
+  it('leaves out the prediction and gap columns when no distance has a prediction', () => {
+    render(<RecordsLeaderboard records={RECORDS} topEfforts={TOP} predictions={[]} />)
+
+    expect(screen.queryByText(t.records.cols.predicted)).toBeNull()
+    expect(screen.queryByText(t.records.cols.gap)).toBeNull()
+    expect(screen.queryAllByTestId('prediction-gap')).toHaveLength(0)
+  })
+
+  it('leaves them out too when the only predictions are for distances with no record yet', () => {
+    const missing = { ...record('10k', '10K', 0), seconds: null }
+    render(<RecordsLeaderboard records={[RECORDS[0]!, missing]} topEfforts={TOP} predictions={[prediction('10k', 2700)]} />)
+
+    expect(screen.queryByText(t.records.cols.predicted)).toBeNull()
+    expect(screen.queryByText(t.records.cols.gap)).toBeNull()
   })
 
   it('opens a distance with more than one effort into its top five, medalled and linked', () => {

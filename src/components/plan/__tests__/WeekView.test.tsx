@@ -11,6 +11,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { CoachingPlan } from '@/domain/coaching/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
+import { formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import type { CoachWords } from '@/application/coaching/GetCoachWords'
 import { forgetCoachWords } from '@/components/coaching/useCoachWords'
@@ -141,7 +142,7 @@ describe('the phase card', () => {
     // The block's Sep 7 to Oct 4, not the season's Aug 31: four weeks, this the first.
     const weekOf = t.plan.phase.weekOf(4)
     expect(card.textContent).toContain(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 1 ${weekOf.after}`)
-    expect(within(card).getByTestId('phase-cycle').textContent).toMatch(/^Cycle week \d+ of 12 · checkpoint /)
+    expect(within(card).getByTestId('phase-cycle').textContent).toMatch(/^Cycle \d+ of 12 · checkpoint [A-Z][a-z]{2} \d+$/)
     expect(within(card).getByRole('link').getAttribute('href')).toBe('/plan/checkpoint')
   })
 
@@ -431,14 +432,15 @@ describe('a day that is over', () => {
 })
 
 describe('a rest day', () => {
-  it('says so, with the next session of the week', async () => {
+  it('says only that, the next session left to Coming up', async () => {
     const user = userEvent.setup()
     renderWeek({ planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
     await user.click(day('2026-09-10'))
     const card = screen.getByTestId('plan-rest-day')
     expect(within(card).getByRole('heading').textContent).toBe(t.plan.restCard.title)
-    expect(within(card).getByTestId('rest-next').textContent).toBe(`${t.plan.restCard.next('Sat')}Long run`)
+    expect(card.textContent).toBe(`${formatWeekday('2026-09-10', true)} · ${t.plan.restCard.eyebrow}${t.plan.restCard.title}`)
+    expect(screen.queryByTestId('next-key-session')).toBeNull()
   })
 
   it('lists the week’s sessions still to come, each selecting its day', async () => {

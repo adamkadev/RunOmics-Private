@@ -122,6 +122,14 @@ describe('KmSplits', () => {
     expect(within(totalRow as HTMLElement).getByText('10:00')).toBeInTheDocument()
   })
 
+  it("totals the laps with the run's own time and distance, rounded as the header rounds them", () => {
+    const activity = { ...activityWith([split('lap', 1741.6, 5755, 150), split('lap', 1741.6, 5755, 150)]), distanceKm: 11.51, durationSeconds: 3483 }
+    const { container } = render(<KmSplits activity={activity} />)
+    const totalRow = container.querySelector('.border-t') as HTMLElement
+    expect(within(totalRow).getByText('11.5')).toBeInTheDocument()
+    expect(within(totalRow).getByText('58:03')).toBeInTheDocument()
+  })
+
   it('colours the segment labels the way the plan structure bar does', () => {
     // The plan structure bar draws warm-up and cool-down as one neutral and keeps blue for recovery.
     render(

@@ -12,6 +12,7 @@ import type { SeasonBlock } from './SeasonTimeline'
 import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
 import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
+import { PageHeader } from '@/components/layout/PageHeader'
 
 export function defaultGoalsYear(years: readonly number[], today: string): number | undefined {
   const current = Number(today.slice(0, 4))
@@ -29,7 +30,7 @@ export function YearStepper({ years, value, onChange }: { years: readonly number
   const newer = i > 0 ? years[i - 1] : undefined
   return (
     // data-bar-segments: the compact top bar carries the stepper once it scrolls away, its value the data-bar-value.
-    <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className={glassClass('regular', 'flex h-11 shrink-0 items-center gap-0.5 p-1')} data-testid="year-stepper">
+    <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className={glassClass('bar', 'flex h-11 shrink-0 items-center gap-0.5 p-1')} data-testid="year-stepper">
       <GlassLayers />
       <button type="button" className={STEP_BTN} aria-label={t.goals.prevYear} disabled={older === undefined} onClick={() => older !== undefined && onChange(older)}>
         <ChevronLeft size={18} strokeWidth={2} aria-hidden />
@@ -59,14 +60,13 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
 
   return (
     <div className="flex flex-col gap-3.5">
-      {/* The stepper sits in the button row, not beside the title: there the title would wrap onto two lines. */}
-      <header className="mb-1.5 flex flex-col">
-        <div className="flex items-start justify-between gap-3">
-          {back}
-          {hasYearStepper && <YearStepper years={years} value={selectedYear} onChange={setSelectedYear} />}
-        </div>
-        <h1 data-bar-title={t.goals.barTitle} className="text-display text-foreground">{t.goals.title}</h1>
-      </header>
+      <PageHeader
+        back={back}
+        title={t.goals.title}
+        titleProps={{ 'data-bar-title': t.goals.barTitle }}
+        action={hasYearStepper && <YearStepper years={years} value={selectedYear} onChange={setSelectedYear} />}
+        className="mb-1.5"
+      />
 
       {data.missingGoalYear !== null && yearData && (
         <section className={cardClass({ className: 'flex flex-col gap-1' })} data-testid="goals-missing-year">

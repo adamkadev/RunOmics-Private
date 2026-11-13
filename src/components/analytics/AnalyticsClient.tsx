@@ -14,7 +14,8 @@ import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
 import { useUrlParam } from '@/lib/useUrlParam'
-import { StickyBar } from '@/components/ui/StickyBar'
+import { PINNED_TOP, StickyBar } from '@/components/ui/StickyBar'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDateRange } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -109,7 +110,6 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   const tab = parseAnalyticsTab(tabParam)
   const opening = (id: TabId) => openingPeriod(DEFAULT_PERIOD[id], data.weeks, serverToday)
   const period = parseAnalyticsPeriod(periodParam, opening(tab))
-  const [periods, setPeriods] = useState<Partial<Record<TabId, LoadPeriod>>>({})
   const [offsets, setOffsets] = useState<Partial<Record<TabId, number>>>({})
   const offset = offsets[tab] ?? 0
   const tabsRef = useRef<HTMLDivElement>(null)
@@ -121,9 +121,9 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   function selectTab(id: TabId) {
     // Before the new tab paints: a page left even 1-2 pt down sets off iOS's scroll-edge blur over the large title.
     if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
-    setPeriods((all) => ({ ...all, [tab]: period }))
+    // The period carries over: a tab swap that changed it changed the numbers being compared.
     setTabParam(id === 'fitness' ? null : id)
-    writePeriod(id, periods[id] ?? opening(id))
+    writePeriod(id, period)
   }
 
   // A tab swap changes the page under the title without a scroll: have the
@@ -177,31 +177,25 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
   return (
     <div className="flex flex-col gap-5">
-      <header className="mb-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 data-testid="analytics-title" className="text-display text-foreground">
-            {t.analytics.title}
-          </h1>
-          {/* The subtitle fades under the compact title bar, which sets its
-              opacity from the layout before this page hydrates. */}
-          <p className="truncate text-sm text-muted-foreground" data-testid="analytics-range">
-            {rangeLabel}
-          </p>
-        </div>
-        <PeriodControl periods={loadTab ? LOAD_PERIODS : WEEK_PERIODS} value={period} onChange={setPeriod} />
-      </header>
+      <PageHeader
+        title={t.analytics.title}
+        titleProps={{ 'data-testid': 'analytics-title' }}
+        action={<PeriodControl periods={loadTab ? LOAD_PERIODS : WEEK_PERIODS} value={period} onChange={setPeriod} />}
+      >
+        <p className="truncate text-sm text-muted-foreground" data-testid="analytics-range">
+          {rangeLabel}
+        </p>
+      </PageHeader>
 
-      {/* Its 8 pt of padding is for when it sticks; at rest the tabs sit the
-          page's 14 pt from the header and the coach read. */}
-      <StickyBar ref={tabsRef} top="var(--sticky-top, var(--sticky-alone, max(var(--safe-top), 8px)))" className="-my-2">
-        <SegmentedTabs tabs={analyticsTabs} items={TABS} label={t.analytics.title} size="md" fill onAura />
+      <StickyBar ref={tabsRef} top={PINNED_TOP} className="-my-2">
+        <SegmentedTabs tabs={analyticsTabs} items={TABS} label={t.analytics.title} fill pinned />
       </StickyBar>
 
       {coach && <CoachRead read={coach} eyebrow={t.analytics.cards.coachRead.eyebrow} />}
 
       <div {...analyticsTabs.panelProps} {...swipeHandlers}>
         {tab === 'fitness' && days && (
-          <LoadTab window={days} period={period} onShift={shift} today={today} data={data} />
+          <LoadTab window={days} period={period} onShift={shift} today={today} data={data} reprise={data.reprise} />
         )}
         {tab === 'performance' && days && (
           <PerformanceTab

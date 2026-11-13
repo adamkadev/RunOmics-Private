@@ -34,15 +34,19 @@ describe('checkpointView', () => {
   it('counts only the scored rows with both cycles, and says what is missing', () => {
     expect(view.summary).toEqual({ good: 3, worse: 0, flat: 2 })
     expect(rows.lthr).toMatchObject({ delta: '−4 bpm', scored: false })
-    expect(rows.fiveK).toMatchObject({ current: null, previous: '21:00', missing: t.checkpoint.noCheck })
+    expect(rows.fiveK).toMatchObject({ current: null, missing: null, absent: `${t.checkpoint.noCheck} · ${t.checkpoint.lastCheck(formatDate('2026-09-05', { style: 'bare' }), '21:00')}`, note: null })
     expect(rows.restingHr!.missing).toBe(t.checkpoint.nothingBefore)
   })
 
-  it('says the cycle is new and dates it alone when there is nothing before it', () => {
+  it('names the cycle compared with, its dates with their year, and leaves this cycle’s dates to the status card', () => {
+    expect(view.range).toBe(t.checkpoint.againstPrevious(formatDateRange(DATA.cycle.previous.start, DATA.cycle.previous.end, { year: 'always' })))
+  })
+
+  it('says the cycle is new and gives no comparison line when there is nothing before it', () => {
     const first = checkpointView({ ...DATA, volume: { kmPerWeek: { previous: null, current: 9 }, runsPerWeek: { previous: null, current: 3 } }, efficiency: null, easyHr: null, fiveK: null, thresholdPace: null, lthr: null, restingHr: null }, '2026-11-04')
 
     expect(first.sections[0]!.rows[0]).toMatchObject({ previous: null, delta: null, missing: t.checkpoint.nothingBefore })
-    expect(first.range).toBe(formatDateRange(DATA.cycle.current.start, DATA.cycle.current.end))
+    expect(first.range).toBeNull()
   })
 
   it('counts a zero before as no baseline, and gives resting heart rate whole', () => {

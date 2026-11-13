@@ -309,8 +309,8 @@ export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: bool
   // The plan first: the coach sets each week's long run against its week, so
   // on plan, a long run over its share (three light weeks of a break, Aug
   // 2026) is the case's first line rather than the claim.
-  if (plan && plan.of >= 2 && planShare !== null && planShare < UNDER_PLAN_WEEKS) return { tone: 'warn', headline: s.underPlan(plan.hit, plan.of), rows: ordered(out) }
-  if (plan && plan.of >= 2 && planShare !== null && planShare >= ON_PLAN_WEEKS) return { tone: 'pos', headline: s.onPlan(plan.hit, plan.of), rows: ordered(out) }
+  if (plan && plan.of >= 2 && planShare !== null && planShare < UNDER_PLAN_WEEKS) return { tone: 'warn', headline: s.underPlan, rows: ordered(out) }
+  if (plan && plan.of >= 2 && planShare !== null && planShare >= ON_PLAN_WEEKS) return { tone: 'pos', headline: s.onPlan, rows: ordered(out) }
   if (long && long.over >= LONG_RUN_PATTERN) return { tone: 'warn', headline: s.longRunOver(long.over, finished), rows: ordered(out) }
   if (weekly.avg !== null) return { tone: 'muted', headline: s.average(formatKm(weekly.avg)), rows: ordered(out.slice(1)) }
   return null

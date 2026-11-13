@@ -1,6 +1,6 @@
 import {
   shareCardSubtitle, shareCardTitle, shareDuration, shareRepDetail, shareRepHeadline, shareRepHero, shareRepResult, shareStats,
-  shareZones, zoneName,
+  shareZones, zoneName, zoneTint,
   type ShareActivity, type ShareRepDetail, type ShareRepHeadline, type ShareRepHero, type ShareVerdict, type ShareZoneRow, type ShareZones,
 } from '@/lib/shareCardStats'
 import { W, H, shareCardHeight, type ShareDesign, type SharePalette, type ShareSize } from '@/lib/shareCardPalette'
@@ -100,7 +100,9 @@ const STATS_PAD_BOTTOM = 16
 const HERO_PAD_TOP = 12
 const HERO_BLOCK = 42
 const HERO_PACE_SIZE = 32
-const CHIP_H = 16
+const CHIP_H = 22
+const CHIP_GAP = 6
+const CHIP_TEXT = 10
 const BAR_MAX = 16
 const REP_DETAIL_PAD_TOP = 8
 const REP_DETAIL_H = { chips: CHIP_H, bars: BAR_MAX + 12 } as const
@@ -254,6 +256,8 @@ interface Ink {
   mark: string
 }
 
+const SUBTITLE_ALPHA = 0.82
+
 const PHOTO_INK: Ink = { tx: '#ffffff', mu: 'rgba(255, 255, 255, 0.85)', mark: '#ffffff' }
 
 function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { title, result }: ShareCardLayout, ink: Ink) {
@@ -278,8 +282,12 @@ function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { titl
 
   const last = TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight
   ctx.font = `400 10px ${fonts.text}`
-  ctx.fillStyle = ink.mu
+  // A step above the muted ink: the only place the date shows.
+  ctx.save()
+  ctx.fillStyle = ink.tx
+  ctx.globalAlpha *= SUBTITLE_ALPHA
   ctx.fillText(fit(ctx, shareCardSubtitle(activity, place), RIGHT - PAD_X), PAD_X, last + 18)
+  ctx.restore()
   if (!result) return
 
   const max = RIGHT - PAD_X
@@ -323,23 +331,25 @@ function drawRepDetail(ctx: Ctx, { activity, fonts, palette }: ShareCardScene, d
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
   if (detail.kind === 'chips') {
-    let x = PAD_X
-    for (const chip of detail.chips) {
-      ctx.font = `400 9px ${fonts.text}`
+    // One row the card's width, so the reps read at the size of the stats under them.
+    const count = detail.chips.length
+    const width = (RIGHT - PAD_X - CHIP_GAP * (count - 1)) / count
+    detail.chips.forEach((chip, i) => {
+      const x = PAD_X + i * (width + CHIP_GAP)
+      ctx.font = `400 ${CHIP_TEXT}px ${fonts.text}`
       const labelW = ctx.measureText(`${chip.label} `).width
-      ctx.font = `600 9px ${fonts.text}`
-      const width = 8 + labelW + ctx.measureText(chip.pace).width + 8
+      ctx.font = `600 ${CHIP_TEXT}px ${fonts.text}`
+      const from = x + (width - labelW - ctx.measureText(chip.pace).width) / 2
       ctx.fillStyle = palette.card
-      roundRect(ctx, x, top, width, CHIP_H, 5)
+      roundRect(ctx, x, top, width, CHIP_H, 7)
       ctx.fill()
-      ctx.font = `400 9px ${fonts.text}`
+      ctx.font = `400 ${CHIP_TEXT}px ${fonts.text}`
       ctx.fillStyle = ink.mu
-      ctx.fillText(chip.label, x + 8, top + CHIP_H / 2)
-      ctx.font = `600 9px ${fonts.text}`
+      ctx.fillText(chip.label, from, top + CHIP_H / 2)
+      ctx.font = `600 ${CHIP_TEXT}px ${fonts.text}`
       ctx.fillStyle = ink.tx
-      ctx.fillText(chip.pace, x + 8 + labelW, top + CHIP_H / 2)
-      x += width + 6
-    }
+      ctx.fillText(chip.pace, from + labelW, top + CHIP_H / 2)
+    })
     ctx.textBaseline = 'alphabetic'
     return
   }
@@ -798,7 +808,9 @@ const ZONE_BAR_H = 16
 const LEGEND_ROW = 13
 const LEGEND_ROW_GAP = 14
 const LEGEND_COL_GAP = 16
+const LEGEND_TEXT = 11
 const SWATCH = 9
+const SWATCH_GAP = 7
 /** The least room between the parts, on a middle too short to spread them. */
 const ZONE_MIN_GAP = 8
 
@@ -832,7 +844,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
     return
   }
 
-  const block = zoneBlockLayout(middleH, Math.ceil(zones.rows.length / 2))
+  const block = zoneBlockLayout(middleH, 1)
   const barW = RIGHT - PAD_X
 
   ctx.textBaseline = 'alphabetic'
@@ -864,30 +876,61 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   let at = PAD_X
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
-    ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
+    ctx.fillStyle = palette.zones[zoneTint(row) - 1] ?? palette.mu
     ctx.fillRect(at, barTop, w, ZONE_BAR_H)
     at += w
   }
   ctx.restore()
 
-  const colW = (barW - LEGEND_COL_GAP) / 2
-  zones.rows.forEach((row, i) => {
-    const x = PAD_X + (i % 2) * (colW + LEGEND_COL_GAP)
-    const mid = block.legendTop + Math.floor(i / 2) * (LEGEND_ROW + LEGEND_ROW_GAP) + LEGEND_ROW / 2
-    ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
+  const mid = block.legendTop + LEGEND_ROW / 2
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  for (const entry of legendEntries(ctx, zones.rows, fonts, barW)) {
+    ctx.fillStyle = palette.zones[zoneTint(entry.row) - 1] ?? palette.mu
     ctx.beginPath()
-    ctx.arc(x + SWATCH / 2, mid, SWATCH / 2, 0, Math.PI * 2)
+    ctx.arc(entry.x + SWATCH / 2, mid, SWATCH / 2, 0, Math.PI * 2)
     ctx.fill()
-    ctx.textBaseline = 'middle'
-    ctx.textAlign = 'left'
-    ctx.font = `400 11px ${fonts.text}`
+    ctx.font = `400 ${entry.size}px ${fonts.text}`
     ctx.fillStyle = palette.mu
-    ctx.fillText(`${zoneName(row)} ${t.zoneLabels[row.zone] ?? ''}`.trim(), x + SWATCH + 7, mid)
-    ctx.textAlign = 'right'
-    ctx.font = `700 11px ${fonts.text}`
+    ctx.fillText(entry.label, entry.x + SWATCH + SWATCH_GAP, mid)
+    ctx.font = `700 ${entry.size}px ${fonts.text}`
     ctx.fillStyle = palette.tx
-    ctx.fillText(formatPercent(row.percent), x + colW, mid)
-  })
+    ctx.fillText(entry.percent, entry.x + SWATCH + SWATCH_GAP + entry.labelW, mid)
+  }
+}
+
+interface LegendEntry {
+  row: ShareZoneRow
+  x: number
+  label: string
+  labelW: number
+  percent: string
+  size: number
+}
+
+/** One row: the zones' names go first when it is too narrow, then the size steps down. */
+export function legendEntries(ctx: Ctx, rows: readonly ShareZoneRow[], fonts: ShareFonts, width: number): LegendEntry[] {
+  const layouts = [
+    { named: true, size: LEGEND_TEXT },
+    { named: false, size: LEGEND_TEXT },
+    { named: false, size: LEGEND_TEXT - 1.5 },
+  ]
+  let entries: LegendEntry[] = []
+  for (const { named, size } of layouts) {
+    let x = PAD_X
+    entries = rows.map((row) => {
+      const label = named ? `${zoneName(row)} ${t.zoneLabels[zoneTint(row)] ?? ''}`.trim() : zoneName(row)
+      ctx.font = `400 ${size}px ${fonts.text}`
+      const labelW = ctx.measureText(`${label} `).width
+      const percent = formatPercent(row.percent)
+      ctx.font = `700 ${size}px ${fonts.text}`
+      const entry = { row, x, label, labelW, percent, size }
+      x += SWATCH + SWATCH_GAP + labelW + ctx.measureText(percent).width + LEGEND_COL_GAP
+      return entry
+    })
+    if (x - LEGEND_COL_GAP <= PAD_X + width) break
+  }
+  return entries
 }
 
 function greedyLines(ctx: Ctx, words: string[], max: number): string[] {
@@ -1028,7 +1071,7 @@ function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: Shar
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
     const last = row === zones.rows[zones.rows.length - 1]
-    ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
+    ctx.fillStyle = palette.zones[zoneTint(row) - 1] ?? palette.mu
     roundRect(ctx, at, top, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
     ctx.fill()
     at += w
@@ -1141,20 +1184,25 @@ export function headerFoot({ title, result }: Pick<ShareCardLayout, 'title'> & {
   return TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight + 18 + 3 + (result ? RESULT_H : 0)
 }
 
+/** How far above the foot's words its scrim starts to darken. */
+const SCRIM_FADE = 40
+
 /**
- * [offset, black's alpha] stops. It holds .62 to the foot of the header's
- * words, 5:1 there on white: clearing sooner left the date line 2.5:1 on a white sky.
+ * [offset, black's alpha] stops, fixed whatever the photo: .62 to the foot of the header's words (5:1 for the date line on
+ * white), clear through the middle, then .62 from the top of the rep pace and stats down to .8 at the foot.
  */
-export function photoScrim(headerBottom: number, height = H): [number, number][] {
+export function photoScrim(headerBottom: number, footerTop: number, height = H): [number, number][] {
   const words = headerBottom / height
-  return [[0, 0.72], [words, 0.62], [Math.min(0.52, Math.max(0.38, words + 0.14)), 0], [0.52, 0], [1, 0.78]]
+  const foot = Math.max(words, (footerTop - SCRIM_FADE) / height)
+  const clear = Math.min(foot, Math.max(0.38, words + 0.14))
+  return [[0, 0.72], [words, 0.62], [clear, 0], [foot, 0], [Math.min(1, footerTop / height), 0.62], [1, 0.8]]
 }
 
 function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
   const { height } = layout
   drawCover(ctx, photo, W, height)
   const scrim = ctx.createLinearGradient(0, 0, 0, height)
-  for (const [offset, alpha] of photoScrim(headerFoot(layout), height)) scrim.addColorStop(offset, `rgba(0, 0, 0, ${alpha})`)
+  for (const [offset, alpha] of photoScrim(headerFoot(layout), layout.textBottom, height)) scrim.addColorStop(offset, `rgba(0, 0, 0, ${alpha})`)
   ctx.fillStyle = scrim
   ctx.fillRect(0, 0, W, height)
 }

@@ -1,3 +1,4 @@
+import { thresholdReadings } from './GetThresholdHistory'
 import type { Activity } from '@/domain/activity/types'
 import type { OfficialRaceResult } from '@/domain/activity/raceResult'
 import type { CoachingPlan, NumberRange } from '@/domain/coaching/types'
@@ -27,10 +28,8 @@ import { buildTimeSeries } from './GetTrainingLoad'
 import { getRecoveryHistory } from './GetLoadRecovery'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import { getAthleteHistory } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
-import { getThresholdSamples } from '@/infrastructure/repositories/JsonThresholdHistoryRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 
 export interface Pair<T = number> {
@@ -241,13 +240,6 @@ function vo2maxSamples(activities: Activity[]): DatedValue[] {
   return [...byDate].map(([date, value]) => ({ date, value })).sort((left, right) => left.date.localeCompare(right.date))
 }
 
-/** Garmin's threshold detections, with the athlete history's daily copy filling the days between them. */
-function thresholdSamples(): CheckpointInputs['threshold'] {
-  const byDate = new Map<string, CheckpointInputs['threshold'][number]>()
-  for (const entry of getAthleteHistory()) byDate.set(entry.date, { date: entry.date, lthrBpm: entry.lthrBpm, thresholdPaceSecPerKm: entry.thresholdPaceSecPerKm })
-  for (const sample of getThresholdSamples()) byDate.set(sample.date, sample)
-  return [...byDate.values()].sort((left, right) => left.date.localeCompare(right.date))
-}
 
 export function getCycleCheckpoint(today = appTodayIso()): CycleCheckpoint {
   const repository = new JsonCoachingRepository()
@@ -259,7 +251,7 @@ export function getCycleCheckpoint(today = appTodayIso()): CycleCheckpoint {
     plans: [...(current ? [current] : []), ...repository.getArchivedPlans()],
     officialResults: getOfficialRaceResults(),
     vo2max: vo2maxSamples(activities),
-    threshold: thresholdSamples(),
+    threshold: thresholdReadings(),
     restingHr: getRecoveryHistory(),
     hrBounds: hrBoundsOf(athlete),
   }, today)

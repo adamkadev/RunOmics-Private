@@ -26,6 +26,8 @@ import type { ExplorePlan } from '@/components/explore/routeGenerator'
 import { cardClass } from '@/components/ui/Card'
 import { Pill } from '@/components/ui/Pill'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { PINNED_ROW_H, PINNED_TOP, StickyBar } from '@/components/ui/StickyBar'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
@@ -134,30 +136,42 @@ function pauseBlock(newer: string, older: string): ListBlock | null {
   return { kind: 'pause', key: `pause-${first}`, label: t.activities.pause(months === 1 ? name(first) : `${name(first)} – ${name(last)}`, first.slice(0, 4), months) }
 }
 
-/** A month heading totals the weeks under it, this week's included, so its km is the month's. */
+/**
+ * A week sits under the month of its Monday, but a month heading counts runs by their own date, this week's
+ * included: Sun Nov 1 in the week of Oct 26 is November's, as Plan counts it.
+ */
 export function listBlocks(weeks: WeekRow[]): ListBlock[] {
   const blocks: ListBlock[] = []
-  let current: WeekRow | null = null
+  const byMonth = new Map<string, { km: number; runs: number }>()
   for (const week of weeks) {
+    for (const item of week.items) {
+      const month = item.date.slice(0, 7)
+      const total = byMonth.get(month) ?? { km: 0, runs: 0 }
+      total.km += item.distanceKm
+      total.runs += 1
+      byMonth.set(month, total)
+    }
     if (week.isCurrent) {
       blocks.push({ kind: 'current', week })
-      current = week
       continue
     }
     const key = week.key.slice(0, 7)
     const open = blocks[blocks.length - 1]
     if (open?.kind === 'month' && open.key === key) {
       open.weeks.push(week)
-      open.km += week.totalKm
-      open.runs += week.items.length
     } else {
       const previous = [...blocks].reverse().find((block) => block.kind === 'month')
       const gap = previous?.kind === 'month' ? pauseBlock(previous.key, key) : null
       if (gap) blocks.push(gap)
       const label = formatDate(`${key}-01`, { precision: 'month', year: 'always', style: 'full' })
-      const withCurrent = current && current.key.slice(0, 7) === key ? current : null
-      blocks.push({ kind: 'month', key, label, km: week.totalKm + (withCurrent?.totalKm ?? 0), runs: week.items.length + (withCurrent?.items.length ?? 0), weeks: [week] })
+      blocks.push({ kind: 'month', key, label, km: 0, runs: 0, weeks: [week] })
     }
+  }
+  for (const block of blocks) {
+    if (block.kind !== 'month') continue
+    const total = byMonth.get(block.key)
+    block.km = total?.km ?? 0
+    block.runs = total?.runs ?? 0
   }
   return blocks
 }
@@ -363,21 +377,21 @@ export function ActivityListClient({
 
   return (
     <div className="flex flex-col gap-3">
-      <header>
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="min-w-0 text-display text-foreground">{t.pages.activities.title}</h1>
-          <SegmentedTabs
-            tabs={viewTabs}
-            items={[
-              { id: 'list', label: t.activities.view.list },
-              { id: 'map', label: t.activities.view.map },
-            ]}
-            label={t.activities.view.label}
-            barMirror
-          />
-        </div>
-        <p data-title-sub className="mt-0.5 text-[15px] leading-5 text-muted-foreground">{archiveLine.join(' · ')}</p>
-      </header>
+      <PageHeader title={t.pages.activities.title}>
+        <p className="text-[15px] leading-5 text-muted-foreground">{archiveLine.join(' · ')}</p>
+      </PageHeader>
+      <StickyBar top={PINNED_TOP} className="-my-2">
+        <SegmentedTabs
+          tabs={viewTabs}
+          items={[
+            { id: 'list', label: t.activities.view.list },
+            { id: 'map', label: t.activities.view.map },
+          ]}
+          label={t.activities.view.label}
+          fill
+          pinned
+        />
+      </StickyBar>
 
       <div {...viewTabs.panelProps} className="flex flex-col gap-3 outline-none">
         {view === 'map' ? (
@@ -508,12 +522,10 @@ export function ActivityListClient({
                     </section>
                   ) : (
                     <section key={block.key} data-testid="month">
-                      {/* Sticky under the compact title bar while it shows; on a phone not
-                          otherwise (--sticky-alone, globals.css). */}
                       <div
                         data-sticky-strip
                         className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
-                        style={{ top: 'var(--sticky-top, var(--sticky-alone, var(--safe-top)))' }}
+                        style={{ top: `calc(${PINNED_TOP} + ${PINNED_ROW_H}px)` }}
                       >
                         <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>
                         <span className="text-[13px] text-muted-foreground" data-testid="month-line">

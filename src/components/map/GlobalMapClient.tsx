@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Maximize, Minimize, SlidersHorizontal } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import { ACTIVITY_TYPES } from "@/domain/activity/types";
+import { RUN_KINDS } from "@/domain/activity/runKind";
 import { areaForCluster } from "@/domain/explore/areaForCluster";
 import { medianStart } from "@/domain/explore/home";
 import { circleOf } from "@/domain/explore/avoidSpots";
@@ -52,7 +52,6 @@ import {
   matchesFilters,
   NO_HEAT_FILTERS,
   reachKm,
-  reachLabel,
   type HeatFilters,
 } from "./mapUtils";
 
@@ -211,8 +210,8 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const { routes, failed: tracksFailed, retry: retryTracks } = useClusterTracks(version, clusters[selectedIdx]?.id ?? null);
 
   const availableTypes = useMemo(() => {
-    const present = new Set(routeMeta.map((m) => m.type));
-    return ACTIVITY_TYPES.filter((ty) => present.has(ty));
+    const present = new Set(routeMeta.map((m) => m.kind));
+    return RUN_KINDS.filter((kind) => present.has(kind));
   }, [routeMeta]);
 
   const rows = useMemo(() => areaRows(clusters, routeMeta, filters), [clusters, routeMeta, filters]);
@@ -315,8 +314,8 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   const territory = useMemo(() => {
     const cluster = clusters[selectedIdx];
-    return cluster ? computeAreaTerritory(cluster, routeMeta, routes, filters) : null;
-  }, [clusters, selectedIdx, routeMeta, routes, filters]);
+    return cluster ? computeAreaTerritory(cluster, routeMeta, routes, filters, data.untracked) : null;
+  }, [clusters, selectedIdx, routeMeta, routes, filters, data.untracked]);
 
   // At the distance the card's sentence states.
   const ring = useMemo<HomeRing | null>(
@@ -324,17 +323,18 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     [territory],
   );
 
+  // Not the coordinate label: "Show 12 runs in 0.0°N 150.0°W".
+  const place = useMemo(() => {
+    const cluster = clusters[selectedIdx];
+    const areaName = names[selectedIdx];
+    return cluster && areaName && areaName !== coordLabel(cluster) ? areaName : null;
+  }, [clusters, selectedIdx, names]);
+
   const cardContent = useMemo<TerritoryCardContent | null>(() => {
     const s = t.pages.map.territory;
-    const cluster = clusters[selectedIdx];
-    if (!cluster || !territory) return null;
-    // Not the coordinate label: the sentence would read "all your 0.0°N
-    // 150.0°W running".
-    const areaName = names[selectedIdx];
-    const place = areaName && areaName !== coordLabel(cluster) ? areaName : null;
-    const reach = reachLabel(territory.medianReachKm);
+    if (!territory) return null;
     const { types, years } = filters;
-    const typeLabel = types.length === 1 ? t.activityTypes[types[0]!] : types.length > 1 ? t.pages.map.filters.types(types.length) : null;
+    const typeLabel = types.length === 1 ? t.pages.map.kinds[types[0]!] : types.length > 1 ? t.pages.map.filters.types(types.length) : null;
     const eyebrow = [
       place ?? s.homeArea,
       ...(typeLabel ? [typeLabel] : []),
@@ -342,14 +342,14 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     ].join(" · ");
     return {
       eyebrow,
-      headline: s.headline(territory.percentVolume, reach, selectedIdx === data.defaultClusterIdx),
+      headline: s.headline(territory.percentVolume),
       stats: [
         { label: s.runsStat, value: String(territory.routeCount) },
         { label: s.kmStat, value: formatKm(territory.km), unit: t.units.km },
         { label: s.reachStat, value: formatNumber(reachKm(territory.medianReachKm)), unit: t.units.km },
       ],
     };
-  }, [clusters, selectedIdx, territory, names, filters, data.defaultClusterIdx]);
+  }, [territory, place, filters]);
 
   const districtsCard = useMemo(
     () =>
@@ -527,6 +527,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
         <HeatFilterSheet
           types={availableTypes}
           years={data.years}
+          place={place}
           value={filters}
           count={(next) => areaRuns(next).length}
           onApply={setFilters}
@@ -575,6 +576,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             start={routeStart}
             onStartModeChange={explore.setStartMode}
             day={explore.day}
+            nextKind={explore.nextKind}
             avoid={avoid}
             home={districtsHome}
             paceSecPerKm={generator.pace}
@@ -656,7 +658,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
         )}
 
         {/* Off under a sheet or its scrim, where they would only cost blur. */}
-        {sheetOpen || generatorOpen || (filtersOpen && districtsOn) ? null : isFullscreen ? (
+        {sheetOpen || generatorOpen || filtersOpen ? null : isFullscreen ? (
           // One column for both layers, so the layers button and the ⓘ never
           // move under the finger when the layer changes.
           <div className="pointer-events-none absolute inset-x-6 bottom-[max(24px,var(--safe-bottom))] z-10 flex flex-col items-end gap-2">

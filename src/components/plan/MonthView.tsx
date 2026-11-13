@@ -1,16 +1,14 @@
 'use client'
 
 import { useMemo, type CSSProperties, type MouseEvent } from 'react'
-import { ChevronRight } from 'lucide-react'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from './planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import { isKeyPrescription } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
 import { zoneColor } from '@/lib/colors'
 import { ZONE_TILE_SHARE } from '@/lib/themeTokens'
 import { DAY_MS, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { formatDate, formatRanKm, formatWeekday, formatPlannedKm } from '@/lib/formatters'
+import { formatDate, formatRanKm, formatPlannedKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -19,7 +17,6 @@ import { monthDays, type MonthDayState } from '@/domain/training/monthDays'
 import { useSkippedDays } from '@/lib/skippedDays'
 import { planPhaseSpans, spanOfWeek, spanWeeks, type PhaseSpan } from './planPhaseSpans'
 import { dayKind, kindColor, kindLetter, type DayKind } from './sessionKind'
-import { sessionTitle } from './sessionTitle'
 
 interface Props {
   year: number
@@ -98,24 +95,6 @@ function tileFigure(cell: Cell): string | null {
   return cell.planned.km !== null ? formatPlannedKm(cell.planned.km) : cell.planned.minutes !== null ? t.plan.steps.minutes(cell.planned.minutes) : null
 }
 
-function nextKeySession(
-  from: string,
-  byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>,
-): { date: string; title: string } | null {
-  const dates = [...new Set([...byDatePlanned.keys(), ...(byDateCoach?.keys() ?? [])])].filter((d) => d >= from).sort()
-  for (const date of dates) {
-    const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
-    if (coach) {
-      if (isKeyPrescription(coach.prescription)) return { date, title: coach.prescription.shortName ?? coach.prescription.title }
-      continue
-    }
-    const plan = byDatePlanned.get(date)
-    if (plan?.type && plan.type !== 'Base') return { date, title: sessionTitle(plan.name, plan.type) ?? t.activityTypes[plan.type] }
-  }
-  return null
-}
-
 // Sessions this close still read as one plan; a longer gap is a plan that stopped.
 const PLAN_GAP_DAYS = 7
 
@@ -170,7 +149,7 @@ export function MonthView({
   const currentSpan = spanOfWeek(spans, isoDate(startOfWeek(new Date(`${today}T00:00:00`))))
 
   const skipped = useSkippedDays()
-  const { rows, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes, hasLong } = useMemo(() => {
+  const { rows, planEnd, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes, hasLong } = useMemo(() => {
     const first = new Date(year, month, 1)
     const startOffset = (first.getDay() || 7) - 1
     const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -232,7 +211,23 @@ export function MonthView({
     const to = extent && extent.to < monthEnd ? extent.to : monthEnd
     const ranInPlanKm = rows.flatMap((row) => row.cells).filter((c) => !c.outside && c.date >= from && c.date <= to).reduce((sum, c) => sum + c.ranKm, 0)
     const planSpan = extent && (from > monthStart || to < monthEnd) ? { from, to } : null
-    return { rows, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes: QUALITY_ORDER.filter((type) => quality.has(type)), hasLong }
+    const lastPlanned = [...byDatePlanned.keys(), ...(byDateCoach?.keys() ?? [])]
+      .filter((date) => date <= monthEnd && plannedFor(date, byDatePlanned, byDateCoach) !== null)
+      .sort()
+      .at(-1) ?? null
+    let shown = rows.length
+    while (lastPlanned && shown > 0 && rows[shown - 1]!.future && rows[shown - 1]!.monday > lastPlanned && rows[shown - 1]!.ranKm === 0) shown--
+    const planEnd = shown < rows.length ? lastPlanned : null
+    return {
+      rows: rows.slice(0, shown),
+      planEnd,
+      ranKm,
+      plannedKm,
+      planSpan,
+      ranInPlanKm,
+      qualityTypes: QUALITY_ORDER.filter((type) => quality.has(type)),
+      hasLong,
+    }
   }, [year, month, monthStart, monthEnd, byDate, byDatePlanned, byDateCoach, coaching, spans, today, skipped])
 
   /** Every run inside the plan's stretch of the month, so the two sides of "of" cover the same days. */
@@ -248,7 +243,6 @@ export function MonthView({
   const spelled = formatDate(monthStart, { precision: 'month', style: 'full', year: 'never' })
   // French months are lowercase mid-sentence; as a title the month opens the line.
   const monthName = spelled.charAt(0).toLocaleUpperCase(t.locale) + spelled.slice(1)
-  const key = monthEnd >= today ? nextKeySession(monthStart > today ? monthStart : today, byDatePlanned, byDateCoach) : null
   const m = t.plan.month
 
   return (
@@ -289,7 +283,11 @@ export function MonthView({
                 onClick={(event) => openRow(row, event)}
                 aria-label={m.weekLabel(
                   formatDate(row.monday, { style: 'bare' }),
-                  row.plannedKm > 0 ? `${formatRanKm(row.ranKm)} ${t.plan.weekRow.kmOf(formatPlannedKm(row.plannedKm))}` : `${formatRanKm(row.ranKm)} ${t.units.km}`,
+                  row.future
+                    ? m.plannedKm(formatPlannedKm(row.plannedKm))
+                    : row.plannedKm > 0
+                      ? `${formatRanKm(row.ranKm)} ${t.plan.weekRow.kmOf(formatPlannedKm(row.plannedKm))}`
+                      : `${formatRanKm(row.ranKm)} ${t.units.km}`,
                 )}
                 className={cn(GRID, 'w-full items-center rounded-r-xl border-l-[3px] py-1.5 text-left transition-colors hover:bg-[var(--surface-2)]', row.current && 'bg-card')}
                 style={{ borderLeftColor: phaseColor(row.span) }}
@@ -339,15 +337,29 @@ export function MonthView({
                   )
                 })}
                 <span data-testid="month-week-total" className="flex min-w-0 flex-col items-end pr-1 leading-tight tabular-nums">
-                  <span className={cn('text-sm font-semibold', row.future ? 'text-muted-foreground' : row.current ? 'text-accent-text' : 'text-foreground')}>
-                    {row.future ? (row.plannedKm > 0 ? '–' : '') : formatRanKm(row.ranKm)}
-                  </span>
-                  {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatPlannedKm(row.plannedKm)}</span>}
+                  {row.future ? (
+                    row.plannedKm > 0 && (
+                      <>
+                        <span className="text-sm font-semibold text-muted-foreground">{formatPlannedKm(row.plannedKm)}</span>
+                        <span className="text-[11px] text-muted-foreground">{m.plannedWord}</span>
+                      </>
+                    )
+                  ) : (
+                    <>
+                      <span className={cn('text-sm font-semibold', row.current ? 'text-accent-text' : 'text-foreground')}>{formatRanKm(row.ranKm)}</span>
+                      {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatPlannedKm(row.plannedKm)}</span>}
+                    </>
+                  )}
                 </span>
               </button>
             </div>
           ))}
         </div>
+        {planEnd && (
+          <p data-testid="month-plan-end" className="mt-2.5 rounded-[18px] border border-dashed border-border px-4 py-3 text-center text-[13px] text-muted-foreground">
+            {m.noneAfter(formatDate(planEnd, { style: 'bare', year: 'never' }))}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-muted-foreground" data-testid="month-legend">
@@ -386,20 +398,6 @@ export function MonthView({
             </>
           )}
         </p>
-        {key && (
-          <button
-            type="button"
-            onClick={() => onSelectDay(key.date)}
-            data-testid="month-next-key"
-            className="-mx-1 mt-1 flex items-center justify-between gap-3 rounded-lg border-t border-border px-1 pt-3 text-left"
-          >
-            <span className="flex min-w-0 flex-col">
-              <span className="text-xs text-muted-foreground">{m.nextKey}</span>
-              <span className="truncate text-[15px] font-semibold text-foreground">{`${formatWeekday(key.date, true)} · ${key.title}`}</span>
-            </span>
-            <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-accent-text" />
-          </button>
-        )}
       </section>
     </div>
   )

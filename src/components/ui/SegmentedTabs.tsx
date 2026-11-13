@@ -1,6 +1,6 @@
 'use client'
 
-import { useContext, useId, type KeyboardEvent, type ReactNode } from 'react'
+import { useContext, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { GlassLayers } from '@/components/ui/GlassSurface'
 import { StickyStuckContext } from '@/components/ui/StickyBar'
 import { cn } from '@/lib/utils'
@@ -76,8 +76,9 @@ export function SegmentedTabs<T extends string | number>({
   fill = false,
   className,
   tabClassName,
-  barMirror = false,
+  pinned = false,
   onAura = false,
+  scroll = false,
 }: {
   tabs: SegmentedTabsState<T>
   /** `ariaLabel` reads a short label in full: "4W" on screen, "last 4 weeks" aloud. */
@@ -87,55 +88,124 @@ export function SegmentedTabs<T extends string | number>({
   fill?: boolean
   className?: string
   tabClassName?: string
-  /** The compact top bar carries a copy once this scrolls away, so it is glass at rest and the copy lands with no jump. */
-  barMirror?: boolean
+  /** A switcher row pinned under the top bar: the bar's glass at rest too, so it never changes look as it pins. */
+  pinned?: boolean
   /** Straight on the background glow. */
   onAura?: boolean
+  /** Labels at their own width, scrolling inside the track with a fade at the edge that has more. */
+  scroll?: boolean
 }) {
   const stuck = useContext(StickyStuckContext)
-  const glass = barMirror || stuck === true
+  const glass = pinned || stuck === true
+  const buttons = items.map((item) => {
+    const props = tabs.tabProps(item.id)
+    return (
+      <button
+        key={item.id}
+        {...props}
+        aria-label={item.ariaLabel}
+        className={cn(
+          'hit-44 flex items-center justify-center whitespace-nowrap transition-colors',
+          glass ? 'lg-press h-9 rounded-full px-3.5 text-[15px] text-foreground' : cn('rounded-full', size && SIZE_CLASS[size]),
+          // Spare width shared on top of each label, not equal widths, so "Performance" never touches its pill's edges.
+          fill && !scroll && 'min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3',
+          scroll && 'shrink-0',
+          !glass && tabClassName,
+          glass && fill && !scroll && 'px-1.5 min-[400px]:px-2.5',
+          glass
+            ? props['aria-selected']
+              ? 'bg-[var(--tab-pill)] font-semibold'
+              : 'font-medium'
+            : props['aria-selected']
+              ? SEGMENTED_THUMB_CLASS
+              : SEGMENTED_IDLE_CLASS
+        )}
+      >
+        <span className="truncate">{item.label}</span>
+      </button>
+    )
+  })
+  if (scroll) {
+    return (
+      <div
+        data-variant={glass ? 'glass' : 'content'}
+        className={cn(
+          glass ? 'lg flex h-11 shrink-0 p-1' : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS,
+          glass && !pinned && 'lg-stuck-in',
+          'w-full max-w-full',
+          className,
+        )}
+      >
+        {glass && <GlassLayers />}
+        <ScrollingTabs listProps={tabs.listProps} label={label} selected={items.findIndex((item) => tabs.tabProps(item.id)['aria-selected'])}>
+          {buttons}
+        </ScrollingTabs>
+      </div>
+    )
+  }
   return (
     <div
       {...tabs.listProps}
       aria-label={label}
-      data-bar-segments={barMirror ? '' : undefined}
       data-variant={glass ? 'glass' : 'content'}
       className={cn(
-        glass ? 'lg flex h-11 shrink-0 p-1' : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS,
-        // A strip's glass fades in as it sticks; the bar's copy is glass from the start.
-        glass && !barMirror && 'lg-stuck-in',
+        glass ? cn('lg flex h-11 shrink-0 p-1', pinned && 'lg-bar') : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS,
+        // A strip's glass fades in as it sticks; a pinned row is glass from the start.
+        glass && !pinned && 'lg-stuck-in',
         fill && 'w-full',
         className,
       )}
     >
       {glass && <GlassLayers />}
-      {items.map((item) => {
-        const props = tabs.tabProps(item.id)
-        return (
-          <button
-            key={item.id}
-            {...props}
-            aria-label={item.ariaLabel}
-            className={cn(
-              'hit-44 flex items-center justify-center whitespace-nowrap transition-colors',
-              glass ? 'lg-press h-9 rounded-full px-3.5 text-[15px] text-foreground' : cn('rounded-full', size && SIZE_CLASS[size]),
-              // Spare width shared on top of each label, not equal widths, so "Performance" never touches its pill's edges.
-              fill && 'min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3',
-              !glass && tabClassName,
-              glass && fill && 'px-1.5 min-[400px]:px-2.5',
-              glass
-                ? props['aria-selected']
-                  ? 'bg-[var(--tab-pill)] font-semibold'
-                  : 'font-medium'
-                : props['aria-selected']
-                  ? SEGMENTED_THUMB_CLASS
-                  : SEGMENTED_IDLE_CLASS
-            )}
-          >
-            <span className="truncate">{item.label}</span>
-          </button>
-        )
-      })}
+      {buttons}
+    </div>
+  )
+}
+
+const FADE = '24px'
+
+function ScrollingTabs({
+  listProps,
+  label,
+  selected,
+  children,
+}: {
+  listProps: SegmentedTabsState<string>['listProps']
+  label: string
+  selected: number
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ start: false, end: false })
+
+  function measure() {
+    const el = ref.current
+    if (!el) return
+    setEdges({ start: el.scrollLeft > 1, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 })
+  }
+
+  useEffect(() => {
+    const el = ref.current
+    el?.children[selected]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    measure()
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [selected])
+
+  const mask = `linear-gradient(to right, ${edges.start ? 'transparent' : '#000'}, #000 ${FADE}, #000 calc(100% - ${FADE}), ${edges.end ? 'transparent' : '#000'})`
+  return (
+    <div
+      {...listProps}
+      ref={ref}
+      aria-label={label}
+      onScroll={measure}
+      data-fade-end={edges.end || undefined}
+      className="relative flex min-w-0 flex-1 gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      style={{ maskImage: mask, WebkitMaskImage: mask }}
+    >
+      {children}
     </div>
   )
 }

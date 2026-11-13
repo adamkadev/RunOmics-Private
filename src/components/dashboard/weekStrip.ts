@@ -1,6 +1,7 @@
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { CoachingWorkoutType, WorkoutBlock } from '@/domain/coaching/types'
 import type { WeekDayState, WeekTarget } from '@/domain/training/weekTarget'
+import { hasStrides } from '@/domain/activity/runKind'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { formatDate, formatNumber, formatPlannedKm } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -8,12 +9,6 @@ import { t } from '@/i18n'
 interface CoachDay {
   state: string
   prescription: { date: string; type: CoachingWorkoutType; blocks: readonly WorkoutBlock[] }
-}
-
-function hasStrides(blocks: readonly WorkoutBlock[]): boolean {
-  return blocks.some((block) =>
-    block.kind === 'repeat' ? block.steps.some((step) => step.kind === 'strides') : block.kind === 'strides',
-  )
 }
 
 /** In Plan's priority (the coach's over Garmin's, a cancelled one is no plan), so the strip names the day Plan draws. */

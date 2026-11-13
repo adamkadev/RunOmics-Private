@@ -7,6 +7,7 @@ import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsi
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { wearOutlook, weeksInRotation } from '@/domain/shoe/wearStatus'
 import { ShoeBackButton } from '@/components/shoes/ShoeBackButton'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
 import { Unit } from '@/components/ui/Stat'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
@@ -140,20 +141,22 @@ export default async function ShoeDetailPage({
 
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="mb-1.5">
-        <ShoeBackButton className="mb-3.5" />
-        <div className="flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="shoe-eyebrow">
-              {!shoe.retired && shoe.firstUsedDate ? s.since(shoe.brand, formatMonthYear(shoe.firstUsedDate)) : shoe.brand}
-              {shoe.retired && (
-                <span className="rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">{s.retired}</span>
-              )}
-            </p>
-            <h1 className="mt-1 text-display text-foreground">{shoe.name}</h1>
-          </div>
-          {/* Limits, roles and retirement are set on the watch, so Edit opens its app. */}
-          {!shoe.retired && isWatchId(shoe.gearId) && (
+      <PageHeader
+        back={<ShoeBackButton />}
+        title={shoe.name}
+        className="mb-1.5"
+        eyebrow={
+          <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="shoe-eyebrow">
+            {!shoe.retired && shoe.firstUsedDate ? s.since(shoe.brand, formatMonthYear(shoe.firstUsedDate)) : shoe.brand}
+            {shoe.retired && (
+              <span className="rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">{s.retired}</span>
+            )}
+          </p>
+        }
+        action={
+          // Limits, roles and retirement are set on the watch, so Edit opens its app.
+          !shoe.retired &&
+          isWatchId(shoe.gearId) && (
             <a
               href={GARMIN_GEAR_URL}
               target="_blank"
@@ -163,9 +166,9 @@ export default async function ShoeDetailPage({
             >
               {s.edit}
             </a>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
 
       <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoe-hero">
         {shoe.retired ? (

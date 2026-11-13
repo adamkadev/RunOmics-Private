@@ -21,6 +21,12 @@ export const ZONE_HEX = {
 } as const
 
 /**
+ * Moderate (Z3) where easy, moderate and hard split one bar: a neutral grey-blue, so it never joins the Z4-Z5 purple
+ * beside it. The five-zone scale keeps its own Z3, which a grey-blue would confuse with Z1.
+ */
+export const ZONE_MODERATE_HEX = { light: '#7a8aa0', dark: '#94a3b8' } as const
+
+/**
  * Status only, never a category: a delta takes one by what it means, not by
  * which way it moved (fatigue +6 is warn, fitness +4 is pos). Good is a green
  * of its own, apart from the teal accent, so a judged value never reads as a
@@ -404,6 +410,7 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--zone-3': ZONE_HEX[mode][2],
     '--zone-4': ZONE_HEX[mode][3],
     '--zone-5': ZONE_HEX[mode][4],
+    '--zone-moderate': ZONE_MODERATE_HEX[mode],
     '--zone-1-text': ZONE_TEXT_HEX[mode][0]!,
     '--zone-2-text': ZONE_TEXT_HEX[mode][1]!,
     '--zone-3-text': ZONE_TEXT_HEX[mode][2]!,

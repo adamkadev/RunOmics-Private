@@ -108,11 +108,12 @@ describe('the map filter chips', () => {
     expect(menu.style.left).toBe('100px')
   })
 
-  it('draw the area as a glass pill that takes the room left and cuts a long name', () => {
+  it('draw the area as a glass pill sized to its name, cutting one too long for the room left', () => {
     render(<AreaPicker />)
     const chip = screen.getByRole('button', { name: new RegExp(t.pages.map.area) })
     expect(chip.className).toMatch(/(^|\s)lg(\s|$)/)
-    expect(chip.className).toContain('flex-1')
+    expect(chip.className).not.toMatch(/(^|\s)flex-1(\s|$)/)
+    expect(chip.className).toContain('max-w-full')
     expect(chip.className).toContain('min-w-0')
     expect(chip.querySelector('span.truncate')!.textContent).toBe('Riverside')
   })

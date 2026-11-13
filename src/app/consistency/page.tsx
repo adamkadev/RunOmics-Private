@@ -25,8 +25,7 @@ export default async function ConsistencyPage() {
   const views = Object.fromEntries(rangesFor(reprise !== null).ranges.map((range) => [range, consistencyView(range, input)]))
   return (
     <div className="flex flex-col gap-3.5">
-      <BackButton label={t.pages.consistency.back} fallbackHref="/profile" />
-      <Consistency views={views} today={today} reprise={reprise !== null} />
+      <Consistency views={views} today={today} reprise={reprise !== null} back={<BackButton label={t.pages.consistency.back} fallbackHref="/profile" />} />
     </div>
   )
 }

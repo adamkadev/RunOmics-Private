@@ -64,11 +64,11 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
         {...menu.chipProps}
         title={selectedName}
         aria-label={`${t.pages.map.area}: ${selectedName}`}
-        className={glassClass("regular", "flex h-11 min-w-0 flex-1 items-center gap-2 pl-3.5 pr-3 text-foreground")}
+        className={glassClass("regular", "flex h-11 min-w-0 max-w-full items-center gap-2 pl-3.5 pr-3 text-foreground")}
       >
         <GlassLayers />
         <MapPin size={18} strokeWidth={2} aria-hidden="true" className="shrink-0 text-accent" />
-        <span data-testid="area-label" className="min-w-0 flex-1 truncate text-left text-headline text-foreground">{selectedName}</span>
+        <span data-testid="area-label" className="min-w-0 truncate text-left text-headline text-foreground">{selectedName}</span>
         <ChevronDown
           size={16}
           strokeWidth={2.2}

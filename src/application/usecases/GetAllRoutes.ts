@@ -1,12 +1,16 @@
 import { createHash } from 'node:crypto'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity, ActivityType } from '@/domain/activity/types'
+import { runKind, type RunKind } from '@/domain/activity/runKind'
+import { sessionForRun, type RunSession } from '@/domain/coaching/sessionForRun'
+import { getRunSessions } from '@/application/coaching/GetCoachingView'
 import { distanceKm } from '@/lib/math'
 import { percentileBounds, type LngLatBounds } from '@/lib/routeFrame'
 
 export interface RouteMeta {
   id: string
   type: ActivityType
+  kind: RunKind
   year: string
   date: string
   distanceKm: number
@@ -34,6 +38,8 @@ export interface MapShellData {
   totalCount: number
   totalKm: number
   years: string[]
+  /** Runs with no GPS track: the heat share is of all the running, as the page's total is. */
+  untracked: Pick<RouteMeta, 'kind' | 'year' | 'distanceKm'>[]
 }
 
 export interface AllRoutesData extends MapShellData {
@@ -76,11 +82,23 @@ function findNearestClusterIdx(
 // Keyed by the activity list itself, which stays the same array until the data changes.
 let cache: { source: Activity[]; routes: AllRoutesData } | null = null
 
+/** An unreadable plan costs the coach's session types, never the map. */
+function readSessions(): RunSession[] {
+  try {
+    return getRunSessions()
+  } catch (error) {
+    console.error('[coaching] plan unreadable, runs keep their own kinds', error)
+    return []
+  }
+}
+
 export function getAllRoutes(): AllRoutesData {
   const source = getAllActivities()
   if (cache?.source === source) return cache.routes
 
   const activities = source.filter((a) => a.route && a.route.length > 1)
+  const sessions = readSessions()
+  const kindOf = (a: Activity) => runKind(a, sessionForRun(a, sessions))
 
   type ClusterAcc = {
     indices: number[]
@@ -148,6 +166,7 @@ export function getAllRoutes(): AllRoutesData {
     routeMeta: activities.map((a) => ({
       id: a.id,
       type: a.type,
+      kind: kindOf(a),
       year: a.date.slice(0, 4),
       date: a.date.slice(0, 10),
       distanceKm: a.distanceKm,
@@ -159,14 +178,15 @@ export function getAllRoutes(): AllRoutesData {
     totalCount: activities.length,
     totalKm: Math.round(activities.reduce((s, a) => s + a.distanceKm, 0)),
     years: Array.from(new Set(activities.map((a) => a.date.slice(0, 4)))).sort(),
+    untracked: source.filter((a) => !(a.route && a.route.length > 1)).map((a) => ({ kind: kindOf(a), year: a.date.slice(0, 4), distanceKm: a.distanceKm })),
   }
   cache = { source, routes }
   return routes
 }
 
 export function getMapShellData(): MapShellData {
-  const { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years } = getAllRoutes()
-  return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years }
+  const { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years, untracked } = getAllRoutes()
+  return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years, untracked }
 }
 
 /** Bump when an answer's shape changes: a browser keeps an answer by its version for good. */

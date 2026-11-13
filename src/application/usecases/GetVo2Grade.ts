@@ -1,3 +1,4 @@
+import { getLatestVO2max } from './GetVO2maxHistory'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
@@ -136,7 +137,8 @@ export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
 export function getVo2Grade(today = appTodayIso()): Vo2GradeView | null {
   const athlete = getAthleteProfile()
   const activities = getAllActivities()
-  const value = athlete.vo2maxMlKgMin ?? activities.find((a) => a.vo2maxGarmin != null)?.vo2maxGarmin ?? null
+  // The precise daily reading Analytics and the hub show: the profile's copy is a whole number.
+  const value = getLatestVO2max()
   if (value == null || athlete.age === undefined || !athlete.sex) return null
   const { months, days } = getVo2maxSamples()
   const byDate = new Map<string, Vo2Sample>()

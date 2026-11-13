@@ -41,6 +41,25 @@ describe('TodaySessionCard', () => {
     expect(eyebrow.className).toContain('uppercase')
   })
 
+  it("puts today's run at display size with no eyebrow, and another day's smaller under its eyebrow", () => {
+    const { unmount } = render(<TodaySessionCard card={card({ eyebrow: null, date: '2026-10-19' })} />)
+    expect(screen.getByTestId('session-title').className).toContain('text-title-1')
+    expect(screen.getByTestId('session-card')).not.toHaveTextContent('Tomorrow')
+    unmount()
+
+    render(<TodaySessionCard card={card()} />)
+    expect(screen.getByTestId('session-title').className).toContain('text-headline')
+  })
+
+  it('leads a rest day with the rest, then the next session below a hairline, still one link', () => {
+    render(<TodaySessionCard card={card({ rest: 'No run today. Easy tomorrow.' })} />)
+    expect(screen.getByTestId('session-rest')).toHaveTextContent(t.dashboard.todayHero.restDay)
+    expect(screen.getByTestId('session-rest-line')).toHaveTextContent('No run today. Easy tomorrow.')
+    expect(screen.getByTestId('session-next')).toHaveTextContent('Tomorrow · Tue 20')
+    expect(screen.getByTestId('session-next').className).toContain('border-t')
+    expect(screen.getAllByRole('link')).toHaveLength(1)
+  })
+
   it('draws the bar only for a session built of steps', () => {
     const { unmount } = render(<TodaySessionCard card={card({ workout: { ...EASY, structure: STRIDES } })} />)
     expect(screen.getByTestId('today-structure-bar').children).toHaveLength(7)

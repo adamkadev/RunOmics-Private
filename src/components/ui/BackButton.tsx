@@ -31,7 +31,7 @@ export function BackButton({ label, fallbackHref = '/', className, variant = 'li
         else router.push(fallbackHref)
       }}
       aria-label={label}
-      className={glassClass(variant === 'round' ? 'clear' : 'regular', cn(GLASS_CIRCLE, variant === 'link' && 'mb-1', className))}
+      className={glassClass(variant === 'round' ? 'clear' : 'bar', cn(GLASS_CIRCLE, className))}
     >
       <GlassLayers />
       <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />

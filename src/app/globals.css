@@ -195,6 +195,7 @@
   --zone-3:                  #6a52d9;
   --zone-4:                  #ae3cc2;
   --zone-5:                  #d63a77;
+  --zone-moderate:           #7a8aa0;
   --zone-1-text:             #4c6279;
   --zone-2-text:             #135bc5;
   --zone-3-text:             #5f45cb;
@@ -224,6 +225,8 @@
   --tab-glass-fill:          rgb(255 255 255 / 0.36);
   --clear-glass-fill:        rgb(255 255 255 / 0.10);
   --clear-glass-filter:      blur(8px) saturate(1.8);
+  --bar-glass-filter:        blur(18px) saturate(0) brightness(1.02);
+  --bar-glass-edge-filter:   blur(1px) saturate(0) brightness(1.08);
   --sheet-glass-fill:        rgb(250 251 250 / 0.55);
   --sheet-glass-filter:      blur(28px) saturate(2);
   --sheet-fill:              rgb(0 0 0 / 0.05);
@@ -329,6 +332,7 @@
   --zone-3:                  #8f7cf0;
   --zone-4:                  #c565f8;
   --zone-5:                  #f4438f;
+  --zone-moderate:           #94a3b8;
   --zone-1-text:             #90a1b6;
   --zone-2-text:             #60a1fa;
   --zone-3-text:             #9e8cff;
@@ -358,6 +362,8 @@
   --tab-glass-fill:          rgb(34 38 37 / 0.60);
   --clear-glass-fill:        rgb(16 18 18 / 0.22);
   --clear-glass-filter:      blur(5px) saturate(1.6) brightness(0.9);
+  --bar-glass-filter:        blur(12px) saturate(0) brightness(1.1);
+  --bar-glass-edge-filter:   blur(1px) saturate(0) brightness(1.25);
   --sheet-glass-fill:        rgb(28 31 31 / 0.80);
   --sheet-glass-filter:      blur(28px) saturate(1.8);
   --sheet-fill:              rgb(255 255 255 / 0.10);
@@ -579,6 +585,11 @@
   .lg-clear {
     --glass-fill: var(--clear-glass-fill);
     --glass-filter: var(--clear-glass-filter);
+  }
+  /* Bar buttons and pinned rows: grey glass, so the page's glow never tints them. */
+  .lg-bar {
+    --glass-filter: var(--bar-glass-filter);
+    --glass-edge-filter: var(--bar-glass-edge-filter);
   }
 
   /* Light glass reads darker than the page under a sheet's scrim or a selected platter, so its secondary and accent
@@ -1001,7 +1012,8 @@ body {
 body {
   color: var(--foreground);
   line-height: 1.5;
-  font-variant-numeric: tabular-nums;
+  /* No page-wide tabular-nums: it sets the hyphen in a figure-wide slot ("Devant - les - Ponts", "12 - week").
+     Columns and counters that must not shift say tabular-nums themselves. */
   overflow-x: hidden;
   -webkit-user-select: none;
   user-select: none;

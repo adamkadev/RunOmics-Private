@@ -1,3 +1,4 @@
+import { displayName } from './sessionTitle'
 import type { WorkoutStep } from '@/domain/activity/types'
 import type { PlanWorkoutView } from './planWorkoutView'
 import { formatClock } from '@/lib/formatters'
@@ -77,8 +78,8 @@ export function workoutSummary(
   }
 
   return {
-    title,
-    shortTitle: view.shortName ?? title,
+    title: displayName(title),
+    shortTitle: displayName(view.shortName ?? title),
     durationSeconds: view.duration?.seconds ?? null,
     distanceM: view.distanceM,
     paces,

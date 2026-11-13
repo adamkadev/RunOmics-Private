@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { formBand } from '@/domain/training/formBand'
 import { t } from '@/i18n'
+import { formatWeekdayLong } from '@/lib/formatters'
 import { ReadinessCard } from '../ReadinessCard'
 
 const checkIn = vi.hoisted(() => ({ day: undefined as unknown }))
@@ -21,24 +22,40 @@ describe('ReadinessCard (App Fixes 1a)', () => {
   it('reads Form, Fitness and Fatigue on three tiles, and no watch status', () => {
     render(<ReadinessCard status={STATUS} />)
 
-    expect(screen.getByTestId('tile-form')).toHaveTextContent(`${t.dashboard.readiness.formLabel}−6`)
-    expect(screen.getByTestId('tile-form')).toHaveTextContent(t.formBand.neutral.toLowerCase())
+    expect(screen.getByTestId('tile-form').textContent).toBe(`${t.dashboard.readiness.formLabel}−6`)
     expect(screen.getByTestId('tile-fitness')).toHaveTextContent(`${t.dashboard.readiness.ctl}54`)
     expect(screen.getByTestId('tile-fatigue')).toHaveTextContent(`${t.dashboard.readiness.atl}60`)
     expect(screen.queryByTestId('tile-load')).toBeNull()
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.trainingStatus.status.productive)
   })
 
-  it('names the form state and the load against its range, amber while out of it', () => {
+  it('names the load against its range, amber while out of it, and leaves a neutral form unsaid', () => {
     render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79, estimated: false }} />)
     const line = screen.getByTestId('readiness-status')
-    expect(line.textContent).toBe(`${t.formBand[formBand(-6)]} · ${t.dashboard.readiness.loadState.below}`)
+    expect(formBand(-6)).toBe('neutral')
+    expect(line.textContent).toBe(t.dashboard.readiness.loadState.below)
     expect(line.style.color).toBe('var(--warn)')
+  })
+
+  it('heads a load in range with the reason the days around it give, and says the number once', () => {
+    const load = { acute: 608, lo: 549, hi: 892, state: 'in' as const, ratio: 0.9, estimated: false }
+    const s = t.dashboard.readiness
+    const { rerender } = render(<ReadinessCard status={STATUS} load={load} reason={{ kind: 'rest', session: 'threshold', date: '2026-11-14' }} />)
+    const verdict = screen.getByTestId('readiness-verdict')
+    expect(verdict).toHaveTextContent(s.reason.rest(s.sessionNoun.threshold, formatWeekdayLong('2026-11-14')))
+    expect(verdict).toHaveTextContent(s.fallback.in(608, 549, 892).body)
+    expect(verdict.textContent!.match(/608/g)).toHaveLength(1)
+
+    rerender(<ReadinessCard status={STATUS} load={load} reason={{ kind: 'yesterday', session: 'threshold' }} />)
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(s.reason.yesterday(s.sessionNoun.threshold))
+
+    rerender(<ReadinessCard status={STATUS} load={load} />)
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(s.fallback.in(608, 549, 892).headline)
   })
 
   it('falls back to the tone\'s own line where the watch has no load pair', () => {
     render(<ReadinessCard status={STATUS} />)
-    expect(screen.getByTestId('readiness-status').textContent).toBe(`${t.formBand.neutral} · ${t.dashboard.readiness.lineByTone.build}`)
+    expect(screen.getByTestId('readiness-status').textContent).toBe(t.dashboard.readiness.lineByTone.build)
   })
 
   it('says when form will show, with no form tile or band, while building back after a break', () => {
@@ -125,7 +142,7 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     checkIn.day = { status: 'ready', entry: { sleep: 4, niggle: { site: 'calf', side: 'left', pain: 5 } } }
     const { rerender } = render(<ReadinessCard status={STATUS} verdict={{ headline: 'Go for it.', body: 'Run it in full.' }} />)
     const line = screen.getByTestId('readiness-status')
-    expect(line.textContent).toBe(`${t.formBand.neutral} · ${t.wellness.readiness.line.caution}`)
+    expect(line.textContent).toBe(t.wellness.readiness.line.caution)
     expect(line.dataset.tone).toBe('caution')
     expect(line.style.color).toBe('var(--warn)')
     expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.wellness.readiness.painEase(t.wellness.niggleName('calf', 'left'), '5/10').headline)

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from '../planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import { formatDate, formatWeekday } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { MonthView } from '../MonthView'
 
@@ -53,12 +53,19 @@ const weeks = () => screen.getAllByTestId('month-week')
 
 describe('the month grid', () => {
   it('draws only the weeks the month needs, Monday to Sunday', () => {
-    renderMonth()
+    renderMonth(vi.fn(), { planned: [...PLANNED, { date: '2026-10-28', name: 'Easy', type: 'Base', distanceM: 6_000 }] })
 
-    // October 2026 starts on a Thursday and ends on a Saturday: five weeks.
     expect(weeks()).toHaveLength(5)
     expect(cell('2026-09-28').dataset.outsideMonth).toBe('true')
     expect(cell('2026-09-28').className).toContain('opacity-40')
+    expect(screen.queryByTestId('month-plan-end')).toBeNull()
+  })
+
+  it('folds the weeks after the plan’s last session into one line', () => {
+    renderMonth()
+
+    expect(weeks()).toHaveLength(4)
+    expect(screen.getByTestId('month-plan-end').textContent).toBe(t.plan.month.noneAfter(formatDate('2026-10-25', { style: 'bare', year: 'never' })))
   })
 
   it('fills a run in its colour, dashes a session still to come, and leaves rest empty', () => {
@@ -110,13 +117,13 @@ describe('the phases down the side', () => {
 })
 
 describe('the km column', () => {
-  it('reads each week as run over planned, and leaves a week with no plan yet blank', () => {
-    renderMonth()
+  it('reads each week as run over planned, and a week to come as planned', () => {
+    renderMonth(vi.fn(), { planned: [...PLANNED, { date: '2026-10-28', name: 'Easy', type: 'Base', distanceM: 6_000 }] })
 
     const totals = screen.getAllByTestId('month-week-total').map((c) => c.textContent)
     expect(totals[2]).toBe('18/ 24')
     expect(totals[3]).toBe('0/ 29')
-    expect(totals[4]).toBe('')
+    expect(totals[4]).toBe(`6${t.plan.month.plannedWord}`)
   })
 })
 
@@ -197,14 +204,5 @@ describe('the legend and the summary', () => {
 
     const km = screen.getByTestId('month-km').textContent!
     expect(km).toBe(t.plan.month.kmOf('22', '25'))
-  })
-
-  it('opens the next key session in the Week view', () => {
-    const onSelectDay = renderMonth()
-
-    const key = screen.getByTestId('month-next-key')
-    expect(key.textContent).toContain(`${formatWeekday('2026-10-21', true)} · 3 × 8 min threshold`)
-    fireEvent.click(key)
-    expect(onSelectDay).toHaveBeenCalledWith('2026-10-21')
   })
 })

@@ -106,18 +106,22 @@ describe('getThresholdHistory', () => {
     expect(data).toBeNull()
   })
 
-  it('prefers the Garmin samples over the change log when both exist', async () => {
+  it('fills the days between Garmin samples from the change log, the samples winning a shared date', async () => {
     const data = await run(
       [
         { date: '2026-05-01', lthrBpm: 175 },
         { date: '2026-06-01', lthrBpm: 176 },
       ],
       [
-        { date: '2020-01-01', lthrBpm: 150 },
-        { date: '2020-02-01', lthrBpm: 151 },
+        { date: '2026-05-01', lthrBpm: 150 },
+        { date: '2026-05-15', lthrBpm: 151 },
       ],
     )
 
-    expect(data?.points.map((p) => p.date)).toEqual(['2026-05-01', '2026-06-01'])
+    expect(data?.points.map((p) => [p.date, p.lthrBpm])).toEqual([
+      ['2026-05-01', 175],
+      ['2026-05-15', 151],
+      ['2026-06-01', 176],
+    ])
   })
 })

@@ -72,7 +72,7 @@ describe('ShoesGrid', () => {
     expect(barWidths(container)).toEqual(['60.4%', '5.3%'])
   })
 
-  it('writes km / limit, runs, last run and role in the meta line, and the page\'s context line', () => {
+  it('writes km / limit, runs and last run in the meta line, an everyday pair with no role, and the page\'s context line', () => {
     const thisYear = new Date().getFullYear()
     render(
       <ShoesGrid
@@ -83,7 +83,7 @@ describe('ShoesGrid', () => {
 
     expect(screen.getByText(t.shoes.hero.usage(3, 6))).toBeInTheDocument()
     const meta = screen.getAllByTestId('shoe-meta')[1]!.textContent
-    expect(meta).toBe(`${t.shoes.kmOf('150', '1,000')} · ${t.shoes.runs(12)} · ${t.shoes.lastRun('Sep 17')} · ${t.shoes.roles.daily}`)
+    expect(meta).toBe(`${t.shoes.kmOf('150', '1,000')} · ${t.shoes.runs(12)} · ${t.shoes.lastRun('Sep 17')}`)
   })
 
   it('keys the retire-from-workouts tick once when every pair shares it', () => {

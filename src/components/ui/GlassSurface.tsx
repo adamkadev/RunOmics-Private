@@ -30,14 +30,15 @@ export const GlassSurface = forwardRef<HTMLElement, GlassSurfaceProps>(function 
   )
 })
 
-/** Per role: regular chrome, the tab bar, clear over a map, a sheet. */
-export type GlassMaterial = 'regular' | 'tab' | 'clear' | 'sheet'
+/** Per role: regular chrome, the tab bar, clear over a map, a sheet, the top bar's buttons and pinned rows. */
+export type GlassMaterial = 'regular' | 'tab' | 'clear' | 'sheet' | 'bar'
 
 const MATERIAL_CLASS: Record<GlassMaterial, string | undefined> = {
   regular: undefined,
   tab: 'lg-tab',
   clear: 'lg-clear',
   sheet: 'lg-sheet',
+  bar: 'lg-bar',
 }
 
 export function GlassLayers() {

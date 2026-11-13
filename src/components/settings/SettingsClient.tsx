@@ -2,9 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import type { User } from 'firebase/auth'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
 import { loadAuth } from '@/lib/loadAuth'
@@ -15,6 +14,7 @@ import { formatRelativeAgo } from '@/lib/formatters'
 import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
 import { BackButton } from '@/components/ui/BackButton'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { AccentPicker } from './AccentPicker'
@@ -52,8 +52,6 @@ interface Props {
   privateSite?: boolean
   garminSeries?: GarminSeriesProps
 }
-
-export const ATHLETE_HREF = '/athlete'
 
 export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device, zones, privateSite = false, garminSeries }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
@@ -213,10 +211,7 @@ export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device
 
 function SettingsHeader() {
   return (
-    <header className="mb-1.5">
-      <BackButton label={t.pages.settings.back} fallbackHref="/profile" className="lg:hidden" />
-      <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
-    </header>
+    <PageHeader back={<BackButton label={t.pages.settings.back} fallbackHref="/profile" />} backOnPhoneOnly title={t.pages.settings.title} className="mb-1.5" />
   )
 }
 
@@ -294,13 +289,13 @@ function ProfileSection({ owner = null, zones }: { owner?: User | null; zones?: 
             </dd>
           </dl>
         ))}
-        <Link href={ATHLETE_HREF} className={`${GROUP_ROW} text-sm transition-colors hover:bg-[var(--surface-2)]`} data-testid="athlete-zones-row">
-          <span className="min-w-0 truncate text-foreground">{t.pages.athlete.title}</span>
-          <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
-            {summary && <span className="tabular-nums">{summary}</span>}
-            <ChevronRight size={16} aria-hidden className="shrink-0 text-subtle" />
-          </span>
-        </Link>
+        {/* Read-only: Athlete & zones has its row on Progress. */}
+        {summary && (
+          <dl className={cn(GROUP_ROW, 'flex-col items-start justify-center gap-0.5 text-sm')} data-testid="profile-zones">
+            <dt className="text-foreground">{t.settings.profile.heartRate}</dt>
+            <dd className="tabular-nums text-muted-foreground">{summary}</dd>
+          </dl>
+        )}
       </div>
       <a
         href={GARMIN_CONNECT_URL}

@@ -7,7 +7,7 @@ import type { AreaCoverage, ExploreAreaFile, ExploreAreaRef, RoutePreferences, S
 import type { RouteCluster } from '@/application/usecases/GetAllRoutes'
 import { removeUrlParams, useUrlParam } from '@/lib/useUrlParam'
 import { parseExploreRoute } from './exploreHref'
-import { generatorDay, generatorPlan, generatorTarget, type ExplorePlan, type GeneratorTarget } from './routeGenerator'
+import { generatorDay, generatorPlan, generatorTarget, nextQualityKind, type ExplorePlan, type GeneratorTarget } from './routeGenerator'
 import { routeStartState, type RouteStartMode, type RouteStartState } from './routeStart'
 import { useAvoidSpots, type AvoidSpots } from './useAvoidSpots'
 import type { LonLat } from './workerProtocol'
@@ -63,6 +63,8 @@ export interface ExploreGenerator {
   setStartMode: (mode: RouteStartMode) => void
   avoid: AvoidSpots
   day: SessionDay
+  /** The kind of the quality session the next day, "Threshold", or null. */
+  nextKind: string | null
   /** What a tap on the map does while it is open: mark a spot, set the start, or nothing. */
   mapPick: ((lngLat: LonLat) => void) | null
   /** The opener of the generator closed last, once: focus goes back to it when the map it gives back has rendered. */
@@ -101,6 +103,7 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
   const { setMarking } = avoid
   const planDay = generator?.plan ?? null
   const day = useMemo(() => generatorDay(explorePlans, planDay, today), [explorePlans, planDay, today])
+  const nextKind = useMemo(() => nextQualityKind(explorePlans, planDay, today), [explorePlans, planDay, today])
   const closedOpener = useRef<GeneratorOpener | null>(null)
 
   const planRun = useCallback(
@@ -110,6 +113,8 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
       const plan = generatorPlan(explorePlans, null, today)
       setGenerator({ ...generatorTarget(null, { unitId, plan, medianKm, easyPace }), plan, returnTo: { expanded, unitId: openUnitId }, opener })
       setPrefs((p) => ({ ...p, flatForReps: plan?.session === 'quality' }))
+      // A district's own button: its start is already known.
+      setStartMode('quartier')
       onOpen()
     },
     [explorePlans, today, medianKm, easyPace, expanded, openUnitId, onOpen],
@@ -152,9 +157,17 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     setStartMode,
     avoid,
     day,
+    nextKind,
     mapPick,
     takeClosedOpener,
   }
+}
+
+export interface GeneratorUnit {
+  id: string
+  name: string
+  /** From home, as the districts card gives it; null without a home or the coverage. */
+  distanceKm: number | null
 }
 
 /** The quartier asked for, else the next one, else the least explored; null until the area (or its coverage) is in. */
@@ -162,11 +175,12 @@ export function generatorUnit(
   file: ExploreAreaFile | null,
   coverage: AreaCoverage | null,
   unitId: string | null,
-): { id: string; name: string } | null {
+): GeneratorUnit | null {
   if (!file) return null
   const asked = unitId ? file.features.find((f) => f.properties.id === unitId) : undefined
-  if (asked) return { id: asked.properties.id, name: asked.properties.name }
+  const fromHome = (id: string) => coverage?.units.find((u) => u.id === id)?.distanceKm ?? null
+  if (asked) return { id: asked.properties.id, name: asked.properties.name, distanceKm: fromHome(asked.properties.id) }
   if (!coverage) return null
   const next = coverage.units.find((u) => u.id === coverage.nextId) ?? [...coverage.units].sort((a, b) => a.pct - b.pct)[0]
-  return next ? { id: next.id, name: next.name } : null
+  return next ? { id: next.id, name: next.name, distanceKm: next.distanceKm ?? null } : null
 }

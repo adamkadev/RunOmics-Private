@@ -144,8 +144,8 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
   })
 
   it('titles the card with the session\'s name as the plan shows it', () => {
-    const legacy = { ...SESSION, title: 'Threshold 3 x 7:40', structure: undefined } as unknown as WorkoutPrescription
-    expect(shareActivity(run, legacy).sessionTitle).toBe('Threshold 3 x 7:40')
+    const legacy = { ...SESSION, title: 'Threshold 3 × 7:40', structure: undefined } as unknown as WorkoutPrescription
+    expect(shareActivity(run, legacy).sessionTitle).toBe('Threshold 3 × 7:40')
     const strides = {
       type: 'easy',
       title: 'Strides 6 x 20s',

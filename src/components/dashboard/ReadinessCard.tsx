@@ -5,11 +5,12 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
-import { formatDelta } from '@/lib/formatters'
 import { formBand } from '@/domain/training/formBand'
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
+import type { ReadinessReason } from './readinessReason'
+import { formatDelta, formatWeekdayLong } from '@/lib/formatters'
 import { cardClass, tileLabelClass } from '@/components/ui/Card'
 import { CheckInReadiness } from '@/components/wellness/CheckInReadiness'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -26,6 +27,13 @@ const STATUS_COLOR: Record<ReadinessTone, string> = {
 /** Words that name a form state, in English or French. */
 const FRESH_WORDS = /\b(fresh|rested|frais|fraîche|reposée?)\b/i
 const TIRED_WORDS = /\b(tired|fatigued|fatiguée?)\b/i
+
+function reasonHeadline(reason: ReadinessReason): string {
+  const s = t.dashboard.readiness
+  const noun = s.sessionNoun[reason.session]
+  if (reason.kind === 'rest') return s.reason.rest(noun, formatWeekdayLong(reason.date))
+  return s.reason[reason.kind](noun)
+}
 
 function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub?: ReactNode; testId: string }) {
   return (
@@ -57,12 +65,15 @@ export function ReadinessCard({
   status,
   verdict = null,
   load = null,
+  reason = null,
   today = appTodayIso(),
 }: {
   status: TrainingStatus | null
   verdict?: TodayVerdict | null
   /** The seven-day load reading Analytics prints, where the watch has one. */
   load?: LoadReading | null
+  /** What the days around today say about the load, for a headline in range. */
+  reason?: ReadinessReason | null
   today?: string
 }) {
   if (!status) return null
@@ -72,12 +83,15 @@ export function ReadinessCard({
   const tone = verdictTone(status)
   const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
   const band = formBand(status.tsbNow)
-  // After a long break form is the break itself, so it gets no word and no number until there is a reading.
-  const bandWord = status.buildingBack ? null : t.formBand[band]
+  // After a long break form is the break itself, so it gets no number until there is a reading.
+  const showForm = !status.buildingBack
+  // Neutral goes unsaid: the Form number says it, and the eyebrow keeps to the load.
+  const bandWord = showForm && band !== 'neutral' ? t.formBand[band] : null
   // Building back there is no reading at all, so no load line and none of the tone's own either.
   const line = status.buildingBack ? s.buildingBack : load ? s.loadLine(s.loadState[load.state], load.estimated) : s.lineByTone[tone]
   const fresh = band === 'fresh' || band === 'veryFresh'
-  const fallback = load ? s.fallback[load.state](load.acute, load.lo, load.hi, fresh) : null
+  const loadWords = load ? s.fallback[load.state](load.acute, load.lo, load.hi, fresh) : null
+  const fallback = loadWords && load?.state === 'in' && reason ? { ...loadWords, headline: reasonHeadline(reason) } : loadWords
   // A written headline that names a form state the status line doesn't ("You're fresh" over NEUTRAL) gives way to the load's own.
   const contradicts = verdict ? (!fresh && FRESH_WORDS.test(verdict.headline)) || (band !== 'tired' && TIRED_WORDS.test(verdict.headline)) : false
   const headline = (contradicts ? fallback?.headline : verdict?.headline) ?? fallback?.headline ?? verdict?.headline ?? null
@@ -98,8 +112,8 @@ export function ReadinessCard({
         />
 
         {/* A flat row under a hairline: tiles inside the card read as cards within a card. */}
-        <div className={cn('grid gap-3 border-t border-border pt-3', bandWord ? 'grid-cols-3' : 'grid-cols-2')}>
-          {bandWord && <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={bandWord.toLocaleLowerCase(t.locale)} />}
+        <div className={cn('grid gap-3 border-t border-border pt-3', showForm ? 'grid-cols-3' : 'grid-cols-2')}>
+          {showForm && <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} />}
           <Tile
             testId="tile-fitness"
             label={s.ctl}

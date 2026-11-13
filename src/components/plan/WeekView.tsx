@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { PlannedWorkout } from '@/domain/activity/types'
 import type { BlockGuideProposal, NumberRange } from '@/domain/coaching/types'
 import type { PlanRun } from './planRun'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
@@ -29,7 +29,7 @@ import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
 import { dayFit } from './dayFit'
 import { sessionLabel } from '@/lib/activityTitle'
-import { BlockFinishedCard, ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
+import { BlockFinishedCard, ComingUpCard, DoneDayCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 import { blockCovers, blockLifecycle } from './blockLifecycle'
 import { useCoachWords } from '@/components/coaching/useCoachWords'
 import { useSkippedDays } from '@/lib/skippedDays'
@@ -75,22 +75,6 @@ function PhaseCard({ name, week, total, race, cycle, proposals = [] }: { name: s
       )}
     </section>
   )
-}
-
-function findNextPlanned(
-  dates: string[],
-  fromDate: string,
-  byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
-): { weekday: string; title: string } | null {
-  for (const date of dates) {
-    if (date <= fromDate) continue
-    const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
-    const plan = byDatePlanned.get(date)
-    const title = coach?.prescription.shortName ?? coach?.prescription.title ?? sessionTitle(plan?.name, plan?.type as ActivityType | undefined) ?? null
-    if (title) return { weekday: formatWeekday(date), title }
-  }
-  return null
 }
 
 function plannedText(workout: PlanWorkoutView, title: string): string {
@@ -220,7 +204,7 @@ export function WeekView({
   const cycleLine = useMemo(() => {
     if (!coaching) return null
     const cycle = checkpointCycle(coaching.plan.macrocycleStartDate ?? coaching.plan.block.startDate, today)
-    return cycle.mode === 'rolling' || cycle.complete ? null : t.checkpoint.tile.inProgress(cycle.week, formatDate(cycle.current.end, { style: 'bare' }))
+    return cycle.mode === 'rolling' || cycle.complete ? null : t.plan.phase.cycle(cycle.week, formatDate(cycle.current.end, { style: 'bare', year: 'never' }))
   }, [coaching, today])
   const race = useMemo(() => {
     const next = planRace(coaching, nextRace, today)
@@ -241,18 +225,6 @@ export function WeekView({
 
   const w = t.plan.weekRow
   const planKm = target.planKm
-
-  const nextKey = (() => {
-    for (const date of dates) {
-      if (date <= selected || date < today || (byDate.get(date) ?? []).length > 0) continue
-      const k = dayKind(date, [], byDatePlanned, byDateCoach)
-      if (k?.kind !== 'quality') continue
-      const workout = selectedWorkouts(date, byDatePlanned, byDateCoach, trainingZones)[0]
-      if (!workout) continue
-      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).shortTitle, color: k.text }
-    }
-    return null
-  })()
 
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
@@ -292,11 +264,7 @@ export function WeekView({
         {over ? (
           <BlockFinishedCard done={block.done} total={block.total} />
         ) : (
-          <RestDayCard
-            date={selected}
-            next={selected < today ? null : findNextPlanned(dates, selected, byDatePlanned, byDateCoach)}
-            covered={blockCovers(block, selected)}
-          />
+          <RestDayCard date={selected} covered={blockCovers(block, selected)} />
         )}
         {coming.length > 0 && <ComingUpCard rows={coming} selectedDate={selected} onSelect={onSelectDate} />}
       </>
@@ -353,9 +321,6 @@ export function WeekView({
         </section>
       )}
 
-      {nextKey && (
-        <NextKeySessionCard weekday={nextKey.weekday} title={nextKey.title} color={nextKey.color} onSelect={() => onSelectDate(nextKey.date)} />
-      )}
     </div>
   )
 }

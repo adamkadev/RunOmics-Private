@@ -25,16 +25,17 @@ test('a chart readout stays inside its card, even over the last bars', async ({ 
   }
 })
 
-test('the period control keeps its place whichever period is picked', async ({ page, t }) => {
+test('the period button keeps its place whichever period is picked from its menu', async ({ page, t }) => {
   await page.setViewportSize({ width: 393, height: 852 })
   await page.goto('/analytics')
-  const control = page.getByRole('radiogroup').first()
+  const control = page.getByTestId('period-button')
   const places: { x: number; y: number }[] = []
   for (const period of ['4w', '12w', '1y']) {
     const name = t.analytics.cards.period.words[period]!
-    await page.getByRole('radio', { name, exact: true }).click()
-    await expect(page.getByRole('radio', { name, exact: true })).toHaveAttribute('aria-checked', 'true')
-    places.push(await control.evaluate((el) => ({ x: el.getBoundingClientRect().left + scrollX, y: el.getBoundingClientRect().top + scrollY })))
+    await control.click()
+    await page.getByTestId('period-menu').getByRole('radio', { name, exact: true }).click()
+    await expect(control).toHaveAccessibleName(`${t.analytics.cards.period.short[period]} · ${t.analytics.cards.period.button(name)}`)
+    places.push(await control.evaluate((el) => ({ x: el.getBoundingClientRect().right + scrollX, y: el.getBoundingClientRect().top + scrollY })))
   }
   for (const place of places.slice(1)) {
     expect(place.y).toBe(places[0]!.y)
@@ -45,10 +46,11 @@ test('the period control keeps its place whichever period is picked', async ({ p
 test('a link opens the tab and period it names, and Back returns to them', async ({ page, t }) => {
   await page.goto('/analytics?tab=volume&period=1y')
   await expect(page.getByRole('tab', { name: t.analytics.tabs.volume })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('radio', { name: t.analytics.cards.period.words['1y']!, exact: true })).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByTestId('period-button')).toHaveAccessibleName(`${t.analytics.cards.period.short['1y']} · ${t.analytics.cards.period.button(t.analytics.cards.period.words['1y']!)}`)
 
+  // The period carries over to the next tab.
   await page.getByRole('tab', { name: t.analytics.tabs.performance }).click()
-  await expect(page).toHaveURL(/\/analytics\?tab=performance$/)
+  await expect(page).toHaveURL(/\/analytics\?tab=performance&period=1y$/)
   await page.goto('/records')
   await page.goBack()
   await expect(page.getByRole('tab', { name: t.analytics.tabs.performance })).toHaveAttribute('aria-selected', 'true')

@@ -22,8 +22,7 @@ export interface ThresholdHistoryData {
 const MIN_POINTS = 2
 
 export function getThresholdHistory(): ThresholdHistoryData | null {
-  const samples = getThresholdSamples()
-  const entries: ThresholdSample[] = samples.length > 0 ? samples : athleteHistorySamples()
+  const entries = thresholdReadings()
   if (entries.length < MIN_POINTS) return null
 
   const points: ThresholdPoint[] = entries.map((entry) => ({
@@ -49,8 +48,15 @@ export function getThresholdHistory(): ThresholdHistoryData | null {
   }
 }
 
-function athleteHistorySamples(): ThresholdSample[] {
-  return getAthleteHistory()
-    .filter((entry) => entry.lthrBpm !== undefined || entry.thresholdPaceSecPerKm !== undefined)
-    .map(({ date, lthrBpm, thresholdPaceSecPerKm }) => ({ date, lthrBpm, thresholdPaceSecPerKm }))
+/**
+ * Garmin's threshold detections, with the athlete history's daily copy filling the days between them: the one
+ * source Analytics and the checkpoint both read, so the two never give the same pace two answers.
+ */
+export function thresholdReadings(): ThresholdSample[] {
+  const byDate = new Map<string, ThresholdSample>()
+  for (const { date, lthrBpm, thresholdPaceSecPerKm } of getAthleteHistory()) {
+    if (lthrBpm !== undefined || thresholdPaceSecPerKm !== undefined) byDate.set(date, { date, lthrBpm, thresholdPaceSecPerKm })
+  }
+  for (const sample of getThresholdSamples()) byDate.set(sample.date, sample)
+  return [...byDate.values()].sort((left, right) => left.date.localeCompare(right.date))
 }

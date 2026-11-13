@@ -48,7 +48,7 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
 /** The sync button and the avatar share one 44 pt glass capsule, about 96 pt wide, as their copy in the compact bar. */
-const CAPSULE = glassClass('regular', 'flex h-11 shrink-0 items-center gap-1 pr-1.5')
+const CAPSULE = glassClass('bar', 'flex h-11 shrink-0 items-center gap-1 pr-1.5')
 // Plain buttons in the glass, so the capsule swells as one.
 const BUTTON = 'lg-press flex size-11 shrink-0 items-center justify-center rounded-full'
 
@@ -198,22 +198,22 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
 
   return (
     <>
-    <header data-testid="today-header" className="flex items-end justify-between gap-3">
-      <div className="flex min-w-0 flex-col">
-        <p data-title-sub data-testid="today-date" className="text-[15px] leading-5 text-muted-foreground">
-          {headerDate(today)}
-        </p>
-        <h1 className="text-large-title text-foreground">{t.pages.dashboard.title}</h1>
-      </div>
-      <div ref={sideRef} className="flex min-w-0 shrink items-center">
-        {ago && lastSyncedAt ? (
-          <SyncLine lastSyncedAt={lastSyncedAt} ago={ago}>{avatar}</SyncLine>
-        ) : (
-          <div data-testid="today-capsule" className={cn(CAPSULE, 'pl-1.5')}>
-            <GlassLayers />
-            {avatar}
-          </div>
-        )}
+    <header data-testid="today-header" className="flex flex-col">
+      <p data-title-sub data-testid="today-date" className="text-[15px] leading-5 text-muted-foreground">
+        {headerDate(today)}
+      </p>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="min-w-0 text-large-title text-foreground">{t.pages.dashboard.title}</h1>
+        <div ref={sideRef} className="flex min-w-0 shrink items-center">
+          {ago && lastSyncedAt ? (
+            <SyncLine lastSyncedAt={lastSyncedAt} ago={ago}>{avatar}</SyncLine>
+          ) : (
+            <div data-testid="today-capsule" className={cn(CAPSULE, 'pl-1.5')}>
+              <GlassLayers />
+              {avatar}
+            </div>
+          )}
+        </div>
       </div>
     </header>
     {serverToday && today !== serverToday && (

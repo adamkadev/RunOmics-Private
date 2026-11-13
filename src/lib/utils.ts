@@ -8,7 +8,7 @@ const twMerge = extendTailwindMerge({
         {
           text: [
             'micro', 'caption', 'footnote', 'subhead', 'body', 'title1', 'title2',
-            'large-title', 'title-1', 'metric', 'title-3', 'headline', 'eyebrow', 'tab',
+            'large-title', 'title-1', 'metric', 'title-3', 'headline', 'eyebrow', 'tab', 'display',
           ],
         },
       ],
