@@ -105,6 +105,17 @@ function restLine(date: string, tomorrow: boolean, kind: SessionKind | null, run
   return s.restLine(name, tomorrow ? s.restTomorrow : s.restOn(formatWeekdayLong(date)))
 }
 
+/**
+ * The session's full name, its pace kept as the watch and Connect show it: "Threshold 4 × 5′ @ 4:31". The type leads,
+ * as Today has no type eyebrow; "Easy run + 6 strides" and "Long run" already start with it.
+ */
+export function fullTitle(summary: { title: string; shortTitle: string }): string {
+  const label = sessionLabel(summary.title)
+  if (!/^\d/.test(label)) return label
+  const type = /^(\p{L}[^\d]*?)\s*(?=\d)/u.exec(summary.shortTitle)?.[1]?.trim()
+  return type ? `${type} ${label}` : label
+}
+
 export function sessionCard(
   today: string,
   todayWorkout: HeroWorkoutView | null,
@@ -132,7 +143,7 @@ export function sessionCard(
   const hrCap = hrCapOf(workout)
   // A ceiling says how to run it; without one, a single pace does; several paces are Plan's to list.
   const limit = hrCap ? `${s.hrCap(hrCap)} ${t.units.bpm}` : summary?.paces.length === 1 ? paceLabel(summary.paces[0]!) : null
-  const title = summary?.shortTitle ?? pick.title ?? ''
+  const title = summary ? fullTitle(summary) : (pick.title ?? '')
   const name = runWalkName(title, workout)
   return {
     date,

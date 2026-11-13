@@ -91,10 +91,10 @@ describe('a session named under the naming rules', () => {
     shortName: 'Threshold 3×8′',
   })
 
-  it('is the short name on the card', () => {
+  it('is the full name on the card, its pace kept, the type leading', () => {
     const next = findNextSession('2026-10-05', [view(named('2026-10-06'))], [])
     expect(next).toMatchObject({ title: 'Threshold 3 × 8′', workout: { title: 'Threshold · 3 × 8′ @ 4:25', shortName: 'Threshold 3×8′' } })
-    expect(sessionCard('2026-10-05', null, null, next)!.title).toBe('Threshold 3 × 8′')
+    expect(sessionCard('2026-10-05', null, null, next)!.title).toBe('Threshold 3 × 8′ @ 4:25')
   })
 })
 
