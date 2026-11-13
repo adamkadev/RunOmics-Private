@@ -1324,6 +1324,12 @@ export const fr = {
         image: 'Image',
         video: 'Vidéo',
       },
+      // Le cadre de la carte : une publication ou une story plein écran.
+      sizeTitle: 'Taille',
+      sizeLabels: {
+        portrait: '4:5',
+        story: '9:16',
+      },
       shareVideo: 'Partager la vidéo',
       preparingVideo: (percent: number) => `Préparation de la vidéo… ${percent} %`,
       // La légende de la vidéo du parcours pendant que la sortie se dessine.

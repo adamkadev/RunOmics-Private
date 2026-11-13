@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 import { Camera, X } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import {
-  renderShareCard, loadImage, pageFonts, shareCardHeight, shareCardMapFrame, SHARE_DESIGNS, W,
+  renderShareCard, loadImage, pageFonts, shareCardHeight, shareCardMapFrame, SHARE_DESIGNS, SHARE_SIZES, W,
   type RenderOptions, type ShareDesign, type ShareSize, type ThemeMode,
 } from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng, shareOrSaveFile } from '@/lib/shareCardExport'
@@ -35,11 +35,13 @@ interface Props {
 }
 
 /**
- * One box on every tab, so the controls under it never move: 88 % of the sheet's width less its margins, so the
+ * One box per size on every tab, so the controls under it never move: 88 % of the sheet's width less its margins, so the
  * first two options fit above the pinned buttons. A short window narrows it; 180 px is the floor.
  */
 const PREVIEW_SCALE = 0.88
 const CARD_BOX_W = `min(${W * PREVIEW_SCALE}px, calc((100vw - 68px) * ${PREVIEW_SCALE}), max(180px, calc((100dvh - 430px) * 4 / 5)))`
+const STORY_BOX_W = `min(${W * PREVIEW_SCALE}px, calc((100vw - 68px) * ${PREVIEW_SCALE}), max(180px, calc((100dvh - 430px) * 9 / 16)))`
+const ASPECT: Record<ShareSize, string> = { portrait: '4 / 5', story: '9 / 16' }
 const SWIPE_PX = 40
 
 /** Both pickers stay radiogroups: a choice, not a tab. */
@@ -59,9 +61,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const hasRoute = (activity.route?.length ?? 0) > 1
   const designs = hasRoute ? SHARE_DESIGNS : SHARE_DESIGNS.filter((d) => d !== 'route')
 
-  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps } = useShareCardPrefs(appTheme, hasRoute)
-  // 4:5 alone: the card goes to a chat, where a 9:16 story card shows cropped or too tall.
-  const size: ShareSize = 'portrait'
+  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, size, setSize } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   // Without its reps the card is an easy run's: one colour on the route, the
   // average pace back in the stats.
@@ -307,7 +307,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             data-testid="share-preview"
             className="relative shrink-0 self-center overflow-hidden"
             style={{
-              width: CARD_BOX_W, aspectRatio: '4 / 5', marginTop: 14, borderRadius: 24, touchAction: 'pan-y',
+              width: size === 'story' ? STORY_BOX_W : CARD_BOX_W, aspectRatio: ASPECT[size], marginTop: 14, borderRadius: 24, touchAction: 'pan-y',
               boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)',
             }}
             onPointerDown={(e) => { swipeX.current = e.clientX }}
@@ -343,6 +343,24 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             data-testid="share-sheet-body"
             className="-mx-[22px] mt-1 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-[22px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
+            <div data-testid="share-size" className={optionRow} style={{ minHeight: 52 }}>
+              <span className="text-foreground" style={{ fontSize: 17 }}>{s.sizeTitle}</span>
+              <div role="radiogroup" aria-label={s.sizeTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+                {SHARE_SIZES.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={size === option}
+                    onClick={() => setSize(option)}
+                    className={cn(segmentClass(size === option), 'h-[26px] px-3.5 text-[13px]')}
+                  >
+                    {s.sizeLabels[option]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {showFormat && (
               <div data-testid="share-format" className={optionRow} style={{ minHeight: 52 }}>
                 <span className="text-foreground" style={{ fontSize: 17 }}>{s.formatTitle}</span>

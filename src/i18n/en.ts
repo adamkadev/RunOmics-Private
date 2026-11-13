@@ -1417,6 +1417,12 @@ export const en = {
         image: 'Image',
         video: 'Video',
       },
+      // The card's frame: a feed post or a full-screen story.
+      sizeTitle: 'Size',
+      sizeLabels: {
+        portrait: '4:5',
+        story: '9:16',
+      },
       shareVideo: 'Share video',
       preparingVideo: (percent: number) => `Preparing video… ${percent} %`,
       // The route video's legend while the run draws itself.
