@@ -252,15 +252,20 @@ function weekSquare(dots: QualityDot[]): { state: 'done' | 'missed' | 'planned' 
   return { state: 'none', count: 0, style: { background: 'var(--track)' } }
 }
 
+/** "9 of 10 planned · 1 extra": the planned ones run, so it adds up with "1 missed" beside it. */
+export function qualityNote(totals: { onPlan: number; extra: number; planned: number | null }): string {
+  const s = t.analytics.cards.quality
+  return [totals.planned ? s.ofPlanned(totals.onPlan, totals.planned) : null, totals.extra > 0 && totals.planned ? s.extra(totals.extra) : null]
+    .filter(Boolean)
+    .join(' · ')
+}
+
 function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; plan: PlanWeekInput[] }) {
   const s = t.analytics.cards.quality
   const view = qualityView(rows, plan)
   if (!view || view.avg === null) return null
   const { totals } = view
-  // "of 10 planned · 1 extra", beside the done count.
-  const note = [totals.planned ? s.ofPlanned(totals.planned) : null, totals.extra > 0 && totals.planned ? s.extra(totals.extra) : null]
-    .filter(Boolean)
-    .join(' · ')
+  const note = qualityNote(totals)
   const squares = view.weeks.map(weekSquare)
   return (
     <Card testId="quality-card">

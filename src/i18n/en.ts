@@ -1189,8 +1189,7 @@ export const en = {
         plannedLegend: 'Planned',
         missedCount: (n: number) => `${n} missed`,
         missed: 'Missed',
-        // "of 10 planned · 1 extra", grey beside "11 done".
-        ofPlanned: (n: number) => `of ${n} planned`,
+        ofPlanned: (done: number, planned: number) => `${done} of ${planned} planned`,
       },
       zoneRanges: {
         title: 'Zone ranges',

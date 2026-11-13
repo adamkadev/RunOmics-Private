@@ -1112,7 +1112,7 @@ export const fr = {
         plannedLegend: 'Prévue',
         missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
         missed: 'Manquée',
-        ofPlanned: (n: number) => `sur ${n} prévues`,
+        ofPlanned: (done: number, planned: number) => `${done} sur ${planned} prévues`,
       },
       zoneRanges: {
         title: 'Plages de zones',

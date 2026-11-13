@@ -7,7 +7,7 @@ import { addDays, isoDate } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 import { AnalyticsClient, type AnalyticsBoardData } from '../AnalyticsClient'
 import { weekBarFill } from '../VolumeTab'
-import { ZoneKey } from '../IntensityTab'
+import { ZoneKey, qualityNote } from '../IntensityTab'
 
 const TODAY = '2026-09-26'
 const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
@@ -479,6 +479,10 @@ describe('Analytics (v4.5)', () => {
     // A year's hours, as distances: a decimal under 100 and none above.
     fireEvent.click(screen.getByRole('radio', { name: 'a year' }))
     expect(figures().slice(0, 2)).toEqual([['Z1', '26.0 h'], ['Z2', '156 h']])
+  })
+
+  it('counts the planned sessions run against the plan, so done, extra and missed add up', () => {
+    expect(qualityNote({ onPlan: 12, extra: 2, planned: 14 })).toBe(`${t.analytics.cards.quality.ofPlanned(12, 14)} · ${t.analytics.cards.quality.extra(2)}`)
   })
 
   it('leaves out a zone the window never reached', () => {
