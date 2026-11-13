@@ -18,6 +18,7 @@ const DATA: CycleCheckpoint = {
   lthr: { previous: { date: '2026-09-29', value: 183 }, current: { date: '2026-10-10', value: 179 } },
   restingHr: { previous: null, current: 55.9 },
   ctl: null,
+  previousRunWeeks: 12,
 }
 
 describe('checkpointView', () => {
@@ -42,5 +43,20 @@ describe('checkpointView', () => {
 
     expect(first.sections[0]!.rows[0]).toMatchObject({ previous: null, delta: null, missing: t.checkpoint.nothingBefore })
     expect(first.range).toBe(formatDateRange(DATA.cycle.current.start, DATA.cycle.current.end))
+  })
+
+  it('counts a zero before as no baseline, and gives resting heart rate whole', () => {
+    const view = checkpointView({ ...DATA, volume: { kmPerWeek: { previous: 0, current: 9 }, runsPerWeek: { previous: 4, current: 5 } } }, '2026-11-04')
+    const byKey = Object.fromEntries(view.sections.flatMap((section) => section.rows).map((row) => [row.key, row]))
+    expect(byKey.distance).toMatchObject({ previous: null, delta: null, missing: t.checkpoint.nothingBefore })
+    expect(byKey.restingHr!.current).toBe('56')
+  })
+
+  it('gives a starting point, no comparison and no count, after a cycle with under four weeks of running', () => {
+    const start = checkpointView({ ...DATA, previousRunWeeks: 2 }, '2026-11-04')
+    const all = start.sections.flatMap((section) => section.rows)
+    expect(start.summary).toBeNull()
+    expect(all.every((row) => row.previous === null && row.delta === null && row.missing === null && row.current !== null)).toBe(true)
+    expect(start.status.note).toBe(t.checkpoint.startingPoint(formatDate(DATA.cycle.current.end)))
   })
 })

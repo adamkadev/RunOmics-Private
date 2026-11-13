@@ -73,7 +73,9 @@ interface RowSpec<T> {
 function row<T>(spec: RowSpec<T>): CompareRow {
   const { pair } = spec
   const current = pair.current === null ? null : spec.value(pair.current)
-  const previous = pair.previous === null ? null : spec.value(pair.previous)
+  // A zero before is no baseline: "40 min vs 0" would count as better.
+  const baseline = pair.previous === null || spec.value(pair.previous) === 0 ? null : pair.previous
+  const previous = baseline === null ? null : spec.value(baseline)
   const change = current !== null && previous !== null ? current - previous : null
   const missing = current === null ? (spec.none ?? s().notEnough) : previous === null ? s().nothingBefore : null
   return {
@@ -81,7 +83,7 @@ function row<T>(spec: RowSpec<T>): CompareRow {
     label: spec.label,
     current: pair.current === null ? null : spec.format(pair.current),
     unit: spec.unit ?? null,
-    previous: pair.previous === null ? null : spec.format(pair.previous),
+    previous: baseline === null ? null : spec.format(baseline),
     delta: change === null ? null : spec.delta(change),
     direction: change === null || change === 0 ? null : change > 0 ? 'up' : 'down',
     tone: spec.metric && change !== null ? deltaTone(spec.metric, change, { value: current!, ...spec.context }) : 'flat',
@@ -179,14 +181,27 @@ function sections(data: CycleCheckpoint): CompareSection[] {
 
   const recoveryRows: CompareRow[] = []
   if (data.restingHr) {
-    recoveryRows.push(row({ key: 'restingHr', label: m.restingHr, pair: data.restingHr, value: number, format: (v) => formatDecimal(v, 1), unit: t.units.bpm, delta: (d) => formatDeltaFixed(d, 1, t.units.bpm), metric: 'heartRate', context: { flatBelow: 1 } }))
+    recoveryRows.push(row({ key: 'restingHr', label: m.restingHr, pair: data.restingHr, value: Math.round, format: (v) => String(Math.round(v)), unit: t.units.bpm, delta: (d) => formatDelta(d, t.units.bpm), metric: 'heartRate', context: { flatBelow: 1 } }))
   }
   if (data.ctl) {
     recoveryRows.push(row({ key: 'ctl', label: cycle.complete ? m.fitnessEnd : m.fitnessToday, pair: data.ctl, value: Math.round, format: (v) => formatDecimal(v, 0), delta: (d) => formatDelta(d), metric: 'fitness' }))
   }
   if (recoveryRows.length > 0) out.push({ key: 'recovery', ...sec.recovery, caption: null, rows: recoveryRows })
 
-  return out
+  // The outcome first, then what went into it.
+  return [...out.filter((section) => section.key === 'markers'), ...out.filter((section) => section.key !== 'markers')]
+}
+
+/** Under this many weeks run before, there is nothing to compare with: the page is a starting point. */
+const MIN_BASELINE_WEEKS = 4
+
+function asStartingPoint(section: CompareSection): CompareSection {
+  return {
+    ...section,
+    rows: section.rows
+      .filter((r) => r.current !== null)
+      .map((r) => ({ ...r, previous: null, delta: null, direction: null, tone: 'flat' as const, missing: null })),
+  }
 }
 
 export function checkpointView(data: CycleCheckpoint, today: string): CheckpointPageView {
@@ -214,7 +229,8 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
           note: cycle.completeWeeks === 0 ? s().tooEarly : null,
         }
 
-  const built = sections(data)
+  const starting = data.previousRunWeeks < MIN_BASELINE_WEEKS
+  const built = starting ? sections(data).map(asStartingPoint).filter((section) => section.rows.length > 0) : sections(data)
   const compared = built.some((section) => section.rows.some((r) => r.previous !== null))
   const current = formatDateRange(cycle.current.start, cycle.current.end)
   const scored = built.flatMap((section) => section.rows).filter((r) => r.scored && r.delta !== null)
@@ -225,8 +241,8 @@ export function checkpointView(data: CycleCheckpoint, today: string): Checkpoint
   return {
     eyebrow,
     range: compared ? s().against(current, formatDateRange(cycle.previous.start, cycle.previous.end)) : current,
-    status,
-    summary,
+    status: starting && cycle.mode !== 'rolling' && !cycle.complete ? { ...status, note: s().startingPoint(formatDate(cycle.current.end)) } : status,
+    summary: starting ? null : summary,
     sections: built,
   }
 }

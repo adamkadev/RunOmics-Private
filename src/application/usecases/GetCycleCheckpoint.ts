@@ -69,6 +69,8 @@ export interface CycleCheckpoint {
   lthr: Pair<DatedValue> | null
   restingHr: Pair | null
   ctl: Pair | null
+  /** Weeks of the previous cycle with a run: under four, the page is a starting point rather than a comparison. */
+  previousRunWeeks: number
 }
 
 export interface CheckpointInputs {
@@ -224,6 +226,7 @@ export function buildCycleCheckpoint(inputs: CheckpointInputs, today: string): C
     lthr: datedPair(lthrs, cycle),
     restingHr: inputs.restingHr.length > 0 ? pairOf(meanRestingHr(inputs.restingHr, cycle.previous), meanRestingHr(inputs.restingHr, read)) : null,
     ctl: past.length > 0 ? pairOf(ranBefore ? ctlOn(cycle.previous.end) : null, ctlOn(cycle.asOf)) : null,
+    previousRunWeeks: new Set(past.filter((activity) => inWindow(activity.date, cycle.previous)).map((activity) => mondayOf(day(activity)))).size,
   }
 }
 

@@ -2096,7 +2096,8 @@ export const fr = {
     perWeek: 'par semaine',
     vs: (value: string) => `contre ${value}`,
     notEnough: 'Pas assez de données',
-    nothingBefore: 'Nouveau',
+    nothingBefore: 'premier cycle',
+    startingPoint: (date: string) => `Ton point de départ : on comparera ces valeurs au bilan du ${date}.`,
     lastReading: (date: string) => `Dernière mesure ${date}`,
     soFar: (minutes: number, sessions: number) => `${minutes} min en ${sessions} séance${sessions > 1 ? 's' : ''} pour l’instant`,
     noCheck: 'Pas de test ce cycle',
@@ -2139,7 +2140,7 @@ export const fr = {
       fitnessEnd: 'Condition en fin de cycle',
       fitnessToday: 'Condition aujourd’hui',
     },
-    units: { runs: 'sorties', perBeat: 'm/batt.' },
+    units: { runs: 'sorties', perBeat: 'm par battement' },
     tile: {
       inProgress: (week: number, date: string) => `Cycle · semaine ${week} sur 12 · bilan ${date}`,
       complete: (n: number) => `Cycle ${n} terminé : place au bilan`,
