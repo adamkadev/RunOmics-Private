@@ -8,7 +8,7 @@ All notable changes to this project are documented in this file.
 
 - Round 9 follow-up. A large title is one line ("Goals", "Checkpoint", "Depuis la maison"), the checkpoint's phase on
   its cycle card; the scrolled Analytics bar shows "4W" alone; a share card keeps the set's "@ 4:36"; "Easy run" reads
-  "Easy run" beside "Long run" everywhere; header buttons clear the strip under the status bar.
+  "Easy run" beside "Long run" everywhere; header buttons hang from the title line's top, clear of the strip under the status bar.
   A done day on Plan is titled by its session when the run kept a generic name, and a short name counts its strides
   ("Easy run + 6 strides"); a run named "Easy · 6 km + 6 strides" reads the same. The map always opens on Heat; Districts only by hand or from a district link.
   A watch-named easy run with strides reads "Easy run + 6 strides" in the Activities list, as Plan names the session.
