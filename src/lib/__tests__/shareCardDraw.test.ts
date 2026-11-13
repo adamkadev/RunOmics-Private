@@ -143,7 +143,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     const label = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Rep pace')!
     expect(label.fill).toBe(palette.zones[3])
     expect(label.font).toMatch(/^600 /)
-    expect(all).not.toContain('REP PACE · 3 × 8′')
+    expect(all).not.toContain('REP PACE')
   })
 
   it('leads the Stats card with the rep pace, the zones dropped to a thin bar', () => {
@@ -154,7 +154,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all).toEqual(expect.arrayContaining(['/km', 'Reps · target 4:25', 'Z1–Z2 80%', 'Z3 20%']))
     expect(all).not.toContain('80%')
     expect(all.some((text) => text.startsWith('in Z'))).toBe(false)
-    expect(all).not.toContain('REP PACE · 3 × 8′')
+    expect(all).not.toContain('REP PACE')
     expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
     expect(all.slice(-8)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
     expect(texts(draw({ design: 'stats' }))).toEqual(expect.arrayContaining(['80%', 'in Z2']))
@@ -519,7 +519,7 @@ describe('the 9:16 story', () => {
 
 describe('the Photo design (design review, Oct 2026)', () => {
   it('asks for a photo until there is one', () => {
-    expect(texts(draw({ design: 'photo' }))).toEqual(expect.arrayContaining(['Choose photo', 'This frame is the exact crop']))
+    expect(texts(draw({ design: 'photo' }))).toEqual(expect.arrayContaining(['Choose photo', 'The frame shows the final crop']))
   })
 
   it('fills the whole card with the photo, the words over it in white', () => {

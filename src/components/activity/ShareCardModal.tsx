@@ -35,12 +35,12 @@ interface Props {
 }
 
 /**
- * One box per size on every tab, so the controls under it never move; 68 px is the
- * sheet's 20 px margins and 14 px more on each side.
+ * One box per size on every tab, so the controls under it never move: 88 % of the sheet's width less its margins, so the
+ * first two options fit above the pinned buttons. A short window narrows it; 180 px is the floor.
  */
-const CARD_BOX_W = `min(${W}px, calc(100vw - 68px))`
-/** A story narrows to keep the sheet's controls in reach on a phone; 180 px is the floor on a short window. */
-const STORY_BOX_W = `min(${W}px, calc(100vw - 68px), max(180px, calc((100dvh - 380px) * 9 / 16)))`
+const PREVIEW_SCALE = 0.88
+const CARD_BOX_W = `min(${W * PREVIEW_SCALE}px, calc((100vw - 68px) * ${PREVIEW_SCALE}), max(180px, calc((100dvh - 430px) * 4 / 5)))`
+const STORY_BOX_W = `min(${W * PREVIEW_SCALE}px, calc((100vw - 68px) * ${PREVIEW_SCALE}), max(180px, calc((100dvh - 430px) * 9 / 16)))`
 const ASPECT: Record<ShareSize, string> = { portrait: '4 / 5', story: '9 / 16' }
 const SWIPE_PX = 40
 
@@ -102,7 +102,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const photoUrlRef = useRef<string | null>(null)
   const swipeX = useRef<number | null>(null)
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
-  const trapRef = useFocusTrap<HTMLDivElement>()
+  const trapRef = useFocusTrap<HTMLDivElement>({ initial: 'container' })
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') close() }
@@ -240,6 +240,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     height: 44, padding: '0 16px', borderRadius: 9999, fontSize: 15, fontWeight: 600,
     background: 'var(--fill-3)',
   } as const
+  const optionRow = 'flex shrink-0 items-center justify-between'
 
   return createPortal(
     <div
@@ -249,8 +250,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       aria-label={s.title}
       onClick={close}
     >
-      {/* The glass on the wrapper and the scroll inside it, so the glass never
-          scrolls away. One height on every tab, a bar's height short of the top, so the scrim still dims the edge. */}
+      {/* The glass on the wrapper and the options' scroll inside it, so the glass never scrolls away. One height on every
+          tab, a bar's height short of the top, so the scrim still dims the edge. */}
       <div
         ref={trapRef}
         data-testid="share-sheet"
@@ -260,8 +261,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       >
         <GlassLayers />
         <div
-          data-testid="share-sheet-body"
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex min-h-0 flex-1 flex-col"
           style={{ padding: '6px 22px 0', paddingBottom: 'max(26px, var(--safe-bottom))' }}
         >
           <div className="flex shrink-0 justify-center" {...handleProps} style={{ ...handleProps.style }}>
@@ -272,7 +272,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <button
               type="button"
               onClick={close}
-              aria-label={s.close}
+              aria-label={t.common.close}
               className={cn(SHEET_CONTROL, 'w-11 justify-self-start text-foreground')}
             >
               <X size={20} strokeWidth={2.2} />
@@ -339,56 +339,60 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             )}
           </div>
 
-
-          <div data-testid="share-size" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
-            <span className="text-foreground" style={{ fontSize: 17 }}>{s.sizeTitle}</span>
-            <div role="radiogroup" aria-label={s.sizeTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
-              {SHARE_SIZES.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  role="radio"
-                  aria-checked={size === option}
-                  onClick={() => setSize(option)}
-                  className={cn(segmentClass(size === option), 'h-[26px] px-3.5 text-[13px]')}
-                >
-                  {s.sizeLabels[option]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {showFormat && (
-            <div data-testid="share-format" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
-              <span className="text-foreground" style={{ fontSize: 17 }}>{s.formatTitle}</span>
-              <div role="radiogroup" aria-label={s.formatTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
-                {(['image', 'video'] as const).map((f) => (
+          {/* Only the options scroll, between the preview and the buttons pinned under them. */}
+          <div
+            data-testid="share-sheet-body"
+            className="-mx-[22px] mt-1 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-[22px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <div data-testid="share-size" className={optionRow} style={{ minHeight: 52 }}>
+              <span className="text-foreground" style={{ fontSize: 17 }}>{s.sizeTitle}</span>
+              <div role="radiogroup" aria-label={s.sizeTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+                {SHARE_SIZES.map((option) => (
                   <button
-                    key={f}
+                    key={option}
                     type="button"
                     role="radio"
-                    aria-checked={format === f}
-                    disabled={f === 'video' && !mapSettled}
-                    onClick={() => setFormat(f)}
-                    className={cn(segmentClass(format === f), 'h-[26px] px-3.5 text-[13px] disabled:opacity-40')}
+                    aria-checked={size === option}
+                    onClick={() => setSize(option)}
+                    className={cn(segmentClass(size === option), 'h-[26px] px-3.5 text-[13px]')}
                   >
-                    {s.formatLabels[f]}
+                    {s.sizeLabels[option]}
                   </button>
                 ))}
               </div>
             </div>
-          )}
 
-          <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
-            {design === 'photo' ? (
-              <>
+            {showFormat && (
+              <div data-testid="share-format" className={optionRow} style={{ minHeight: 52 }}>
+                <span className="text-foreground" style={{ fontSize: 17 }}>{s.formatTitle}</span>
+                <div role="radiogroup" aria-label={s.formatTitle} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+                  {(['image', 'video'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      role="radio"
+                      aria-checked={format === f}
+                      disabled={f === 'video' && !mapSettled}
+                      onClick={() => setFormat(f)}
+                      className={cn(segmentClass(format === f), 'h-[26px] px-3.5 text-[13px] disabled:opacity-40')}
+                    >
+                      {s.formatLabels[f]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* The empty frame is the one picker; once a photo is in, this row replaces it. */}
+            {design === 'photo' ? photoImage && (
+              <div data-testid="share-options" className={optionRow} style={{ minHeight: 52 }}>
                 <span className="text-foreground" style={{ fontSize: 17 }}>{s.photo}</span>
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center text-foreground" style={chip}>
-                  {photoImage ? s.replacePhoto : s.choosePhoto}
+                  {s.replacePhoto}
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div data-testid="share-options" className={optionRow} style={{ minHeight: 52 }}>
                 <span className="text-foreground" style={{ fontSize: 17 }}>{s.background}</span>
                 <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
                   {(['dark', 'light'] as const).map((mode) => (
@@ -404,16 +408,16 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                     </button>
                   ))}
                 </div>
-              </>
+              </div>
+            )}
+
+            {activity.reps && (
+              <div data-testid="share-reps" className={optionRow} style={{ minHeight: 52 }}>
+                <span className="text-foreground" style={{ fontSize: 17 }}>{s.showReps}</span>
+                <Toggle checked={showReps} onChange={setShowReps} label={s.showReps} />
+              </div>
             )}
           </div>
-
-          {activity.reps && (
-            <div data-testid="share-reps" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
-              <span className="text-foreground" style={{ fontSize: 17 }}>{s.showReps}</span>
-              <Toggle checked={showReps} onChange={setShowReps} label={s.showReps} />
-            </div>
-          )}
 
           <ShareCardActions
             canShareFiles={canShareFiles}

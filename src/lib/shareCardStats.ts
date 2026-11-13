@@ -114,7 +114,7 @@ export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
   const target = targetBand(reps.target)
   const off = reps.target ? repDelta(reps.paceSecPerKm, reps.target) : null
   return {
-    eyebrow: s.repPace(reps.count, repLength(reps.repSeconds)),
+    eyebrow: s.repPace,
     pace: formatClock(reps.paceSecPerKm),
     unit: t.units.perKm,
     target: target ? [s.target(target), off].filter(Boolean).join(' · ') : null,
