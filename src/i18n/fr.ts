@@ -159,7 +159,7 @@ export const fr = {
     rangeLabel: 'Période',
     streakEyebrow: 'Série hebdomadaire',
     weeks: (weeks: number) => (weeks > 1 ? 'semaines' : 'semaine'),
-    streakRule: (target: number, best: number) => `${target}+ sorties par semaine · record ${best}, depuis le début`,
+    streakRule: (target: number, best: number) => `${target}+ sorties par semaine · meilleure série ${best} semaine${best > 1 ? 's' : ''}`,
     thisWeek: 'Cette semaine',
     thisWeekRuns: (runs: number) => `${runs} faite${runs > 1 ? 's' : ''}`,
     keeps: (runs: number) => `encore ${runs} pour la garder`,

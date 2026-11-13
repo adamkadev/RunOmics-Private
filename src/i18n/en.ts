@@ -156,7 +156,7 @@ export const en = {
     rangeLabel: 'Window',
     streakEyebrow: 'Weekly streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
-    streakRule: (target: number, best: number) => `${target}+ runs a week · best ${best}, all time`,
+    streakRule: (target: number, best: number) => `${target}+ runs a week · best streak ${best} week${best === 1 ? '' : 's'}`,
     thisWeek: 'This week',
     thisWeekRuns: (runs: number) => `${runs} done`,
     keeps: (runs: number) => `${runs} more keeps it`,
