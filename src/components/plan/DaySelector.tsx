@@ -3,10 +3,9 @@
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import type { CrossTrainingKind } from '@/domain/activity/crossTraining'
 import { CrossTrainingIcon } from '@/components/crossTraining/CrossTraining'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatPlannedKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { formatWeekKm } from './weekPlanDays'
 
 export interface SelectorDay {
   date: string
@@ -44,7 +43,7 @@ export function barHeight(day: Pick<SelectorDay, 'state' | 'km'>, pxPerKm = PX_P
 
 function dayName(day: SelectorDay): string {
   const state = [t.sessionState[day.state], day.isToday ? t.sessionState.today : null].filter(Boolean).join(' · ')
-  const km = day.state !== 'rest' && day.km !== null ? `${formatWeekKm(day.km)} ${t.units.km}` : null
+  const km = day.state !== 'rest' && day.km !== null ? `${formatPlannedKm(day.km)} ${t.units.km}` : null
   const other = (day.other ?? []).map((kind) => t.crossTraining.kinds[kind])
   return [t.sessionState.dayLabel(formatDate(day.date, { style: 'full' }), state), km, ...other].filter(Boolean).join(' · ')
 }

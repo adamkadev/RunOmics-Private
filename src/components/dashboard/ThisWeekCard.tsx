@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
-import { formatWeekKm } from '@/components/plan/weekPlanDays'
-import { formatRanKm } from '@/lib/formatters'
+import { formatRanKm, formatPlannedKm } from '@/lib/formatters'
 import { useToday } from '@/lib/useToday'
 import { useSkippedDays } from '@/lib/skippedDays'
 import type { SkipReason } from '@/domain/wellness/checkIn'
@@ -34,10 +33,10 @@ export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<st
   return target.days.map((source, i) => {
     const day = strip[i]!
     if (day.state === 'rest') return { day, height: 3, label: null }
-    if (day.state === 'done') return source.runs > 0 ? { day, height: px(source.ranKm), label: formatWeekKm(source.ranKm) } : { day, height: 3, label: null }
+    if (day.state === 'done') return source.runs > 0 ? { day, height: px(source.ranKm), label: formatPlannedKm(source.ranKm) } : { day, height: 3, label: null }
     const km = source.plannedKm ?? 0
     // A missed day keeps its km over the amber bar, so it says what was missed.
-    return { day, height: px(km), label: km > 0 ? formatWeekKm(km) : null }
+    return { day, height: px(km), label: km > 0 ? formatPlannedKm(km) : null }
   })
 }
 
@@ -115,7 +114,7 @@ export function ThisWeekCard({
         <h2 className="text-headline text-foreground">{s.title}</h2>
         <p className="text-[13px] tabular-nums text-text-2">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
-          {targetKm !== null ? ` / ${formatWeekKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
+          {targetKm !== null ? ` / ${formatPlannedKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
         </p>
       </div>
 

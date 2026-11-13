@@ -21,7 +21,7 @@ import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { sessionTitle } from './sessionTitle'
 import { dayKind, kindLetter } from './sessionKind'
-import { formatWeekKm, planWeekTarget } from './weekPlanDays'
+import { planWeekTarget } from './weekPlanDays'
 import { generalBlockWeek, phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
@@ -128,7 +128,7 @@ function comingUpRows(
         summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null,
         summary.durationSeconds ? formatDurationWords(summary.durationSeconds) : null,
       ]
-      return { key: workout.key, date, title: summary.title, detail: detail.filter(Boolean).join(' · '), color: kind.color }
+      return { key: workout.key, date, title: summary.shortTitle, detail: detail.filter(Boolean).join(' · '), color: kind.color }
     })
   })
 }
@@ -240,14 +240,14 @@ export function WeekView({
       if (k?.kind !== 'quality') continue
       const workout = selectedWorkouts(date, byDatePlanned, byDateCoach, trainingZones)[0]
       if (!workout) continue
-      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).title, color: k.text }
+      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).shortTitle, color: k.text }
     }
     return null
   })()
 
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
-    const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).title)
+    const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).shortTitle)
     const session = fitWorkouts[0] ?? null
     const planned = session ? plannedText(session, title) : null
     dayCard = (
@@ -329,7 +329,7 @@ export function WeekView({
         {/* Km only: Coming up and the selector count the runs. */}
         <p className="text-[13px] tabular-nums text-muted-foreground" data-testid="week-summary">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
-          {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatWeekKm(planKm))}`}
+          {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatPlannedKm(planKm))}`}
         </p>
       </div>
 

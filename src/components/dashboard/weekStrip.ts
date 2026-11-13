@@ -2,8 +2,7 @@ import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { CoachingWorkoutType, WorkoutBlock } from '@/domain/coaching/types'
 import type { WeekDayState, WeekTarget } from '@/domain/training/weekTarget'
 import { sessionZone, zoneColor } from '@/lib/colors'
-import { formatDate, formatNumber } from '@/lib/formatters'
-import { formatWeekKm } from '@/components/plan/weekPlanDays'
+import { formatDate, formatNumber, formatPlannedKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface CoachDay {
@@ -75,7 +74,7 @@ export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Re
           ? typeKind(day.type)
           : (kinds[day.date] ?? typeKind(day.type))
     // One decimal at most: a 34 pt circle holds "9.2", not "9.23".
-    const kmText = km === null ? null : day.state === 'done' ? formatNumber(km, 1) : formatWeekKm(km)
+    const kmText = km === null ? null : day.state === 'done' ? formatNumber(km, 1) : formatPlannedKm(km)
     const isToday = day.date === today
     const state = [t.sessionState[day.state], isToday ? t.sessionState.today : null].filter(Boolean).join(' · ')
     const weekday = t.plan.weekdays[i] ?? ''

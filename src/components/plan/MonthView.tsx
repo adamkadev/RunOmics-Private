@@ -10,7 +10,7 @@ import { cardClass } from '@/components/ui/Card'
 import { zoneColor } from '@/lib/colors'
 import { ZONE_TILE_SHARE } from '@/lib/themeTokens'
 import { DAY_MS, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { formatDate, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { formatDate, formatRanKm, formatWeekday, formatPlannedKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -20,7 +20,6 @@ import { useSkippedDays } from '@/lib/skippedDays'
 import { planPhaseSpans, spanOfWeek, spanWeeks, type PhaseSpan } from './planPhaseSpans'
 import { dayKind, kindColor, kindLetter, type DayKind } from './sessionKind'
 import { sessionTitle } from './sessionTitle'
-import { formatWeekKm } from './weekPlanDays'
 
 interface Props {
   year: number
@@ -96,7 +95,7 @@ function tileStyle(cell: Cell): CSSProperties | null {
 function tileFigure(cell: Cell): string | null {
   if (cell.ranKm > 0) return formatRanKm(cell.ranKm)
   if (!cell.planned) return null
-  return cell.planned.km !== null ? formatWeekKm(cell.planned.km) : cell.planned.minutes !== null ? t.plan.steps.minutes(cell.planned.minutes) : null
+  return cell.planned.km !== null ? formatPlannedKm(cell.planned.km) : cell.planned.minutes !== null ? t.plan.steps.minutes(cell.planned.minutes) : null
 }
 
 function nextKeySession(
@@ -290,7 +289,7 @@ export function MonthView({
                 onClick={(event) => openRow(row, event)}
                 aria-label={m.weekLabel(
                   formatDate(row.monday, { style: 'bare' }),
-                  row.plannedKm > 0 ? `${formatRanKm(row.ranKm)} ${t.plan.weekRow.kmOf(formatWeekKm(row.plannedKm))}` : `${formatRanKm(row.ranKm)} ${t.units.km}`,
+                  row.plannedKm > 0 ? `${formatRanKm(row.ranKm)} ${t.plan.weekRow.kmOf(formatPlannedKm(row.plannedKm))}` : `${formatRanKm(row.ranKm)} ${t.units.km}`,
                 )}
                 className={cn(GRID, 'w-full items-center rounded-r-xl border-l-[3px] py-1.5 text-left transition-colors hover:bg-[var(--surface-2)]', row.current && 'bg-card')}
                 style={{ borderLeftColor: phaseColor(row.span) }}
@@ -343,7 +342,7 @@ export function MonthView({
                   <span className={cn('text-sm font-semibold', row.future ? 'text-muted-foreground' : row.current ? 'text-accent-text' : 'text-foreground')}>
                     {row.future ? (row.plannedKm > 0 ? '–' : '') : formatRanKm(row.ranKm)}
                   </span>
-                  {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatWeekKm(row.plannedKm)}</span>}
+                  {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatPlannedKm(row.plannedKm)}</span>}
                 </span>
               </button>
             </div>
@@ -377,7 +376,7 @@ export function MonthView({
           </div>
         )}
         <p className="text-xs text-muted-foreground" data-testid="month-km">
-          {plannedKm > 0 ? m.kmOf(formatRanKm(againstPlanKm), formatWeekKm(plannedKm)) : `${formatRanKm(ranKm)} ${t.units.km}`}
+          {plannedKm > 0 ? m.kmOf(formatRanKm(againstPlanKm), formatPlannedKm(plannedKm)) : `${formatRanKm(ranKm)} ${t.units.km}`}
           {plannedKm > 0 && planSpan !== null && (
             <>
               {' · '}

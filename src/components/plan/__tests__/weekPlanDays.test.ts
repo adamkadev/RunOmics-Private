@@ -1,6 +1,7 @@
+import { formatPlannedKm } from '@/lib/formatters'
 import { describe, expect, it } from 'vitest'
 import type { PlannedWorkout } from '@/domain/activity/types'
-import { currentWeekTarget, formatWeekKm, planMaps, resolveDayType, weekPlanDays } from '../weekPlanDays'
+import { currentWeekTarget, planMaps, resolveDayType, weekPlanDays } from '../weekPlanDays'
 
 const run = (date: string, distanceKm: number) => ({ date, distanceKm })
 const garmin = (date: string, km: number): PlannedWorkout => ({ date, name: 'Run', distanceM: km * 1000 })
@@ -45,11 +46,11 @@ describe('currentWeekTarget', () => {
   })
 })
 
-describe('formatWeekKm', () => {
+describe('formatPlannedKm', () => {
   it('keeps a decimal only where it tells the reader something', () => {
-    expect(formatWeekKm(6.1)).toBe('6.1')
-    expect(formatWeekKm(6)).toBe('6')
-    expect(formatWeekKm(52.4)).toBe('52')
+    expect(formatPlannedKm(6.1)).toBe('6.1')
+    expect(formatPlannedKm(6)).toBe('6')
+    expect(formatPlannedKm(52.4)).toBe('52')
   })
 })
 

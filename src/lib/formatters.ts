@@ -102,8 +102,9 @@ export function formatNumber(value: number, maxDecimals = 1): string {
 }
 
 /** Whole kilometres on every screen, so a prescription never rounds one way here and another there. */
+/** "7.5", "2.9", "12": the session card, the week bars and Plan round a planned distance alike. */
 export function formatPlannedKm(km: number): string {
-  return formatKm(km)
+  return formatKm(km, km < 10 && Math.round(km * 10) % 10 !== 0 ? 1 : 0)
 }
 
 export function formatRanKm(km: number): string {

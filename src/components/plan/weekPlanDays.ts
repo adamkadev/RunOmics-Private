@@ -2,7 +2,6 @@ import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/act
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { weekTarget, type WeekTarget, type WeekTargetDay } from '@/domain/training/weekTarget'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { formatKm } from '@/lib/formatters'
 import { intendedType } from '@/lib/activityTitle'
 import type { PlanPrescriptionView } from './planCoachingView'
 
@@ -121,7 +120,3 @@ export function currentWeekTarget(maps: PlanMaps, today: string, goalKm: number 
   return planWeekTarget(weekDates(startOfWeek(new Date(`${today}T00:00:00`))), maps, today, goalKm)
 }
 
-export function formatWeekKm(km: number): string {
-  const decimals = km < 10 && Math.round(km * 10) % 10 !== 0 ? 1 : 0
-  return formatKm(km, decimals)
-}
