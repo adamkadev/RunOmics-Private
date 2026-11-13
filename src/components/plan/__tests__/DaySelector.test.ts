@@ -9,8 +9,8 @@ describe('the day bars', () => {
     const days = [rest, run(4), rest, run(4), rest, run(3), rest]
     const scale = weekPxPerKm(days)
 
-    expect(barHeight(run(4), scale)).toBe(68)
-    expect(barHeight(run(3), scale)).toBe(51)
+    expect(barHeight(run(4), scale)).toBe(54)
+    expect(barHeight(run(3), scale)).toBe(41)
   })
 
   it('keep the shared scale in a week with a long run', () => {
@@ -23,9 +23,5 @@ describe('the day bars', () => {
   it('keep the shared scale in a week with no distance', () => {
     expect(weekPxPerKm([rest, run(null), rest])).toBe(5)
     expect(barHeight(run(null), weekPxPerKm([run(null)]))).toBe(14)
-  })
-
-  it('leave a rest day a stub whatever the scale', () => {
-    expect(barHeight(rest, 17)).toBe(5)
   })
 })

@@ -24,10 +24,10 @@ export interface SelectorDay {
 
 const PX_PER_KM = 5
 const TRACK_PX = 70
-const MAX_BAR_PX = 68
+// Room above the tallest bar for its km.
+const MAX_BAR_PX = 54
 /** A session with no distance, or a very short one, still reads as a bar. */
 const MIN_BAR_PX = 14
-const STUB_PX = 5
 
 /** A week of short runs fills the track with its longest one; a week with a long run keeps the shared scale. */
 export function weekPxPerKm(days: readonly Pick<SelectorDay, 'state' | 'km'>[]): number {
@@ -35,8 +35,7 @@ export function weekPxPerKm(days: readonly Pick<SelectorDay, 'state' | 'km'>[]):
   return longest > 0 ? Math.max(PX_PER_KM, MAX_BAR_PX / longest) : PX_PER_KM
 }
 
-export function barHeight(day: Pick<SelectorDay, 'state' | 'km'>, pxPerKm = PX_PER_KM): number {
-  if (day.state === 'rest') return STUB_PX
+export function barHeight(day: Pick<SelectorDay, 'km'>, pxPerKm = PX_PER_KM): number {
   if (day.km === null) return MIN_BAR_PX
   return Math.min(MAX_BAR_PX, Math.max(MIN_BAR_PX, Math.round(day.km * pxPerKm)))
 }
@@ -85,26 +84,37 @@ export function DaySelector({
             <span className={cn('text-lg font-semibold leading-tight tabular-nums', day.isToday ? 'text-accent-text' : 'text-foreground')}>
               {Number(day.date.slice(8))}
             </span>
-            <span className="flex items-end" style={{ height: TRACK_PX }}>
-              <span
-                data-bar-state={day.state}
-                className={cn(
-                  'box-border block w-5',
-                  day.state === 'rest' ? 'rounded-[3px] bg-[var(--rest-bar)]' : 'rounded-[7px]',
-                  day.state === 'missed' && 'border-[1.5px] border-dashed border-[var(--warn)]',
-                )}
-                style={{
-                  height: barHeight(day, pxPerKm),
-                  ...(day.state === 'done' || day.state === 'planned' ? { background: day.color ?? 'var(--line-2)' } : {}),
-                }}
-              />
+            {/* Done solid, planned dashed, as Today and Month draw them; a rest day draws nothing. */}
+            <span className="flex flex-col items-center justify-end gap-1" style={{ height: TRACK_PX }}>
+              {day.state !== 'rest' && day.km !== null && (
+                <span aria-hidden className="text-[11px] leading-none tabular-nums text-muted-foreground" data-testid="day-km">
+                  {formatPlannedKm(day.km)}
+                </span>
+              )}
+              {day.state !== 'rest' && (
+                <span
+                  data-bar-state={day.state}
+                  className={cn(
+                    'box-border block w-5 rounded-[7px]',
+                    day.state === 'missed' && 'border-[1.5px] border-dashed border-[var(--warn)]',
+                    day.state === 'planned' && 'border-[1.5px] border-dashed',
+                  )}
+                  style={{
+                    height: barHeight(day, pxPerKm),
+                    ...(day.state === 'done' ? { background: day.color ?? 'var(--line-2)' } : {}),
+                    ...(day.state === 'planned'
+                      ? { borderColor: day.color ?? 'var(--line-2)', background: `color-mix(in srgb, ${day.color ?? 'var(--line-2)'} 18%, transparent)` }
+                      : {}),
+                  }}
+                />
+              )}
             </span>
             <span
               aria-hidden
-              className="text-xs font-semibold leading-none tracking-[0.04em]"
-              style={{ color: day.letter ? (day.text ?? 'var(--muted-foreground)') : 'var(--muted-foreground)' }}
+              className="h-3 text-xs font-semibold leading-none tracking-[0.04em]"
+              style={{ color: day.text ?? 'var(--muted-foreground)' }}
             >
-              {day.letter ?? '–'}
+              {day.letter}
             </span>
             {withOther && (
               <span className="flex h-4 items-center" aria-hidden>

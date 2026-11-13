@@ -193,25 +193,24 @@ describe('the day selector', () => {
     expect(day(TODAY).className).toContain('state-today')
   })
 
-  it('draws each day as a bar as long as its km, in its colour, and rest as a stub', () => {
+  it('draws each day as a bar as long as its km, in its colour, with its km over it, and nothing on a rest day', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
-    // 5 px a km, capped at 68 px.
     expect(bar('2026-09-07').style.height).toBe(`${Math.round(4.79 * 5)}px`)
     expect(bar('2026-09-07').style.background).toBe('var(--zone-3)')
-    expect(bar('2026-09-12').style.height).toBe('68px')
-    // The long run shares the easy blue.
-    expect(bar('2026-09-12').style.background).toBe('var(--zone-2)')
-    expect(bar('2026-09-10').getAttribute('data-bar-state')).toBe('rest')
-    expect(bar('2026-09-10').style.height).toBe('5px')
+    expect(bar('2026-09-12').style.height).toBe('54px')
+    expect(bar('2026-09-12').style.borderColor).toBe('var(--zone-2)')
+    expect(bar('2026-09-12').getAttribute('data-bar-state')).toBe('planned')
+    expect(within(day('2026-09-12')).getByTestId('day-km').textContent).toBe('18')
+    expect(day('2026-09-10').querySelector('[data-bar-state]')).toBeNull()
   })
 
-  it('names each day by its session letter, a dash on a rest day', () => {
+  it('names each day by its session letter, and a rest day by nothing', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
     expect(day('2026-09-07').textContent).toContain(t.plan.typeLetters.Tempo)
     expect(day('2026-09-12').textContent).toContain(t.plan.typeLetters.long)
-    expect(day('2026-09-10').textContent).toContain('–')
+    expect(day('2026-09-10').textContent).not.toContain('–')
   })
 
   it('draws a missed session as a dashed amber outline', () => {
