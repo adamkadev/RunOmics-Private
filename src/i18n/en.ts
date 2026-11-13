@@ -765,7 +765,8 @@ export const en = {
         above: 'Load above range',
       },
       // Said in place of the load line while a break has left nothing to read it against.
-      buildingBack: 'Building back – no reading yet',
+      buildingBack: 'Comeback',
+      formLater: 'Your form shows once you have run regularly for a few weeks.',
       // "Estimated" where the watch rates no load and the app did the arithmetic itself.
       loadLine: (state: string, estimated: boolean) => (estimated ? `${state} · Estimated` : state),
       ctl: 'Fitness',

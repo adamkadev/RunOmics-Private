@@ -41,10 +41,11 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('readiness-status').textContent).toBe(`${t.formBand.neutral} · ${t.dashboard.readiness.lineByTone.build}`)
   })
 
-  it('names no form band and shows no form number while building back after a break', () => {
+  it('says when form will show, with no form tile or band, while building back after a break', () => {
     render(<ReadinessCard status={{ ...STATUS, tsbNow: -11, buildingBack: true }} />)
     expect(screen.getByTestId('readiness-status').textContent).toBe(t.dashboard.readiness.buildingBack)
-    expect(screen.getByTestId('tile-form')).toHaveTextContent(`${t.dashboard.readiness.formLabel}–`)
+    expect(screen.queryByTestId('tile-form')).toBeNull()
+    expect(screen.getByTestId('readiness-card')).toHaveTextContent(t.dashboard.readiness.formLater)
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.formBand[formBand(-11)])
   })
 

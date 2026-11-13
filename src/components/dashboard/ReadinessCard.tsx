@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -80,7 +81,8 @@ export function ReadinessCard({
   // A written headline that names a form state the status line doesn't ("You're fresh" over NEUTRAL) gives way to the load's own.
   const contradicts = verdict ? (!fresh && FRESH_WORDS.test(verdict.headline)) || (band !== 'tired' && TIRED_WORDS.test(verdict.headline)) : false
   const headline = (contradicts ? fallback?.headline : verdict?.headline) ?? fallback?.headline ?? verdict?.headline ?? null
-  const body = verdict ? verdict.body : (fallback?.body ?? null)
+  // Building back, the missing reading is said in a sentence rather than left as an empty Form tile.
+  const body = verdict ? verdict.body : status.buildingBack ? s.formLater : (fallback?.body ?? null)
 
   return (
     <section
@@ -96,8 +98,8 @@ export function ReadinessCard({
         />
 
         {/* A flat row under a hairline: tiles inside the card read as cards within a card. */}
-        <div className="grid grid-cols-3 gap-3 border-t border-border pt-3">
-          <Tile testId="tile-form" label={s.formLabel} value={bandWord ? formatDelta(form) : '–'} sub={bandWord?.toLocaleLowerCase(t.locale)} />
+        <div className={cn('grid gap-3 border-t border-border pt-3', bandWord ? 'grid-cols-3' : 'grid-cols-2')}>
+          {bandWord && <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={bandWord.toLocaleLowerCase(t.locale)} />}
           <Tile
             testId="tile-fitness"
             label={s.ctl}
