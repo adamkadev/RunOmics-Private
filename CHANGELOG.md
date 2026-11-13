@@ -10,7 +10,7 @@ All notable changes to this project are documented in this file.
   its cycle card; the scrolled Analytics bar shows "4W" alone; a share card keeps the set's "@ 4:36"; "Easy run" reads
   "Easy run" beside "Long run" everywhere; header buttons clear the strip under the status bar.
   A done day on Plan is titled by its session when the run kept a generic name, and a short name counts its strides
-  ("Easy run + 6 strides"). The map always opens on Heat; Districts only by hand or from a district link.
+  ("Easy run + 6 strides"); a run named "Easy · 6 km + 6 strides" reads the same. The map always opens on Heat; Districts only by hand or from a district link.
   A watch-named easy run with strides reads "Easy run + 6 strides" in the Activities list, as Plan names the session.
 - Design review, round 9 (one PR). **Numbers agree**: VO2max is the precise 57.4 on every page; Load's third
   stat is the window's fitness change, as Form says it, and Form's bars sit above and below zero; threshold pace has

@@ -7,7 +7,8 @@ describe('sessionLabel', () => {
     expect(sessionLabel('Threshold · 3 × 8′ @ 4:25')).toBe('3 × 8′ @ 4:25')
     expect(sessionLabel('Tempo · 20′ @ 4:40')).toBe('20′ @ 4:40')
     expect(sessionLabel('VO₂ max · 5 × 3′ @ 3:55')).toBe('5 × 3′ @ 3:55')
-    expect(sessionLabel('Easy · 54 min + 6 strides')).toBe('54 min + 6 strides')
+    expect(sessionLabel('Easy · 54 min + 6 strides')).toBe('Easy run + 6 strides')
+    expect(sessionLabel('Easy · 6 km + 6 strides')).toBe('Easy run + 6 strides')
     expect(sessionLabel('Seuil · 3 × 8′ @ 4:20')).toBe('3 × 8′ @ 4:20')
   })
 
@@ -33,8 +34,8 @@ describe('sessionLabel', () => {
   it('keeps words that are not the type, after the set', () => {
     expect(sessionLabel('Strides 6 × 20s')).toBe('6 × 20s strides')
     expect(sessionLabel('Strides · 6 × 20″')).toBe('6 × 20″ strides')
-    expect(sessionLabel('Easy 50 min + 6 × 20s strides')).toBe('50 min + 6 × 20s strides')
-    expect(sessionLabel('Footing 50 min + 6 accélérations de 20s')).toBe('50 min + 6 accélérations de 20s')
+    expect(sessionLabel('Easy 50 min + 6 × 20s strides')).toBe('Easy run + 6 × 20s strides')
+    expect(sessionLabel('Footing 50 min + 6 accélérations de 20s')).toBe('Footing + 6 accélérations de 20s')
   })
 
   it('keeps a name with no set whole', () => {

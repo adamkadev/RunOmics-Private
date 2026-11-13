@@ -91,7 +91,12 @@ export function sessionLabel(title: string): string {
   if (!match) return name
   const [, words, set] = match as unknown as [string, string, string]
   // The plan's distance beside the one run would be a second, wrong number: the row's own column carries it.
-  if (/^\d+(?:[.,]\d+)?\s?km$/i.test(set.trim()) && isTypeWord(words)) return words.trim().replace(/[·:,\-–—]+$/, '').trim()
+  const type = words.trim().replace(/[·:,\-–—]+$/, '').trim()
+  if (/^\d+(?:[.,]\d+)?\s?km$/i.test(set.trim()) && isTypeWord(words)) return type
+  // An easy body's length and its strides, "Easy · 6 km + 6 strides": the row's columns carry the length, the type
+  // stays in front of the strides it would otherwise lose: "Easy run + 6 strides".
+  const extras = /^\d+(?:[.,]\d+)?\s?(?:km|min)\s*\+\s*(.+)$/i.exec(set.trim())
+  if (extras && isTypeWord(words)) return `${type} + ${extras[1]!.trim()}`
   if (!isStructure(set)) return name
   return isTypeWord(words) ? notation(set) : `${notation(set)} ${lowerFirst(words.trim())}`
 }
