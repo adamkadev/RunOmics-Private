@@ -78,7 +78,7 @@ for (const key of ['fitness', 'performance', 'volume', 'health'] as const) {
       const name = t.analytics.cards.period.words[period]!
       await page.getByTestId('period-button').click()
       await page.getByTestId('period-menu').getByRole('radio', { name, exact: true }).click()
-      await expect(page.getByTestId('period-button')).toHaveAccessibleName(t.analytics.cards.period.button(name))
+      await expect(page.getByTestId('period-button')).toHaveAccessibleName(`${t.analytics.cards.period.short[period]} · ${t.analytics.cards.period.button(name)}`)
       expect(await overflows(page), `${key}, ${period}`).toEqual([])
     }
   })

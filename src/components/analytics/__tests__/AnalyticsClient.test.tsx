@@ -90,7 +90,7 @@ function pickPeriod(name: string | undefined) {
   fireEvent.click(within(screen.getByTestId('period-menu')).getByRole('radio', { name }))
 }
 
-const shownPeriod = () => screen.getByTestId('period-button').textContent
+const shownPeriod = () => screen.getByTestId('period-button').querySelector('span:not(.sr-only)')?.textContent
 
 function periods() {
   fireEvent.click(screen.getByTestId('period-button'))
