@@ -1302,6 +1302,8 @@ export const en = {
   },
 
   activities: {
+    // A watch-named easy run with its strides, as Plan writes the session: "Easy + 6 strides".
+    withStrides: (kind: string, n: number) => `${kind} + ${n} strides`,
     pause: (months: string, year: string, count: number) => `Break · ${months} ${year} · ${count} month${count === 1 ? '' : 's'}`,
     // What the search reads: a run's name and notes, its weekday and date.
     searchPlaceholder: 'Search runs, notes, dates…',

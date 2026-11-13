@@ -125,6 +125,8 @@ export type ActivitySummary = Pick<
   gearId?: string | null
   /** From encodeRouteThumb; null for a treadmill run. */
   routeThumb?: string | null
+  /** How many strides followed the run, read from its laps: the list names an easy run "Easy + 6 strides". */
+  strides?: number
 }
 
 export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'

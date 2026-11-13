@@ -38,10 +38,17 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
     .join(' · ')
 }
 
+/** A watch-named run by Plan's word for it, its strides counted as Plan writes them: "Easy + 6 strides". */
+function watchRunTitle(a: ActivitySummary, type: ActivityType): string {
+  const kind = kindOf(type, isLongSession(a))
+  const label = kindLabel(type, kind)
+  return a.strides && kind === 'easy' ? t.activities.withStrides(label, a.strides) : label
+}
+
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.type, variant = 'card' }: Props) {
   // The session as its set ("3 × 8′ @ 4:25"), not its type: the type is the dot beside the meta. A watch's
   // default name gives way to the word Plan uses for the session.
-  const title = isWatchName(a.description) ? kindLabel(type, kindOf(type, isLongSession(a))) : sessionLabel(activityTitle(a))
+  const title = isWatchName(a.description) ? watchRunTitle(a, type) : sessionLabel(activityTitle(a))
   const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
   const router = useRouter()

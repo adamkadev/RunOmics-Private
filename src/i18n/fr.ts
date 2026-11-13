@@ -1217,6 +1217,7 @@ export const fr = {
   },
 
   activities: {
+    withStrides: (kind: string, n: number) => `${kind} + ${n} accélérations`,
     pause: (months: string, year: string, count: number) => `Pause · ${months} ${year} · ${count} mois`,
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
     // Not « Toutes »: it pushes the fourth chip under the filter button at 393 pt.

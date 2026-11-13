@@ -1,3 +1,4 @@
+import { repSet } from './repSet'
 import { activityRouteThumb } from './routeThumb'
 import type { Activity, ActivitySummary, HrZone } from './types'
 
@@ -24,5 +25,11 @@ export function toActivitySummary(a: Activity, athleteHasLthr = false): Activity
     zones: athleteHasLthr || a.aerTrainingEffect != null ? zoneSeconds(a.hrZones) : [],
     gearId: a.gearId,
     routeThumb: activityRouteThumb(a),
+    ...strideCount(a),
   }
+}
+
+function strideCount(a: Activity): { strides?: number } {
+  const set = repSet(a.splits ?? null)
+  return set?.strides ? { strides: set.reps.length } : {}
 }

@@ -56,4 +56,9 @@ describe('ActivityThumbRow', () => {
     expect(screen.getByTestId('thumb-row').textContent).toContain(t.plan.kinds.easy)
     expect(screen.getByTestId('thumb-row').textContent).not.toContain('Hoenheim')
   })
+
+  it('counts the strides after an easy run the watch named, as Plan writes the session', () => {
+    render(<ActivityThumbRow activity={{ ...activity, type: 'Base', description: 'Hoenheim Running', strides: 6 }} variant="inset" />)
+    expect(screen.getByTestId('thumb-row').textContent).toContain(t.activities.withStrides(t.plan.kinds.easy, 6))
+  })
 })
