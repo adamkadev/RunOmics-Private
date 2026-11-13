@@ -36,9 +36,9 @@ describe('French week streaks', () => {
   })
 
   it('reads the hub streak in the singular up to one week, the plural from two', () => {
-    expect(fr.profile.hub.streakOf(1, 3)).toBe("semaine d'affilée · 3 sorties et plus")
-    expect(fr.profile.hub.streakOf(2, 3)).toBe("semaines d'affilée · 3 sorties et plus")
-    expect(fr.profile.hub.streakOf(4, 1)).toBe("semaines d'affilée · 1 sortie et plus")
+    expect(fr.profile.hub.streakOf(1, 3)).toBe("semaine d’affilée · 3 sorties et plus")
+    expect(fr.profile.hub.streakOf(2, 3)).toBe("semaines d’affilée · 3 sorties et plus")
+    expect(fr.profile.hub.streakOf(4, 1)).toBe("semaines d’affilée · 1 sortie et plus")
   })
 })
 

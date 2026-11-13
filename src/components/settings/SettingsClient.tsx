@@ -248,8 +248,8 @@ function AppearanceSection() {
 export function zonesSummary(zones: Zones | undefined): string | null {
   const p = t.settings.profile
   const parts = [
-    zones?.lthrBpm !== undefined ? p.lthr(zones.lthrBpm) : null,
     zones?.maxHrBpm !== undefined ? p.maxHr(zones.maxHrBpm) : null,
+    zones?.lthrBpm !== undefined ? p.lthr(zones.lthrBpm) : null,
   ].filter((part): part is string => part !== null)
   return parts.length > 0 ? parts.join(' · ') : null
 }

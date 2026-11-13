@@ -603,7 +603,7 @@ export const fr = {
       auto: 'Auto',
       dark: 'Sombre',
       // Le fond du mode clair.
-      glowLabel: "Lueur d'arrière-plan",
+      glowLabel: "Lueur d’arrière-plan",
       glowHint: 'Couleur derrière le haut de chaque page',
       reducedTransparencyNote: ' · désactivé tant que Réduire la transparence est activé',
     },
@@ -672,9 +672,8 @@ export const fr = {
     },
     profile: {
       readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
-      // « Seuil 172 · max 189 »: « FC seuil » would cut the row's name.
-      lthr: (bpm: number) => `Seuil ${bpm}`,
-      maxHr: (bpm: number) => `max ${bpm}`,
+      lthr: (bpm: number) => `seuil ${bpm}`,
+      maxHr: (bpm: number) => `FC max ${bpm}`,
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
@@ -1021,7 +1020,7 @@ export const fr = {
       paceCurve: {
         title: 'Courbe allure-durée',
         caption: 'meilleure allure pour chaque durée',
-        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d'avant, lue dans l'enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D' : l'allure la plus rapide que tu tiens sans t'épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D' est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
+        about: "Ta meilleure allure pour chaque durée de 30 secondes à 2 heures, sur ces semaines et sur les semaines d’avant, lue dans l’enregistrement complet de chaque sortie. La vitesse critique (VC) est ajustée sur les meilleurs efforts de 3 à 20 minutes, distance = VC x temps + D' : l’allure la plus rapide que tu tiens sans t’épuiser, à peu près ce que tu courrais en compétition sur 30 à 40 minutes, en général un peu plus vite que ton allure seuil. D' est la distance que tu peux courir au-dessus avant de fatiguer. Elle ne vaut que ce que valent tes efforts les plus durs de 3 à 20 minutes : des semaines faciles la sous-estiment.",
         cs: 'Vitesse critique',
         dPrime: (m: number) => `D' ${m} m`,
         noThreshold: 'Ajustée sur tes meilleurs efforts de 3 à 20 min : à peu près l’allure que tu tiendrais 30 à 40 minutes.',
@@ -1071,7 +1070,7 @@ export const fr = {
       ytd: {
         title: "Depuis janvier",
         shortOf: (km: string, goal: string) => `${km} km de retard sur ${goal} à ce rythme`,
-        overOf: (km: string, goal: string) => `${km} km d'avance sur ${goal} à ce rythme`,
+        overOf: (km: string, goal: string) => `${km} km d’avance sur ${goal} à ce rythme`,
       },
       longRun: {
         title: 'Part de la sortie longue',
@@ -1200,7 +1199,7 @@ export const fr = {
       ofRuns: (n: number, total: number) => `${n} sur ${total} sortie${total > 1 ? 's' : ''}`,
     },
     view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
-    groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Courses' },
+    groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Compétitions' },
     filter: {
       title: 'Filtrer et trier',
       reset: 'Réinitialiser',
@@ -1220,7 +1219,7 @@ export const fr = {
         races: ' · les totaux ne comptent que les courses',
       },
       clear: 'Effacer',
-      sortedBy: { oldest: "plus anciennes d'abord", longest: "plus longues d'abord", fastest: "plus rapides d'abord" } as Record<string, string>,
+      sortedBy: { oldest: "plus anciennes d’abord", longest: "plus longues d’abord", fastest: "plus rapides d’abord" } as Record<string, string>,
     },
     sort: {
       label: 'Trier',
@@ -1231,7 +1230,7 @@ export const fr = {
       fastest: 'Rapides',
     },
     row: {
-      rpeValue: (n: number) => `RPE ${n}`,
+      rpeValue: (n: number) => `Effort ${n}/10`,
     },
   },
 
@@ -1524,7 +1523,7 @@ export const fr = {
       lapTitle: 'Tours',
       wholeRun: 'Sortie entière',
       lapNumber: (n: number) => `Tour ${n}`,
-      noLapsPressed: "Aucun tour n'a été déclenché sur cette sortie. Les allures au km montrent comment ton allure a évolué.",
+      noLapsPressed: "Aucun tour n’a été déclenché sur cette sortie. Les allures au km montrent comment ton allure a évolué.",
       seeKmSplits: 'Voir les allures au km',
       cols: {
         km: 'Km',
@@ -1781,7 +1780,7 @@ export const fr = {
   profile: {
     hub: {
       goalsSeason: 'Objectifs & saison',
-      streakOf: (weeks: number, target: number) => `semaine${weeks > 1 ? 's' : ''} d'affilée · ${target} sortie${target > 1 ? 's' : ''} et plus`,
+      streakOf: (weeks: number, target: number) => `semaine${weeks > 1 ? 's' : ''} d’affilée · ${target} sortie${target > 1 ? 's' : ''} et plus`,
       noStreak: (target: number) => `Pas encore de série · ${target} sortie${target > 1 ? 's' : ''} et plus`,
       runsThisWeek: (runs: number, target: number) => `${runs} sur ${target} cette semaine`,
       records: 'Records',
@@ -1797,7 +1796,7 @@ export const fr = {
       predictedShort: 'prédit',
       targetShort: 'objectif',
       shortAtPace: (km: string) => `${km} km de retard à ce rythme`,
-      overAtPace: (km: string) => `${km} km d'avance à ce rythme`,
+      overAtPace: (km: string) => `${km} km d’avance à ce rythme`,
       noRace: 'Aucune course prévue',
       currentBlock: 'Bloc en cours',
       blockWeek: (week: number, total: number) => `Bloc · semaine ${week} sur ${total}`,
@@ -2058,8 +2057,8 @@ export const fr = {
     split: 'Passage',
     pace: 'Allure',
     finish: 'Arrivée',
-    title: 'Course',
-    noneTitle: 'Aucune course prévue',
+    title: 'Prochaine compétition',
+    noneTitle: 'Aucune compétition prévue',
     none: 'Ajoute une course dans Garmin Connect : ta prédiction et ton allure cible apparaîtront ici après la synchro.',
     formTitle: 'Forme le jour de la course',
     formToday: (tsb: string) => `Aujourd’hui ${tsb}.`,

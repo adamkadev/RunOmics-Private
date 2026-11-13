@@ -132,7 +132,7 @@ describe('SettingsClient owner gate', () => {
 
     const athlete = screen.getByTestId('athlete-zones-row')
     expect(athlete.getAttribute('href')).toBe('/athlete')
-    expect(athlete.textContent).toBe(`${t.pages.athlete.title}LTHR 179 · Max 200`)
+    expect(athlete.textContent).toBe(`${t.pages.athlete.title}Max HR 200 · threshold 179`)
     const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
     expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
     expect(garmin.className).toContain('hit-44')
@@ -169,8 +169,8 @@ describe('SettingsClient owner gate', () => {
   })
 
   it('names only the heart rate Garmin has on the Athlete & zones row', () => {
-    expect(zonesSummary({ lthrBpm: 179, maxHrBpm: 200 })).toBe('LTHR 179 · Max 200')
-    expect(zonesSummary({ maxHrBpm: 200 })).toBe('Max 200')
+    expect(zonesSummary({ lthrBpm: 179, maxHrBpm: 200 })).toBe('Max HR 200 · threshold 179')
+    expect(zonesSummary({ maxHrBpm: 200 })).toBe('Max HR 200')
     expect(zonesSummary({})).toBeNull()
     expect(zonesSummary(undefined)).toBeNull()
   })

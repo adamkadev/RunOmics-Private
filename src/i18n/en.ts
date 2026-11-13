@@ -134,7 +134,7 @@ export const en = {
     },
     fitness: { term: 'Fitness', definition: 'Fitness (CTL) is your 42-day average training load: the work your body has absorbed.' },
     fatigue: { term: 'Fatigue', definition: 'Fatigue (ATL) is your 7-day average training load: what the last week has cost you.' },
-    vma: { term: 'VMA', definition: 'Maximal aerobic speed: the speed you reach at VO₂max, held for about six minutes.' },
+    vma: { term: 'vVO₂max', definition: 'Maximal aerobic speed: the speed you reach at VO₂max, held for about six minutes.' },
     vo2Grade: { term: 'Men / Women and age', definition: 'Your VO₂max against people of your sex and age decade, from the age and sex norms your watch uses (ACSM / Cooper Institute percentiles). A+ is the top 5%, C below the 45th percentile. The grade changes only once your VO₂max has stayed past the edge for 7 days.' },
     vo2max: { term: 'VO₂max', definition: 'The most oxygen your body can use per kilo each minute, as your watch estimates it from your runs.' },
     lthr: { term: 'Threshold HR', definition: 'Lactate-threshold heart rate (LTHR): about the heart rate you could hold for an hour-long race.' },
@@ -323,28 +323,28 @@ export const en = {
       // around it, by how much of each the runs have covered.
       districts: {
         // The layers button: a toggle, pressed while the layer shows.
-        layersButton: 'Show quartiers',
-        legend: 'Quartier coverage',
+        layersButton: 'Show districts',
+        legend: 'District coverage',
         fog: 'Fog',
         partly: 'Partly',
         complete: 'Complete',
         // The insight card. `distance` is "1.9 km", or null without a home.
         headline: (done: number, total: number, next: string, distance: string | null) => ({
-          lead: `${done} of ${total} quartier${total === 1 ? '' : 's'} complete. `,
+          lead: `${done} of ${total} district${total === 1 ? '' : 's'} complete. `,
           accent: next,
           tail: distance ? ` is next, ${distance} from home.` : ' is next.',
         }),
         allComplete: (total: number) => ({
-          lead: total === 1 ? 'Your quartier is complete.' : `All ${total} quartiers complete.`,
+          lead: total === 1 ? 'Your district is complete.' : `All ${total} districts complete.`,
           accent: '',
           tail: '',
         }),
-        loading: { lead: 'Counting the quartiers you’ve run…', accent: '', tail: '' },
-        failed: { lead: 'Your quartiers couldn’t be counted just now.', accent: '', tail: '' },
+        loading: { lead: 'Counting the districts you’ve run…', accent: '', tail: '' },
+        failed: { lead: 'Your districts couldn’t be counted just now.', accent: '', tail: '' },
         completeStat: 'Complete',
         ofTotal: (total: number) => `of ${total}`,
         exploredStat: 'Explored',
-        nextStat: 'Next quartier',
+        nextStat: 'Next district',
         planRunIn: (name: string) => `Plan a run in ${name}`,
         // The expanded map's card. `pct` is "8%"; `distance` "1.9 km", or null without a home.
         nextToExplore: 'Next to explore',
@@ -354,7 +354,7 @@ export const en = {
         planRun: 'Plan a run',
         // A quartier's sheet, opened by a tap on it.
         sheet: {
-          quartierOf: (commune: string) => `Quartier · ${commune}`,
+          quartierOf: (commune: string) => `District · ${commune}`,
           commune: 'Commune',
           explored: (pct: string) => `${pct} explored`,
           // `n` formats a count for the reader's locale.
@@ -381,8 +381,8 @@ export const en = {
         usePlanDistance: (km: string) => `Use the plan’s distance, ${km}`,
         start: {
           label: 'Start',
-          modes: { pick: 'Map point', quartier: 'Quartier' },
-          modesFull: { pick: 'Start from a point I tap on the map', quartier: 'Start inside the quartier' },
+          modes: { pick: 'Map point', quartier: 'District' },
+          modesFull: { pick: 'Start from a point I tap on the map', quartier: 'Start inside the district' },
           pickPrompt: 'Tap the map where you’ll start.',
         },
         // The button that takes the shortest distance reaching the quartier. `km` is "12.5 km".
@@ -462,8 +462,8 @@ export const en = {
           dailyQuota: 'Today’s route quota is used up.',
           noRoute: 'No loop found here. Try another distance.',
           upstream: 'The routing service didn’t answer. Try again.',
-          tooFar: (km: string) => `Too far for this distance: from here, a loop through this quartier needs ${km}.`,
-          tooFarToRun: 'Too far to run there and back. Start in the quartier instead.',
+          tooFar: (km: string) => `Too far for this distance: from here, a loop through this district needs ${km}.`,
+          tooFarToRun: 'Too far to run there and back. Start in the district instead.',
         },
         // The GPX's name and description. `km` is "8.1".
         gpxName: (name: string, km: string) => `RunOmics · ${name} · ${km} km`,
@@ -639,7 +639,7 @@ export const en = {
     },
     accent: {
       title: 'Accent',
-      caption: 'charts & highlights',
+      caption: 'buttons, your routes, this week',
       options: {
         teal:     { label: 'Teal' },
         cyan: { label: 'Cyan' },
@@ -659,7 +659,7 @@ export const en = {
     athlete: {
       thresholdPace: 'Threshold',
       thresholdHr: 'Threshold HR',
-      vma: 'VMA',
+      vma: 'vVO₂max',
       maxHr: 'Max HR',
       // The watch's setting the zones and the load are computed from, not a
       // reading of today (Analytics > Recovery has that, "Daily resting HR").
@@ -707,9 +707,9 @@ export const en = {
       // Under the read-only height and weight. No brand in the words: the data is
       // imported JSON, and the brand can change.
       readOnly: 'From your watch – edit in your watch app.',
-      // The Athlete & zones row's value: "LTHR 179 · Max 200".
-      lthr: (bpm: number) => `LTHR ${bpm}`,
-      maxHr: (bpm: number) => `Max ${bpm}`,
+      // The Athlete & zones row's value: "Max HR 200 · threshold 179".
+      lthr: (bpm: number) => `threshold ${bpm}`,
+      maxHr: (bpm: number) => `Max HR ${bpm}`,
     },
     offlineCache: {
       clear: 'Clear offline cache',
@@ -807,8 +807,8 @@ export const en = {
       stillRunning: 'Still syncing…',
       synced: (relative: string) => `Synced ${relative}`,
       justNow: 'just now',
-      minutesAgo: (m: number) => `${m}m ago`,
-      hoursAgo: (h: number) => `${h}h ago`,
+      minutesAgo: (m: number) => `${m} min ago`,
+      hoursAgo: (h: number) => `${h} h ago`,
       daysAgo: (d: number) => `${d}d ago`,
     },
     todayHero: {
@@ -1952,7 +1952,7 @@ export const en = {
       onPace: 'On pace for the goal.',
       // The tiles under the records.
       vo2max: 'VO₂max',
-      vo2Delta: (delta: string) => `${delta} in 12 wk`,
+      vo2Delta: (delta: string) => `${delta} in 12 weeks`,
       allPairs: 'All pairs',
       since: (date: string) => `since ${date}`,
       distance: 'Distance',
@@ -1962,10 +1962,10 @@ export const en = {
       openYears: 'Kilometres by year',
       // The Explored card: how much of the home area has been run, and the next quartier to run.
       explored: 'Explored',
-      exploredComplete: (done: number, total: number) => `${done} of ${total} quartier${total === 1 ? '' : 's'} complete`,
+      exploredComplete: (done: number, total: number) => `${done} of ${total} district${total === 1 ? '' : 's'} complete`,
       // "Next: Borny · 12%", the name in ink. `pct` is formatted ("12%").
       exploredNext: (name: string, pct: string) => ({ lead: 'Next: ', name, tail: ` · ${pct}` }),
-      exploredAllComplete: (total: number) => (total === 1 ? 'Your quartier is complete' : `All ${total} quartiers complete`),
+      exploredAllComplete: (total: number) => (total === 1 ? 'Your district is complete' : `All ${total} districts complete`),
     },
     hero: {
       namePlaceholder: 'Your name',
@@ -2122,7 +2122,7 @@ export const en = {
     },
     staleSync: {
       title: 'No data synced in a while',
-      body: (hours: number) => `Your last sync was ${hours}h ago – check that sync is still running.`,
+      body: (hours: number) => `Your last sync was ${hours} h ago – check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
     // The focus is never cut: iOS truncates the unexpanded notification, and expanding it must show the whole sentence.
@@ -2172,7 +2172,7 @@ export const en = {
     },
     exploreComplete: {
       title: (name: string) => `${name} explored`,
-      body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
+      body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} districts complete.`,
     },
     aiIdle: {
       title: (nights: number) => `No AI copy written for ${nights} nights`,
@@ -2208,7 +2208,7 @@ export const en = {
     best: 'Best',
     standTitle: 'Where you stand',
     toFind: (gap: string) => `${gap} to find.`,
-    inHand: (gap: string) => `${gap} in hand.`,
+    inHand: (gap: string) => `${gap} inside target.`,
     perWeek: (seconds: number, weeks: number) => (weeks === 1 ? `About ${seconds} s in the week left.` : `About ${seconds} s a week over the ${weeks} weeks left.`),
     trendTitle: 'Prediction, last 12 weeks',
     trendTitleEstimated: 'Estimate, last 12 weeks',
