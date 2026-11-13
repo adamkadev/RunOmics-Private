@@ -59,7 +59,7 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
                     </span>
                     <span className="text-center text-[11px] tabular-nums text-muted-foreground" aria-hidden>{minutes}</span>
                     <span
-                      className={cn('text-center text-[10px] leading-tight', current ? 'font-semibold text-accent-text' : 'text-muted-foreground')}
+                      className={cn('text-center text-[11px] leading-tight', current ? 'font-semibold text-accent-text' : 'text-muted-foreground')}
                       aria-hidden
                       data-testid="return-week-label"
                     >
