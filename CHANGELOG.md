@@ -11,8 +11,8 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
-- Shoes: the default shoe is gone. A run Garmin gave no shoe stays without one (picking a shoe on the run still
-  works), and the shoe page's brand line sits under its name, clear of the status bar.
+- Shoes: the app's default shoe is gone; Garmin Connect's own default already gives each run its shoe at sync.
+  Picking a shoe on a run still works, and the shoe page's brand line sits under its name, clear of the status bar.
 - Round 10 review (78–106): share cards and Activities keep the session's name, one type word
   ("Easy" / "Footing"), Z3 grey-blue, "Effort 2/10"; Plan says "Week 5 of 12", phase over block, a done card that
   says done and the month run against its goal; Today shows one status the verdict can't contradict; Training status
