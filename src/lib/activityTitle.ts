@@ -79,6 +79,8 @@ export function sessionLabel(title: string): string {
   const match = /^(\p{L}[^\d]*?)[\s·:,\-–—]+(\d.*)$/u.exec(name)
   if (!match) return name
   const [, words, set] = match as unknown as [string, string, string]
+  // The plan's distance beside the one run would be a second, wrong number: the row's own column carries it.
+  if (/^\d+(?:[.,]\d+)?\s?km$/i.test(set.trim()) && isTypeWord(words)) return words.trim().replace(/[·:,\-–—]+$/, '').trim()
   if (!isStructure(set)) return name
   return isTypeWord(words) ? notation(set) : `${notation(set)} ${lowerFirst(words.trim())}`
 }

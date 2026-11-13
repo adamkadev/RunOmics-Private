@@ -11,6 +11,11 @@ describe('sessionLabel', () => {
     expect(sessionLabel('Seuil · 3 × 8′ @ 4:20')).toBe('3 × 8′ @ 4:20')
   })
 
+  it("drops the plan's distance from a name that only adds one, so the row's own km stands alone", () => {
+    expect(sessionLabel('Easy · 8 km')).toBe('Easy')
+    expect(sessionLabel('Long run · 16.5 km')).toBe('Long run')
+  })
+
   // An older name says its set twice, the coach's then Garmin's; Garmin's simpler half is kept.
   it("keeps an older name's simpler half, in the rules' notation", () => {
     expect(sessionLabel("Threshold 3 x 7:15 - 3x7'@4:25")).toBe('3 × 7′ @ 4:25')
