@@ -7,7 +7,8 @@ import { t } from '@/i18n'
 import type { SessionDay } from '@/domain/explore/climbBudget'
 import { runDarkness } from '@/domain/explore/daylight'
 import type { ExploreAreaRef, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
-import { formatPercent, formatWeekday } from '@/lib/formatters'
+import { formatWeekday } from '@/lib/formatters'
+import { reverseGeocode } from '@/lib/reverseGeocode'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
 import { Glass, GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
@@ -16,9 +17,8 @@ import { planRouteKm, type ExploreFrom } from './exploreHref'
 import { RouteGeneratorPanel } from './RouteGeneratorPanel'
 import { generatorBack, routeStats, runStart, type ExplorePlan } from './routeGenerator'
 import { routeGpxFile } from './routeGpx'
-import type { RouteStartMode, RouteStartState } from './routeStart'
+import { startLineOf, type RouteStartMode, type RouteStartState } from './routeStart'
 import type { AvoidSpots } from './useAvoidSpots'
-import { useFitsWhole } from './useFitsWhole'
 import { useRouteGenerator } from './useRouteGenerator'
 import type { LonLat } from './workerProtocol'
 
@@ -43,7 +43,7 @@ export const ROUTE_CREDIT: MapCredit = { text: '© openrouteservice by HeiGIT' }
 export interface RouteGeneratorModeProps {
   area: ExploreAreaRef
   /** The quartier to loop in; null until the area (or its coverage, for the next one) is in. */
-  target: { id: string; name: string } | null
+  target: { id: string; name: string; distanceKm?: number | null } | null
   /** The runs are in the worker: loops can be scored against them. */
   tracksReady: boolean
   /** The runs never came: no loop can be scored until they are fetched again. */
@@ -58,6 +58,8 @@ export interface RouteGeneratorModeProps {
   onStartModeChange: (mode: RouteStartMode) => void
   /** The session the loop is for and whether a quality one follows it. */
   day: SessionDay
+  /** The kind of the quality session the next day, "Threshold", or null. */
+  nextKind?: string | null
   avoid: AvoidSpots
   home: LonLat | null
   paceSecPerKm: number | null
@@ -90,6 +92,7 @@ export function RouteGeneratorMode({
   start,
   onStartModeChange,
   day,
+  nextKind = null,
   avoid,
   home,
   paceSecPerKm,
@@ -150,38 +153,31 @@ export function RouteGeneratorMode({
   const stats = useMemo(() => (route ? routeStats(route, paceSecPerKm) : null), [route, paceSecPerKm])
   const allCredits = useMemo(() => [...credits, ROUTE_CREDIT], [credits])
 
+  const backAction = generatorBack(from, origin)
   const back = () => {
-    const action = generatorBack(from, origin)
-    if (action.kind === 'back') router.back()
-    else if (action.kind === 'push') router.push(action.href)
-    else onClose()
+    if (backAction.kind === 'back') router.back()
+    else if (backAction.kind === 'push') router.push(backAction.href)
   }
+  const street = useStartStreet(start.mode === 'pick' ? start.origin : null)
+  const startLine = startLineOf(start, target, street, home)
 
   const gpxFile = () =>
     route && target
       ? routeGpxFile({ unitName: target.name, coordinates: route.candidate.coordinates, distanceM: route.candidate.distanceM, time: new Date().toISOString() })
       : null
 
-  const name = target?.name ?? area.name
-  const newText = stats ? e.newShare(formatPercent(stats.newPct)) : null
-  // "Loop" stays while the name fits whole beside it.
-  const { textRef: nameRef, whole: loopShown } = useFitsWhole<HTMLSpanElement>(`${name}|${newText ?? ''}`)
-  const tail = [...(loopShown ? [e.loop] : []), ...(newText ? [newText] : [])].join(' · ')
-
   return (
     <>
       <div data-testid="route-generator-bar" className="absolute inset-x-4 top-3 z-30 flex items-center gap-3">
-        <button type="button" onClick={back} aria-label={e.back} className={glassClass('regular', GLASS_CIRCLE)}>
-          <GlassLayers />
-          <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
-        </button>
-        <Glass data-testid="route-generator-pill" className="flex h-11 min-w-0 flex-1 items-center justify-center gap-2 px-4 text-[16px] leading-5">
-          {/* "N% new" always whole: short of room, "Loop" goes first (the
-              panel says it too), then the name gives way. */}
-          <span ref={nameRef} className="min-w-0 truncate font-semibold text-foreground">
-            {name}
-          </span>
-          {tail && <span className="shrink-0 whitespace-nowrap text-[var(--text-2)]">· {tail}</span>}
+        {/* Without a page to go back to, ✕ on the panel is the one way out. */}
+        {backAction.kind !== 'close' && (
+          <button type="button" onClick={back} aria-label={e.back} className={glassClass('regular', GLASS_CIRCLE)}>
+            <GlassLayers />
+            <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+        )}
+        <Glass data-testid="route-generator-pill" className="flex h-11 min-w-0 flex-1 items-center justify-center px-4 text-[16px] font-semibold leading-5 text-foreground">
+          {e.loop}
         </Glass>
       </div>
 
@@ -194,8 +190,10 @@ export function RouteGeneratorMode({
           onDistanceChange={onDistanceChange}
           plan={plan ? { heading: !today || plan.date === today ? e.todaysPlan : e.planFor(formatWeekday(plan.date, true)), label: plan.label, km: planRouteKm(plan.distanceM) } : null}
           start={start}
+          startLine={startLine}
           onStartModeChange={onStartModeChange}
           day={day}
+          nextKind={nextKind}
           darkness={darkness}
           avoid={avoid}
           prefs={prefs}
@@ -216,3 +214,20 @@ export function RouteGeneratorMode({
   )
 }
 
+/** The tapped start's street, once MapTiler names it; null without a token or an answer. */
+function useStartStreet(origin: LonLat | null): string | null {
+  const [found, setFound] = useState<{ key: string; street: string | null } | null>(null)
+  const key = origin ? `${origin[0]},${origin[1]}` : null
+  useEffect(() => {
+    const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
+    if (!origin || !key || !token) return
+    let live = true
+    void reverseGeocode(origin[0], origin[1], token, 'street').then((street) => {
+      if (live) setFound({ key, street })
+    })
+    return () => {
+      live = false
+    }
+  }, [origin, key])
+  return found && found.key === key ? found.street : null
+}

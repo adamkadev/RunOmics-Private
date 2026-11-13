@@ -21,7 +21,7 @@ export interface TerritoryCardContent {
 export function TerritoryBand({ eyebrow, headline, stats, action, pending }: TerritoryCardContent) {
   return (
     <section
-      className="flex flex-col gap-3.5 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4"
+      className={cn('flex flex-col gap-3.5 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4', action && 'pb-6')}
       data-testid="territory-card"
       aria-busy={pending || undefined}
     >

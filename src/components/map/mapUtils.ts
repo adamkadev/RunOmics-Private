@@ -1,21 +1,21 @@
-import type { ActivityType } from "@/domain/activity/types";
+import type { RunKind } from "@/domain/activity/runKind";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
-import { formatDecimal, formatNumber } from "@/lib/formatters";
+import { formatDecimal } from "@/lib/formatters";
 
 /** None ticked is "All". */
 export interface HeatFilters {
   years: readonly string[];
-  types: readonly ActivityType[];
+  types: readonly RunKind[];
 }
 
 export const NO_HEAT_FILTERS: HeatFilters = { years: [], types: [] };
 
-export function matchesFilters(meta: Pick<RouteMeta, 'type' | 'year'> | undefined, filters: HeatFilters): boolean {
+export function matchesFilters(meta: Pick<RouteMeta, 'kind' | 'year'> | undefined, filters: HeatFilters): boolean {
   if (!meta) return false;
   if (filters.years.length > 0 && !filters.years.includes(meta.year)) return false;
-  if (filters.types.length > 0 && !filters.types.includes(meta.type)) return false;
+  if (filters.types.length > 0 && !filters.types.includes(meta.kind)) return false;
   return true;
 }
 
@@ -36,7 +36,7 @@ export function computeAreaTerritory(
   routeMeta: RouteMeta[],
   routes: [number, number][][],
   filters: HeatFilters,
-  untracked: readonly Pick<RouteMeta, 'type' | 'year' | 'distanceKm'>[] = []
+  untracked: readonly Pick<RouteMeta, 'kind' | 'year' | 'distanceKm'>[] = []
 ): AreaTerritory | null {
   const clusterIndices = cluster.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
   if (clusterIndices.length === 0) return null;
@@ -69,10 +69,6 @@ export function computeAreaTerritory(
 
 export function reachKm(km: number): number {
   return km <= 1 ? 1 : Math.ceil(km * 10) / 10;
-}
-
-export function reachLabel(km: number): string {
-  return `${formatNumber(reachKm(km))} ${t.units.km}`;
 }
 
 export interface AreaRow {

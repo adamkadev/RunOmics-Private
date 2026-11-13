@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
+import type { RunSession } from '@/domain/coaching/sessionForRun'
+import type { WorkoutPrescription } from '@/domain/coaching/types'
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities: vi.fn() }))
+vi.mock('@/application/coaching/GetCoachingView', () => ({ getRunSessions: vi.fn(() => []) }))
 
 const PARIS: [number, number][] = [
   [2.3, 48.8],
@@ -16,10 +19,12 @@ function activity(id: string, date: string, route: [number, number][] | undefine
   return { id, date, type: 'Base', route, distanceKm, durationSeconds: 3000, paceSecPerKm: 300 } as Activity
 }
 
-async function load(activities: Activity[]) {
+async function load(activities: Activity[], sessions: RunSession[] = []) {
   vi.resetModules()
   const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')
   vi.mocked(getAllActivities).mockReturnValue(activities)
+  const { getRunSessions } = await import('@/application/coaching/GetCoachingView')
+  vi.mocked(getRunSessions).mockReturnValue(sessions)
 
   const useCase = await import('../GetAllRoutes')
   return { ...useCase, getAllActivities: vi.mocked(getAllActivities) }
@@ -147,12 +152,26 @@ describe('getAllRoutes', () => {
     expect(getAllRoutes().routeMeta[0]).toEqual({
       id: 'paris',
       type: 'Base',
+      kind: 'easy',
       year: '2026',
       date: '2026-07-20',
       distanceKm: 10,
       durationSeconds: 3000,
       paceSecPerKm: 300,
     })
+  })
+
+  it('names each run by the session it was set as, else by what it was', async () => {
+    const threshold = { id: 'p1', date: '2026-07-20', type: 'threshold', status: 'completed', title: 'Threshold 3 × 8′', blocks: [] } as unknown as WorkoutPrescription
+    const sprint = { ...activity('hoenheim', '2026-07-12T08:00:00', PARIS), type: 'Sprint' } as Activity
+    const { getAllRoutes } = await load([...HISTORY, sprint], [{ prescription: threshold, activityId: 'paris' }])
+
+    expect(getAllRoutes().routeMeta.map((m) => [m.id, m.type, m.kind])).toEqual([
+      ['paris', 'Base', 'threshold'],
+      ['brussels-new', 'Base', 'easy'],
+      ['brussels-old', 'Base', 'easy'],
+      ['hoenheim', 'Sprint', 'intervals'],
+    ])
   })
 
   it('lists the years running was recorded, oldest first and once each', async () => {
@@ -178,7 +197,7 @@ describe('getAllRoutes', () => {
       totalCount: 0,
       totalKm: 0,
       years: [],
-      untracked: [{ type: 'Base', year: '2026', distanceKm: 10 }],
+      untracked: [{ kind: 'easy', year: '2026', distanceKm: 10 }],
     })
   })
 

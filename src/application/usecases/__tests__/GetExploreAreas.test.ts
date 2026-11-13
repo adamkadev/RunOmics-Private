@@ -26,7 +26,7 @@ function cluster(id: string, at: [number, number], routeIndices: number[]): Rout
 }
 
 function meta(id: string, date: string): RouteMeta {
-  return { id, type: 'Base', year: date.slice(0, 4), date, distanceKm: 5, durationSeconds: 1800, paceSecPerKm: 360 }
+  return { id, type: 'Base', kind: 'easy', year: date.slice(0, 4), date, distanceKm: 5, durationSeconds: 1800, paceSecPerKm: 360 }
 }
 
 function withMap(overrides: Partial<MapShellData> = {}) {

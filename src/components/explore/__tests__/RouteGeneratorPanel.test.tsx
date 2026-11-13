@@ -51,12 +51,28 @@ const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
 })
 
 describe('RouteGeneratorPanel', () => {
-  it('opens on the tap-to-start prompt, with no buttons until there is a route', () => {
+  it('opens on the tap-to-start prompt, its Generate and GPX buttons off until there is a start and a route', () => {
     const base = props(avoidSpots(false))
     render(<RouteGeneratorPanel {...base} start={{ ...base.start, waiting: true }} />)
     expect(screen.getByTestId('route-pick-prompt')).toHaveTextContent(t.pages.map.explore.start.pickPrompt)
-    expect(screen.queryByRole('button', { name: 'Download GPX' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Regenerate' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Download GPX' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Generate 8.5 km loop' })).toBeDisabled()
+  })
+
+  it('says where the loop starts, and how the next day bounds its climb', () => {
+    const base = props(avoidSpots(false))
+    render(
+      <RouteGeneratorPanel
+        {...base}
+        start={{ mode: 'quartier', waiting: false }}
+        startLine="Start: Hoenheim · 0.9 km from home"
+        day={{ session: 'easy', beforeQuality: true }}
+        nextKind="Threshold"
+      />,
+    )
+    expect(screen.getByTestId('route-start-line')).toHaveTextContent('Start: Hoenheim · 0.9 km from home')
+    expect(screen.getByTestId('route-notes')).toHaveTextContent('Threshold tomorrow, so climb stays under 12 m/km.')
+    expect(screen.getByTestId('route-footnote')).toHaveTextContent(t.pages.map.explore.generating)
   })
 
   it('shrinks to the prompt and Cancel while a spot is being marked, leaving the map free to tap', () => {

@@ -25,6 +25,8 @@ export interface ExplorePlan {
   date: string
   /** "Easy · 8 km + 6 strides". */
   label: string
+  /** The session's kind as Plan names it, "Threshold". */
+  kind?: string | null
   /** The whole session, strides and recoveries included. */
   distanceM: number | null
   paceSecPerKm: number | null
@@ -54,6 +56,14 @@ export function generatorDay(plans: readonly ExplorePlan[], plan: ExplorePlan | 
   if (!day) return { session: plan?.session ?? null, beforeQuality: false }
   const next = new Date(Date.parse(`${day}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10)
   return { session: plan?.session ?? null, beforeQuality: plans.some((p) => p.date === next && p.session === 'quality') }
+}
+
+/** The kind of the quality session the day after the loop's, "Threshold"; null when none follows or it has no kind. */
+export function nextQualityKind(plans: readonly ExplorePlan[], plan: ExplorePlan | null, today: string | null | undefined): string | null {
+  const day = plan?.date ?? today
+  if (!day) return null
+  const next = new Date(Date.parse(`${day}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10)
+  return plans.find((p) => p.date === next && p.session === 'quality')?.kind ?? null
 }
 
 /**

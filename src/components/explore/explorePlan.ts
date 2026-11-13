@@ -53,9 +53,11 @@ export function explorePlanOn(
   if (kind?.type === 'Race' || workout.type === 'Race') return null
   const coachType = coach.find((v) => v.prescription.date === date && v.state !== 'cancelled')?.prescription.type ?? null
   const title = sessionLabel(workoutSummary(workout).shortTitle)
+  const kindName = kind ? kindLabel(kind.type, kind.kind) : null
   return {
     date,
-    label: planLabel(kind ? kindLabel(kind.type, kind.kind) : null, title),
+    label: planLabel(kindName, title),
+    kind: kindName,
     distanceM: workout.distanceM && workout.distanceM > 0 ? Math.round(workout.distanceM) : null,
     paceSecPerKm: planPaceSecPerKm(workout),
     session: exploreSession(coachType, kind?.kind ?? null),

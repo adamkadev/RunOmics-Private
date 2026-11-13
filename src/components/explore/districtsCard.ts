@@ -1,5 +1,5 @@
 import { t } from '@/i18n'
-import { formatDistance, formatNumber } from '@/lib/formatters'
+import { formatNumber, formatPercent } from '@/lib/formatters'
 import type { TerritoryCardContent } from '@/components/map/TerritoryBand'
 import type { AreaCoverage } from '@/domain/explore/types'
 import type { DistrictsStatus } from './useDistrictsCoverage'
@@ -15,13 +15,12 @@ export function districtsCardContent(
 ): TerritoryCardContent {
   const d = t.pages.map.districts
   const next = coverage?.nextId ? (coverage.units.find((u) => u.id === coverage.nextId) ?? null) : null
-  const distance = next?.distanceKm != null ? formatDistance(next.distanceKm) : null
   const headline = !coverage
     ? status === 'error'
       ? d.failed
       : d.loading
     : next
-      ? d.headline(coverage.completeCount, coverage.unitCount, next.name, distance ? `${distance} ${t.units.km}` : null)
+      ? d.headline(next.name, formatPercent(next.pct))
       : d.allComplete(coverage.unitCount)
   return {
     eyebrow,
@@ -37,11 +36,10 @@ export function districtsCardContent(
         value: coverage ? formatNumber(coverage.exploredPct, 0) : NO_VALUE,
         unit: coverage ? t.units.percent : undefined,
       },
-      { label: d.nextStat, value: distance ?? NO_VALUE, unit: distance ? t.units.km : undefined },
     ],
     action:
       next && onPlanRun
-        ? { label: d.planRunIn(next.name), onClick: () => onPlanRun(next.id) }
+        ? { label: d.sheet.planRunHere, onClick: () => onPlanRun(next.id) }
         : !coverage && status === 'error' && onRetry
           ? { label: t.pages.error.retry, onClick: onRetry }
           : undefined,

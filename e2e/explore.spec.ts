@@ -49,7 +49,7 @@ test('the map sheet switches to Districts, remembers it, and a link opens a dist
   await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'true')
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('districts-legend')).toContainText('Complete')
-  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 districts complete/, { timeout: 30_000 })
+  await expect(page.getByTestId('territory-card')).toContainText(/is next, \d+% done\./, { timeout: 30_000 })
   await expect(page).toHaveURL(/\/activities\?view=map$/)
 
   await page.reload()
@@ -177,7 +177,7 @@ test('a tap on a quartier opens its sheet', async ({ page }) => {
   const tracks = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/map/routes')
   await page.goto('/activities?view=map&layer=districts')
   expect((await tracks).ok()).toBe(true)
-  await expect(page.getByTestId('territory-card')).toContainText(/\d+ of 7 districts complete/, { timeout: 30_000 })
+  await expect(page.getByTestId('territory-card')).toContainText(/is next, \d+% done\./, { timeout: 30_000 })
   const sheet = page.getByTestId('quartier-sheet')
   await tapMap(page, 0.5, 0.5, async () => {
     await expect(sheet).toBeVisible({ timeout: 1_500 })

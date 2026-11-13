@@ -20,6 +20,7 @@ import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoute
 const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
   id: 'a1',
   type: 'Base',
+  kind: 'easy',
   year: '2026',
   date: '2026-01-01',
   distanceKm: 5,
@@ -33,8 +34,8 @@ const f = (over: Partial<HeatFilters> = {}): HeatFilters => ({ years: [], types:
 describe('activeFilterCount', () => {
   it('counts the narrowed filters, not the ticks', () => {
     expect(activeFilterCount(f())).toBe(0)
-    expect(activeFilterCount(f({ types: ['Race', 'Tempo'] }))).toBe(1)
-    expect(activeFilterCount(f({ types: ['Race'], years: ['2026', '2025'] }))).toBe(2)
+    expect(activeFilterCount(f({ types: ['race', 'tempo'] }))).toBe(1)
+    expect(activeFilterCount(f({ types: ['race'], years: ['2026', '2025'] }))).toBe(2)
   })
 })
 
@@ -53,14 +54,14 @@ describe('matchesFilters', () => {
   })
 
   it('takes any of several types or years', () => {
-    expect(matchesFilters(meta({ type: 'Tempo' }), f({ types: ['Race', 'Tempo'] }))).toBe(true)
-    expect(matchesFilters(meta({ type: 'Base' }), f({ types: ['Race', 'Tempo'] }))).toBe(false)
+    expect(matchesFilters(meta({ kind: 'tempo' }), f({ types: ['race', 'tempo'] }))).toBe(true)
+    expect(matchesFilters(meta({ kind: 'easy' }), f({ types: ['race', 'tempo'] }))).toBe(false)
     expect(matchesFilters(meta({ year: '2025' }), f({ years: ['2026', '2025'] }))).toBe(true)
   })
 
   it('combines year and type (both must match)', () => {
-    expect(matchesFilters(meta({ year: '2026', type: 'Base' }), f({ years: ['2026'], types: ['Base'] }))).toBe(true)
-    expect(matchesFilters(meta({ year: '2026', type: 'Base' }), f({ years: ['2026'], types: ['Race'] }))).toBe(false)
+    expect(matchesFilters(meta({ year: '2026', kind: 'easy' }), f({ years: ['2026'], types: ['easy'] }))).toBe(true)
+    expect(matchesFilters(meta({ year: '2026', kind: 'easy' }), f({ years: ['2026'], types: ['race'] }))).toBe(false)
   })
 })
 
@@ -198,7 +199,7 @@ describe('computeAreaTerritory', () => {
   it('shares of all the running, the runs without a track counted as the page counts them', () => {
     const routeMeta = [meta({ distanceKm: 30 }), meta({ distanceKm: 10 })]
     const routes: [number, number][][] = [[[0, 0], [0.001, 0.001]], [[1, 1], [1.001, 1.001]]]
-    const untracked = [{ type: 'Base' as const, year: '2026', distanceKm: 20 }, { type: 'Base' as const, year: '2020', distanceKm: 100 }]
+    const untracked = [{ kind: 'easy' as const, year: '2026', distanceKm: 20 }, { kind: 'easy' as const, year: '2020', distanceKm: 100 }]
     expect(computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { years: [], types: [] }, untracked)?.percentVolume).toBe(19)
     expect(computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { years: ['2026'], types: [] }, untracked)?.percentVolume).toBe(50)
   })

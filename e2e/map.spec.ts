@@ -15,7 +15,8 @@ test('heatmap: Activities on Map, chips, a 560 pt map with its legend and licenc
 
   const map = page.getByRole('img', { name: 'Heatmap' })
   const card = page.getByTestId('territory-card')
-  await expect(card).toContainText('ring')
+  await expect(card).toContainText(/\d+% of your running is here\./)
+  await expect(card).not.toContainText('ring')
   await expect(card).toContainText('Median reach')
   const mapBox = (await map.boundingBox())!
   expect(Math.round(mapBox.height)).toBe(560)
@@ -83,7 +84,7 @@ test('heatmap filters open where they can be seen', async ({ page }) => {
   await page.getByRole('button', { name: 'Map and filters', exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'Map and filters' })
   await expect(sheet).toBeVisible()
-  const show = sheet.getByRole('button', { name: /^Show \d+ runs?$/ })
+  const show = sheet.getByRole('button', { name: /^Show \d+ runs?( in .+)?$/ })
   // Polled: the sheet slides up for 0.42 s.
   await expect.poll(() => drawnWhereItClaims(show)).toBe(true)
   await sheet.getByRole('region', { name: 'Year' }).getByRole('button').nth(1).click()
@@ -192,7 +193,7 @@ test('heatmap fullscreen: the filter badge is whole, clear of the edge sampler',
   await page.getByRole('button', { name: 'Map and filters', exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'Map and filters' })
   await sheet.getByRole('region', { name: 'Year' }).getByRole('button').nth(1).click()
-  await sheet.getByRole('button', { name: /^Show \d+ runs?$/ }).click()
+  await sheet.getByRole('button', { name: /^Show \d+ runs?( in .+)?$/ }).click()
   await expect(sheet).toHaveCount(0)
   await page.getByRole('button', { name: 'Fullscreen' }).click()
   await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
