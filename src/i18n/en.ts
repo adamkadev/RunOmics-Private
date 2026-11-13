@@ -1,4 +1,5 @@
 import type { ActivityType, HrDistrust } from '@/domain/activity/types'
+import type { RunKind } from '@/domain/activity/runKind'
 import type { NiggleSide, NiggleSite } from '@/domain/wellness/checkIn'
 
 function ordinal(n: number): string {
@@ -295,10 +296,22 @@ export const en = {
         title: 'Map and filters',
         reset: 'Reset',
         all: 'All',
-        show: (n: number) => `Show ${n} run${n === 1 ? '' : 's'}`,
+        // `place` is the area pill's name, null while it has only coordinates.
+        show: (n: number, place: string | null) => `Show ${n} run${n === 1 ? '' : 's'}${place ? ` in ${place}` : ''}`,
         // The card's eyebrow, with more than one type ticked.
         types: (n: number) => `${n} types`,
       },
+      // The Type chips: sessions as Plan and Today name them.
+      kinds: {
+        easy: 'Easy',
+        long: 'Long run',
+        strides: 'Strides',
+        runWalk: 'Run/walk',
+        tempo: 'Tempo',
+        threshold: 'Threshold',
+        intervals: 'Intervals',
+        race: 'Race',
+      } satisfies Record<RunKind, string>,
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
       less: 'Rare',
@@ -312,11 +325,7 @@ export const en = {
       credits: 'Map credits',
       territory: {
         // The place is the eyebrow's; the ring is the map's.
-        headline: (percent: number, reach: string, home: boolean) => ({
-          lead: `${percent}% of your running is here. Half your runs stay inside the `,
-          accent: `${reach} ring`,
-          tail: home ? ' around home.' : ' around where they start.',
-        }),
+        headline: (percent: number) => ({ lead: `${percent}% of your running is here.`, accent: '', tail: '' }),
         homeArea: 'Home area',
         runsStat: 'Runs',
         kmStat: 'Distance',
@@ -330,12 +339,8 @@ export const en = {
         fog: 'Fog',
         partly: 'Partly',
         complete: 'Complete',
-        // The insight card. `distance` is "1.9 km", or null without a home.
-        headline: (done: number, total: number, next: string, distance: string | null) => ({
-          lead: `${done} of ${total} district${total === 1 ? '' : 's'} complete. `,
-          accent: next,
-          tail: distance ? ` is next, ${distance} from home.` : ' is next.',
-        }),
+        // The insight card. `pct` is "79%".
+        headline: (next: string, pct: string) => ({ lead: '', accent: next, tail: ` is next, ${pct} done.` }),
         allComplete: (total: number) => ({
           lead: total === 1 ? 'Your district is complete.' : `All ${total} districts complete.`,
           accent: '',
@@ -346,8 +351,6 @@ export const en = {
         completeStat: 'Complete',
         ofTotal: (total: number) => `of ${total}`,
         exploredStat: 'Explored',
-        nextStat: 'Next district',
-        planRunIn: (name: string) => `Plan a run in ${name}`,
         // The expanded map's card. `pct` is "8%"; `distance` "1.9 km", or null without a home.
         nextToExplore: 'Next to explore',
         nextMeta: (pct: string, distance: string | null) => (distance ? `${pct} explored · ${distance} from home` : `${pct} explored`),

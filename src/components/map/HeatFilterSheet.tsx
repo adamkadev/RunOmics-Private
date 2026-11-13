@@ -1,16 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import type { ActivityType } from '@/domain/activity/types'
+import type { RunKind } from '@/domain/activity/runKind'
 import { Button } from '@/components/ui/Button'
 import { Sheet, SheetSection } from '@/components/ui/Sheet'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { NO_HEAT_FILTERS, type HeatFilters } from './mapUtils'
+import { activeFilterCount, NO_HEAT_FILTERS, type HeatFilters } from './mapUtils'
 
 interface Props {
-  types: readonly ActivityType[]
+  types: readonly RunKind[]
   years: readonly string[]
+  /** The area pill's name, which the count is of; null while it has only coordinates. */
+  place: string | null
   value: HeatFilters
   count: (filters: HeatFilters) => number
   onApply: (filters: HeatFilters) => void
@@ -63,7 +65,7 @@ function ChipGroup<T extends string>({
   )
 }
 
-export function HeatFilterSheet({ types, years, value, count, onApply, onClose, layer = null }: Props) {
+export function HeatFilterSheet({ types, years, place, value, count, onApply, onClose, layer = null }: Props) {
   const [draft, setDraft] = useState<HeatFilters>(value)
   const f = t.pages.map.filters
 
@@ -73,7 +75,7 @@ export function HeatFilterSheet({ types, years, value, count, onApply, onClose, 
       title={f.title}
       titleId="heat-filter-title"
       testId="heat-filter-sheet"
-      action={{ label: f.reset, onClick: () => setDraft(NO_HEAT_FILTERS) }}
+      action={{ label: f.reset, onClick: () => setDraft(NO_HEAT_FILTERS), disabled: activeFilterCount(draft) === 0 }}
       footer={(close) => (
         <Button
           size="lg"
@@ -83,7 +85,7 @@ export function HeatFilterSheet({ types, years, value, count, onApply, onClose, 
             close()
           }}
         >
-          {f.show(count(draft))}
+          {f.show(count(draft), place)}
         </Button>
       )}
     >
@@ -110,7 +112,7 @@ export function HeatFilterSheet({ types, years, value, count, onApply, onClose, 
           title={t.pages.map.type}
           options={types}
           picked={draft.types}
-          label={(type) => t.activityTypes[type]}
+          label={(kind) => t.pages.map.kinds[kind]}
           onChange={(next) => setDraft((d) => ({ ...d, types: next }))}
         />
       )}
