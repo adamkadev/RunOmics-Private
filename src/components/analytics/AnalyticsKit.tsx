@@ -191,15 +191,16 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
         // The compact top bar keeps this button once the page scrolls.
         data-bar-action="period"
         data-testid="period-button"
+        // Starts with the visible "4W", so a voice command that says what it sees finds it; the scrolled bar copies the
+        // button's text, so the words stay out of it.
+        aria-label={`${s.short[value]} · ${s.button(s.words[value] ?? value)}`}
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={toggle}
         className={glassClass('bar', 'hit-44 flex h-11 min-w-11 shrink-0 items-center justify-center gap-0.5 pl-3.5 pr-2.5 text-[15px] font-semibold text-foreground')}
       >
         <GlassLayers />
-        {/* The name starts with the visible "4W", so a voice command that says what it sees finds the button. */}
         <span>{s.short[value]}</span>
-        <span className="sr-only">{` · ${s.button(s.words[value] ?? value)}`}</span>
         <ChevronDown size={14} strokeWidth={2.4} aria-hidden="true" />
       </button>
       {at &&

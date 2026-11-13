@@ -38,7 +38,7 @@ describe('sessionLabel', () => {
   })
 
   it('keeps a name with no set whole', () => {
-    for (const title of ['Easy run', 'Long run', 'Recovery run', 'Intervals', '5K Race', 'Morning Run 10 km', 'Wine Route - Luxemburg', '10K de Metz', 'Sunday Run']) {
+    for (const title of ['Long run', 'Recovery run', 'Intervals', '5K Race', 'Morning Run 10 km', 'Wine Route - Luxemburg', '10K de Metz', 'Sunday Run']) {
       expect(sessionLabel(title)).toBe(title)
     }
   })
@@ -72,6 +72,12 @@ describe('isWatchName', () => {
   it('keeps a name someone gave the run', () => {
     expect(isWatchName('Long run')).toBe(false)
     expect(isWatchName('Easy run')).toBe(false)
+  })
+
+  it('says "Easy run" as the plan\'s one word, "Easy"', () => {
+    expect(sessionLabel('Easy Run')).toBe('Easy')
+    expect(sessionLabel('Easy run')).toBe('Easy')
+    expect(sessionLabel('Easy runner club')).toBe('Easy runner club')
     expect(isWatchName('Footing 4 × 6′')).toBe(false)
     expect(isWatchName('')).toBe(false)
     expect(isWatchName('Sortie au canal')).toBe(false)

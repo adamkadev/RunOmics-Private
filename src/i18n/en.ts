@@ -1707,6 +1707,8 @@ export const en = {
   goals: {
     // The hub row's name, so the row and the screen it opens agree.
     title: 'Goals & season',
+    // The page's large title, on one line beside the back and year buttons.
+    pageTitle: 'Goals',
     // The compact top bar's, short enough to sit beside the ‹ 2026 › stepper.
     barTitle: 'Goals',
     empty: 'No goals configured yet.',
@@ -1780,6 +1782,8 @@ export const en = {
 
   homeRuns: {
     title: 'Home runs',
+    // The page's large title, on one line beside the back button.
+    pageTitle: 'Home runs',
     back: 'Progress',
     tileDetail: (runs: number, since: string) => `${runs} runs from your usual start since ${since}, replayed together`,
     subtitle: (runs: number, since: string) => `${runs} runs from one start · since ${since}`,
@@ -2296,6 +2300,8 @@ export const en = {
   // The 12-week checkpoint: one cycle set against the 12 weeks before it.
   checkpoint: {
     title: '12\u2011week checkpoint',
+    // The page's large title, on one line beside the back button.
+    pageTitle: 'Checkpoint',
     cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: 'Last 12 weeks',
     againstPrevious: (range: string) => `vs previous cycle · ${range}`,

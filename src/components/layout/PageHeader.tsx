@@ -9,7 +9,7 @@ const UNDER_TITLE = 'pl-14'
 
 type TitleProps = HTMLAttributes<HTMLHeadingElement> & { [data: `data-${string}`]: string | undefined }
 
-/** Back, title and right-hand buttons share the title's first line, so a long title wraps beside them, never under. */
+/** Back, title and right-hand buttons share one line: a title is one line, cut short only as a last resort. */
 export function PageHeader({
   title,
   back,
@@ -38,7 +38,7 @@ export function PageHeader({
       {eyebrow && <div className={cn('mb-1', indent)}>{eyebrow}</div>}
       <div className="flex items-start gap-3">
         {back && <div className={cn('flex shrink-0 items-center', TITLE_LINE, backOnPhoneOnly && 'lg:hidden')}>{back}</div>}
-        <h1 {...titleProps} className={cn('min-w-0 flex-1 break-words text-display text-foreground text-pretty', titleProps?.className)}>
+        <h1 {...titleProps} className={cn('min-w-0 flex-1 truncate text-display text-foreground', titleProps?.className)}>
           {title}
         </h1>
         {action && <div className={cn('flex shrink-0 items-center gap-2', TITLE_LINE)}>{action}</div>}

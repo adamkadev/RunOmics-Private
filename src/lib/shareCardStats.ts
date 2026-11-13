@@ -35,13 +35,18 @@ export interface ShareReps {
 
 /** "Footing · 4 × 6′": the type word its name leads with, then a set. */
 const TYPED_SET = /^(\p{L}[^\d]*?)[\s·:,\-–—]+(\d.*×.*)$/u
+const SET = /^\d+\s*×/
 
 /** A session's set as the title and its type for the subtitle, the same on every card whoever runs it. */
 function nameParts(activity: ShareActivity): { title: string; type: string | null } {
   const reps = activity.reps
-  if (reps) return { title: `${reps.count} × ${repLength(reps.repSeconds)}`, type: activity.type ? t.activityTypes[activity.type] : null }
   const name = activity.sessionTitle?.trim() || activityTitle(activity)
   const typed = namedType(name) ? TYPED_SET.exec(name) : null
+  if (reps) {
+    // The session's own set when its name has one, its "@ 4:36" kept: the reps alone only when the name has no set.
+    const set = typed ? typed[2]!.trim() : SET.test(name) ? name : `${reps.count} × ${repLength(reps.repSeconds)}`
+    return { title: set, type: activity.type ? t.activityTypes[activity.type] : null }
+  }
   return typed ? { title: typed[2]!.trim(), type: typed[1]!.trim() } : { title: name, type: null }
 }
 

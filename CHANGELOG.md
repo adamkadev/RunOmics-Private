@@ -6,6 +6,9 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Round 9 follow-up. A large title is one line ("Goals", "Checkpoint", "Depuis la maison"), the checkpoint's phase on
+  its cycle card; the scrolled Analytics bar shows "4W" alone; a share card keeps the set's "@ 4:36"; "Easy run" reads
+  "Easy" everywhere.
 - Design review, round 9 (one PR). **Numbers agree**: VO2max is the precise 57.4 on every page; Load's third
   stat is the window's fitness change, as Form says it, and Form's bars sit above and below zero; threshold pace has
   one source on Analytics and Checkpoint; a month on Activities counts runs by date, as Plan does; the map's share

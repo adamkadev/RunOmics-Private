@@ -1592,6 +1592,7 @@ export const fr = {
 
   goals: {
     title: 'Objectifs et saison',
+    pageTitle: 'Objectifs',
     barTitle: 'Objectifs',
     empty: 'Aucun objectif configuré pour le moment.',
     emptyHow: 'Fixe une distance pour l’année, des temps visés et tes courses.',
@@ -1656,6 +1657,7 @@ export const fr = {
 
   homeRuns: {
     title: 'Sorties depuis la maison',
+    pageTitle: 'Depuis la maison',
     back: 'Progression',
     tileDetail: (runs: number, since: string) => `${runs} sorties depuis le point de départ habituel, depuis ${since}, rejouées ensemble`,
     subtitle: (runs: number, since: string) => `${runs} sorties depuis un même départ · depuis ${since}`,
@@ -2124,6 +2126,7 @@ export const fr = {
   // Le bilan des 12 semaines : un cycle face aux 12 semaines d’avant.
   checkpoint: {
     title: 'Bilan 12 semaines',
+    pageTitle: 'Bilan',
     cycle: (n: number) => `Cycle ${n}`,
     lastWeeks: '12 dernières semaines',
     againstPrevious: (range: string) => `contre le cycle précédent · ${range}`,

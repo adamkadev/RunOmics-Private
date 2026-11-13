@@ -62,7 +62,7 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
     <div className="flex flex-col gap-3.5">
       <PageHeader
         back={back}
-        title={t.goals.title}
+        title={t.goals.pageTitle}
         titleProps={{ 'data-bar-title': t.goals.barTitle }}
         action={hasYearStepper && <YearStepper years={years} value={selectedYear} onChange={setSelectedYear} />}
         className="mb-1.5"

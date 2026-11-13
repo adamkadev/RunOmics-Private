@@ -1,4 +1,5 @@
 import { ACTIVITY_TYPES, type ActivityType } from '@/domain/activity/types'
+import { easyWord } from '@/lib/activityTitle'
 import { t } from '@/i18n'
 
 const TYPE_WORDS = new Map<string, ActivityType>()
@@ -24,5 +25,5 @@ export function sessionTitle(name: string | null | undefined, type: ActivityType
 
 /** One notation for a session's name, whoever wrote it: "4 × 5′" with spaces, the pace kept after " @ ". */
 export function displayName(name: string): string {
-  return name.replace(/(\d+)\s*[×x]\s*(?=\d)/g, '$1 × ')
+  return easyWord(name).replace(/(\d+)\s*[×x]\s*(?=\d)/g, '$1 × ')
 }

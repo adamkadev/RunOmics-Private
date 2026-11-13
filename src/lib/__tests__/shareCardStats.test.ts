@@ -159,9 +159,10 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(shareRepDetail(RUN)).toBeNull()
   })
 
-  it('titles a rep session by its set, its type leading the subtitle', () => {
+  it('titles a rep session by its set and its pace, its type leading the subtitle', () => {
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' }
-    expect(shareCardTitle(run)).toBe('3 × 8′')
+    expect(shareCardTitle(run)).toBe('3 × 8′ @ 4:25')
+    expect(shareCardTitle({ ...run, sessionTitle: null })).toBe('3 × 8′')
     expect(shareCardSubtitle(run, 'Hoenheim')).toBe(`Threshold · ${formatDate('2026-09-26')} · Hoenheim`)
     expect(shareCardSubtitle({ ...RUN, type: 'Threshold' }, 'Hoenheim')).toBe(`${formatDate('2026-09-26')} · Hoenheim`)
   })

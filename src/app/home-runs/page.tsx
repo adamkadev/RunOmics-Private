@@ -17,7 +17,7 @@ export default async function HomeRunsPage() {
   const spots = getHomeRuns()
   return (
     <div className="space-y-3">
-      <PageHeader back={<BackButton label={t.homeRuns.back} fallbackHref="/profile" />} title={t.homeRuns.title}>
+      <PageHeader back={<BackButton label={t.homeRuns.back} fallbackHref="/profile" />} title={t.homeRuns.pageTitle}>
         {spots.length > 0 && <HomeRunsSubtitle spots={spots} />}
       </PageHeader>
       {spots.length > 0 ? (
