@@ -72,7 +72,8 @@ export function PlannedWorkoutCard({
 }) {
   const s = t.plan.session
   const summary = workoutSummary(workout)
-  const title = sessionLabel(summary.shortTitle)
+  // The full name, as the watch and Connect show it, "4 × 5′ @ 4:31": the short name is for tight rows and drops the pace.
+  const title = sessionLabel(summary.title)
   const totalSeconds = summary.durationSeconds ?? 0
   const structured = (workout.structure?.length ?? 0) > 1
   const km = summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null
