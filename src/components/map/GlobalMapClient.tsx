@@ -28,7 +28,7 @@ import { DistrictsLegend } from "@/components/explore/DistrictsLegend";
 import { useDistrictsCoverage } from "@/components/explore/useDistrictsCoverage";
 import { districtsCardContent } from "@/components/explore/districtsCard";
 import { useDistrictsOverlay, useDistrictsSync } from "@/components/explore/useDistrictsOverlay";
-import { initialMapLayer, parseMapLayer, readStoredMapLayer, storeMapLayer, type MapLayer } from "@/components/explore/mapLayer";
+import { initialMapLayer, type MapLayer } from "@/components/explore/mapLayer";
 import { NextQuartierCard } from "@/components/explore/NextQuartierCard";
 import { QuartierSheet } from "@/components/explore/QuartierSheet";
 import { useDistrictsTap, useQuartierCamera } from "@/components/explore/useQuartierMap";
@@ -195,15 +195,10 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const { setMarking: setAvoidMarking, marking: avoidMarking } = avoid;
   const closeGenerator = explore.close;
 
-  // Read once, on mount. A change by hand takes the link's layer out of the
-  // address, so a remount (List and back) keeps the hand's choice instead of
-  // applying the link again.
+  // Read once, on mount: the map opens on Heat, Districts only from a link or by hand. A change by hand takes the
+  // link's layer out of the address, so a remount does not apply the link again.
   const [layerParam, setLayerParam] = useUrlParam("layer");
-  const [linkedLayer] = useState<MapLayer | null>(() => parseMapLayer(layerParam));
-  const [layer, setLayer] = useState<MapLayer>(() => (linkedGenerator ? "districts" : initialMapLayer(layerParam, readStoredMapLayer())));
-  useEffect(() => {
-    if (linkedLayer) storeMapLayer(linkedLayer);
-  }, [linkedLayer]);
+  const [layer, setLayer] = useState<MapLayer>(() => (linkedGenerator ? "districts" : initialMapLayer(layerParam)));
 
   const [linkedQuartier, setLinkedQuartier] = useState<string | null>(() => (linkedGenerator ? null : quartierParam));
 
@@ -237,7 +232,6 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const toggleLayer = useCallback(() => {
     const next: MapLayer = layer === "districts" ? "heat" : "districts";
     setLayer(next);
-    storeMapLayer(next);
     if (layerParam !== null) setLayerParam(null);
     setLinkedQuartier(null);
     setOpenUnitId(null);

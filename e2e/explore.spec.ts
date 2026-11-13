@@ -39,7 +39,7 @@ async function tapMap(page: Page, x: number, y: number, done: () => Promise<void
   }).toPass({ timeout: 20_000 })
 }
 
-test('the map sheet switches to Districts, remembers it, and a link opens a district', async ({ page }) => {
+test('the map sheet switches to Districts, opens on Heat again, and a link opens a district', async ({ page }) => {
   await page.goto('/activities?view=map')
   await page.getByTestId('map-menu').click()
   await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'false')
@@ -52,9 +52,10 @@ test('the map sheet switches to Districts, remembers it, and a link opens a dist
   await expect(page.getByTestId('territory-card')).toContainText(/is next, \d+% done\./, { timeout: 30_000 })
   await expect(page).toHaveURL(/\/activities\?view=map$/)
 
+  // Heat is where the map opens: Districts only by hand or from a link.
   await page.reload()
   await page.getByTestId('map-menu').click()
-  await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('layer-districts')).toHaveAttribute('aria-pressed', 'false')
   await page.keyboard.press('Escape')
 
   await page.goto('/activities?view=map&layer=districts&quartier=demo-southfield')
