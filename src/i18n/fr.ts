@@ -1660,6 +1660,8 @@ export const fr = {
     tileDetail: (runs: number, since: string) => `${runs} sorties depuis le point de départ habituel, depuis ${since}, rejouées ensemble`,
     subtitle: (runs: number, since: string) => `${runs} sorties depuis un même départ · depuis ${since}`,
     periods: 'Sorties affichées',
+    spots: 'Points de départ',
+    spot: (runs: number) => `${runs} sorties`,
     periodAll: 'Toutes',
     period: (label: string, runs: number) => `${label} · ${runs}`,
     running: (n: number, of: number) => `${n} sur ${of} encore dehors`,

@@ -1784,6 +1784,8 @@ export const en = {
     tileDetail: (runs: number, since: string) => `${runs} runs from your usual start since ${since}, replayed together`,
     subtitle: (runs: number, since: string) => `${runs} runs from one start · since ${since}`,
     periods: 'Runs shown',
+    spots: 'Start points',
+    spot: (runs: number) => `${runs} runs`,
     periodAll: 'All',
     period: (label: string, runs: number) => `${label} · ${runs}`,
     running: (n: number, of: number) => `${n} of ${of} still out`,

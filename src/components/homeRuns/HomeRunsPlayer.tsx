@@ -12,6 +12,7 @@ import { pageFonts } from '@/lib/shareCard'
 import { shareOrSaveFile } from '@/lib/shareCardExport'
 import { formatDate, formatPercent } from '@/lib/formatters'
 import { useAccent } from '@/lib/useAccent'
+import { useUrlParam } from '@/lib/useUrlParam'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -39,8 +40,30 @@ export function homeRunPeriods(runs: HomeRun[], today: string): PeriodTab[] {
   return tabs.length > 1 ? tabs : []
 }
 
-export function HomeRunsPlayer({ spot, today }: { spot: HomeRunSpot; today: string }) {
+/** The start point a link or the switcher picked (`?start=2`), the busiest one by default. */
+export function useHomeRunSpot(spots: readonly HomeRunSpot[]): [number, (index: number) => void] {
+  const [param, setParam] = useUrlParam('start')
+  const picked = Number(param) - 1
+  const index = Number.isInteger(picked) && picked > 0 && picked < spots.length ? picked : 0
+  return [index, (next) => setParam(next === 0 ? null : String(next + 1))]
+}
+
+/** The page's subtitle, for the start point shown. */
+export function HomeRunsSubtitle({ spots }: { spots: HomeRunSpot[] }) {
+  const [index] = useHomeRunSpot(spots)
+  const spot = spots[index]
+  if (!spot) return null
+  return (
+    <p className="text-sm text-muted-foreground" data-testid="home-runs-subtitle">
+      {t.homeRuns.subtitle(spot.runs.length, formatDate(spot.firstDate, { precision: 'month', year: 'always' }))}
+    </p>
+  )
+}
+
+export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: string }) {
   const accentId = useAccent()
+  const [spotIdx, setSpotIdx] = useHomeRunSpot(spots)
+  const spot = spots[spotIdx]!
   const periods = useMemo(() => homeRunPeriods(spot.runs, today), [spot, today])
   const [period, setPeriod] = useState<Period>('all')
   const [time, setTime] = useState(0)
@@ -158,6 +181,26 @@ export function HomeRunsPlayer({ spot, today }: { spot: HomeRunSpot; today: stri
               }}
             >
               {t.homeRuns.period(tab.label, tab.runs.length)}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* Up to three start points; the periods above are the one shown. */}
+      {spots.length > 1 && (
+        <div className={SEGMENTED_TRACK_CLASS} role="group" aria-label={t.homeRuns.spots} data-testid="home-runs-spots">
+          {spots.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-pressed={i === spotIdx}
+              className={cn('h-[26px] whitespace-nowrap px-3 text-[13px] tabular-nums', i === spotIdx ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS)}
+              onClick={() => {
+                setSpotIdx(i)
+                setPeriod('all')
+                restart()
+              }}
+            >
+              {t.homeRuns.spot(s.runs.length)}
             </button>
           ))}
         </div>

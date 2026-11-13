@@ -230,7 +230,8 @@ Blender.
   runs or more. Nothing is trimmed around the start: the site is private.
 - **Periods**: All, this year and this month, each a labelled tab with its count, shown only when it holds fewer runs
   than the one before it. On the page the clock and the count sit above the map, since the title is the page's; the
-  video keeps its own title.
+  video keeps its own title. With more than one start point (up to three), a second row under the periods switches
+  between them, kept in the URL as `?start=2` so the page's subtitle follows it.
 - **Timing** (`pointSeconds`): the stored routes carry no timestamps, so each point's time comes from
   `paceSamples` (150, evenly spaced in time) and the run's duration. Pauses are smoothed over.
 - **Clock** (`warpSeconds`): exponential, so the crowded first minutes read and the long runs don't drag.

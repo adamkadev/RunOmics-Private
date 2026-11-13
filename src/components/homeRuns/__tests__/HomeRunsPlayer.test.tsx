@@ -36,7 +36,7 @@ describe('HomeRunsPlayer video', () => {
 
   it('makes the video on one tap and opens the share sheet only on the next', async () => {
     encode.mockResolvedValue(new Blob(['x'], { type: 'video/mp4' }))
-    render(<HomeRunsPlayer spot={spot} today="2026-11-13" />)
+    render(<HomeRunsPlayer spots={[spot]} today="2026-11-13" />)
 
     await userEvent.click(await screen.findByRole('button', { name: t.homeRuns.makeVideo }))
 
@@ -48,7 +48,7 @@ describe('HomeRunsPlayer video', () => {
   it('says so when the browser cannot make the video', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     encode.mockRejectedValue(new Error('no encoder'))
-    render(<HomeRunsPlayer spot={spot} today="2026-11-13" />)
+    render(<HomeRunsPlayer spots={[spot]} today="2026-11-13" />)
 
     await userEvent.click(await screen.findByRole('button', { name: t.homeRuns.makeVideo }))
 
@@ -73,11 +73,28 @@ describe('homeRunPeriods', () => {
   })
 
   it('switches the replay to the period tapped', async () => {
-    render(<HomeRunsPlayer spot={{ ...spot, runs }} today="2026-11-13" />)
+    render(<HomeRunsPlayer spots={[{ ...spot, runs }]} today="2026-11-13" />)
 
     const month = screen.getByRole('button', { name: t.homeRuns.period(homeRunPeriods(runs, '2026-11-13')[2]!.label, 2) })
     await userEvent.click(month)
     expect(month).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('home-runs-canvas')).toHaveAttribute('aria-label', t.homeRuns.canvasLabel(2))
+  })
+
+  it('offers the other start points under the periods, and opens one from the link', async () => {
+    window.history.replaceState(null, '', '/home-runs')
+    const other = { ...spot, runs: runs.slice(0, 2) }
+    render(<HomeRunsPlayer spots={[{ ...spot, runs }, other]} today="2026-11-13" />)
+
+    const second = screen.getByRole('button', { name: t.homeRuns.spot(2) })
+    await userEvent.click(second)
+    expect(second).toHaveAttribute('aria-pressed', 'true')
+    expect(window.location.search).toBe('?start=2')
+    expect(screen.getByTestId('home-runs-canvas')).toHaveAttribute('aria-label', t.homeRuns.canvasLabel(2))
+  })
+
+  it('shows no start point switcher with one start', () => {
+    render(<HomeRunsPlayer spots={[{ ...spot, runs }]} today="2026-11-13" />)
+    expect(screen.queryByTestId('home-runs-spots')).toBeNull()
   })
 })

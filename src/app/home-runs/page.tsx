@@ -1,9 +1,8 @@
 import { getHomeRuns } from '@/application/usecases/GetHomeRuns'
 import { loadData } from '@/application/usecases/LoadData'
-import { HomeRunsPlayer } from '@/components/homeRuns/HomeRunsPlayer'
+import { HomeRunsPlayer, HomeRunsSubtitle } from '@/components/homeRuns/HomeRunsPlayer'
 import { BackButton } from '@/components/ui/BackButton'
 import { appTodayIso } from '@/lib/calendarDate'
-import { formatDate } from '@/lib/formatters'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { t } from '@/i18n'
 
@@ -15,18 +14,14 @@ export const metadata = {
 
 export default async function HomeRunsPage() {
   await loadData()
-  const spot = getHomeRuns()[0]
+  const spots = getHomeRuns()
   return (
     <div className="space-y-3">
       <PageHeader back={<BackButton label={t.homeRuns.back} fallbackHref="/profile" />} title={t.homeRuns.title}>
-        {spot && (
-          <p className="text-sm text-muted-foreground" data-testid="home-runs-subtitle">
-            {t.homeRuns.subtitle(spot.runs.length, formatDate(spot.firstDate, { precision: 'month', year: 'always' }))}
-          </p>
-        )}
+        {spots.length > 0 && <HomeRunsSubtitle spots={spots} />}
       </PageHeader>
-      {spot ? (
-        <HomeRunsPlayer spot={spot} today={appTodayIso()} />
+      {spots.length > 0 ? (
+        <HomeRunsPlayer spots={spots} today={appTodayIso()} />
       ) : (
         <p className="text-sm text-muted-foreground" data-testid="home-runs-empty">{t.homeRuns.empty}</p>
       )}
