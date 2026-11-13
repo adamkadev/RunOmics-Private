@@ -1,20 +1,21 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { FitTitle } from '@/components/layout/FitTitle'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
 import { GOALS_RACES_HREF } from '@/components/goals/goalsHref'
 import { Stat, StatGrid } from '@/components/ui/Stat'
-import { CardTitle, EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import { shortDist } from '@/components/goals/shortDistance'
 import { MINUS, formatClock, formatDate, formatDelta, formatDuration, formatPace } from '@/lib/formatters'
 import { deltaColor } from '@/lib/deltaTone'
 import { linePath } from '@/lib/linePath'
-import { cn } from '@/lib/utils'
 import { closingPace, daysBetween, evenSplit, pacingCheckpoints, predictionChange, type PredictionPoint } from '@/domain/race/pacing'
 import type { RacePageData } from '@/application/usecases/GetRacePage'
 import { formBand } from '@/domain/training/formBand'
 import type { FormForecast, FormPoint } from '@/domain/training/formForecast'
 import { t } from '@/i18n'
+import { raceShortName } from './raceShortName'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
@@ -117,7 +118,7 @@ function RaceDayForm({ form }: { form: FormForecast }) {
 export function NoRace({ back }: { back?: ReactNode }) {
   return (
     <div className="flex flex-col gap-3.5">
-      <PageHeader back={back} title={t.race.title} />
+      <PageHeader back={back} title={<FitTitle text={t.race.title} />} />
       <section className={cardClass({ className: 'flex flex-col gap-1.5' })} data-testid="race-none">
         <CardTitle as="h2">{t.race.noneTitle}</CardTitle>
         <p className="text-sm text-muted-foreground text-pretty">{t.race.none}</p>
@@ -142,19 +143,14 @@ export function RaceView({ data, back }: { data: RacePageData; back?: ReactNode 
     ...(predictedSeconds !== null ? [{ label: predicted, seconds: predictedSeconds }] : []),
   ]
   const dash = '—'
+  const shortName = raceShortName(race.name, race.distance)
 
   return (
     <div className="flex flex-col gap-3.5">
-      <PageHeader
-        back={back}
-        title={race.name}
-        eyebrow={
-          <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')} data-testid="race-eyebrow">
-            {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare' })} · {t.profile.hub.inDays(daysUntil)}
-          </span>
-        }
-      >
-        {race.location && <p className="text-sm text-muted-foreground">{race.location}</p>}
+      <PageHeader back={back} title={<FitTitle text={race.name} short={shortName} />} titleProps={{ 'data-bar-title': shortName }}>
+        <p className="text-[15px] leading-5 text-muted-foreground" data-testid="race-facts">
+          {[shortDist(race.distance), formatDate(race.date, { style: 'bare' }), t.profile.hub.inDays(daysUntil), race.location].filter(Boolean).join(' · ')}
+        </p>
       </PageHeader>
 
       <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="race-stand">

@@ -2094,7 +2094,7 @@ export const fr = {
     split: 'Passage',
     pace: 'Allure',
     finish: 'Arrivée',
-    title: 'Prochaine compétition',
+    title: 'Prochaine course',
     noneTitle: 'Aucune compétition prévue',
     none: 'Ajoute-la dans Garmin Connect ou ici : ta prédiction et ton allure cible apparaîtront après la synchro.',
     formTitle: 'Forme le jour de la course',
