@@ -876,7 +876,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   let at = PAD_X
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
-    ctx.fillStyle = palette.zones[zoneTint(row) - 1] ?? palette.mu
+    ctx.fillStyle = palette.hrZones[zoneTint(row) - 1] ?? palette.mu
     ctx.fillRect(at, barTop, w, ZONE_BAR_H)
     at += w
   }
@@ -886,7 +886,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
   for (const entry of legendEntries(ctx, zones.rows, fonts, barW)) {
-    ctx.fillStyle = palette.zones[zoneTint(entry.row) - 1] ?? palette.mu
+    ctx.fillStyle = palette.hrZones[zoneTint(entry.row) - 1] ?? palette.mu
     ctx.beginPath()
     ctx.arc(entry.x + SWATCH / 2, mid, SWATCH / 2, 0, Math.PI * 2)
     ctx.fill()
@@ -1071,7 +1071,7 @@ function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: Shar
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
     const last = row === zones.rows[zones.rows.length - 1]
-    ctx.fillStyle = palette.zones[zoneTint(row) - 1] ?? palette.mu
+    ctx.fillStyle = palette.hrZones[zoneTint(row) - 1] ?? palette.mu
     roundRect(ctx, at, top, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
     ctx.fill()
     at += w

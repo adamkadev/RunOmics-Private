@@ -67,9 +67,9 @@ describe('shareZones', () => {
     expect(zoneTint({ zone: 4, tint: 3 })).toBe(3)
   })
 
-  it('heads an easy session that ran mostly harder with that zone, not its small easy share', () => {
+  it('heads an easy session that ran mostly harder with that zone, merged as its legend row', () => {
     const footing = { ...RUN, type: 'Base' as const, hrZones: [300, 900, 2400, 150, 0].map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) }
-    expect(shareZones(footing)!.headline).toEqual({ percent: 64, label: 'in Z3' })
+    expect(shareZones(footing)!.headline).toEqual({ percent: 68, label: 'in Z3–Z4' })
   })
 
   it('rounds once, to the total, and heads with the rows\' own sum', () => {
@@ -104,9 +104,9 @@ describe('shareZones', () => {
     expect(percentsTo100([0, 0])).toEqual([0, 0])
   })
 
-  it('heads an easy run with its time in Z1-Z2, a threshold session with its time in Z4', () => {
+  it('heads an easy run with its time in Z1-Z2, a threshold session with its time in Z4 and the sliver its legend merged', () => {
     expect(shareZones({ ...RUN, type: 'Base' })!.headline).toEqual({ percent: 79, label: 'easy · Z1–Z2' })
-    expect(shareZones({ ...RUN, type: 'Threshold' })!.headline).toEqual({ percent: 5, label: 'in Z4' })
+    expect(shareZones({ ...RUN, type: 'Threshold' })!.headline).toEqual({ percent: 7, label: 'in Z4–Z5' })
   })
 
   it('heads a session that never reached its zone with the hardest zone it did, never 0%', () => {
@@ -115,7 +115,7 @@ describe('shareZones', () => {
   })
 
   it('heads a run of no known kind with its main zone', () => {
-    expect(shareZones(RUN)!.headline).toEqual({ percent: 72, label: 'in Z2' })
+    expect(shareZones(RUN)!.headline).toEqual({ percent: 79, label: 'in Z1–Z2' })
   })
 
   it('is null without heart rate', () => {
@@ -127,8 +127,13 @@ const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, paces: [262, 264, 2
 
 describe('an interval session (design review, Oct 2026)', () => {
   it('takes the coach\'s name for the session, else the run\'s', () => {
-    expect(shareCardTitle({ ...RUN, sessionTitle: 'Footing 40′' })).toBe('Footing 40′')
-    expect(shareCardTitle({ ...RUN, sessionTitle: '  ' })).toBe('Strides 6 × 20s')
+    expect(shareCardTitle({ ...RUN, sessionTitle: 'Footing 40′' })).toBe('Footing 40′ · 10.0 km')
+    expect(shareCardTitle({ ...RUN, sessionTitle: '  ' })).toBe('Strides 6 × 20s · 10.0 km')
+  })
+
+  it('titles a run by its session\'s name and the distance run, never the plan\'s', () => {
+    expect(shareCardTitle({ ...RUN, distanceKm: 7.5, sessionTitle: 'Easy · 7.5 km + 6 strides' })).toBe('Easy run + 6 strides · 7.5 km')
+    expect(shareCardTitle({ ...RUN, distanceKm: 7.5, description: 'Easy · 6 km' })).toBe('Easy run · 7.5 km')
   })
 
   it('leads with the reps\' pace, the plan\'s, and how far off it ran', () => {
@@ -161,18 +166,18 @@ describe('an interval session (design review, Oct 2026)', () => {
 
   it('titles a rep session by its set and its pace, its type leading the subtitle', () => {
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' }
-    expect(shareCardTitle(run)).toBe('3 × 8′ @ 4:25')
-    expect(shareCardTitle({ ...run, sessionTitle: null })).toBe('3 × 8′')
+    expect(shareCardTitle(run)).toBe('3 × 8′ @ 4:25 · 10.0 km')
+    expect(shareCardTitle({ ...run, sessionTitle: null })).toBe('3 × 8′ · 10.0 km')
     expect(shareCardSubtitle(run, 'Hoenheim')).toBe(`Threshold · ${formatDate('2026-09-26')} · Hoenheim`)
     expect(shareCardSubtitle({ ...RUN, type: 'Threshold' }, 'Hoenheim')).toBe(`${formatDate('2026-09-26')} · Hoenheim`)
   })
 
   it('gives a set named after its type the same structure without reps: the set, then type · date · place', () => {
     const runWalk = { ...RUN, type: 'Base' as const, sessionTitle: 'Footing · 4 × 6′' }
-    expect(shareCardTitle(runWalk)).toBe('4 × 6′')
+    expect(shareCardTitle(runWalk)).toBe('4 × 6′ · 10.0 km')
     expect(shareCardSubtitle(runWalk, 'Hoenheim')).toBe(`Footing · ${formatDate('2026-09-26')} · Hoenheim`)
-    expect(shareCardTitle({ ...RUN, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' })).toBe('3 × 8′ @ 4:25')
-    expect(shareCardTitle(RUN)).toBe('Strides 6 × 20s')
+    expect(shareCardTitle({ ...RUN, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' })).toBe('3 × 8′ @ 4:25 · 10.0 km')
+    expect(shareCardTitle(RUN)).toBe('Strides 6 × 20s · 10.0 km')
     expect(shareCardSubtitle(RUN, null)).toBe(formatDate('2026-09-26'))
   })
 

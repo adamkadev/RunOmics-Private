@@ -1,6 +1,6 @@
 import { curatedAccent, type AccentId } from '@/lib/accentScale'
 import { MAP_COLORS } from '@/lib/colors'
-import { STATUS_HEX, SURFACES, ZONE_HEX } from '@/lib/themeTokens'
+import { STATUS_HEX, SURFACES, ZONE_HEX, ZONE_MODERATE_HEX } from '@/lib/themeTokens'
 
 export type ThemeMode = 'light' | 'dark'
 
@@ -40,6 +40,8 @@ export interface SharePalette {
   /** --accent */
   acc: string
   zones: readonly string[]
+  /** Time in heart-rate zones: Z3 is the grey-blue moderate of Easy vs hard. */
+  hrZones: readonly string[]
   pos: string
   warn: string
   route: string
@@ -70,6 +72,7 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     card: s.card,
     acc: curatedAccent(accent)[mode].acc,
     zones: ZONE_HEX[mode],
+    hrZones: ZONE_HEX[mode].map((hex, i) => (i === 2 ? ZONE_MODERATE_HEX[mode] : hex)),
     pos: STATUS_HEX[mode].pos,
     warn: STATUS_HEX[mode].warn,
     route: curatedAccent(accent)[mode].acc,

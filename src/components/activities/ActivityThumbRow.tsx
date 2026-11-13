@@ -21,6 +21,8 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
   /** Its session's type where it is not the watch's; else the run's. */
   type?: ActivityType
+  /** Its session's name, where the coach set one. */
+  name?: string
   /**
    * `card`: a row of a list card. `inset`: a row in a week card, under its
    * month's heading, so its date leaves the month out.
@@ -45,10 +47,10 @@ function watchRunTitle(a: ActivitySummary, type: ActivityType): string {
   return a.strides && kind === 'easy' ? t.activities.withStrides(label, a.strides) : label
 }
 
-export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.type, variant = 'card' }: Props) {
+export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.type, name, variant = 'card' }: Props) {
   // The session as its set ("3 × 8′ @ 4:25"), not its type: the type is the dot beside the meta. A watch's
   // default name gives way to the word Plan uses for the session.
-  const title = isWatchName(a.description) ? watchRunTitle(a, type) : sessionLabel(activityTitle(a))
+  const title = name ?? (isWatchName(a.description) ? watchRunTitle(a, type) : sessionLabel(activityTitle(a)))
   const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
   const router = useRouter()

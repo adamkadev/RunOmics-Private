@@ -5,10 +5,10 @@ import { getExploreAreas } from '@/application/usecases/GetExploreAreas'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { appTodayIso } from '@/lib/calendarDate'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
-import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getCoachingOverview, getRunSessions } from '@/application/coaching/GetCoachingView'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
-import { sessionTypes } from '@/components/activity/activityViews'
+import { sessionNames, sessionTypes } from '@/components/activity/activityViews'
 import { getCompletedSince } from '@/application/usecases/GetExploreGains'
 import { explorePlansFrom } from '@/components/explore/explorePlan'
 import { getUsualRunHour } from '@/application/usecases/GetHeatAhead'
@@ -23,6 +23,7 @@ export default async function ActivitiesPage() {
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const today = appTodayIso()
   const coaching = getCoachingOverview(today)
+  const sessions = getRunSessions()
   const exploreAreas = getExploreAreas()
   const { clusters, defaultClusterIdx } = getMapShellData()
   const defaultCluster = clusters[defaultClusterIdx]
@@ -42,7 +43,8 @@ export default async function ActivitiesPage() {
       exploreAreas={exploreAreas}
       explorePlans={explorePlans}
       exploreCompletedSince={exploreAreas.length > 0 ? getCompletedSince() : undefined}
-      sessionTypes={sessionTypes(coaching?.workouts ?? [], items)}
+      sessionTypes={sessionTypes(sessions, items)}
+      sessionNames={sessionNames(sessions, items)}
     />
   )
 }

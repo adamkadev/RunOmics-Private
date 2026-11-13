@@ -1381,7 +1381,7 @@ export const en = {
         dark: 'Dark',
         light: 'Light',
       },
-      inZone: (zone: number) => `in Z${zone}`,
+      inZone: (zone: string) => `in ${zone}`,
       // The headline of an easy run's zones, on a run without a written verdict: "100% easy · Z1–Z2".
       easyZones: (from: number, to: number) => `easy · Z${from}–Z${to}`,
       noZones: 'No heart-rate zones for this run',

@@ -1291,7 +1291,7 @@ export const fr = {
         dark: 'Sombre',
         light: 'Clair',
       },
-      inZone: (zone: number) => `en Z${zone}`,
+      inZone: (zone: string) => `en ${zone}`,
       // L’en-tête des zones d’une sortie facile sans verdict rédigé : « 100 % facile · Z1–Z2 ».
       easyZones: (from: number, to: number) => `facile · Z${from}–Z${to}`,
       noZones: 'Pas de zones cardiaques pour cette sortie',

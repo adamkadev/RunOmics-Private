@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
-import { activityDetailView, runName, sessionTypes, shareActivity, shownType } from '../activityViews'
+import { activityDetailView, runName, sessionNames, sessionTypes, shareActivity, shownType } from '../activityViews'
 
 const ACTIVITY = {
   id: '90000273',
@@ -196,5 +196,13 @@ describe('the type a run is shown as', () => {
     expect(sessionTypes([at('2026-10-14', 'threshold')], [easy])).toEqual({})
     // With no session, by its name: a threshold the watch filed as tempo.
     expect(sessionTypes([], [{ ...run, description: "Threshold 2 x 7:00 - 2x7'@4:25" }])).toEqual({ 'run-1': 'Threshold' })
+  })
+
+  it('names a run by the session it stood for, moved from the day before, so the row reads as Plan does', () => {
+    const friday = { id: 'run-4', date: '2026-11-13', type: 'Base' as const, description: 'Easy · 6 km' }
+    const thursday = at('2026-11-12', 'easy')
+    thursday.prescription = { ...thursday.prescription, title: 'Easy · 7.5 km + 6 strides', blocks: [] }
+    expect(sessionNames([thursday], [friday])).toEqual({ 'run-4': 'Easy run + 6 strides' })
+    expect(sessionNames([], [friday])).toEqual({})
   })
 })
