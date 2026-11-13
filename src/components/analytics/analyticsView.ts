@@ -4,7 +4,7 @@ import type { HeatImpactData, HeatBandId } from '@/application/usecases/GetHeatI
 import type { TrainingStatusType } from '@/domain/training/status'
 import { formBand, type FormBand } from '@/domain/training/formBand'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
-import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
+import { addDays, isoDate, periodStart, startOfWeek } from '@/lib/calendarDate'
 import { median } from '@/lib/math'
 import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import { intensityMix, type IntensityMix } from '@/domain/training/intensityMix'
@@ -55,7 +55,7 @@ export function dayWindow(today: string, period: LoadPeriod, offset = 0): DayWin
 
 export function weekWindow(today: string, period: WeekPeriod, offset = 0): WeekWindow {
   const n = PERIOD_WEEKS[period]
-  const last = addDays(startOfWeek(day(today)), -offset * n * 7)
+  const last = addDays(day(periodStart(today, 1)), -offset * n * 7)
   const weeks = Array.from({ length: n }, (_, i) => isoDate(addDays(last, -(n - 1 - i) * 7)))
   return { weeks, start: weeks[0]!, end: isoDate(addDays(last, 6)), live: offset === 0 }
 }

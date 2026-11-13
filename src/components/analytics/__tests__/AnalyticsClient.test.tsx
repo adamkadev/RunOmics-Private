@@ -410,7 +410,6 @@ describe('Analytics (v4.5)', () => {
     const current = bars.querySelector<HTMLElement>('[data-current]')!
     expect(current.style.background).toBe('var(--data-done-soft)')
     expect(current.style.outline).toBe('1.5px dashed var(--accent)')
-    // The average over the period chosen: its 11 finished weeks.
     expect(screen.getByTestId('weekly-card').textContent).toContain(t.analytics.cards.weekly.underAvg(11))
     // This week, dashed in the one "this week" style and never flagged over:
     // its first runs are all of its distance so far.

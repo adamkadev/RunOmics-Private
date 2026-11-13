@@ -15,6 +15,11 @@ export function startOfWeek(d: Date): Date {
   return addDays(d, -mondayOffset)
 }
 
+/** The Monday that opens a window of `weeks` calendar weeks ending this week: Analytics and Race share it. */
+export function periodStart(today: string, weeks: number): string {
+  return isoDate(addDays(startOfWeek(new Date(`${today}T00:00:00`)), -(weeks - 1) * 7))
+}
+
 export function isoWeekNumber(d: Date): number {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
   const dayNum = date.getUTCDay() || 7

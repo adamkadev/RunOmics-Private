@@ -7,7 +7,7 @@ import { deltaColor } from '@/lib/deltaTone'
 import { linePath } from '@/lib/linePath'
 import { cn } from '@/lib/utils'
 import { closingPace, daysBetween, evenSplit, pacingCheckpoints, predictionChange, type PredictionPoint } from '@/domain/race/pacing'
-import { RACE_TREND_DAYS, type RacePageData } from '@/application/usecases/GetRacePage'
+import type { RacePageData } from '@/application/usecases/GetRacePage'
 import { formBand } from '@/domain/training/formBand'
 import type { FormForecast, FormPoint } from '@/domain/training/formForecast'
 import { t } from '@/i18n'
@@ -128,7 +128,7 @@ export function RaceView({ data }: { data: RacePageData }) {
   const predicted = estimate ? r.estimated : r.predicted
   const gap = predictedSeconds !== null && targetSeconds !== null ? predictedSeconds - targetSeconds : null
   const closing = gap !== null ? closingPace(gap, daysUntil) : null
-  const change = predictionChange(trend, RACE_TREND_DAYS)
+  const change = predictionChange(trend)
   const changePerWeek = change && change.weeks > 1 && Math.round(change.perWeek) !== 0 ? signed(change.perWeek) : null
   const columns = [
     ...(targetSeconds !== null ? [{ label: r.target, seconds: targetSeconds }] : []),

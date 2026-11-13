@@ -162,14 +162,13 @@ describe('findNextMilestones', () => {
   const runs = (n: number, date: string, km: number) => Array.from({ length: n }, () => ({ date, distanceKm: km }))
 
   it('names the next run count and this year\'s next distance, with what is left', () => {
-    const acts = [...runs(100, '2025-06-01', 10), ...runs(215, '2026-03-01', 7.2932)]
+    const acts = [...runs(100, '2025-06-01', 10), ...runs(215, '2026-03-01', 7.2959)]
     const [count, distance] = findNextMilestones(acts, 2026, [250, 300, 350, 400], [500, 1000, 1500, 2000])
 
     expect(count).toMatchObject({ kind: 'activity-count', remaining: 35 })
     expect(count!.progress).toBeCloseTo(0.9)
-    // 1,568 km this year: 2,000 is next, 432 to go - last year's 1,000 km does not count.
-    expect(distance).toMatchObject({ kind: 'distance-tier', remaining: 432 })
-    expect(distance!.progress).toBeCloseTo(1568 / 2000, 3)
+    expect(distance).toMatchObject({ kind: 'distance-tier', remaining: 431 })
+    expect(distance!.progress).toBeCloseTo(1569 / 2000, 3)
   })
 
   it('drops a milestone past its last tier', () => {

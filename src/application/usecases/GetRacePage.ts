@@ -9,12 +9,13 @@ import type { PredictionPoint } from '@/domain/race/pacing'
 import type { GoalYear, UpcomingRace } from '@/domain/goals/types'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import { bestRecentEffort, secondsForVdot } from '@/domain/training/vdot'
-import { DAY_MS, appTodayIso } from '@/lib/calendarDate'
+import { DAY_MS, appTodayIso, periodStart } from '@/lib/calendarDate'
 import { forecastForm, type FormForecast } from '@/domain/training/formForecast'
 import { athleteHrBounds, dailyTrimpByDate } from './GetTrainingLoad'
 import { getPlannedWorkouts } from './GetPlannedWorkouts'
 
-export const RACE_TREND_DAYS = 84
+const RACE_TREND_WEEKS = 12
+const RACE_TREND_DAYS = RACE_TREND_WEEKS * 7
 const ESTIMATE_STEP_DAYS = 7
 
 /** What the estimate stands on when Garmin's predictions are missing or stale. */
@@ -89,12 +90,13 @@ export async function getRacePageData(today: string = appTodayIso()): Promise<Ra
   const predictions = getGarminRacePredictions()
   const record = (await getRecords()).find((r) => r.key === distance)
   const garmin = freshGarminPredictions(predictions, today)[distance] ?? null
-  const from = daysBefore(today, RACE_TREND_DAYS)
+  // Analytics' 12-week window, so both pages print the same trend.
+  const from = periodStart(today, RACE_TREND_WEEKS)
   const estimated = garmin === null ? estimatedTrend(RACE_DISTANCE_KM[distance], today) : null
-  const trend = estimated?.trend ?? (predictions?.points ?? []).flatMap((p) => {
+  const trend = (estimated?.trend ?? (predictions?.points ?? []).flatMap((p) => {
     const seconds = p.seconds[distance]
-    return p.date >= from && seconds !== undefined ? [{ date: p.date, seconds }] : []
-  })
+    return seconds !== undefined ? [{ date: p.date, seconds }] : []
+  })).filter((p) => p.date >= from)
 
   // As the Progress card reads it: a best faster than the prediction is a time already run.
   const latest = garmin ?? estimated?.latest ?? null
