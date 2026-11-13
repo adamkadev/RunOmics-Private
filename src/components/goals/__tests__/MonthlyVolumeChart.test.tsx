@@ -82,7 +82,7 @@ describe('MonthlyVolumeChart (3.1)', () => {
     const running = screen.getByTestId('running-month')
     expect(running.className).toContain('border-dashed')
     expect(running.querySelector('.bg-accent')).not.toBeNull()
-    expect(screen.getByTestId('running-legend').textContent).toBe(s.running(monthName(THIS_MONTH), '40', s.pace.behind))
+    expect(screen.getByTestId('running-legend').textContent).toBe(s.running(monthName(THIS_MONTH), '40'))
   })
 
   it('draws a short month as an outline in the done ink, never the accent or a status colour', () => {

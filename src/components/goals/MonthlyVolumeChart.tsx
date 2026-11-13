@@ -124,7 +124,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
         <LegendItem swatch="outline" color={DONE}>{m.short}</LegendItem>
         {current && current.status !== 'pending' && (
           <LegendItem swatch="dashRing" color="var(--accent)">
-            <span data-testid="running-legend">{m.running(monthName(current.month), formatKm(current.actualKm), m.pace[current.status])}</span>
+            <span data-testid="running-legend">{m.running(monthName(current.month), formatKm(current.actualKm))}</span>
           </LegendItem>
         )}
       </Legend>

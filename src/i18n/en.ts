@@ -1703,12 +1703,7 @@ export const en = {
       targetFromPlan: 'target from your plan',
       hit: 'hit',
       short: 'short',
-      running: (month: string, km: string, pace: string) => `${month} · ${km}, ${pace}`,
-      pace: {
-        ahead: 'ahead of pace',
-        on_track: 'on pace',
-        behind: 'behind pace',
-      },
+      running: (month: string, km: string) => `${month} so far · ${km} km`,
       km: (actual: string, target: string) => `${actual} / ${target}`,
     },
     season: {

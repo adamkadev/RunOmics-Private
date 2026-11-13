@@ -49,8 +49,8 @@ function Bar({ share, color, thin = false }: { share: number; color: string; thi
 
 function projectionColor(hero: ProgressHubView['hero']): string {
   const projected = hero.projection?.yearKm
-  if (projected === undefined || hero.goalKm === null) return 'var(--pos)'
-  return projected < hero.goalKm ? 'var(--warn)' : 'var(--pos)'
+  if (projected === undefined || hero.goalKm === null) return 'var(--foreground)'
+  return projected < hero.goalKm ? 'var(--warn)' : 'var(--foreground)'
 }
 
 function shoeColor(status: WearStatus): string {

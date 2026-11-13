@@ -85,7 +85,7 @@ describe('YearView annual goal card', () => {
     expect(container.textContent).not.toContain('%')
   })
 
-  it('signs the outcome from the projection, not from the status', () => {
+  it('signs the outcome from the projection, not from the status, a surplus in ink', () => {
     const surplus: GoalProjection = {
       weeklyRate: 41,
       weeklyNeeded: 35,
@@ -97,7 +97,7 @@ describe('YearView annual goal card', () => {
     // 2030 against a 2000 goal is a surplus, though `status` is merely 'on_track'.
     expect(container.textContent).toContain(p.overAtPace('30'))
     expect(container.textContent).not.toContain(p.shortAtPace('30'))
-    expect(screen.getByTestId('projection-verdict').getAttribute('style')).toContain('var(--pos)')
+    expect(screen.getByTestId('projection-verdict').getAttribute('style')).toContain('var(--foreground)')
   })
 
   it('marks a reached goal with a pill', () => {
