@@ -120,15 +120,18 @@ export function ThisWeekCard({
       </div>
 
       {/* Read before the bars, on one line: the key and what is left this week. */}
-      <div className="pointer-events-none relative flex items-center gap-x-3.5 whitespace-nowrap text-[13px] text-muted-foreground">
-        {legend.map((entry) => (
-          <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">
-            <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: entry.color }} />
-            {entry.label}
-          </span>
-        ))}
+      <div className="pointer-events-none relative flex items-start gap-x-3.5 whitespace-nowrap text-[13px] text-muted-foreground">
+        {/* A week of many session types wraps its key rather than push the count off the card. */}
+        <span className="flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">
+          {legend.map((entry) => (
+            <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">
+              <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: entry.color }} />
+              {entry.label}
+            </span>
+          ))}
+        </span>
         {(left > 0 || missed > 0) && (
-          <span className="ml-auto whitespace-nowrap text-text-2" data-testid="week-footer-count">
+          <span className="ml-auto shrink-0 whitespace-nowrap text-text-2" data-testid="week-footer-count">
             {left > 0 && s.runsLeft(left)}
             {left > 0 && missed > 0 && ' · '}
             {missed > 0 && <span className="text-[var(--warn)]">{s.missedCount(missed)}</span>}

@@ -32,13 +32,13 @@ function SessionBlock({ card }: { card: SessionCard }) {
           {chevron}
         </span>
       )}
-      <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+      <span className="flex flex-col gap-0.5">
+        <span className="flex min-w-0 items-center justify-between gap-3">
           <span
             className={cn('line-clamp-2 min-w-0 break-words text-pretty text-foreground', card.eyebrow ? 'text-headline' : 'text-title-1')}
             data-testid="session-title"
           >
-            {card.title}
+            {card.title.replace(/ × /g, '\u00a0×\u00a0')}
           </span>
           {!card.eyebrow && chevron}
         </span>
