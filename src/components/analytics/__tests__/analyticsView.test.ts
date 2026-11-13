@@ -112,8 +112,9 @@ describe('D1 Load', () => {
     const view = statusView(days, dayWindow(TODAY, '4w'))!
     expect(view.current).toBe('productive')
     expect(view.count).toBe(13)
-    expect(view.days).toBe(27)
-    expect(view.cells).toHaveLength(27)
+    expect(view.days).toBe(28)
+    expect(view.cells).toHaveLength(28)
+    expect(view.cells[0]!.status).toBeNull()
     expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
   })
 
