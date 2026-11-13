@@ -1871,6 +1871,7 @@ export const fr = {
       routes: 'Parcours',
     },
     recurring: {
+      runWalk: 'séance course/marche',
       equalBest: 'égal',
       showAll: (n: number) => `Voir les ${n} parcours`,
       runCount: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,

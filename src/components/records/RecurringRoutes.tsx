@@ -89,9 +89,15 @@ function BestAndLast({ route, thisYear }: { route: RecurringRoute; thisYear: num
         <>
           {' · '}
           {r.lastPace(formatClock(latest.run.paceSecPerKm))}{' '}
-          <span data-testid="route-gap" className={latest.gapSeconds > 0 ? 'text-[var(--warn)]' : 'text-muted-foreground'}>
-            {latest.gapSeconds > 0 ? `+${formatGap(latest.gapSeconds)}` : r.equalBest}
+          <span data-testid="route-gap" className={latest.gapSeconds > 0 ? 'text-[var(--warn)]' : latest.gapSeconds < 0 ? 'text-[var(--pos)]' : 'text-muted-foreground'}>
+            {latest.gapSeconds > 0 ? `+${formatGap(latest.gapSeconds)}` : latest.gapSeconds < 0 ? `−${formatGap(latest.gapSeconds)}` : r.equalBest}
           </span>
+        </>
+      )}
+      {latest?.kind === 'run-walk' && (
+        <>
+          {' · '}
+          {r.lastPace(formatClock(latest.run.paceSecPerKm))} <span className="text-muted-foreground" data-testid="route-run-walk">{r.runWalk}</span>
         </>
       )}
     </p>

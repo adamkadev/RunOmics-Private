@@ -2018,6 +2018,7 @@ export const en = {
       routes: 'Routes',
     },
     recurring: {
+      runWalk: 'run/walk session',
       equalBest: 'level with it',
       showAll: (n: number) => `Show all ${n} routes`,
       runCount: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
