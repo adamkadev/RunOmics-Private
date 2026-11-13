@@ -222,7 +222,7 @@ describe('ProgressHub as a list', () => {
     expect(screen.getByTestId('consistency-row-value').textContent).toBe(t.profile.hub.streakValue(INPUT.streakWeeks))
     expect(screen.getByTestId('records-row-value').textContent).toBe(`${t.profile.hub.recordLabels.half} 1:39:28`)
     expect(screen.getByTestId('athlete-row-value').textContent).toBe(`${t.profile.hub.vo2max} 55.0`)
-    expect(screen.getByTestId('shoes-row').getAttribute('href')).toBe('/shoes/p')
+    expect(screen.getByTestId('shoes-row').getAttribute('href')).toBe('/shoes')
     expect(screen.getByTestId('shoes-row-value').textContent).toBe(t.shoes.status.watch.toLowerCase())
     expect(screen.getByTestId('all-time-row-value').textContent).toBe('2,509 km')
   })

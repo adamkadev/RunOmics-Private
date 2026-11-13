@@ -297,7 +297,8 @@ export function ProgressHub({ view, checkpoint = null, explored = null, homeRuns
       <HubGroup title={h.groupGear} testId="hub-gear">
         {shoe && (
           <HubRow
-            href={shoe.status !== 'ok' ? `/shoes/${shoe.gearId}` : '/shoes'}
+            // Every pair, the worn one leading the list with its tag: its own page alone hid the others.
+            href="/shoes"
             label={`${h.shoes} · ${shoe.name}`}
             value={shoe.status !== 'ok' ? t.shoes.status[shoe.status].toLocaleLowerCase(t.locale) : undefined}
             valueColor={shoe.status !== 'ok' ? WEAR_COLOR[shoe.status] : undefined}
