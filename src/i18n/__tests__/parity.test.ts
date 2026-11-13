@@ -46,6 +46,10 @@ describe('French words a French athlete reads', () => {
   it('names the check-in mood in French', () => {
     expect(fr.wellness.checkIn.scores.mood.label).toBe('Humeur')
   })
+
+  it('ends a sentence on an abbreviated month with one full stop', () => {
+    expect(fr.analytics.cards.loadTrend.wentOver(3, '29 oct.')).toBe(' Plus tôt sur la période, 3 jours au-dessus, le dernier le 29 oct.')
+  })
 })
 
 describe('French copy', () => {
