@@ -3,7 +3,7 @@
 import { useId } from 'react'
 import { t } from '@/i18n'
 import { COMPLETE_PCT, type UnitCoverage } from '@/domain/explore/types'
-import { formatDate, formatDistance, formatNumber, formatPercent } from '@/lib/formatters'
+import { formatDate, formatDistance, formatPercent } from '@/lib/formatters'
 import { Button } from '@/components/ui/Button'
 import { Sheet } from '@/components/ui/Sheet'
 import { Stat, StatGrid } from '@/components/ui/Stat'
@@ -46,6 +46,8 @@ export function QuartierSheet({
   return (
     <Sheet
       onClose={onClose}
+      title={unit.name}
+      subtitle={unit.kind === 'commune' ? s.commune : s.quartierOf(unit.commune)}
       titleId={titleId}
       testId={QUARTIER_SHEET_TEST_ID}
       footer={
@@ -56,43 +58,35 @@ export function QuartierSheet({
         ) : undefined
       }
     >
-      <div className="flex flex-col gap-4 pt-1">
-          <div className="flex min-w-0 flex-col">
-            <h2 id={titleId} className="text-title-1 text-foreground text-pretty [overflow-wrap:anywhere]">
-              {unit.name}
-            </h2>
-            <p className="text-subhead leading-5 text-muted-foreground">{unit.kind === 'commune' ? s.commune : s.quartierOf(unit.commune)}</p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-headline text-foreground">{s.explored(formatPercent(unit.pct))}</span>
-              <span className="text-[14px] text-muted-foreground tabular-nums">{s.cells(unit.visited, unit.total, (n) => formatNumber(n, 0))}</span>
-            </div>
-            {/* Hidden from screen readers: the line above says both. */}
-            <div aria-hidden="true" className="relative h-2 rounded-full bg-[var(--fill-3)]">
-              <div
-                data-testid="quartier-progress"
-                className="absolute inset-y-0 left-0 rounded-full bg-accent"
-                style={{ width: `${Math.min(100, Math.max(0, unit.pct))}%` }}
-              />
-              <div
-                data-testid="quartier-complete-tick"
-                className="absolute -top-1 h-4 w-0.5 -translate-x-1/2 rounded-[1px] bg-foreground/40"
-                style={{ left: `${COMPLETE_PCT}%` }}
-              />
-            </div>
-            <p className="text-right text-footnote leading-4 text-muted-foreground" data-testid="quartier-complete-note">
+      <div className="flex flex-col gap-4 pt-3">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-headline text-foreground">{s.explored(formatPercent(unit.pct))}</span>
+            <span className="text-[14px] text-muted-foreground" data-testid="quartier-complete-note">
               {completeSince && unit.pct >= COMPLETE_PCT ? s.completeSince(formatDate(completeSince, { style: 'bare' })) : s.completeAt(formatPercent(COMPLETE_PCT))}
-            </p>
+            </span>
           </div>
+          {/* Hidden from screen readers: the line above says both. */}
+          <div aria-hidden="true" className="relative h-2 rounded-full bg-[var(--fill-3)]">
+            <div
+              data-testid="quartier-progress"
+              className="absolute inset-y-0 left-0 rounded-full bg-accent"
+              style={{ width: `${Math.min(100, Math.max(0, unit.pct))}%` }}
+            />
+            <div
+              data-testid="quartier-complete-tick"
+              className="absolute -top-1 h-4 w-0.5 -translate-x-1/2 rounded-[1px] bg-foreground/40"
+              style={{ left: `${COMPLETE_PCT}%` }}
+            />
+          </div>
+        </div>
 
-          {/* 8 pt between the columns, not the grid's 16. */}
-          <StatGrid columns={3} className="gap-2">
-            {stats.map((stat) => (
-              <Stat key={stat.label} labelPosition="bottom" label={stat.label} value={stat.value} valueStyle={STAT_VALUE_STYLE} />
-            ))}
-          </StatGrid>
+        {/* 8 pt between the columns, not the grid's 16. */}
+        <StatGrid columns={3} className="gap-2">
+          {stats.map((stat) => (
+            <Stat key={stat.label} labelPosition="bottom" label={stat.label} value={stat.value} valueStyle={STAT_VALUE_STYLE} />
+          ))}
+        </StatGrid>
       </div>
     </Sheet>
   )

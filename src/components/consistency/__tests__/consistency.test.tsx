@@ -194,6 +194,21 @@ describe('Consistency', () => {
     expect(screen.getByTestId('week-selected')).toBeTruthy()
   })
 
+  it('heads the sheet with its close, title and summary, a missed week as runs over target and future weeks blank', async () => {
+    render(<Consistency views={views} today={TODAY} />)
+    await userEvent.click(screen.getAllByTestId('week-column')[3]!)
+    const sheet = screen.getByTestId('week-sheet')
+    expect(within(sheet).getAllByRole('button', { name: t.common.close })).toHaveLength(1)
+    expect(within(sheet).getByTestId('week-summary').textContent).toContain(t.consistency.sheet.under)
+    expect(sheet.querySelector('[data-status="under"]')!.textContent).toBe('1/3')
+    expect(screen.queryByText(t.common.close)).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: t.common.close }))
+    await userEvent.click(screen.getAllByTestId('week-column').at(-1)!)
+    const future = screen.getAllByTestId('calendar-row').filter((row) => row.getAttribute('aria-label')!.startsWith('Oct 26'))
+    expect(future[0]!.lastElementChild!.textContent).toBe('')
+  })
+
   it('pages the sheet\'s month with a swipe or its arrows, never past this month or before the first run', async () => {
     render(<Consistency views={views} today={TODAY} />)
     await userEvent.click(screen.getAllByTestId('week-column')[12]!)

@@ -59,7 +59,7 @@ test('the map sheet switches to Districts, remembers it, and a link opens a dist
   await page.goto('/activities?view=map&layer=districts&quartier=demo-southfield')
   const sheet = page.getByTestId('quartier-sheet')
   await expect(sheet).toContainText('Southfield')
-  await expect(sheet).toContainText('Complete at 90%')
+  await expect(sheet).toContainText('complete at 90%')
 })
 
 test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ page }) => {
@@ -181,5 +181,5 @@ test('a tap on a quartier opens its sheet', async ({ page }) => {
   await tapMap(page, 0.5, 0.5, async () => {
     await expect(sheet).toBeVisible({ timeout: 1_500 })
   })
-  await expect(sheet).toContainText(/Complete at 90%/)
+  await expect(sheet).toContainText(/complete at 90%/)
 })
