@@ -5,7 +5,8 @@ import { encodeIntegers, encodePolyline } from '@/lib/polyline'
 
 /** The original replay's radius: a start across the street still counts as home. */
 export const START_RADIUS_M = 200
-const MIN_RUNS = 5
+/** More than 20 runs from one start: fewer make a thin replay, and the hub row and the page stay away until then. */
+const MIN_RUNS = 21
 const MAX_SPOTS = 3
 /** Enough for a curve at the replay's scale; ~200 runs stay a few hundred kB. */
 const MAX_POINTS = 240

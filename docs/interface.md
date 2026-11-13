@@ -226,8 +226,8 @@ clock, a "still running" count and a histogram of finish times fill in. It is mo
 [strava-home-runs](https://github.com/AlFontal/strava-home-runs), drawn in 2D on a canvas instead of rendered in
 Blender.
 
-- **Start point** (`homeSpots`, `GetHomeRuns`): runs whose first point is within 200 m of the busiest start, five
-  runs or more. Nothing is trimmed around the start: the site is private.
+- **Start point** (`homeSpots`, `GetHomeRuns`): runs whose first point is within 200 m of the busiest start, more
+  than 20 runs. Nothing is trimmed around the start: the site is private.
 - **Periods**: All, this year and this month, each a labelled tab with its count, shown only when it holds fewer runs
   than the one before it. On the page the clock and the count sit above the map, since the title is the page's; the
   video keeps its own title. With more than one start point (up to three), a second row under the periods switches

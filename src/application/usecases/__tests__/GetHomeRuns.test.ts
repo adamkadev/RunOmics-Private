@@ -15,7 +15,7 @@ function run(id: string, date: string, start: [number, number], durationSeconds 
   return { id, date, route, durationSeconds, distanceKm: 5, paceSamples: [360, 360, 360] } as Activity
 }
 
-const homes = Array.from({ length: 6 }, (_, i) => run(`home-${i}`, `2026-0${i + 1}-10`, [HOME[0] + i * 0.0002, HOME[1]]))
+const homes = Array.from({ length: 21 }, (_, i) => run(`home-${i}`, `2026-${String(Math.floor(i / 2) + 1).padStart(2, '0')}-${10 + (i % 2)}`, [HOME[0] + i * 0.00005, HOME[1]]))
 
 describe('getHomeRuns', () => {
   it('keeps the runs from the shared start, oldest first, and leaves a lone start out', () => {
@@ -26,7 +26,7 @@ describe('getHomeRuns', () => {
     expect(spots).toHaveLength(1)
     expect(spots[0]!.runs.map((r) => r.id)).toEqual(homes.map((a) => a.id))
     expect(spots[0]!.firstDate).toBe('2026-01-10')
-    expect(spots[0]!.totalKm).toBe(30)
+    expect(spots[0]!.totalKm).toBe(105)
   })
 
   it('sends each track with one time per point, ending at the run’s duration', () => {
@@ -40,8 +40,8 @@ describe('getHomeRuns', () => {
     expect(times[2]).toBe(1800)
   })
 
-  it('has no spot and no summary under five runs from one start', () => {
-    getAllActivities.mockReturnValue(homes.slice(0, 4))
+  it('has no spot and no summary at 20 runs or fewer from one start', () => {
+    getAllActivities.mockReturnValue(homes.slice(0, 20))
 
     expect(getHomeRuns()).toEqual([])
     expect(getHomeRunsSummary()).toBeNull()
@@ -52,7 +52,7 @@ describe('getHomeRuns', () => {
 
     const summary = getHomeRunsSummary()
 
-    expect(summary?.runCount).toBe(6)
+    expect(summary?.runCount).toBe(21)
     expect(summary?.preview.startsWith('M')).toBe(true)
   })
 })
