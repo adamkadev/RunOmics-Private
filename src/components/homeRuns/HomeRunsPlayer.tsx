@@ -39,6 +39,8 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
       subtitle: t.homeRuns.subtitle(spot.runs.length, formatDate(spot.firstDate, { precision: 'month', year: 'always' })),
       running: t.homeRuns.running,
       finished: t.homeRuns.finished,
+      histogram: t.homeRuns.histogram,
+      elapsed: t.homeRuns.elapsed,
     },
   }), [spot, accentId])
 

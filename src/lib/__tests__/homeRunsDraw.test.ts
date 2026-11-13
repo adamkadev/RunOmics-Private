@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { buildReplayScene, formatClock, REPLAY_CUES, replaySeconds } from '../homeRunsDraw'
+import { buildReplayScene, drawReplay, formatClock, REPLAY_CUES, replaySeconds } from '../homeRunsDraw'
 import { encodeIntegers, encodePolyline } from '../polyline'
 
-const labels = { title: '', subtitle: '', running: () => '', finished: () => '' }
+const labels = { title: '', subtitle: '', running: (n: number, of: number) => `${n} of ${of} out`, finished: () => '', histogram: 'by duration', elapsed: 'elapsed' }
 
 describe('formatClock', () => {
   it('reads hours, minutes and seconds', () => {
@@ -37,5 +37,18 @@ describe('buildReplayScene', () => {
     expect(scene.runs[1]!.times).toEqual([0, 1200])
     expect(scene.maxSeconds).toBe(1200)
     expect(scene.binCount).toBe(2)
+  })
+
+  it('labels the finish-time bars and the timer, and counts the runs still out of all of them in ink', () => {
+    const scene = buildReplayScene(runs, { accent: '#ff7a1a', font: 'sans-serif', labels })
+    const texts: { text: string; fill: unknown }[] = []
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get: (target, key) => (key === 'fillText' ? (text: string) => texts.push({ text, fill: target.fillStyle }) : key in target ? target[key as string] : () => ({ addColorStop: () => {} })),
+      set: (target, key, value) => ((target[key as string] = value), true),
+    }) as unknown as CanvasRenderingContext2D
+    drawReplay(ctx, scene, 300, 1080, 1920)
+
+    expect(texts.map((t) => t.text)).toEqual(expect.arrayContaining(['by duration', 'elapsed']))
+    expect(texts.find((t) => t.text === '2 of 2 out')?.fill).toBe('#ffffff')
   })
 })
