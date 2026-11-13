@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Clapperboard, Download, Pause, Play, RotateCcw } from 'lucide-react'
-import type { HomeRunSpot } from '@/application/usecases/GetHomeRuns'
+import type { HomeRun, HomeRunSpot } from '@/application/usecases/GetHomeRuns'
 import { Button } from '@/components/ui/Button'
-import { SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
+import { SEGMENTED_FILL_SEGMENT_CLASS, SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
 import { canvasVideoEncoder, encodeCanvasClip, videoExtension, type VideoEncoderKind } from '@/lib/canvasVideo'
 import { heatAccent } from '@/lib/heatRamp'
 import { buildReplayScene, drawReplay, REPLAY_CUES, REPLAY_FPS, REPLAY_FRAMES, REPLAY_HEIGHT, REPLAY_WIDTH, replaySeconds, type ReplayScene } from '@/lib/homeRunsDraw'
@@ -18,9 +18,31 @@ import { t } from '@/i18n'
 /** Holds a long replay's detail at 1080 × 1920. */
 const BITRATE = 8_000_000
 
-export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
+type Period = 'all' | 'year' | 'month'
+
+interface PeriodTab {
+  id: Period
+  label: string
+  runs: HomeRun[]
+}
+
+/** All, this year and this month, each only when it holds runs the wider one does not. */
+export function homeRunPeriods(runs: HomeRun[], today: string): PeriodTab[] {
+  const capital = (text: string) => text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
+  const year = runs.filter((run) => run.date.startsWith(today.slice(0, 4)))
+  const month = year.filter((run) => run.date.startsWith(today.slice(0, 7)))
+  const tabs: PeriodTab[] = [{ id: 'all', label: t.homeRuns.periodAll, runs }]
+  if (year.length > 0 && year.length < runs.length) tabs.push({ id: 'year', label: today.slice(0, 4), runs: year })
+  if (month.length > 0 && month.length < tabs.at(-1)!.runs.length) {
+    tabs.push({ id: 'month', label: capital(formatDate(today, { precision: 'month', year: 'never' })), runs: month })
+  }
+  return tabs.length > 1 ? tabs : []
+}
+
+export function HomeRunsPlayer({ spot, today }: { spot: HomeRunSpot; today: string }) {
   const accentId = useAccent()
-  const [spotIdx, setSpotIdx] = useState(0)
+  const periods = useMemo(() => homeRunPeriods(spot.runs, today), [spot, today])
+  const [period, setPeriod] = useState<Period>('all')
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [encoder, setEncoder] = useState<VideoEncoderKind | null>(null)
@@ -29,20 +51,20 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
   const [failed, setFailed] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const abortRef = useRef<AbortController | null>(null)
-  const spot = spots[spotIdx] ?? spots[0]!
+  const runs = periods.find((tab) => tab.id === period)?.runs ?? spot.runs
 
-  const scene = useMemo<ReplayScene>(() => buildReplayScene(spot.runs, {
+  const scene = useMemo<ReplayScene>(() => buildReplayScene(runs, {
     accent: heatAccent(accentId),
     font: pageFonts().display,
     labels: {
       title: t.homeRuns.title,
-      subtitle: t.homeRuns.subtitle(spot.runs.length, formatDate(spot.firstDate, { precision: 'month', year: 'always' })),
+      subtitle: t.homeRuns.subtitle(runs.length, formatDate(runs[0]!.date, { precision: 'month', year: 'always' })),
       running: t.homeRuns.running,
       finished: t.homeRuns.finished,
       histogram: t.homeRuns.histogram,
       elapsed: t.homeRuns.elapsed,
     },
-  }), [spot, accentId])
+  }), [runs, accentId])
 
   useEffect(() => {
     void canvasVideoEncoder(REPLAY_WIDTH, REPLAY_HEIGHT, BITRATE).then(setEncoder)
@@ -80,7 +102,7 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
     if (canvas.width !== w) canvas.width = w
     if (canvas.height !== h) canvas.height = h
     const ctx = canvas.getContext('2d')
-    if (ctx) drawReplay(ctx, scene, replaySeconds(time, scene.maxSeconds), w, h)
+    if (ctx) drawReplay(ctx, scene, replaySeconds(time, scene.maxSeconds), w, h, 'page')
   }, [scene, time])
 
   const restart = () => {
@@ -122,20 +144,20 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
 
   return (
     <div className="flex flex-col items-center gap-3.5">
-      {spots.length > 1 && (
-        <div className={SEGMENTED_TRACK_CLASS} role="group" aria-label={t.homeRuns.spots} data-testid="home-runs-spots">
-          {spots.map((s, i) => (
+      {periods.length > 0 && (
+        <div className={cn(SEGMENTED_TRACK_CLASS, 'w-full max-w-[420px]')} role="group" aria-label={t.homeRuns.periods} data-testid="home-runs-periods">
+          {periods.map((tab) => (
             <button
-              key={s.firstDate}
+              key={tab.id}
               type="button"
-              aria-pressed={i === spotIdx}
-              className={cn('h-[26px] whitespace-nowrap px-3 text-[13px]', i === spotIdx ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS)}
+              aria-pressed={tab.id === period}
+              className={cn('h-[30px] whitespace-nowrap px-3 text-[13px] tabular-nums', SEGMENTED_FILL_SEGMENT_CLASS, tab.id === period ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS)}
               onClick={() => {
-                setSpotIdx(i)
+                setPeriod(tab.id)
                 restart()
               }}
             >
-              {t.homeRuns.spot(s.runs.length)}
+              {t.homeRuns.period(tab.label, tab.runs.length)}
             </button>
           ))}
         </div>
@@ -143,7 +165,7 @@ export function HomeRunsPlayer({ spots }: { spots: HomeRunSpot[] }) {
       <canvas
         ref={canvasRef}
         role="img"
-        aria-label={t.homeRuns.canvasLabel(spot.runs.length)}
+        aria-label={t.homeRuns.canvasLabel(runs.length)}
         data-testid="home-runs-canvas"
         className="aspect-[9/16] w-full max-w-[420px] rounded-[24px] bg-[#0a0c10]"
       />
