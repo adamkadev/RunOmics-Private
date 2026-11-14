@@ -67,7 +67,7 @@ describe('ActivityDetailClient', () => {
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
-    expect(container.querySelector('h1')!.textContent).toBe('Threshold run')
+    expect(container.querySelector('h1')!.textContent).toBe('3 × 8′ @ 4:25')
     expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
   })
 
