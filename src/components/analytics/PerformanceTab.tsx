@@ -585,15 +585,16 @@ export interface PerformanceTabProps {
   heat: HeatImpactData | null
   paceBests: RunBests[]
   reprise?: boolean
+  returnDate?: string | null
 }
 
-export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, predictions, race, heat, paceBests, reprise = false }: PerformanceTabProps) {
+export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, predictions, race, heat, paceBests, reprise = false, returnDate = null }: PerformanceTabProps) {
   const inWindow = weeksIn(weeks, window)
   const easy = paceShift(inWindow, (w) => w.easyPace)
   const workout = paceShift(inWindow, (w) => w.hardPace)
   return (
     <div className="flex flex-col gap-3.5">
-      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={reprise ? null : bare(window.start)} />
+      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={returnDate && returnDate >= window.start ? null : bare(window.start)} />
       <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} reprise={reprise} />
       <PaceCurveCard runs={paceBests} window={window} period={period} threshold={threshold} onShift={onShift} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />

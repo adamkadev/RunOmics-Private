@@ -36,6 +36,7 @@ export default async function AnalyticsPage() {
   const threshold = getThresholdHistory()?.points ?? []
   const loads = getLoadSeries()
   const status = getTrainingStatusHistory() ?? getLocalTrainingStatusHistory()
+  const reprise = getReprise(today)
   const board: AnalyticsBoardData = {
     load: trainingLoad?.points.map(({ date, ctl, atl }) => ({ date, ctl, atl })) ?? [],
     status: status?.points.map(({ date, status }) => ({ date, status })) ?? [],
@@ -67,7 +68,8 @@ export default async function AnalyticsPage() {
     balance: getLoadBalance(),
     paceBests: getPaceBests(),
     ytd: analyticsYtd(activities, yearData, today),
-    reprise: getReprise(today) !== null,
+    reprise: reprise !== null,
+    returnDate: reprise?.since ?? null,
   }
 
   return <AnalyticsClient data={board} today={today} />
