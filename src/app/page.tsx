@@ -13,7 +13,7 @@ import { getActivities } from '@/application/usecases/GetActivities'
 import { plannedSessionForRun } from '@/domain/coaching/sessionForRun'
 import { runLabel, shownType } from '@/components/activity/activityViews'
 import { verdictType } from '@/lib/activityTitle'
-import type { YesterdayRun } from '@/components/dashboard/ReadinessCard'
+import type { LatestRun } from '@/components/dashboard/ReadinessCard'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
@@ -42,11 +42,12 @@ export const revalidate = 3600
 
 const capitalized = (text: string) => text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
 
-/** Yesterday's run, named and judged as its page does; none when yesterday had no run. */
-function yesterdayRun(today: string): YesterdayRun | null {
+/** Today's run once there is one, else yesterday's, named and judged as its page does; none when neither day had a run. */
+function latestRun(today: string): LatestRun | null {
   const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
-  const judged = latestJudgedRun(yesterday)
-  if (!judged || judged.activity.date.slice(0, 10) !== yesterday) return null
+  const judged = latestJudgedRun(today)
+  const ranOn = judged?.activity.date.slice(0, 10)
+  if (!judged || (ranOn !== today && ranOn !== yesterday)) return null
   const days = new Set(getActivities().map((a) => a.date.slice(0, 10)))
   const session = plannedSessionForRun(judged.activity, getRunSessions(), (day) => days.has(day))
   const title = runLabel(judged.activity, session)
@@ -55,7 +56,7 @@ function yesterdayRun(today: string): YesterdayRun | null {
   // The title already names the type: "Footing · Exigeant", not "Footing · footing exigeant"; "Solid base" stays whole.
   const said = title.toLocaleLowerCase(t.locale).includes(type.toLocaleLowerCase(t.locale))
   const bare = said ? word.replace(new RegExp(`\\s*${type}\\s*`, 'i'), ' ').trim() : word
-  return { href: `/activities/${judged.activity.id}`, title, word: capitalized(bare || word), tone: judged.tone }
+  return { day: ranOn === today ? 'today' : 'yesterday', href: `/activities/${judged.activity.id}`, title, word: capitalized(bare || word), tone: judged.tone }
 }
 
 export default async function DashboardPage() {
@@ -111,7 +112,7 @@ export default async function DashboardPage() {
         verdict={aiVerdict}
         load={recentLoad?.reading ?? null}
         reason={readinessReason(today, coachWorkouts, plannedWorkouts, data.recentActivities, nextSession)}
-        yesterdayRun={yesterdayRun(today)}
+        latestRun={latestRun(today)}
         today={today}
       />
       <TodayBoard session={card && { ...card, heat }} />

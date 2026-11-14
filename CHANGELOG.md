@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Today: the run row under the readiness card shows today's run once it has synced ("Today · …" / "Aujourd’hui · …"),
+  and yesterday's until then.
 - Round 12 review (111, 119–123): Analytics drops "recovery holds" over a mostly tired window; past races read by their
   short name on Goals; one longest-run figure on Plan and Progress; Ta reprise bars share a baseline with one-line
   dates; the yesterday row reads "Footing · Exigeant"; the Today prompt names sessions as the plan does and gets the

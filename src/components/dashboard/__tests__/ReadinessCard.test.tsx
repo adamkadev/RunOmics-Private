@@ -138,14 +138,23 @@ describe('ReadinessCard (App Fixes 1a)', () => {
 
   it("never shows yesterday's verdict on a new day: the load's words stand in, and yesterday's run gets its own row", () => {
     const load = { acute: 608, lo: 549, hi: 892, state: 'in' as const, ratio: 0.9, estimated: false }
-    const run = { href: '/activities/1', title: 'Easy run + 6 strides', word: 'Solid base', tone: 'positive' as const }
-    render(<ReadinessCard status={STATUS} load={load} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.', yesterday: true }} yesterdayRun={run} />)
+    const run = { day: 'yesterday' as const, href: '/activities/1', title: 'Easy run + 6 strides', word: 'Solid base', tone: 'positive' as const }
+    render(<ReadinessCard status={STATUS} load={load} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.', yesterday: true }} latestRun={run} />)
 
     expect(screen.getByTestId('readiness-verdict')).not.toHaveTextContent('Long run day.')
     expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.dashboard.readiness.fallback.in(608, 549, 892).headline)
-    const row = screen.getByTestId('readiness-yesterday')
-    expect(row).toHaveTextContent(`${t.dashboard.readiness.yesterday} · Easy run + 6 strides · Solid base`)
+    const row = screen.getByTestId('readiness-latest-run')
+    expect(row).toHaveTextContent(`${t.dashboard.readiness.runDay.yesterday} · Easy run + 6 strides · Solid base`)
     expect(row.getAttribute('href')).toBe('/activities/1')
+  })
+
+  it("names today's run once it has synced, in place of yesterday's", () => {
+    const run = { day: 'today' as const, href: '/activities/2', title: 'Threshold 3 × 10 min', word: 'On target', tone: 'positive' as const }
+    render(<ReadinessCard status={STATUS} latestRun={run} />)
+
+    const row = screen.getByTestId('readiness-latest-run')
+    expect(row).toHaveTextContent(`${t.dashboard.readiness.runDay.today} · Threshold 3 × 10 min · On target`)
+    expect(row.getAttribute('href')).toBe('/activities/2')
   })
 
   it('lets a poor check-in lead the card and temper its tone, the load numbers untouched', () => {
