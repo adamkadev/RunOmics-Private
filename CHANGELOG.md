@@ -11,6 +11,10 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Round 11 review (107–118): Plan's month goal counts the coach's sessions; Today drops yesterday's verdict on a new
+  day for the load's own words and a row for yesterday's run, a set's type moves to the eyebrow, and the Today
+  prompt gets the last run's verdict; the share Stats card shows measured data only; one short race name everywhere;
+  Training status says "yesterday" until today's arrives; the activity's shoe chip loses its icon.
 - Shoes: the app's default shoe is gone; Garmin Connect's own default already gives each run its shoe at sync.
   Picking a shoe on a run still works, and the shoe page's brand line sits under its name, clear of the status bar.
 - Round 10 review (78–106): share cards and Activities keep the session's name, one type word
