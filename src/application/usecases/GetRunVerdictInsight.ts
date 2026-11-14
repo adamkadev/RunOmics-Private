@@ -79,6 +79,20 @@ export async function getRunVerdict(activity: Activity): Promise<RunVerdictView>
   }
 }
 
+export interface JudgedRun {
+  activity: Activity
+  tone: VerdictTone
+}
+
+/** The latest run on or before a day, with the badge its page shows: rules only, no stored text read. */
+export function latestJudgedRun(onOrBefore: string): JudgedRun | null {
+  const activities = getAllActivities()
+  const activity = activities.find((a) => a.date.slice(0, 10) <= onOrBefore)
+  if (!activity) return null
+  const context = buildContext(activity, activities, getAllPlannedWorkouts(), getOfficialRaceResults(), coaching())
+  return { activity, tone: runVerdictJudgement(context).tone }
+}
+
 export interface LatestRunVerdict {
   activity: Activity
   verdict: Insight | null

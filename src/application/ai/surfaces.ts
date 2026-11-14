@@ -1,5 +1,5 @@
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import { getRunVerdictContexts } from '@/application/usecases/GetRunVerdictInsight'
+import { getRunVerdictContexts, latestJudgedRun } from '@/application/usecases/GetRunVerdictInsight'
 import { getRecords, getMostRecentRecord, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getActivityNotes } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
@@ -80,7 +80,7 @@ export function insightSurfaces() {
 
       const today = appTodayIso()
       const loadState = getRecentLoad(today, current)?.reading?.state ?? null
-      const context = buildTodayContext(current, await todayInsightSession(today), today, loadState)
+      const context = { ...buildTodayContext(current, await todayInsightSession(today), today, loadState), lastRunTone: latestJudgedRun(today)?.tone ?? null }
 
       return {
         surface: TODAY_SURFACE,

@@ -136,12 +136,16 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  // Yesterday's verdict stands until the night's sync writes today's.
-  it("labels yesterday's verdict, and only that one", () => {
-    const { rerender } = render(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.', yesterday: true }} />)
-    expect(screen.getByTestId('verdict-yesterday')).toHaveTextContent(t.dashboard.readiness.yesterday)
-    rerender(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.' }} />)
-    expect(screen.queryByTestId('verdict-yesterday')).toBeNull()
+  it("never shows yesterday's verdict on a new day: the load's words stand in, and yesterday's run gets its own row", () => {
+    const load = { acute: 608, lo: 549, hi: 892, state: 'in' as const, ratio: 0.9, estimated: false }
+    const run = { href: '/activities/1', title: 'Easy run + 6 strides', word: 'Solid base', tone: 'positive' as const }
+    render(<ReadinessCard status={STATUS} load={load} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.', yesterday: true }} yesterdayRun={run} />)
+
+    expect(screen.getByTestId('readiness-verdict')).not.toHaveTextContent('Long run day.')
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.dashboard.readiness.fallback.in(608, 549, 892).headline)
+    const row = screen.getByTestId('readiness-yesterday')
+    expect(row).toHaveTextContent(`${t.dashboard.readiness.yesterday} · Easy run + 6 strides · Solid base`)
+    expect(row.getAttribute('href')).toBe('/activities/1')
   })
 
   it('lets a poor check-in lead the card and temper its tone, the load numbers untouched', () => {

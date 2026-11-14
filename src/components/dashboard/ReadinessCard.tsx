@@ -6,10 +6,11 @@ import { readinessEyebrow, verdictTone, type ReadinessTone } from '@/domain/trai
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
 import { formBand } from '@/domain/training/formBand'
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ChevronRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
 import type { ReadinessReason } from './readinessReason'
+import type { VerdictTone as RunTone } from '@/domain/activity/runVerdict'
 import { formatDelta, formatWeekdayLong } from '@/lib/formatters'
 import { cardClass, tileLabelClass } from '@/components/ui/Card'
 import { CheckInReadiness } from '@/components/wellness/CheckInReadiness'
@@ -61,11 +62,42 @@ function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: n
   )
 }
 
+/** Yesterday's run as its own page names and judges it. */
+export interface YesterdayRun {
+  href: string
+  title: string
+  word: string
+  tone: RunTone
+}
+
+const RUN_TONE_COLOR: Record<RunTone, string> = {
+  positive: 'var(--pos)',
+  neutral: 'var(--muted-foreground)',
+  caution: 'var(--warn)',
+}
+
+function YesterdayRow({ run }: { run: YesterdayRun }) {
+  return (
+    <Link
+      href={run.href}
+      className="pointer-events-auto relative flex min-h-11 items-center gap-1.5 border-t border-border pt-2.5 text-subhead"
+      data-testid="readiness-yesterday"
+    >
+      <span className="min-w-0 truncate text-muted-foreground">
+        {t.dashboard.readiness.yesterday} · <span className="text-foreground">{run.title}</span> ·{' '}
+        <span style={{ color: RUN_TONE_COLOR[run.tone] }}>{run.word}</span>
+      </span>
+      <ChevronRight size={16} aria-hidden className="ml-auto shrink-0 text-muted-foreground" />
+    </Link>
+  )
+}
+
 export function ReadinessCard({
   status,
   verdict = null,
   load = null,
   reason = null,
+  yesterdayRun = null,
   today = appTodayIso(),
 }: {
   status: TrainingStatus | null
@@ -74,11 +106,14 @@ export function ReadinessCard({
   load?: LoadReading | null
   /** What the days around today say about the load, for a headline in range. */
   reason?: ReadinessReason | null
+  yesterdayRun?: YesterdayRun | null
   today?: string
 }) {
   if (!status) return null
 
   const s = t.dashboard.readiness
+  // Yesterday's text speaks of yesterday as today: the load's own words stand in until today's is written.
+  const written = verdict?.yesterday ? null : verdict
   const form = Math.round(status.tsbNow)
   const tone = verdictTone(status)
   const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
@@ -91,10 +126,10 @@ export function ReadinessCard({
   const loadWords = load ? s.fallback[load.state](load.acute, load.lo, load.hi, fresh) : null
   const fallback = loadWords && load?.state === 'in' && reason ? { ...loadWords, headline: reasonHeadline(reason) } : loadWords
   // A written headline that names a form state the status line doesn't ("You're fresh" over NEUTRAL) gives way to the load's own.
-  const contradicts = verdict ? (!fresh && FRESH_WORDS.test(verdict.headline)) || (band !== 'tired' && TIRED_WORDS.test(verdict.headline)) : false
-  const headline = (contradicts ? fallback?.headline : verdict?.headline) ?? fallback?.headline ?? verdict?.headline ?? null
+  const contradicts = written ? (!fresh && FRESH_WORDS.test(written.headline)) || (band !== 'tired' && TIRED_WORDS.test(written.headline)) : false
+  const headline = (contradicts ? fallback?.headline : written?.headline) ?? fallback?.headline ?? written?.headline ?? null
   // Building back, the missing reading is said in a sentence rather than left as an empty Form tile.
-  const body = verdict ? verdict.body : status.buildingBack ? s.formLater : (fallback?.body ?? null)
+  const body = written ? written.body : status.buildingBack ? s.formLater : (fallback?.body ?? null)
 
   return (
     <section
@@ -106,7 +141,7 @@ export function ReadinessCard({
       <div className="pointer-events-none relative flex flex-col gap-2.5">
         <CheckInReadiness
           today={today}
-          words={{ tone, color, line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
+          words={{ tone, color, line, headline, body }}
         />
 
         {/* A flat row under a hairline: tiles inside the card read as cards within a card. */}
@@ -125,6 +160,7 @@ export function ReadinessCard({
             sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
         </div>
+        {yesterdayRun && <YesterdayRow run={yesterdayRun} />}
         {load?.estimated && (
           <p className="-mt-1 text-footnote text-muted-foreground" data-testid="readiness-estimated">
             {s.estimatedNote}

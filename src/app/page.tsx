@@ -7,13 +7,20 @@ import { getRecords, getMostRecentRecord } from '@/application/usecases/GetRecor
 import { getPlannedWorkouts, getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getTodayInsight, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
-import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getCoachingOverview, getRunSessions } from '@/application/coaching/GetCoachingView'
+import { latestJudgedRun } from '@/application/usecases/GetRunVerdictInsight'
+import { getActivities } from '@/application/usecases/GetActivities'
+import { plannedSessionForRun } from '@/domain/coaching/sessionForRun'
+import { runLabel, shownType } from '@/components/activity/activityViews'
+import { verdictType } from '@/lib/activityTitle'
+import type { YesterdayRun } from '@/components/dashboard/ReadinessCard'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
 import { planPhaseLine } from '@/components/plan/planPhase'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
-import { appTodayIso } from '@/lib/calendarDate'
+import { addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
+import { t } from '@/i18n'
 import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { StaleSyncBanner } from '@/components/dashboard/StaleSyncBanner'
@@ -32,6 +39,21 @@ import { getHeatAhead } from '@/application/usecases/GetHeatAhead'
 import { CheckInCard } from '@/components/wellness/CheckInCard'
 
 export const revalidate = 3600
+
+/** Yesterday's run, named and judged as its page does; none when yesterday had no run. */
+function yesterdayRun(today: string): YesterdayRun | null {
+  const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
+  const judged = latestJudgedRun(yesterday)
+  if (!judged || judged.activity.date.slice(0, 10) !== yesterday) return null
+  const days = new Set(getActivities().map((a) => a.date.slice(0, 10)))
+  const session = plannedSessionForRun(judged.activity, getRunSessions(), (day) => days.has(day))
+  return {
+    href: `/activities/${judged.activity.id}`,
+    title: runLabel(judged.activity, session),
+    word: t.activity.verdict.headline[judged.tone](verdictType(shownType(judged.activity, session))),
+    tone: judged.tone,
+  }
+}
 
 export default async function DashboardPage() {
   await loadData()
@@ -86,6 +108,7 @@ export default async function DashboardPage() {
         verdict={aiVerdict}
         load={recentLoad?.reading ?? null}
         reason={readinessReason(today, coachWorkouts, plannedWorkouts, data.recentActivities, nextSession)}
+        yesterdayRun={yesterdayRun(today)}
         today={today}
       />
       <TodayBoard session={card && { ...card, heat }} />
