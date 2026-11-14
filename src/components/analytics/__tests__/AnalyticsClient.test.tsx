@@ -641,9 +641,16 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   it('never credits load for speed when load did not go up', async () => {
     const { readHeadline } = await import('../coachReadTabs')
     const s = t.analytics.cards.coachRead
-    const view = { tone: 'positive' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'improving' as const, pace: 352, delta: -8 }] }
+    const view = { tone: 'positive' as const, loadUp: false, signals: [{ key: 'efficiency' as const, trend: 'improving' as const, value: 1.1, delta: 0.05 }] }
     expect(readHeadline(view, '12w')).toBe(s.headline.positiveSteadyLoad(s.last['12w']!))
     expect(readHeadline({ ...view, loadUp: true }, '12w')).toBe(s.headline.positive)
+  })
+
+  it('says an easy-pace gain as itself, never as load turning into speed', async () => {
+    const { readHeadline } = await import('../coachReadTabs')
+    const s = t.analytics.cards.coachRead
+    const view = { tone: 'positive' as const, loadUp: true, signals: [{ key: 'easy' as const, trend: 'improving' as const, pace: 522, delta: -30 }] }
+    expect(readHeadline(view, '4w')).toBe(s.headline.easyFaster(30, s.within['4w']!))
   })
 
   it('claims no speed a slipped read contradicts, naming the gain that holds', async () => {
