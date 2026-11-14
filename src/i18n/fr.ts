@@ -987,6 +987,8 @@ export const fr = {
         about: "Le statut d’entraînement de ta montre : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
         aboutEstimated: "Ta montre ne donne pas de statut d’entraînement, alors l’app en estime un à partir de ta charge cardiaque : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
         sentenceToday: (count: number, days: number) => ` aujourd’hui, et sur ${count} des ${days} derniers jours.`,
+        sentenceYesterday: (count: number, days: number) => ` hier, et sur ${count} des ${days} derniers jours.`,
+        sentenceOnLive: (date: string, count: number, days: number) => ` le ${date}, et sur ${count} des ${days} derniers jours.`,
         sentenceOn: (date: string, count: number, days: number) => ` le ${date}, et sur ${count} de ces ${days} jours.`,
         days: (n: number) => `${n} j`,
       },

@@ -1052,6 +1052,9 @@ export const en = {
         about: "Your watch's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         aboutEstimated: "Your watch rates no training status, so the app estimates one from your heart-rate load: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         sentenceToday: (count: number, days: number) => ` today, and on ${count} of the last ${days} days.`,
+        // Until today's status comes in with the watch's sync.
+        sentenceYesterday: (count: number, days: number) => ` yesterday, and on ${count} of the last ${days} days.`,
+        sentenceOnLive: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of the last ${days} days.`,
         sentenceOn: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of those ${days} days.`,
         days: (n: number) => `${n} d`,
       },

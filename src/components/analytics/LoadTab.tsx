@@ -14,6 +14,7 @@ import { loadTrendView, loadTrendYMax, overnightView, recoveryView } from './loa
 import { LoadFocusCard } from './LoadFocusCard'
 import type { AnalyticsBoardData } from './AnalyticsClient'
 import { formView, statusView, type DayWindow, type LoadDay, type LoadPeriod, type StatusDay } from './analyticsView'
+import { addDays, isoDate } from '@/lib/calendarDate'
 
 /**
  * At the Training status cells' strength, set on the card as --form-fill: full-strength Fresh bars would be the
@@ -73,7 +74,13 @@ function StatusCard({
       />
       <Sentence>
         <b>{names[view.current]}</b>
-        {window.live ? s.sentenceToday(view.count, view.days) : s.sentenceOn(bare(window.end), view.count, view.days)}
+        {!window.live
+          ? s.sentenceOn(bare(window.end), view.count, view.days)
+          : view.currentDate === window.end
+            ? s.sentenceToday(view.count, view.days)
+            : view.currentDate === isoDate(addDays(new Date(`${window.end}T00:00:00`), -1))
+              ? s.sentenceYesterday(view.count, view.days)
+              : s.sentenceOnLive(bare(view.currentDate), view.count, view.days)}
       </Sentence>
       <ChartScrub count={cells.length} onShift={onShift} readout={(i) => `${bare(cells[i]!.date)} · ${cells[i]!.status ? names[cells[i]!.status!] : '–'}`}>
         <div className="grid h-[22px] gap-[3px]" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }} data-testid="training-status-strip">

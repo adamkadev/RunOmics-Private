@@ -153,6 +153,8 @@ export function formView(load: LoadDay[], window: DayWindow): FormView | null {
 
 export interface StatusView {
   current: TrainingStatusType
+  /** The day of that latest status: today's arrives with the watch's next sync. */
+  currentDate: string
   count: number
   days: number
   /** One cell a day on 4 weeks, one a week (its most common status) beyond. */
@@ -172,8 +174,9 @@ export function statusView(days: StatusDay[], window: DayWindow): StatusView | n
         return { date, status: byDate.get(date) ?? null }
       })
     : days.filter((d) => d.date >= window.start && d.date <= window.end)
-  const current = [...inWindow].reverse().find((d) => d.status !== null)?.status ?? null
-  if (!current) return null
+  const latest = [...inWindow].reverse().find((d) => d.status !== null)
+  const current = latest?.status ?? null
+  if (!latest || !current) return null
 
   const tally = new Map<TrainingStatusType, number>()
   for (const d of inWindow) if (d.status) tally.set(d.status, (tally.get(d.status) ?? 0) + 1)
@@ -196,7 +199,7 @@ export function statusView(days: StatusDay[], window: DayWindow): StatusView | n
     })
   }
 
-  return { current, count: tally.get(current) ?? 0, days: daily ? STATUS_DAYS : window.days, cells, totals }
+  return { current, currentDate: latest.date, count: tally.get(current) ?? 0, days: daily ? STATUS_DAYS : window.days, cells, totals }
 }
 
 export type RiskState = 'ok' | 'out' | 'alert'
