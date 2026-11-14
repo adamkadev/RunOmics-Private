@@ -11,6 +11,12 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Round 12 review (111, 119–123): Analytics drops "recovery holds" over a mostly tired window; past races read by their
+  short name on Goals; one longest-run figure on Plan and Progress; Ta reprise bars share a baseline with one-line
+  dates; the yesterday row reads "Footing · Exigeant"; the Today prompt names sessions as the plan does and gets the
+  form band, never calling tired legs fresh.
+- Today: the readiness card is no longer one big link to Analytics; its numbers open Load and the yesterday row opens
+  the run, so a tap goes where it looks like it goes. French verdict word capitalised ("Footing exigeant").
 - Round 11 review (107–118): Plan's month goal counts the coach's sessions; Today drops yesterday's verdict on a new
   day for the load's own words and a row for yesterday's run, a set's type moves to the eyebrow, and the Today
   prompt gets the last run's verdict; the share Stats card shows measured data only; one short race name everywhere;

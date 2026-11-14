@@ -7,7 +7,7 @@ import { formatCountdown, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 import { shortDist } from './shortDistance'
-import { raceDisplayName } from './raceName'
+import { raceDisplayName, raceShortName } from './raceName'
 
 export interface SeasonRaceRow {
   distance: string
@@ -132,15 +132,15 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
     }
 
     if (pb) {
+      // A past race reads by the same short name as the race to come: "ING Night Half", not the event's "Marathon".
+      const done = pb.activity.description ? raceShortName(pb.activity.description, target.distance) : null
       const achieved = target.targetSeconds !== null && pb.entry.seconds <= target.targetSeconds
       return {
         distance: target.distance,
         sortKey: pb.activity.date,
         kind: 'done',
-        title: pb.activity.description
-          ? `${shortDist(target.distance)} · ${pb.activity.description}`
-          : shortDist(target.distance),
-        name: pb.activity.description || shortDist(target.distance),
+        title: done ? `${shortDist(target.distance)} · ${done}` : shortDist(target.distance),
+        name: done || shortDist(target.distance),
         sub: [formatDate(pb.activity.date, { style: 'bare' }), targetLine].filter((part): part is string => part !== null),
         countdownText: null,
         isNext: false,

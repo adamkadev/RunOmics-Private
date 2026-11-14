@@ -80,7 +80,7 @@ function YesterdayRow({ run }: { run: YesterdayRun }) {
   return (
     <Link
       href={run.href}
-      className="pointer-events-auto relative flex min-h-11 items-center gap-1.5 border-t border-border pt-2.5 text-subhead"
+      className="flex min-h-11 items-center gap-1.5 border-t border-border pt-2.5 text-subhead"
       data-testid="readiness-yesterday"
     >
       <span className="min-w-0 truncate text-muted-foreground">
@@ -132,20 +132,20 @@ export function ReadinessCard({
   const body = written ? written.body : status.buildingBack ? s.formLater : (fallback?.body ?? null)
 
   return (
-    <section
-      className={cardClass({ className: 'relative transition-transform duration-100 ease-out active:scale-[0.98]' })}
-      data-testid="readiness-card"
-    >
-      {/* Over the card, not around it, so a screen reader reads the card's words and not the link's name alone. */}
-      <Link href="/analytics" aria-label={s.open} className="absolute inset-0 rounded-[24px]" data-testid="readiness-card-link" />
-      <div className="pointer-events-none relative flex flex-col gap-2.5">
+    <section className={cardClass()} data-testid="readiness-card">
+      <div className="flex flex-col gap-2.5">
         <CheckInReadiness
           today={today}
           words={{ tone, color, line, headline, body }}
         />
 
-        {/* A flat row under a hairline: tiles inside the card read as cards within a card. */}
-        <div className={cn('grid gap-3 border-t border-border pt-3', showForm ? 'grid-cols-3' : 'grid-cols-2')}>
+        {/* The numbers alone open Load: a card-wide link took taps meant for the row under them. */}
+        <Link
+          href="/analytics"
+          aria-label={s.open}
+          className={cn('grid gap-3 border-t border-border pt-3 transition-opacity active:opacity-70', showForm ? 'grid-cols-3' : 'grid-cols-2')}
+          data-testid="readiness-card-link"
+        >
           {showForm && <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} />}
           <Tile
             testId="tile-fitness"
@@ -159,7 +159,7 @@ export function ReadinessCard({
             value={Math.round(status.atl)}
             sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
-        </div>
+        </Link>
         {yesterdayRun && <YesterdayRow run={yesterdayRun} />}
         {load?.estimated && (
           <p className="-mt-1 text-footnote text-muted-foreground" data-testid="readiness-estimated">

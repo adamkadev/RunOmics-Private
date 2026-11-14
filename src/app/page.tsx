@@ -40,6 +40,8 @@ import { CheckInCard } from '@/components/wellness/CheckInCard'
 
 export const revalidate = 3600
 
+const capitalized = (text: string) => text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
+
 /** Yesterday's run, named and judged as its page does; none when yesterday had no run. */
 function yesterdayRun(today: string): YesterdayRun | null {
   const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
@@ -47,12 +49,13 @@ function yesterdayRun(today: string): YesterdayRun | null {
   if (!judged || judged.activity.date.slice(0, 10) !== yesterday) return null
   const days = new Set(getActivities().map((a) => a.date.slice(0, 10)))
   const session = plannedSessionForRun(judged.activity, getRunSessions(), (day) => days.has(day))
-  return {
-    href: `/activities/${judged.activity.id}`,
-    title: runLabel(judged.activity, session),
-    word: t.activity.verdict.headline[judged.tone](verdictType(shownType(judged.activity, session))),
-    tone: judged.tone,
-  }
+  const title = runLabel(judged.activity, session)
+  const type = verdictType(shownType(judged.activity, session))
+  const word = t.activity.verdict.headline[judged.tone](type)
+  // The title already names the type: "Footing · Exigeant", not "Footing · footing exigeant"; "Solid base" stays whole.
+  const said = title.toLocaleLowerCase(t.locale).includes(type.toLocaleLowerCase(t.locale))
+  const bare = said ? word.replace(new RegExp(`\\s*${type}\\s*`, 'i'), ' ').trim() : word
+  return { href: `/activities/${judged.activity.id}`, title, word: capitalized(bare || word), tone: judged.tone }
 }
 
 export default async function DashboardPage() {

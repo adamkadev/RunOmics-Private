@@ -125,7 +125,9 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   const trend = loadTrendView(data.loads, window, loadTrendYMax(data.loads, today))
   const recovery = recoveryView(data.recovery, window)
   const form = formView(data.load, window)
-  const head = loadCoachHeadline(trend, recovery, form?.band === 'tired')
+  // Tired today, or on most of the window's days: either way recovery is not holding.
+  const tired = !!form && (form.band === 'tired' || form.bars.filter((bar) => bar.band === 'tired').length * 2 > form.bars.length)
+  const head = loadCoachHeadline(trend, recovery, tired)
 
   // The Why rows in the sheet's fixed order (App Fixes 1b): Load, Fitness,
   // Fatigue, Resting HR, each a bold lead and what it means. Not sorted worse

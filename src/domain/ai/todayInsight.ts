@@ -5,6 +5,7 @@ import type { RecentTraining } from '@/domain/training/recentTraining'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { MIN_REP_SECONDS } from '@/domain/activity/sessionExecution'
 import { isRunWalkPlan } from '@/domain/activity/runWalk'
+import { formBand } from '@/domain/training/formBand'
 import { t } from '@/i18n'
 import { insightHash } from './insightHash'
 import { avoidClause, CARD_PROMPT_VERSION, promptVersion, systemInstruction } from './prompt'
@@ -173,6 +174,8 @@ export const TODAY_SYSTEM_INSTRUCTION = [
   'Ground the verdict in what this week actually held - the session yesterday, the days off, what is waiting today - rather than in the state alone.',
   "When the facts show today's planned session as already completed, write about it in the past tense - what it earned or cost - never as instructions for approaching it.",
   "A session that is already easy (an easy run, a recovery run, a long run at easy pace) cannot be dialled back: never tell the athlete to reduce its effort or intensity. Tell them to keep it easy, or to shorten it if fatigue calls for less.",
+  'Name a session only by the name given in the facts, as the plan writes it ("Footing", "Easy run", "4 × 5′ @ 4:31"), never by a description of it such as "the easy outing".',
+  'The form band in the facts says how the legs are: never call them fresh, rested or ready to go unless the band is fresh.',
 ].join(' ')
 
 function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {
@@ -191,7 +194,7 @@ export function todayInsightPrompt(context: TodayContext, recentHeadlines: strin
     `Tone: ${f.tone}. The status line above your headline reads "${context.eyebrow}": it was picked first, so the headline and sentence must never contradict it. ${toneRule(context.tone, f.kind, ranToday(context.recent))}`,
     '',
     'Facts:',
-    `- Form (TSB, positive = fresh): ${f.form}`,
+    `- Form (TSB, positive = fresh): ${f.form}, band ${formBand(f.form)}`,
     `- Fitness trend over 2 weeks (CTL delta): ${f.fitnessTrend}`,
     `- Fatigue trend over 7 days (ATL delta): ${f.fatigueTrend}`,
     `- Training status: ${f.status}`,
