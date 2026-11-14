@@ -178,7 +178,7 @@ export const en = {
     target: (runs: number) => `target ${runs}`,
     legend: { onTarget: (runs: number) => `${runs}+ runs`, under: 'under', planned: 'planned', streak: 'streak' },
     weekLabel: (week: string, runs: number) => `Week of ${week}: ${runs} run${runs === 1 ? '' : 's'}`,
-    runningWeek: 'Your running week',
+    runningWeek: 'Your week',
     weeksRan: (weeks: number) => `weeks with a run on this day, of ${weeks}`,
     weekdayLabel: (day: string, weeks: number) => `${day}: ${weeks} week${weeks === 1 ? '' : 's'}`,
     anchor: (day: string) => `${day} is your anchor`,
@@ -2076,7 +2076,6 @@ export const en = {
     /** A shorter name for a record on a run's row badge, where the run's own name must fit beside it. */
     badgeLabels: { longest: 'Longest Run' } as Record<string, string>,
     raceTag: 'race',
-    trainingTag: 'training',
     segmented: {
       best: 'Best times',
       milestones: 'Milestones',

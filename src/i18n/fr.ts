@@ -185,7 +185,7 @@ export const fr = {
     target: (runs: number) => `objectif ${runs}`,
     legend: { onTarget: (runs: number) => `${runs}+ sorties`, under: 'en dessous', planned: 'prévue', streak: 'série' },
     weekLabel: (week: string, runs: number) => `Semaine du ${week} : ${runs} sortie${runs > 1 ? 's' : ''}`,
-    runningWeek: 'Ta semaine de course',
+    runningWeek: 'Ta semaine',
     weeksRan: (weeks: number) => `semaines courues, sur ${weeks}`,
     weekdayLabel: (day: string, weeks: number) => `${day} : ${weeks} semaine${weeks > 1 ? 's' : ''}`,
     anchor: (day: string) => `Le ${day} est ton point d’ancrage`,
@@ -1916,7 +1916,6 @@ export const fr = {
     // One word: « RP Plus longue sortie » cuts the run's name to « Race … » at 393 pt.
     badgeLabels: { longest: 'Distance' } as Record<string, string>,
     raceTag: 'course',
-    trainingTag: 'entraînement',
     segmented: {
       best: 'Meilleurs temps',
       milestones: 'Étapes',

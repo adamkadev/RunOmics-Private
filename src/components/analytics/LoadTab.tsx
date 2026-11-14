@@ -190,7 +190,7 @@ function LoadCard({
             <span className="text-[22px] font-bold leading-tight tabular-nums" data-testid="fitness-ramp">
               {signed(ramp)}
             </span>
-            <span className="text-[11.5px] text-muted-foreground">{s.fitnessIn(t.analytics.cards.form.span[period])}</span>
+            <span className="text-[11.5px] text-muted-foreground">{s.fitnessIn(t.analytics.cards.form.spanShort[period])}</span>
           </div>
         )}
       </div>
