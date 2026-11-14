@@ -357,9 +357,9 @@ jobs:
           printf 'x-internal-secret: %s\n' "$SECRET" \
             | curl -fsS --max-time 30 "$APP_URL/api/internal/shoe-choices" -H @- \
             | jq -S --indent 2 '.' > "$RUNNER_TEMP/shoe_choices.json"
-          jq -e '(.runs | type == "object") and (.settings | type == "object")' "$RUNNER_TEMP/shoe_choices.json" > /dev/null
+          jq -e '.runs | type == "object"' "$RUNNER_TEMP/shoe_choices.json" > /dev/null
           mv "$RUNNER_TEMP/shoe_choices.json" data/shoe_choices.json
-          echo "Backed up the shoe of $(jq '.runs | length' data/shoe_choices.json) run(s); default shoe set: $(jq '.settings | has("default")' data/shoe_choices.json)."
+          echo "Backed up the shoe of $(jq '.runs | length' data/shoe_choices.json) run(s)."
 
       # Explore's avoid spots say where the athlete runs: the log gets counts only.
       - name: Back up route names and avoid spots
