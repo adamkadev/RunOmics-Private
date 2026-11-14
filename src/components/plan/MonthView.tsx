@@ -251,7 +251,7 @@ export function MonthView({
   const target = hasGoal ? { ran: ranKm, km: goalKm } : plannedKm > 0 ? { ran: againstPlanKm, km: plannedKm } : null
   const covers = planSpan && m.planCovers(formatDate(planSpan.from, { style: 'bare', year: 'never' }), formatDate(planSpan.to, { style: 'bare', year: 'never' }))
   const planLine = (hasGoal
-    ? [covers, plannedKm > 0 ? m.plannedKm(formatPlannedKm(plannedKm)) : null]
+    ? [covers, plannedKm > 0 && formatPlannedKm(plannedKm) !== formatPlannedKm(goalKm) ? m.plannedKm(formatPlannedKm(plannedKm)) : null]
     : [covers, covers && ranKm !== againstPlanKm ? m.monthTotal(formatRanKm(ranKm)) : null]
   ).filter(Boolean).join(' · ')
 

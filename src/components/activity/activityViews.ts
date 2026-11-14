@@ -1,5 +1,4 @@
 import type { Activity, ActivitySplit, ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
-import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
 import { prescribedRepPace } from '@/domain/coaching/repPace'
@@ -172,23 +171,17 @@ export function runLabel(activity: Pick<Activity, 'description' | 'date'>, sessi
   return sessionLabel(runName(activity, session))
 }
 
-/**
- * A threshold session the watch filed as tempo is read as the threshold it was set as; a run without a written
- * verdict keeps the zones headline.
- */
+/** A threshold session the watch filed as tempo is read as the threshold it was set as; the card shows measured data only. */
 export function shareActivity(
   activity: Activity,
   session: WorkoutPrescription | null = null,
-  aiVerdict: { headline: string; tone: VerdictTone } | null = null,
   planned: PlannedWorkout | null = null,
 ): ShareActivity {
   const type = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
-  const headline = aiVerdict?.headline.trim()
   return {
     ...pickDefined(activity, SHARE_FIELDS),
     type,
     sessionTitle: session ? sessionName(session) : null,
     reps: shareReps({ type, splits: activity.splits }, session, planned),
-    verdict: aiVerdict && headline ? { tone: aiVerdict.tone, headline } : null,
   }
 }

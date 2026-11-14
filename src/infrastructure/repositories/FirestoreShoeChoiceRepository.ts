@@ -1,5 +1,5 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import { DEFAULT_SHOE_DOC, RUN_SHOES_COLLECTION, SHOE_SETTINGS_COLLECTION } from '@/lib/shoeChoices'
+import { RUN_SHOES_COLLECTION } from '@/lib/shoeChoices'
 import { withTimeout } from '@/lib/withTimeout'
 
 /** The nightly backup's first Firestore call is cold. */
@@ -7,11 +7,10 @@ const READ_TIMEOUT_MS = 10_000
 
 export interface ShoeChoicesRead {
   runs: Map<string, string>
-  defaultGearId: string | null
   available: boolean
 }
 
-const UNAVAILABLE: ShoeChoicesRead = { runs: new Map(), defaultGearId: null, available: false }
+const UNAVAILABLE: ShoeChoicesRead = { runs: new Map(), available: false }
 
 const gearIdOf = (data: unknown) => {
   const gearId = (data as { gearId?: unknown } | undefined)?.gearId
@@ -23,20 +22,15 @@ export async function getShoeChoicesFromFirestore(): Promise<ShoeChoicesRead> {
 
   try {
     const db = getAdminFirestore()
-    const read = await withTimeout(
-      Promise.all([db.collection(RUN_SHOES_COLLECTION).get(), db.collection(SHOE_SETTINGS_COLLECTION).doc(DEFAULT_SHOE_DOC).get()]),
-      READ_TIMEOUT_MS,
-      null
-    )
-    if (!read) return UNAVAILABLE
-    const [runShoes, defaultShoe] = read
+    const runShoes = await withTimeout(db.collection(RUN_SHOES_COLLECTION).get(), READ_TIMEOUT_MS, null)
+    if (!runShoes) return UNAVAILABLE
 
     const runs = new Map<string, string>()
     for (const doc of runShoes.docs) {
       const gearId = gearIdOf(doc.data())
       if (gearId) runs.set(doc.id, gearId)
     }
-    return { runs, defaultGearId: defaultShoe.exists ? gearIdOf(defaultShoe.data()) : null, available: true }
+    return { runs, available: true }
   } catch {
     return UNAVAILABLE
   }

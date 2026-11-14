@@ -18,7 +18,6 @@ export function PageHeader({
   back,
   backOnPhoneOnly = false,
   action,
-  eyebrow,
   children,
   titleProps,
   className,
@@ -29,7 +28,6 @@ export function PageHeader({
   /** A wide screen has the sidebar for the way back. */
   backOnPhoneOnly?: boolean
   action?: ReactNode
-  eyebrow?: ReactNode
   /** The subtitle lines, which the compact bar fades as they scroll under it. */
   children?: ReactNode
   titleProps?: TitleProps
@@ -38,7 +36,6 @@ export function PageHeader({
   const indent = back ? cn(UNDER_TITLE, backOnPhoneOnly && 'lg:pl-0') : undefined
   return (
     <header className={cn('flex flex-col', className)} {...rest}>
-      {eyebrow && <div className={cn('mb-1', indent)}>{eyebrow}</div>}
       <div className="flex items-start gap-3">
         {back && <div className={cn('flex shrink-0', TITLE_LINE, backOnPhoneOnly && 'lg:hidden')}>{back}</div>}
         <h1 {...titleProps} className={cn('min-w-0 flex-1 truncate text-display text-foreground', titleProps?.className)}>

@@ -40,6 +40,12 @@ function context(overrides: Partial<TodayContext> = {}): TodayContext {
 }
 
 describe('todayInsightPrompt', () => {
+  it('hands the model the last run’s own verdict, and keeps it out of the hash', () => {
+    expect(todayInsightPrompt(context({ lastRunTone: 'caution' }), [])).toContain('ran harder than its type should')
+    expect(todayInsightPrompt(context(), [])).not.toContain('own verdict')
+    expect(todayInsightHash(context({ lastRunTone: 'caution' }))).toBe(todayInsightHash(context()))
+  })
+
   it('advises approaching the session when it is still ahead', () => {
     const prompt = todayInsightPrompt(context(), [])
 

@@ -14,25 +14,16 @@ describe('GET /api/internal/shoe-choices', () => {
     getShoeChoicesFromFirestore.mockReset()
   })
 
-  it('hands the sync every run’s pick, sorted by id, and the default shoe', async () => {
-    getShoeChoicesFromFirestore.mockResolvedValue({ available: true, runs: new Map([['22', 'b'], ['11', 'a']]), defaultGearId: 'a' })
+  it('hands the sync every run’s pick, sorted by id', async () => {
+    getShoeChoicesFromFirestore.mockResolvedValue({ available: true, runs: new Map([['22', 'b'], ['11', 'a']]) })
 
     const res = await GET(request())
     expect(res.headers.get('cache-control')).toBe('no-store')
-    expect(await res.text()).toBe(JSON.stringify({
-      runs: { 11: { gearId: 'a' }, 22: { gearId: 'b' } },
-      settings: { default: { gearId: 'a' } },
-    }))
-  })
-
-  it('writes no default when none is set, as for an athlete without shoes', async () => {
-    getShoeChoicesFromFirestore.mockResolvedValue({ available: true, runs: new Map(), defaultGearId: null })
-
-    expect(await (await GET(request())).json()).toEqual({ runs: {}, settings: {} })
+    expect(await res.text()).toBe(JSON.stringify({ runs: { 11: { gearId: 'a' }, 22: { gearId: 'b' } } }))
   })
 
   it('answers 503 when Firestore did not, so the sync keeps the last copy', async () => {
-    getShoeChoicesFromFirestore.mockResolvedValue({ available: false, runs: new Map(), defaultGearId: null })
+    getShoeChoicesFromFirestore.mockResolvedValue({ available: false, runs: new Map() })
     expect((await GET(request())).status).toBe(503)
   })
 

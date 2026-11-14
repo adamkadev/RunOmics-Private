@@ -178,7 +178,7 @@ export const en = {
     target: (runs: number) => `target ${runs}`,
     legend: { onTarget: (runs: number) => `${runs}+ runs`, under: 'under', planned: 'planned', streak: 'streak' },
     weekLabel: (week: string, runs: number) => `Week of ${week}: ${runs} run${runs === 1 ? '' : 's'}`,
-    runningWeek: 'Your running week',
+    runningWeek: 'Your week',
     weeksRan: (weeks: number) => `weeks with a run on this day, of ${weeks}`,
     weekdayLabel: (day: string, weeks: number) => `${day}: ${weeks} week${weeks === 1 ? '' : 's'}`,
     anchor: (day: string) => `${day} is your anchor`,
@@ -1052,6 +1052,9 @@ export const en = {
         about: "Your watch's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         aboutEstimated: "Your watch rates no training status, so the app estimates one from your heart-rate load: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         sentenceToday: (count: number, days: number) => ` today, and on ${count} of the last ${days} days.`,
+        // Until today's status comes in with the watch's sync.
+        sentenceYesterday: (count: number, days: number) => ` yesterday, and on ${count} of the last ${days} days.`,
+        sentenceOnLive: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of the last ${days} days.`,
         sentenceOn: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of those ${days} days.`,
         days: (n: number) => `${n} d`,
       },
@@ -1835,12 +1838,6 @@ export const en = {
   },
 
   shoes: {
-    defaultShoe: {
-      label: 'Default shoe',
-      none: 'None',
-      hint: 'Counts every run Garmin gives no shoe, from the pair’s first use. Mileage follows after the next sync.',
-      saved: 'Saved. Mileage updates after the next sync.',
-    },
     listCheckedAt: (date: string) => `Shoe list last refreshed from Garmin on ${date}`,
     // The gap is what All time counts beyond the shoes: runs Garmin gave no shoe.
     tracked: (km: string, without: string | null) => (without ? `${km} km on shoes (${without} km without a shoe)` : `${km} km on shoes`),
@@ -2079,7 +2076,6 @@ export const en = {
     /** A shorter name for a record on a run's row badge, where the run's own name must fit beside it. */
     badgeLabels: { longest: 'Longest Run' } as Record<string, string>,
     raceTag: 'race',
-    trainingTag: 'training',
     segmented: {
       best: 'Best times',
       milestones: 'Milestones',
@@ -2491,7 +2487,7 @@ export const en = {
       Race: 'R',
     } as Record<string, string>,
     phase: {
-      weekOf: (total: number) => ({ before: 'Block', after: `of ${total}` }),
+      weekOf: (total: number) => ({ before: 'Block week', after: `of ${total}` }),
       checkpoint: (week: number, date: string) => `Week ${week} of 12 · checkpoint ${date}`,
       // The part week before a block's first Monday.
       leadIn: 'Lead-in week',

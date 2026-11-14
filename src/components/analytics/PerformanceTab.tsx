@@ -56,8 +56,6 @@ export function shiftWords(delta: number | null, flatBelow = 1): string | null {
   return delta > 0 ? s.slower(changeAmount(delta)) : s.faster(changeAmount(delta))
 }
 
-/** Under this a threshold move stays grey, not an amber slowdown, though its words still name the direction. */
-const THRESHOLD_FLAT_SEC = 5
 
 
 /** "+33 s", "−1:10", or "0 s": a signed change that fits its column. */
@@ -130,7 +128,8 @@ function SummaryStrip({ vo2, threshold, easy, since }: { vo2: ReturnType<typeof 
       value: formatClock(threshold.now),
       unit: t.units.perKm,
       note: notes.threshold,
-      tone: threshold.delta !== null && Math.abs(Math.round(threshold.delta)) < THRESHOLD_FLAT_SEC ? STAT_TONE.flat : STAT_TONE[deltaTone('pace', threshold.delta)],
+      // The same rule as easy pace: a gain both name in words is coloured alike.
+      tone: STAT_TONE[deltaTone('pace', threshold.delta)],
       href: null,
     },
     easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: notes.easy, tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
@@ -586,15 +585,16 @@ export interface PerformanceTabProps {
   heat: HeatImpactData | null
   paceBests: RunBests[]
   reprise?: boolean
+  returnDate?: string | null
 }
 
-export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, predictions, race, heat, paceBests, reprise = false }: PerformanceTabProps) {
+export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, predictions, race, heat, paceBests, reprise = false, returnDate = null }: PerformanceTabProps) {
   const inWindow = weeksIn(weeks, window)
   const easy = paceShift(inWindow, (w) => w.easyPace)
   const workout = paceShift(inWindow, (w) => w.hardPace)
   return (
     <div className="flex flex-col gap-3.5">
-      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={reprise ? null : bare(window.start)} />
+      <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} since={returnDate && returnDate >= window.start ? null : bare(window.start)} />
       <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} reprise={reprise} />
       <PaceCurveCard runs={paceBests} window={window} period={period} threshold={threshold} onShift={onShift} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />

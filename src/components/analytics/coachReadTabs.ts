@@ -124,8 +124,8 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   // and one y range per athlete (v5.4).
   const trend = loadTrendView(data.loads, window, loadTrendYMax(data.loads, today))
   const recovery = recoveryView(data.recovery, window)
-  const head = loadCoachHeadline(trend, recovery)
   const form = formView(data.load, window)
+  const head = loadCoachHeadline(trend, recovery, form?.band === 'tired')
 
   // The Why rows in the sheet's fixed order (App Fixes 1b): Load, Fitness,
   // Fatigue, Resting HR, each a bold lead and what it means. Not sorted worse
@@ -191,11 +191,12 @@ export function readHeadline(view: CoachReadView, period: Period): string {
   const slipped = named(speed.filter((sig) => sig.trend === 'declining').map((sig) => sig.key))
   switch (view.tone) {
     case 'positive': {
-      if (!slipped.names) return view.loadUp ? s.positive : s.positiveSteadyLoad(last)
-      // A read that slipped forbids the general speed claim: say the gain that holds instead.
+      // Easy pace alone is no proof of speed: the general claim needs a race-pace read that moved, and none that slipped.
+      const raceGain = speed.some((sig) => sig.key !== 'easy' && sig.trend === 'improving')
+      if (!slipped.names && raceGain) return view.loadUp ? s.positive : s.positiveSteadyLoad(last)
       const easy = speed.find((sig) => sig.key === 'easy' && sig.trend === 'improving')
       if (easy?.key === 'easy') return s.easyFaster(Math.round(Math.abs(easy.delta)), t.analytics.cards.coachRead.within[period]!)
-      return s.mixed(capitalized(improved.names), improved.plural, slipped.names, slipped.plural)
+      return slipped.names ? s.mixed(capitalized(improved.names), improved.plural, slipped.names, slipped.plural) : s.neutral(last)
     }
     case 'caution':
       return view.loadUp ? s.cautionLoadUp(slipped.names, slipped.plural) : s.caution(last)

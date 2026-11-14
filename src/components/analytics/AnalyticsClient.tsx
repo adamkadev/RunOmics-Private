@@ -90,6 +90,8 @@ export interface AnalyticsBoardData {
   ytd: YtdInput | null
   /** A runner back from a long break: predictions past 5 km wait. */
   reprise: boolean
+  /** The first run back; null outside a comeback. */
+  returnDate?: string | null
 }
 
 const DEFAULT_PERIOD: Record<TabId, LoadPeriod> = { fitness: '4w', performance: '12w', volume: '12w', health: '12w' }
@@ -211,6 +213,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             heat={data.heat}
             paceBests={data.paceBests}
             reprise={data.reprise}
+            returnDate={data.returnDate ?? null}
           />
         )}
         {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} />}

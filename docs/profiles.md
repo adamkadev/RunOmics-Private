@@ -55,7 +55,7 @@ switches TRIMP to Banister's female weighting.
 **Owner-only** means behind the `owner` claim on a deployment; a viewer sees the pages but cannot write.
 
 - Notes and tags on a run, the HR-unreliable switch, the morning check-in, a skipped day's reason.
-- A run's shoe and the default shoe; Settings → Races & goals; spots to avoid and Explore's route generator.
+- A run's shoe; Settings → Races & goals; spots to avoid and Explore's route generator.
 - The Sync button, Settings → Diagnostics, the push switches.
 
 **Rich data only.** These need what the second athlete's watch or data never sends. Each must degrade quietly:
@@ -73,7 +73,7 @@ no 0, no empty card and no English word on her French deployment.
 | Records' PBs | `pbs.json` or best efforts | Records shows best efforts alone, or the Comeback tab during a return |
 | Running form | A watch or strap that records dynamics | The card is left out |
 | Explore's quartiers | `explore/` areas, built by `npm run explore:areas` | The Districts layer and the Explored card are not shown |
-| Shoes from Garmin | `GARMIN_SECRET` | Picks and the default shoe in the app |
+| Shoes from Garmin | `GARMIN_SECRET` | Picks in the app |
 | Sleep, HRV and a resting HR read asleep | A tracker worn to sleep, read through the Google Health API (the owner's) | The watch's resting HR, filtered by run days; no sleep or HRV row; the coach gets no `overnight` |
 
 The demo generator builds a profile like hers (`npm run demo:generate -- --profile sparse`), and the `sparse-fr`

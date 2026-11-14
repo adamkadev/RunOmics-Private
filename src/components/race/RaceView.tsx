@@ -15,7 +15,7 @@ import type { RacePageData } from '@/application/usecases/GetRacePage'
 import { formBand } from '@/domain/training/formBand'
 import type { FormForecast, FormPoint } from '@/domain/training/formForecast'
 import { t } from '@/i18n'
-import { raceShortName } from './raceShortName'
+import { raceDisplayName } from '@/components/goals/raceName'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
@@ -143,13 +143,13 @@ export function RaceView({ data, back }: { data: RacePageData; back?: ReactNode 
     ...(predictedSeconds !== null ? [{ label: predicted, seconds: predictedSeconds }] : []),
   ]
   const dash = '—'
-  const shortName = raceShortName(race.name, race.distance)
+  const name = raceDisplayName(race)
 
   return (
     <div className="flex flex-col gap-3.5">
-      <PageHeader back={back} title={<FitTitle text={race.name} short={shortName} />} titleProps={{ 'data-bar-title': shortName }}>
+      <PageHeader back={back} title={<FitTitle text={name} />} titleProps={{ 'data-bar-title': name }}>
         <p className="text-[15px] leading-5 text-muted-foreground" data-testid="race-facts">
-          {[shortDist(race.distance), formatDate(race.date, { style: 'bare' }), t.profile.hub.inDays(daysUntil), race.location].filter(Boolean).join(' · ')}
+          {[shortDist(race.distance), formatDate(race.date, { style: 'bare', year: 'never' }), t.profile.hub.inDays(daysUntil), race.location].filter(Boolean).join(' · ')}
         </p>
       </PageHeader>
 

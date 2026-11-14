@@ -2,6 +2,7 @@ import type { TrainingStatus } from '@/domain/training/status'
 import type { ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 import type { ReadinessTone } from '@/domain/training/readiness'
 import type { RecentTraining } from '@/domain/training/recentTraining'
+import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { MIN_REP_SECONDS } from '@/domain/activity/sessionExecution'
 import { isRunWalkPlan } from '@/domain/activity/runWalk'
 import { t } from '@/i18n'
@@ -20,6 +21,14 @@ export interface TodayContext {
   recent: RecentTraining
   /** The status printed above the verdict, picked before it is written. */
   eyebrow: string
+  /** The last run's badge on its own page; the generator's alone, so it stays out of the hash. */
+  lastRunTone?: VerdictTone | null
+}
+
+const LAST_RUN_TONE: Record<VerdictTone, string> = {
+  positive: 'it went as its type intends',
+  neutral: 'its effort was off what its type intends',
+  caution: 'it ran harder than its type should, so never call it controlled, easy or a good fit for the load',
 }
 
 export type SessionKind = 'rest' | 'easy' | 'quality' | 'race'
@@ -190,6 +199,9 @@ export function todayInsightPrompt(context: TodayContext, recentHeadlines: strin
     `- Injury risk: ${f.risk}`,
     `- This week so far (Monday to today), in the weekly card: ${f.weekRuns} run${f.weekRuns === 1 ? '' : 's'}, ${f.weekKm} km`,
     context.recent.lastRun ? lastRunLine(context.recent.lastRun) : '- No run logged yet',
+    context.recent.lastRun && context.lastRunTone
+      ? `- The last run's own verdict, on its page: ${LAST_RUN_TONE[context.lastRunTone]}. Never contradict it.`
+      : null,
     `- Today is ${KIND_LABEL[f.kind]}`,
     f.kind === 'rest'
       ? null

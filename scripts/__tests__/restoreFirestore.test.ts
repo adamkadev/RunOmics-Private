@@ -14,7 +14,6 @@ describe('restore_firestore', () => {
       ['routeNames', 'route_names.json'],
       ['avoidSpots', 'avoid_spots.json'],
       ['runShoes', 'shoe_choices.json'],
-      ['shoeSettings', 'shoe_choices.json'],
       ['raceEntries', 'race_entries.json'],
       ['goalEntries', 'goal_entries.json'],
     ])
@@ -63,7 +62,6 @@ describe('restore_firestore', () => {
     expect((spots.create as [string, unknown][]).map(([id]) => id)).toEqual(['ok', 'dried'])
     expect(spots.invalid).toBe(2)
     expect(planRestore(byName('runShoes'), { 1: { gearId: 'a1' }, 2: { gearId: 'not/an id' } }, new Map()).invalid).toBe(1)
-    expect(planRestore(byName('shoeSettings'), { default: { gearId: 'a1' }, other: { gearId: 'a1' } }, new Map()).invalid).toBe(1)
   })
 
   it('reports counts only, never a document', () => {

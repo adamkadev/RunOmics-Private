@@ -1,7 +1,7 @@
 import {
   shareCardSubtitle, shareCardTitle, shareDuration, shareRepDetail, shareRepHeadline, shareRepHero, shareRepResult, shareStats,
   shareZones, zoneName, zoneTint,
-  type ShareActivity, type ShareRepDetail, type ShareRepHeadline, type ShareRepHero, type ShareVerdict, type ShareZoneRow, type ShareZones,
+  type ShareActivity, type ShareRepDetail, type ShareRepHeadline, type ShareRepHero, type ShareZoneRow, type ShareZones,
 } from '@/lib/shareCardStats'
 import { W, H, shareCardHeight, type ShareDesign, type SharePalette, type ShareSize } from '@/lib/shareCardPalette'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
@@ -9,7 +9,6 @@ import { runTypeZone } from '@/lib/colors'
 import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
-import { verdictType } from '@/lib/activityTitle'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
 
@@ -934,71 +933,10 @@ export function legendEntries(ctx: Ctx, rows: readonly ShareZoneRow[], fonts: Sh
   return entries
 }
 
-function greedyLines(ctx: Ctx, words: string[], max: number): string[] {
-  const lines: string[] = []
-  let line = ''
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word
-    if (!line || ctx.measureText(next).width <= max) line = next
-    else {
-      lines.push(line)
-      line = word
-    }
-  }
-  if (line) lines.push(line)
-  return lines
-}
-
-/** As text-wrap: balance: the narrowest width that still takes no more lines than `max` does. */
-export function balanceWrap(ctx: Ctx, text: string, max: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean)
-  const lines = greedyLines(ctx, words, max)
-  if (lines.length < 2) return lines
-  let [lo, hi] = [0, max]
-  while (hi - lo > 0.5) {
-    const mid = (lo + hi) / 2
-    if (greedyLines(ctx, words, mid).length <= lines.length) hi = mid
-    else lo = mid
-  }
-  return greedyLines(ctx, words, hi)
-}
-
-const VERDICT_SIZES = [27, 24, 22, 20] as const
-const VERDICT_MAX_LINES = 3
-const VERDICT_EYEBROW = 9.5
-const VERDICT_EYEBROW_GAP = 10
-const VERDICT_BAR_GAP = 16
 const VERDICT_BAR_H = 6
 const VERDICT_SEGMENT_GAP = 2
 const VERDICT_LABEL = 9
 const VERDICT_LABEL_GAP = 6
-
-export interface VerdictHero {
-  lines: string[]
-  size: number
-  lineHeight: number
-}
-
-export function verdictHero(ctx: Ctx, headline: string, fonts: ShareFonts): VerdictHero {
-  const max = RIGHT - PAD_X
-  const font = (size: number) => {
-    ctx.font = `700 ${size}px ${fonts.display}`
-    setSpacing(ctx, -0.02 * size)
-  }
-  let size: number = VERDICT_SIZES[0]
-  let lines: string[] = []
-  for (size of VERDICT_SIZES) {
-    font(size)
-    lines = balanceWrap(ctx, headline, max)
-    if (lines.length <= VERDICT_MAX_LINES) break
-  }
-  if (lines.length > VERDICT_MAX_LINES) {
-    lines = [...lines.slice(0, VERDICT_MAX_LINES - 1), fit(ctx, lines.slice(VERDICT_MAX_LINES - 1).join(' '), max)]
-  }
-  lines = lines.map((line) => fit(ctx, line, max))
-  setSpacing(ctx, 0)
-  return { lines, size, lineHeight: Math.round(size * 1.08) }
-}
 
 export interface ZoneBarLabel {
   zone: number
@@ -1026,41 +964,6 @@ export function zoneBarLabels(rows: readonly ShareZoneRow[], left: number, width
     if (kept.every((k) => c.to + GAP <= k.from || c.from >= k.to + GAP)) kept.push(c)
   }
   return all.filter((c) => kept.includes(c)).map((c) => c.label)
-}
-
-function drawVerdict(ctx: Ctx, scene: ShareCardScene, verdict: ShareVerdict, { middleH }: ShareCardLayout) {
-  const { activity, palette, fonts } = scene
-  const hero = verdictHero(ctx, verdict.headline, fonts)
-  const zones = shareZones(activity)
-  const barBlock = zones ? VERDICT_BAR_GAP + VERDICT_BAR_H + VERDICT_LABEL_GAP + VERDICT_LABEL : 0
-  const heroH = hero.lines.length * hero.lineHeight
-  const blockH = VERDICT_EYEBROW + VERDICT_EYEBROW_GAP + heroH + barBlock
-  let y = Math.max(0, (middleH - blockH) / 2)
-
-  const tone = verdict.tone === 'positive' ? palette.pos : verdict.tone === 'caution' ? palette.warn : palette.mu
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-  ctx.fillStyle = tone
-  ctx.beginPath()
-  ctx.arc(PAD_X + 2.5, y + VERDICT_EYEBROW / 2, 2.5, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.font = `700 ${VERDICT_EYEBROW}px ${fonts.text}`
-  setSpacing(ctx, 0.1 * VERDICT_EYEBROW)
-  // As the activity page's verdict; a run with no type reads as Base, the plain run's.
-  const eyebrow = t.activity.verdict.headline[verdict.tone](verdictType(activity.type ?? 'Base'))
-  ctx.fillText(eyebrow.toLocaleUpperCase(t.locale), PAD_X + 10, y + VERDICT_EYEBROW / 2)
-  setSpacing(ctx, 0)
-  y += VERDICT_EYEBROW + VERDICT_EYEBROW_GAP
-
-  ctx.textBaseline = 'alphabetic'
-  ctx.font = `700 ${hero.size}px ${fonts.display}`
-  ctx.fillStyle = palette.tx
-  setSpacing(ctx, -0.02 * hero.size)
-  // The first baseline a cap height and a little under the line's top.
-  hero.lines.forEach((line, i) => ctx.fillText(line, PAD_X, y + i * hero.lineHeight + Math.round(hero.size * 0.86)))
-  setSpacing(ctx, 0)
-  y += heroH
-  if (zones) drawZoneStrip(ctx, scene, zones, y + VERDICT_BAR_GAP)
 }
 
 const ZONE_STRIP_H = VERDICT_BAR_H + VERDICT_LABEL_GAP + VERDICT_LABEL
@@ -1135,9 +1038,7 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
 }
 
 function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
-  const verdict = scene.activity.verdict
   if (layout.repHeadline) drawRepMiddle(ctx, scene, layout.repHeadline, layout)
-  else if (verdict) drawVerdict(ctx, scene, verdict, layout)
   else drawZones(ctx, scene, layout)
 }
 

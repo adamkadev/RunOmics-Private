@@ -206,6 +206,10 @@ describe('loadCoachHeadline', () => {
     expect(loadCoachHeadline(load('in'), recovery(false))).toEqual({ kind: 'building', change: { pct: 18, days: 21 }, recovery: true })
   })
 
+  it('never says recovery holds while form is tired', () => {
+    expect(loadCoachHeadline(load('in'), recovery(false), true)).toEqual({ kind: 'building', change: { pct: 18, days: 21 }, recovery: false })
+  })
+
   it('leaves the speed headline when load is not up and nothing is out', () => {
     expect(loadCoachHeadline(load('in', -4), null)).toBeNull()
     expect(loadCoachHeadline(load('below', -30), recovery(false))).toBeNull()

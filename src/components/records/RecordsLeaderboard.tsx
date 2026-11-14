@@ -94,8 +94,10 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
           <div className="min-w-0">
             <p className="truncate text-subhead font-semibold text-foreground">{r.label}</p>
             <p className="text-xs text-muted-foreground">
-              {r.date && <><span className="whitespace-nowrap">{formatDate(r.date, DATE)}</span> · </>}
-              <span>{r.official ? t.records.raceTag : t.records.trainingTag}</span>
+              {/* Training is the default, so only a race says what it was. */}
+              {r.date && <span className="whitespace-nowrap">{formatDate(r.date, DATE)}</span>}
+              {r.date && r.official && ' · '}
+              {r.official && <span>{t.records.raceTag}</span>}
             </p>
           </div>
         )

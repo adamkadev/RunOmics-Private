@@ -185,7 +185,7 @@ export const fr = {
     target: (runs: number) => `objectif ${runs}`,
     legend: { onTarget: (runs: number) => `${runs}+ sorties`, under: 'en dessous', planned: 'prévue', streak: 'série' },
     weekLabel: (week: string, runs: number) => `Semaine du ${week} : ${runs} sortie${runs > 1 ? 's' : ''}`,
-    runningWeek: 'Ta semaine de course',
+    runningWeek: 'Ta semaine',
     weeksRan: (weeks: number) => `semaines courues, sur ${weeks}`,
     weekdayLabel: (day: string, weeks: number) => `${day} : ${weeks} semaine${weeks > 1 ? 's' : ''}`,
     anchor: (day: string) => `Le ${day} est ton point d’ancrage`,
@@ -799,8 +799,8 @@ export const fr = {
     },
     weeklyStreak: {
       kinds: {
-        easy: 'Facile',
-        easyStrides: 'Facile + accél.',
+        easy: 'Footing',
+        easyStrides: 'Footing + accél.',
         recovery: 'Récup',
         long_run: 'Sortie longue',
         tempo: 'Tempo',
@@ -987,6 +987,8 @@ export const fr = {
         about: "Le statut d’entraînement de ta montre : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
         aboutEstimated: "Ta montre ne donne pas de statut d’entraînement, alors l’app en estime un à partir de ta charge cardiaque : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
         sentenceToday: (count: number, days: number) => ` aujourd’hui, et sur ${count} des ${days} derniers jours.`,
+        sentenceYesterday: (count: number, days: number) => ` hier, et sur ${count} des ${days} derniers jours.`,
+        sentenceOnLive: (date: string, count: number, days: number) => ` le ${date}, et sur ${count} des ${days} derniers jours.`,
         sentenceOn: (date: string, count: number, days: number) => ` le ${date}, et sur ${count} de ces ${days} jours.`,
         days: (n: number) => `${n} j`,
       },
@@ -1706,12 +1708,6 @@ export const fr = {
   },
 
   shoes: {
-    defaultShoe: {
-      label: 'Chaussure par défaut',
-      none: 'Aucune',
-      hint: 'Compte chaque sortie sans chaussure côté Garmin, dès la première utilisation de la paire. Le kilométrage suit après la prochaine synchro.',
-      saved: 'Enregistré. Le kilométrage suit après la prochaine synchro.',
-    },
     listCheckedAt: (date: string) => `Liste des chaussures mise à jour depuis Garmin le ${date}`,
     tracked: (km: string, without: string | null) => (without ? `${km} km sur tes chaussures (${without} km sans chaussure)` : `${km} km sur tes chaussures`),
     addLabel: 'Ajouter une paire dans l’app de ta montre',
@@ -1856,7 +1852,7 @@ export const fr = {
       overAtPace: (km: string) => `${km} km d’avance à ce rythme`,
       noRace: 'Aucune course prévue',
       currentBlock: 'Bloc en cours',
-      blockWeek: (week: number, total: number) => `Bloc · semaine ${week} sur ${total}`,
+      blockWeek: (week: number, total: number) => `Bloc · sem. ${week} sur ${total}`,
       blockSessions: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} faite${done > 1 ? 's' : ''} sur ${planned}`,
       thisYear: 'Cette année',
       athleteZones: 'Athlète et zones',
@@ -1920,7 +1916,6 @@ export const fr = {
     // One word: « RP Plus longue sortie » cuts the run's name to « Race … » at 393 pt.
     badgeLabels: { longest: 'Distance' } as Record<string, string>,
     raceTag: 'course',
-    trainingTag: 'entraînement',
     segmented: {
       best: 'Meilleurs temps',
       milestones: 'Étapes',
@@ -2309,7 +2304,7 @@ export const fr = {
       Race: 'C',
     } as Record<string, string>,
     phase: {
-      weekOf: (total: number) => ({ before: 'Bloc', after: `sur ${total}` }),
+      weekOf: (total: number) => ({ before: 'Bloc · sem.', after: `sur ${total}` }),
       checkpoint: (week: number, date: string) => `Sem. ${week} sur 12 · bilan ${date}`,
       leadIn: 'Semaine de mise en route',
       generalShort: 'Prépa générale',

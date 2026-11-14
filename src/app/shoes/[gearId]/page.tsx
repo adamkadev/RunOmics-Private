@@ -145,14 +145,6 @@ export default async function ShoeDetailPage({
         back={<ShoeBackButton />}
         title={shoe.name}
         className="mb-1.5"
-        eyebrow={
-          <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="shoe-eyebrow">
-            {!shoe.retired && shoe.firstUsedDate ? s.since(shoe.brand, formatMonthYear(shoe.firstUsedDate)) : shoe.brand}
-            {shoe.retired && (
-              <span className="rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">{s.retired}</span>
-            )}
-          </p>
-        }
         action={
           // Limits, roles and retirement are set on the watch, so Edit opens its app.
           !shoe.retired &&
@@ -168,7 +160,15 @@ export default async function ShoeDetailPage({
             </a>
           )
         }
-      />
+      >
+        {/* Under the title, clear of the status bar the top of the page sits under. */}
+        <p className="flex items-center gap-2 text-footnote text-muted-foreground" data-testid="shoe-eyebrow">
+          {!shoe.retired && shoe.firstUsedDate ? s.since(shoe.brand, formatMonthYear(shoe.firstUsedDate)) : shoe.brand}
+          {shoe.retired && (
+            <span className="rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">{s.retired}</span>
+          )}
+        </p>
+      </PageHeader>
 
       <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoe-hero">
         {shoe.retired ? (

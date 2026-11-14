@@ -213,14 +213,14 @@ export type LoadCoachHeadline =
 /**
  * The coach read's headline once load and recovery are known; first match
  * wins. Null leaves the speed-based headline in place: the load is not up and
- * nothing is out of range.
+ * nothing is out of range. Tired form never reads as recovery holding.
  */
-export function loadCoachHeadline(load: LoadTrendView | null, recovery: RecoveryView | null): LoadCoachHeadline | null {
+export function loadCoachHeadline(load: LoadTrendView | null, recovery: RecoveryView | null, tired = false): LoadCoachHeadline | null {
   const above = load?.state === 'above'
   if (above && recovery?.out) return { kind: 'spikeAndDip' }
   if (above) return { kind: 'spike', change: load!.change && load!.change.pct > 0 ? load!.change : null }
   if (recovery?.out) return { kind: 'dip' }
-  if (load?.state === 'in' && load.change && load.change.pct > 0) return { kind: 'building', change: load.change, recovery: recovery !== null }
+  if (load?.state === 'in' && load.change && load.change.pct > 0) return { kind: 'building', change: load.change, recovery: recovery !== null && !tired }
   return null
 }
 

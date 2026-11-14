@@ -13,8 +13,6 @@ import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
 import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
 import { loadData } from '@/application/usecases/LoadData'
 import { getOldShoeListDate } from '@/application/usecases/GetSyncStatus'
-import { getShoeChoices } from '@/infrastructure/repositories/JsonShoeChoiceRepository'
-import { DefaultShoe } from '@/components/shoes/DefaultShoe'
 
 const QUALITY_RUNS_WINDOW = 6
 
@@ -36,7 +34,6 @@ export default async function ShoesPage() {
 
   const comparison = getShoeComparison()
   const listCheckedOn = shoes.length > 0 ? getOldShoeListDate() : null
-  const defaultOptions = shoes.filter((shoe) => !shoe.retired).map(({ gearId, name }) => ({ gearId, name }))
   // Rounded as each page shows it, so the gap is All time's total minus this one.
   const shoeKm = Math.round(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0))
   const withoutShoe = Math.round(getActivities().reduce((sum, a) => sum + a.distanceKm, 0)) - shoeKm
@@ -69,8 +66,6 @@ export default async function ShoesPage() {
           </p>
         )}
       </PageHeader>
-
-      <DefaultShoe options={defaultOptions} initial={getShoeChoices().defaultGearId} />
 
       <ShoesGrid
         shoes={shoes}

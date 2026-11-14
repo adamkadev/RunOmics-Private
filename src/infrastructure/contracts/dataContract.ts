@@ -317,14 +317,11 @@ function checkShoeChoices(dir: string, problems: Problem[]) {
   const report = new Report('shoe_choices.json')
   const choices = readJson(file, report)
   if (choices !== undefined) {
-    for (const key of ['runs', 'settings']) {
-      const docs = isObject(choices) ? choices[key] : undefined
-      if (!isObject(docs)) {
-        report.warn(`$.${key}`, 'expected an object')
-        continue
-      }
+    const docs = isObject(choices) ? choices.runs : undefined
+    if (!isObject(docs)) report.warn('$.runs', 'expected an object')
+    else {
       for (const [id, doc] of Object.entries(docs)) {
-        if (!isObject(doc) || !isNonEmptyString(doc.gearId)) report.warn(`$.${key}.${id}.gearId`, 'expected a non-empty string')
+        if (!isObject(doc) || !isNonEmptyString(doc.gearId)) report.warn(`$.runs.${id}.gearId`, 'expected a non-empty string')
       }
     }
   }

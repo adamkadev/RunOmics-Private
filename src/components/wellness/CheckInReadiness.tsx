@@ -12,7 +12,6 @@ export interface ReadinessWords {
   line: string
   headline: string | null
   body: string | null
-  yesterday: boolean
 }
 
 /**
@@ -37,11 +36,6 @@ export function CheckInReadiness({ today, words }: { today: string; words: Readi
       </p>
       {headline && (
         <div className="flex flex-col gap-2.5" data-testid="readiness-verdict" data-source={concern ? 'check-in' : 'load'}>
-          {words.yesterday && !concern && (
-            <p className="-mb-1.5 text-eyebrow uppercase text-muted-foreground" data-testid="verdict-yesterday">
-              {t.dashboard.readiness.yesterday}
-            </p>
-          )}
           <p className="text-title-3 text-foreground [text-wrap:pretty]">{headline}</p>
           {body && <p className="text-[15px] leading-5 tracking-[-0.015rem] text-[var(--text-2)] [text-wrap:pretty]">{body}</p>}
           {concern && <p className="text-footnote text-muted-foreground">{t.wellness.readiness.why}</p>}
