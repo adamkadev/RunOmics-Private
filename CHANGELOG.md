@@ -11,6 +11,11 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Share card: the map is drawn at the export's 1080 px on a portrait card instead of stretched from 900 px,
+  so its streets and names are as sharp as the text. A story's map keeps its size: larger ones lost the
+  basemap on a phone.
+- Today: the run row under the readiness card shows today's run once it has synced ("Today · …" / "Aujourd’hui · …"),
+  and yesterday's until then.
 - Round 12 review (111, 119–123): Analytics drops "recovery holds" over a mostly tired window; past races read by their
   short name on Goals; one longest-run figure on Plan and Progress; Ta reprise bars share a baseline with one-line
   dates; the yesterday row reads "Footing · Exigeant"; the Today prompt names sessions as the plan does and gets the
@@ -251,6 +256,10 @@ All notable changes to this project are documented in this file.
 
 ### Data & sync
 
+- A session moved on intervals.icu moves in the app too: the sync reads each pushed session's day back from
+  intervals.icu, so Today, Plan and the coach show it where it was run instead of missed. Moves within the
+  session's week only; a move made only in Garmin Connect is not read. **Needs** `INTERVALS_API_KEY` (and
+  `INTERVALS_ATHLETE_ID` if not `0`) added as secrets of the profile's GitHub environment.
 - Every sync failed since the default shoe went: the shoe-choices backup still required the `settings` the export no
   longer sends. It now checks `runs` only.
 - A quick sync at 07:45 UTC brings in the night the tracker just recorded: the nightly sync runs at 04:00, before

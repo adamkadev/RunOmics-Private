@@ -381,3 +381,13 @@ describe('the share card names', () => {
     expect(JSON.stringify(map.filters.get('runomics-park-label'))).toContain('Parc des Tilleuls')
   })
 })
+
+describe('mapPixelRatio', () => {
+  it('draws a portrait map at the 1080 px export width, a story one no larger than the size known to draw on a phone', async () => {
+    const { mapPixelRatio } = await import('@/lib/useShareCardMap')
+    expect(mapPixelRatio(300, 375) * 300).toBeCloseTo(1080)
+    const story = mapPixelRatio(300, (300 * 16) / 9)
+    expect(story).toBeGreaterThanOrEqual(3)
+    expect(story).toBeLessThan(3.1)
+  })
+})

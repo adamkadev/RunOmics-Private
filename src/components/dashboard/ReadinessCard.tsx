@@ -62,8 +62,9 @@ function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: n
   )
 }
 
-/** Yesterday's run as its own page names and judges it. */
-export interface YesterdayRun {
+/** The latest run as its own page names and judges it: today's once there is one, else yesterday's. */
+export interface LatestRun {
+  day: 'today' | 'yesterday'
   href: string
   title: string
   word: string
@@ -76,15 +77,15 @@ const RUN_TONE_COLOR: Record<RunTone, string> = {
   caution: 'var(--warn)',
 }
 
-function YesterdayRow({ run }: { run: YesterdayRun }) {
+function LatestRunRow({ run }: { run: LatestRun }) {
   return (
     <Link
       href={run.href}
       className="flex min-h-11 items-center gap-1.5 border-t border-border pt-2.5 text-subhead"
-      data-testid="readiness-yesterday"
+      data-testid="readiness-latest-run"
     >
       <span className="min-w-0 truncate text-muted-foreground">
-        {t.dashboard.readiness.yesterday} · <span className="text-foreground">{run.title}</span> ·{' '}
+        {t.dashboard.readiness.runDay[run.day]} · <span className="text-foreground">{run.title}</span> ·{' '}
         <span style={{ color: RUN_TONE_COLOR[run.tone] }}>{run.word}</span>
       </span>
       <ChevronRight size={16} aria-hidden className="ml-auto shrink-0 text-muted-foreground" />
@@ -97,7 +98,7 @@ export function ReadinessCard({
   verdict = null,
   load = null,
   reason = null,
-  yesterdayRun = null,
+  latestRun = null,
   today = appTodayIso(),
 }: {
   status: TrainingStatus | null
@@ -106,7 +107,7 @@ export function ReadinessCard({
   load?: LoadReading | null
   /** What the days around today say about the load, for a headline in range. */
   reason?: ReadinessReason | null
-  yesterdayRun?: YesterdayRun | null
+  latestRun?: LatestRun | null
   today?: string
 }) {
   if (!status) return null
@@ -160,7 +161,7 @@ export function ReadinessCard({
             sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
         </Link>
-        {yesterdayRun && <YesterdayRow run={yesterdayRun} />}
+        {latestRun && <LatestRunRow run={latestRun} />}
         {load?.estimated && (
           <p className="-mt-1 text-footnote text-muted-foreground" data-testid="readiness-estimated">
             {s.estimatedNote}

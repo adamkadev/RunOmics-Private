@@ -710,7 +710,7 @@ export const fr = {
       open: 'Ouvrir la charge dans Analyses',
       // Des mots de tous les jours, pas des sigles.
       formLabel: 'Forme',
-      yesterday: 'Hier',
+      runDay: { today: 'Aujourd’hui', yesterday: 'Hier' },
       eyebrowByTone: {
         go: 'Feu vert',
         build: 'En charge',

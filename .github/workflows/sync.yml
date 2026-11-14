@@ -397,6 +397,16 @@ jobs:
           rm "$RUNNER_TEMP/goals_races.json"
           echo "Mirrored $(jq '.races | length' data/race_entries.json) race entr(ies) and $(jq '.goals | length' data/goal_entries.json) goal year(s)."
 
+      # intervals.icu sends each session on to the watch; a session the athlete moves there moves in the app's plan too.
+      - name: Read sessions moved on intervals.icu
+        id: intervals_moves
+        if: inputs.dry_run != true
+        continue-on-error: true
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          INTERVALS_ATHLETE_ID: ${{ secrets.INTERVALS_ATHLETE_ID }}
+        run: node --conditions=react-server --import tsx scripts/sync-intervals-moves.ts data
+
       - name: Commit updated data
         id: commit
         env:
@@ -608,9 +618,9 @@ jobs:
           always() && (steps.sync.outputs.partial_failure == 'true' || steps.shoes.outputs.partial_failure == 'true'
           || steps.notes.outcome == 'failure' || steps.wellness.outcome == 'failure'
           || steps.shoe_choices.outcome == 'failure' || steps.route_data.outcome == 'failure'
-          || steps.goals_races.outcome == 'failure')
+          || steps.goals_races.outcome == 'failure' || steps.intervals_moves.outcome == 'failure')
         run: |
-          echo "::error::Some activities or steps failed. Whatever synced successfully was committed and deployed; see the 'Run sync', 'Sync shoes', 'Back up' and 'Mirror races and goals' logs for what failed."
+          echo "::error::Some activities or steps failed. Whatever synced successfully was committed and deployed; see the 'Run sync', 'Sync shoes', 'Back up', 'Mirror races and goals' and 'Read sessions moved' logs for what failed."
           exit 1
 
       # Best effort: if the app itself is what broke, this fails too. A timeout cancels the job rather than failing it.

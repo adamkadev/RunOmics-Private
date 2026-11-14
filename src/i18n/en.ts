@@ -749,8 +749,8 @@ export const en = {
       open: 'Open Load in Analytics',
       // Everyday words, not acronyms.
       formLabel: 'Form',
-      // Over yesterday's verdict, shown until the night's sync writes today's.
-      yesterday: 'Yesterday',
+      // Opens the row for the latest run: today's once it has synced, else yesterday's.
+      runDay: { today: 'Today', yesterday: 'Yesterday' },
       eyebrowByTone: {
         go: 'Green light',
         build: 'Building',
