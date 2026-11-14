@@ -799,8 +799,8 @@ export const fr = {
     },
     weeklyStreak: {
       kinds: {
-        easy: 'Facile',
-        easyStrides: 'Facile + accél.',
+        easy: 'Footing',
+        easyStrides: 'Footing + accél.',
         recovery: 'Récup',
         long_run: 'Sortie longue',
         tempo: 'Tempo',

@@ -91,10 +91,12 @@ describe('a session named under the naming rules', () => {
     shortName: 'Threshold 3×8′',
   })
 
-  it('is the full name on the card, its pace kept, the type leading', () => {
+  it('is the set and its pace on the card, as on Plan, with the type in the eyebrow', () => {
     const next = findNextSession('2026-10-05', [view(named('2026-10-06'))], [])
     expect(next).toMatchObject({ title: 'Threshold 3 × 8′', workout: { title: 'Threshold · 3 × 8′ @ 4:25', shortName: 'Threshold 3×8′' } })
-    expect(sessionCard('2026-10-05', null, null, next)!.title).toBe('Threshold 3 × 8′ @ 4:25')
+    const card = sessionCard('2026-10-05', null, null, next)!
+    expect(card.title).toBe('3 × 8′ @ 4:25')
+    expect(card.eyebrow).toMatch(/· Threshold$/)
   })
 })
 

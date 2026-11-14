@@ -106,14 +106,13 @@ function restLine(date: string, tomorrow: boolean, kind: SessionKind | null, run
 }
 
 /**
- * The session's full name, its pace kept as the watch and Connect show it: "Threshold 4 × 5′ @ 4:31". The type leads,
- * as Today has no type eyebrow; "Easy run + 6 strides" and "Long run" already start with it.
+ * The session's name as Plan shows it, "4 × 5′ @ 4:31", and the type a set leaves out, for the eyebrow; "Easy run +
+ * 6 strides" and "Long run" already start with theirs.
  */
-export function fullTitle(summary: { title: string; shortTitle: string }): string {
+export function titleParts(summary: { title: string; shortTitle: string }): { title: string; type: string | null } {
   const label = sessionLabel(summary.title)
-  if (!/^\d/.test(label)) return label
-  const type = /^(\p{L}[^\d]*?)\s*(?=\d)/u.exec(summary.shortTitle)?.[1]?.trim()
-  return type ? `${type} ${label}` : label
+  if (!/^\d/.test(label)) return { title: label, type: null }
+  return { title: label, type: /^(\p{L}[^\d]*?)\s*(?=\d)/u.exec(summary.shortTitle)?.[1]?.trim() ?? null }
 }
 
 export function sessionCard(
@@ -143,17 +142,22 @@ export function sessionCard(
   const hrCap = hrCapOf(workout)
   // A ceiling says how to run it; without one, a single pace does; several paces are Plan's to list.
   const limit = hrCap ? `${s.hrCap(hrCap)} ${t.units.bpm}` : summary?.paces.length === 1 ? paceLabel(summary.paces[0]!) : null
-  const title = summary ? fullTitle(summary) : (pick.title ?? '')
-  const name = runWalkName(title, workout)
+  const { title, type } = summary ? titleParts(summary) : { title: pick.title ?? '', type: null }
+  const full = type ? `${type} ${title}` : title
+  const named = runWalkName(full, workout)
+  // The type in the eyebrow keeps a set's title on one line, as on Plan; a run/walk keeps its own name.
+  const set = type && named === full ? type : null
+  const name = set ? title : named
+  const eyebrow = date === today ? (set ? `${day} · ${set}` : null) : [when, day, set].filter(Boolean).join(' · ')
   return {
     date,
-    eyebrow: date === today ? null : when ? `${when} · ${day}` : day,
+    eyebrow,
     title: name,
     km: workout?.distanceM ? formatPlannedKm(workout.distanceM / 1000) : null,
     detail: [workout?.duration ? formatDurationWords(workout.duration.seconds) : null, limit].filter(Boolean).join(' · ') || null,
     workout,
     phase: phaseOn(date),
     href: planDayHref(date),
-    rest: !todayWorkout && !todayActivity ? restLine(date, date === tomorrow, pick.kind, name !== title) : null,
+    rest: !todayWorkout && !todayActivity ? restLine(date, date === tomorrow, pick.kind, named !== full) : null,
   }
 }
