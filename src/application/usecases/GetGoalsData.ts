@@ -1,6 +1,7 @@
 import type { Activity } from '@/domain/activity/types'
 import { yearDistanceKm } from '@/domain/activity/distance'
 import { getPlannedWorkouts } from './GetPlannedWorkouts'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
@@ -144,6 +145,16 @@ export function plannedKmByMonth(planned: readonly { date: string; distanceM?: n
   return new Map([...byMonth].map(([key, km]) => [key, round(km, 1)]))
 }
 
+/** What Plan's month counts: the coach's session where a day has one, else Garmin's calendar, which drops past days. */
+async function plannedSessions(today: string): Promise<{ date: string; distanceM?: number }[]> {
+  const coach = new Map<string, number | undefined>()
+  for (const view of getCoachingOverview(today)?.workouts ?? []) {
+    if (view.state !== 'cancelled' && !coach.has(view.prescription.date)) coach.set(view.prescription.date, view.distanceMeters ?? undefined)
+  }
+  const calendar = (await getPlannedWorkouts()).filter((w) => !coach.has(w.date))
+  return [...[...coach].map(([date, distanceM]) => ({ date, distanceM })), ...calendar]
+}
+
 const monthKey = (year: number, month: number) => `${year}-${String(month).padStart(2, '0')}`
 
 // A month's target is what the plan asks of it, so Goals and Plan agree; a month the plan does not cover keeps a twelfth of the year.
@@ -200,8 +211,8 @@ export function computeMonthlyGoals(
 }
 
 /** Each "YYYY-MM" of a year with a distance goal, to the target the Goals page sets it. */
-export async function getMonthKmGoals(): Promise<Record<string, number>> {
-  const planned = plannedKmByMonth(await getPlannedWorkouts())
+export async function getMonthKmGoals(today: string = appTodayIso()): Promise<Record<string, number>> {
+  const planned = plannedKmByMonth(await plannedSessions(today))
   return Object.fromEntries(
     getGoalYears()
       .filter((goals) => goals.annualDistanceKm > 0)
@@ -339,7 +350,7 @@ export async function getGoalsPageData(today: string = appTodayIso()): Promise<G
   const goalYears = getGoalYears()
   const pbYears = getPbYears()
   const predictions = await getGoalPredictions(today)
-  const plannedByMonth = plannedKmByMonth(await getPlannedWorkouts())
+  const plannedByMonth = plannedKmByMonth(await plannedSessions(today))
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))
 

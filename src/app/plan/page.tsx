@@ -43,7 +43,7 @@ export default async function PlanPage() {
       hrZoneBoundsBpm={athlete.hrZoneBoundsBpm ?? null}
       coaching={coaching ? planCoachingView(coaching) : null}
       returnProgress={returnProgress?.ongoing ? returnProgress : null}
-      monthKmGoals={await getMonthKmGoals()}
+      monthKmGoals={await getMonthKmGoals(today)}
       today={today}
       // Only whether there is one: the area and the runs stay on the server.
       exploreAvailable={getExploreHome() !== null}
