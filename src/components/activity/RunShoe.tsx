@@ -1,6 +1,5 @@
 'use client'
 
-import { Footprints } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Toast, useToast } from '@/components/ui/Toast'
@@ -89,7 +88,6 @@ export function RunShoe({ activityId, shoe, options, garminUrl }: Props) {
           className={cn(RUN_CHIP_CLASS, !shown && 'font-medium text-accent-text')}
           data-testid="run-shoe"
         >
-          {shown && <Footprints size={13} aria-hidden className="shrink-0 text-muted-foreground" data-testid="run-shoe-icon" />}
         <span className="truncate">{shown ? shown.name : s.add}</span>
         </button>
         {open && (
@@ -117,7 +115,6 @@ export function RunShoe({ activityId, shoe, options, garminUrl }: Props) {
         className={cn(RUN_CHIP_CLASS, !shown && 'font-medium text-accent-text')}
         data-testid="run-shoe"
       >
-        {shown && <Footprints size={13} aria-hidden className="shrink-0 text-muted-foreground" data-testid="run-shoe-icon" />}
         <span className="truncate">{shown ? shown.name : s.add}</span>
       </a>
     )
@@ -125,7 +122,6 @@ export function RunShoe({ activityId, shoe, options, garminUrl }: Props) {
 
   return shown ? (
     <span className={RUN_CHIP_CLASS} data-testid="run-shoe">
-      <Footprints size={13} aria-hidden className="shrink-0 text-muted-foreground" data-testid="run-shoe-icon" />
       <span className="truncate">{shown.name}</span>
     </span>
   ) : null
