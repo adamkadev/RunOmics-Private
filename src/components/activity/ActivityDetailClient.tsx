@@ -231,7 +231,8 @@ export function ActivityDetailClient({
       <header className="-mt-1 flex flex-col gap-1">
         <p data-title-sub className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-5 text-muted-foreground" data-testid="activity-subtitle">
           <TypeDot type={type} />
-          {name.trim().toLowerCase() !== t.activityTypes[type].toLowerCase() && (
+          {/* A title that starts with its type ("Easy run…", "Footing") says it already. */}
+          {!name.trim().toLowerCase().startsWith(t.activityTypes[type].toLowerCase()) && (
             <>
               {t.activityTypes[type]}
               <span aria-hidden>·</span>

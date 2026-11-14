@@ -62,7 +62,7 @@ describe('ActivityDetailClient', () => {
   })
 
   it('keeps the run in reading order: map, title, stats, verdict, tabs', () => {
-    const { container } = renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
+    const { container } = renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView, name: '3 × 8′ @ 4:25' })
     const order = ['run-hero', 'activity-subtitle', 'run-stats', 'run-verdict', 'sticky-bar'].map((id) => screen.getByTestId(id))
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -78,8 +78,13 @@ describe('ActivityDetailClient', () => {
     expect(line).not.toContain(t.activityTypes.Tempo)
   })
 
+  it('leaves the type out where the title starts with it', () => {
+    renderDetail()
+    expect(screen.getByTestId('activity-subtitle').textContent).not.toContain(`${t.activityTypes.Threshold}·`)
+  })
+
   it("names the session's type over the title where it is not the watch's", () => {
-    renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, shownType: 'Threshold' })
+    renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, name: '3 × 8′ @ 4:25', shownType: 'Threshold' })
     expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
     expect(screen.getByTestId('activity-subtitle').textContent).not.toContain(t.activityTypes.Tempo)
   })
