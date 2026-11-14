@@ -2485,7 +2485,7 @@ export const en = {
       Race: 'R',
     } as Record<string, string>,
     phase: {
-      weekOf: (total: number) => ({ before: 'Block', after: `of ${total}` }),
+      weekOf: (total: number) => ({ before: 'Block week', after: `of ${total}` }),
       checkpoint: (week: number, date: string) => `Week ${week} of 12 · checkpoint ${date}`,
       // The part week before a block's first Monday.
       leadIn: 'Lead-in week',

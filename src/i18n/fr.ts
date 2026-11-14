@@ -1850,7 +1850,7 @@ export const fr = {
       overAtPace: (km: string) => `${km} km d’avance à ce rythme`,
       noRace: 'Aucune course prévue',
       currentBlock: 'Bloc en cours',
-      blockWeek: (week: number, total: number) => `Bloc · semaine ${week} sur ${total}`,
+      blockWeek: (week: number, total: number) => `Bloc · sem. ${week} sur ${total}`,
       blockSessions: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} faite${done > 1 ? 's' : ''} sur ${planned}`,
       thisYear: 'Cette année',
       athleteZones: 'Athlète et zones',
@@ -2303,7 +2303,7 @@ export const fr = {
       Race: 'C',
     } as Record<string, string>,
     phase: {
-      weekOf: (total: number) => ({ before: 'Bloc', after: `sur ${total}` }),
+      weekOf: (total: number) => ({ before: 'Bloc · sem.', after: `sur ${total}` }),
       checkpoint: (week: number, date: string) => `Sem. ${week} sur 12 · bilan ${date}`,
       leadIn: 'Semaine de mise en route',
       generalShort: 'Prépa générale',
