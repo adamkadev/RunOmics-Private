@@ -8,6 +8,11 @@ import { t } from '@/i18n'
 const WEEKS_SHOWN = 8
 const BAR_AREA_PX = 56
 
+/** "28/9", "5/10": a day and month that fit one line under a 36 pt column. */
+function shortDay(iso: string): string {
+  return new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`))
+}
+
 export function ReturnProgressCard({ progress, today }: { progress: ReturnProgress; today: string }) {
   const r = t.returnProgress
   const now = new Date(`${today}T12:00:00`)
@@ -29,7 +34,8 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-sm text-muted-foreground">{r.longest}</span>
             <span className="text-sm font-semibold tabular-nums text-foreground" data-testid="return-card-longest">
-              {progress.longestSec > 0 ? formatDurationWords(progress.longestSec) : '—'}
+              {/* Whole minutes run, rounded down as Progress counts them. */}
+              {progress.longestSec > 0 ? formatDurationWords(Math.floor(progress.longestSec / 60) * 60) : '—'}
             </span>
           </div>
 
@@ -40,7 +46,8 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
                 <span className="font-semibold tabular-nums text-foreground" data-testid="return-card-this-week">{r.minutes(thisWeekMinutes)}</span>
               )}
             </figcaption>
-            <ol className="flex items-end gap-2">
+            {/* Top-aligned columns of one bar height: a label on two lines can no longer lift its bar. */}
+            <ol className="flex items-start gap-2">
               {weeks.map((week, i) => {
                 const minutes = Math.round(week.runningSec / 60)
                 const current = i === weeks.length - 1
@@ -59,11 +66,11 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
                     </span>
                     <span className="text-center text-[11px] tabular-nums text-muted-foreground" aria-hidden>{minutes}</span>
                     <span
-                      className={cn('text-center text-[11px] leading-tight', current ? 'font-semibold text-accent-text' : 'text-muted-foreground')}
+                      className={cn('text-center text-[11px] leading-tight', current ? 'font-semibold text-accent-text' : 'whitespace-nowrap text-muted-foreground')}
                       aria-hidden
                       data-testid="return-week-label"
                     >
-                      {current ? r.thisWeek : formatDate(week.weekStart, { style: 'bare', year: 'never' })}
+                      {current ? r.thisWeek : shortDay(week.weekStart)}
                     </span>
                   </li>
                 )
