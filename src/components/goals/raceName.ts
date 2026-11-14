@@ -12,7 +12,7 @@ const YEAR = /\s*\b(?:19|20)\d{2}\b/g
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
- * "ING Night Marathon Luxembourg" run as a half reads "ING Night Half": the event's word gives way to the race's own
+ * "Spring Marathon Lakeside" run as a half reads "Spring Half": the event's word gives way to the race's own
  * distance, and the year and the city, which the facts line carries, go.
  */
 export function raceShortName(name: string, distance: string, location?: string): string {
