@@ -1,5 +1,6 @@
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { shortDist } from '@/components/goals/shortDistance'
+import { raceShortName } from '@/components/goals/raceName'
 import { DAY_MS } from '@/lib/calendarDate'
 import type { PlanCoachingView } from './planCoachingView'
 
@@ -15,7 +16,7 @@ export function planRace(coaching: PlanCoachingView | null, nextRace: UpcomingRa
 const DISTANCE_ONLY = /^\s*\d+(?:[.,]\d+)?\s*(?:k|km|m|mi|miles?)\s*$/i
 
 export function raceTitle(race: PlanRace): string {
-  if (!DISTANCE_ONLY.test(race.name) && race.name !== race.distance) return race.name
+  if (!DISTANCE_ONLY.test(race.name) && race.name !== race.distance) return raceShortName(race.name, race.distance, race.location)
   return [shortDist(race.distance) || race.name, race.location].filter(Boolean).join(' ')
 }
 
