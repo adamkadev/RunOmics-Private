@@ -40,6 +40,8 @@ import { CheckInCard } from '@/components/wellness/CheckInCard'
 
 export const revalidate = 3600
 
+const capitalized = (text: string) => text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
+
 /** Yesterday's run, named and judged as its page does; none when yesterday had no run. */
 function yesterdayRun(today: string): YesterdayRun | null {
   const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
@@ -50,7 +52,8 @@ function yesterdayRun(today: string): YesterdayRun | null {
   return {
     href: `/activities/${judged.activity.id}`,
     title: runLabel(judged.activity, session),
-    word: t.activity.verdict.headline[judged.tone](verdictType(shownType(judged.activity, session))),
+    // Written for an uppercase eyebrow, so French starts it lowercase: "footing exigeant".
+    word: capitalized(t.activity.verdict.headline[judged.tone](verdictType(shownType(judged.activity, session)))),
     tone: judged.tone,
   }
 }
