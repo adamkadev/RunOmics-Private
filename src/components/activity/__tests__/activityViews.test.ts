@@ -63,20 +63,9 @@ describe('shareActivity', () => {
     expect(Object.keys(shareActivity(ACTIVITY)).sort()).toEqual(
       [
         'avgHeartRate', 'date', 'dayOfWeek', 'description', 'distanceKm', 'durationSeconds', 'elevationGain',
-        'hrZones', 'id', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'type', 'verdict',
+        'hrZones', 'id', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'type',
       ].sort()
     )
-  })
-
-  it('carries the written verdict\'s headline and the tone the Overview card shows with it', () => {
-    expect(shareActivity(ACTIVITY, null, { headline: ' Usual long-run pace, 7 bpm cheaper. ', tone: 'positive' }).verdict)
-      .toEqual({ tone: 'positive', headline: 'Usual long-run pace, 7 bpm cheaper.' })
-    expect(shareActivity({ ...ACTIVITY, rpe: 2 }, null, { headline: 'Too hard', tone: 'caution' }).verdict?.tone).toBe('caution')
-  })
-
-  it('has no verdict without a written one, so the card keeps its zones headline', () => {
-    expect(shareActivity(ACTIVITY).verdict).toBeNull()
-    expect(shareActivity(ACTIVITY, null, { headline: '  ', tone: 'positive' }).verdict).toBeNull()
   })
 })
 
@@ -131,10 +120,10 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
         { kind: 'recovery' as const, minutes: 4, paceSecPerKm: [360, 420] as [number, number] },
       ],
     }
-    expect(shareActivity(run, null, null, planned).reps?.target).toEqual({ min: 262, max: 268 })
+    expect(shareActivity(run, null, planned).reps?.target).toEqual({ min: 262, max: 268 })
     // The coach's own pace still wins where there is one.
-    expect(shareActivity(run, SESSION, null, planned).reps?.target).toEqual({ min: 265, max: 265 })
-    expect(shareActivity(run, null, null, null).reps?.target).toBeNull()
+    expect(shareActivity(run, SESSION, planned).reps?.target).toEqual({ min: 265, max: 265 })
+    expect(shareActivity(run, null, null).reps?.target).toBeNull()
   })
 
   it('takes the pace guide of the repeat\'s effort step over the point the name sets', () => {

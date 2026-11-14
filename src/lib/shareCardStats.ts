@@ -1,5 +1,4 @@
 import type { Activity, ActivityType } from '@/domain/activity/types'
-import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { formatClock, formatDate, formatDurationRounded, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { activityTitle, namedType, sessionLabel } from '@/lib/activityTitle'
@@ -13,12 +12,6 @@ export type ShareActivity = Pick<
   /** The coach's name for the session this run matched. */
   sessionTitle?: string | null
   reps?: ShareReps | null
-  verdict?: ShareVerdict | null
-}
-
-export interface ShareVerdict {
-  tone: VerdictTone
-  headline: string
 }
 
 export interface ShareReps {

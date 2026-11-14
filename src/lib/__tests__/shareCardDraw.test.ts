@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { arrangeLabels, type LabelKind, balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { arrangeLabels, type LabelKind, balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, SHARE_MARKER_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
@@ -385,56 +385,7 @@ describe('the route (redesign, Oct 2026)', () => {
   })
 })
 
-describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
-  const VERDICT = { tone: 'positive' as const, headline: 'Usual long-run pace, 7 bpm cheaper than last month.' }
-  const led = { ...RUN, type: 'Base' as const, verdict: VERDICT }
-
-  it('leads with the eyebrow in the status colour, then the verdict as a 27 px hero', () => {
-    const ops = draw({ design: 'stats', activity: led })
-    const eyebrow = ops.find((o) => o.op === 'fillText' && o.args[0] === 'SOLID BASE')
-    expect(eyebrow?.fill).toBe(STATUS_HEX.dark.pos)
-    const hero = ops.filter((o) => o.op === 'fillText' && o.font.startsWith('700 27px'))
-    expect(hero.map((o) => o.args[0]).join(' ')).toBe(VERDICT.headline)
-    expect(hero.length).toBeGreaterThan(1)
-    expect((hero[1]!.args[2] as number) - (hero[0]!.args[2] as number)).toBe(Math.round(27 * 1.08))
-  })
-
-  it('colours a tough session warn and a logged one muted', () => {
-    const caution = draw({ design: 'stats', activity: { ...led, verdict: { ...VERDICT, tone: 'caution' } } }, 'light')
-    expect(caution.find((o) => o.op === 'fillText' && o.args[0] === 'TOUGH BASE')?.fill).toBe(STATUS_HEX.light.warn)
-    const neutral = draw({ design: 'stats', activity: { ...led, verdict: { ...VERDICT, tone: 'neutral' } } })
-    expect(neutral.find((o) => o.op === 'fillText' && o.args[0] === 'BASE LOGGED')?.fill).toBe(palette.mu)
-  })
-
-  it('replaces the zones headline with a 6 px bar and its percents', () => {
-    const ops = draw({ design: 'stats', activity: led })
-    const all = texts(ops)
-    expect(all).not.toContain('80%')
-    expect(all).not.toContain('easy · Z1–Z2')
-    expect(all).toEqual(expect.arrayContaining(['Z1–Z2 80%', 'Z3 20%']))
-    expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
-  })
-
-  it('keeps the 4-stat row', () => {
-    const all = texts(draw({ design: 'stats', activity: led }))
-    expect(all.slice(-11)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
-  })
-
-  it('draws no bar for a run without heart rate, the verdict still leading', () => {
-    const all = texts(draw({ design: 'stats', activity: { ...led, hrZones: [] } }))
-    expect(all).toContain('SOLID BASE')
-    expect(all).not.toContain('No heart-rate zones for this run')
-  })
-
-  it('balances the hero over the lines it needs, never past three', () => {
-    const measure = recorder().ctx
-    // 7 px a character.
-    expect(balanceWrap(measure, 'Usual long-run pace, 7 bpm cheaper.', 200)).toEqual(['Usual long-run pace,', '7 bpm cheaper.'])
-    expect(balanceWrap(measure, 'one two three four five six', 1000)).toEqual(['one two three four five six'])
-    const long = verdictHero(measure, 'A very long verdict that the coach wrote about this run and about how the legs felt all the way to the end of it today', FALLBACK_FONTS)
-    expect(long.lines.length).toBeLessThanOrEqual(3)
-  })
-
+describe('the zone bar under a rep pace', () => {
   it('labels the bar\'s first zone at its start and the last at its end, dropping one that would touch', () => {
     const w = (text: string) => text.length * 5
     expect(zoneBarLabels([{ zone: 1, percent: 24 }, { zone: 2, percent: 76 }], 16, 268, w)).toEqual([

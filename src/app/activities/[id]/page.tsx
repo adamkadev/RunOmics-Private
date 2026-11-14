@@ -132,7 +132,7 @@ export default async function ActivityDetailPage({
         plannedRepPace={prescribedRepPace(session)}
         repsOnOverview={!!controlledRun}
         back={<BackButton label={t.activity.back} fallbackHref="/activities" variant="round" />}
-        share={<ShareButton activity={shareActivity(activity, session, aiVerdict && { headline: aiVerdict.headline, tone: verdictTone }, plannedForDay)} />}
+        share={<ShareButton activity={shareActivity(activity, session, plannedForDay)} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         shoe={shoe}
         shoeOptions={shoeOptions}
