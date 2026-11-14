@@ -143,7 +143,6 @@ export function ReadinessCard({
         {/* The numbers alone open Load: a card-wide link took taps meant for the row under them. */}
         <Link
           href="/analytics"
-          aria-label={s.open}
           className={cn('grid gap-3 border-t border-border pt-3 transition-opacity active:opacity-70', showForm ? 'grid-cols-3' : 'grid-cols-2')}
           data-testid="readiness-card-link"
         >
@@ -160,6 +159,8 @@ export function ReadinessCard({
             value={Math.round(status.atl)}
             sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
+          {/* A name that holds the numbers on show: an aria-label alone would hide them from voice control (WCAG 2.5.3). */}
+          <span className="sr-only">{s.open}</span>
         </Link>
         {latestRun && <LatestRunRow run={latestRun} />}
         {load?.estimated && (
