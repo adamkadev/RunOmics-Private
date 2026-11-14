@@ -508,6 +508,18 @@ state, then pushes to intervals.icu only if every delete succeeded; `--retire-in
 Connect route) does the reverse. Workouts created by hand or by Garmin are never touched. Past
 entries stay in each state as history.
 
+**A session moved on intervals.icu moves in the app.** Each sync's "Read sessions moved on
+intervals.icu" step (`scripts/sync-intervals-moves.ts`) lists the calendar from 35 days back to 56
+ahead and finds each pushed session by the event id in `coaching/intervals-sync.json`. Where the
+event sits on another day than `current_plan.json` says, it records the new day in
+`coaching/intervals_moves.json`; an event back on its planned day drops the move, and one not listed
+(out of the window, or deleted) keeps it. `JsonCoachingRepository.getCurrentPlan` applies the moves,
+so Today, Plan, the run verdicts and the coach all see the new day, and the next push leaves the
+event where the athlete put it. A move out of the session's own week is ignored: a week holds only
+its own days. The step needs `INTERVALS_API_KEY` (and `INTERVALS_ATHLETE_ID` when not `0`) as
+secrets of the profile's GitHub environment; without them it skips. A move made only in Garmin
+Connect is not read.
+
 ## Garmin-sourced series
 
 Several repositories exist only to read what the Python sync writes, and each carries a

@@ -37,6 +37,15 @@ describe('JsonCoachingRepository', () => {
     ])
   })
 
+  it('reads the current plan with the sessions moved on intervals.icu, the file as written untouched', () => {
+    repository.saveCurrentPlan(plan())
+    repository.saveSessionMoves({ 'workout-threshold': '2026-09-10' })
+
+    expect(repository.getCurrentPlan()?.weeks[0]?.workouts[0]?.date).toBe('2026-09-10')
+    expect(repository.getCurrentPlanAsWritten()?.weeks[0]?.workouts[0]?.date).toBe('2026-09-09')
+    expect(repository.getSessionMoves()).toEqual({ 'workout-threshold': '2026-09-10' })
+  })
+
   it('round-trips the current plan and state', () => {
     const currentPlan = plan()
     const state: CoachState = {

@@ -6,7 +6,7 @@ import {
   bandFencePoints, pickWater, routeFencePoints, simplifyRoute,
   type LngLat, type RouteFrame, type WaterLine,
 } from '@/lib/shareCardMap'
-import type { ThemeMode } from '@/lib/shareCardPalette'
+import { W, type ThemeMode } from '@/lib/shareCardPalette'
 import {
   addLandmarkLabels, addParkLabels, addWaterLabels, isPlaceLabelLayer, loadMapLibre, PARK_LABEL_LAYER, showPlacesAtAnyZoom,
   styleRunMapLabels, WATER_LABEL_LAYER,
@@ -52,8 +52,14 @@ export interface ShareCardMapOptions {
   enabled?: boolean
 }
 
-// A phone's own ratio, not 4: at 4 the basemap goes missing from the card on a phone.
-const PIXEL_RATIO = 3
+// The export is 1080 px wide, so a map drawn narrower is stretched and soft.
+const EXPORT_RATIO = 1080 / W
+// At 4 the basemap went missing on a phone, and a story at 3 (900 x 1600) draws: a portrait at full size is about as many pixels.
+const MAX_MAP_PIXELS = 1080 * 1350
+
+export function mapPixelRatio(width: number, height: number): number {
+  return Math.min(EXPORT_RATIO, Math.max(3, Math.sqrt(MAX_MAP_PIXELS / (width * height))))
+}
 
 const RENDER_TIMEOUT_MS = 15_000
 
@@ -249,7 +255,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     bounds,
     fitBoundsOptions: { padding: frame, maxZoom: 15, duration: 0 },
     canvasContextAttributes: { preserveDrawingBuffer: true },
-    pixelRatio: PIXEL_RATIO,
+    pixelRatio: mapPixelRatio(width, height),
     interactive: false,
     attributionControl: false,
     fadeDuration: 0,

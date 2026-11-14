@@ -8,6 +8,7 @@ import {
   parseCoachingPlan,
   parseWorkoutEvaluation,
 } from '@/domain/coaching/validation'
+import { parseSessionMoves, withMovedSessions, type SessionMoves } from '@/domain/coaching/movedSessions'
 import { dataPath } from '../dataPath'
 import { dataFs } from '../dataFs'
 
@@ -48,9 +49,24 @@ export class JsonCoachingRepository implements CoachingRepository {
     this.coachingDir = path.join(dataRoot, 'coaching')
   }
 
+  /** With the sessions the athlete moved on intervals.icu on the days they moved them to. */
   getCurrentPlan(): CoachingPlan | null {
+    const plan = this.getCurrentPlanAsWritten()
+    return plan && withMovedSessions(plan, this.getSessionMoves())
+  }
+
+  getCurrentPlanAsWritten(): CoachingPlan | null {
     const filePath = path.join(this.coachingDir, 'current_plan.json')
     return dataFs.existsSync(filePath) ? parseCoachingPlan(readJson(filePath), filePath) : null
+  }
+
+  getSessionMoves(): SessionMoves {
+    const filePath = path.join(this.coachingDir, 'intervals_moves.json')
+    return dataFs.existsSync(filePath) ? parseSessionMoves(readJson(filePath)) : {}
+  }
+
+  saveSessionMoves(moves: SessionMoves): void {
+    writeJsonAtomic(path.join(this.coachingDir, 'intervals_moves.json'), { moves })
   }
 
   saveCurrentPlan(plan: CoachingPlan): void {
@@ -68,10 +84,11 @@ export class JsonCoachingRepository implements CoachingRepository {
   getArchivedPlans(): CoachingPlan[] {
     const dir = path.join(this.coachingDir, 'superseded')
     if (!dataFs.existsSync(dir)) return []
+    const moves = this.getSessionMoves()
     return dataFs
       .readdirSync(dir)
       .filter((file) => file.endsWith('.json'))
-      .map((file) => parseCoachingPlan(readJson(path.join(dir, file)), path.join(dir, file)))
+      .map((file) => withMovedSessions(parseCoachingPlan(readJson(path.join(dir, file)), path.join(dir, file)), moves))
       .sort((a, b) => b.provenance.createdAt.localeCompare(a.provenance.createdAt))
   }
 
