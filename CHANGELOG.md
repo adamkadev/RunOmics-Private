@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Today: the readiness numbers link is named by the numbers it shows, then "Open Load in Analytics", so voice
+  control can reach it by what is on screen (WCAG 2.5.3).
 - Share card: the map is drawn at the export's 1080 px on a portrait card instead of stretched from 900 px,
   so its streets and names are as sharp as the text. A story's map keeps its size: larger ones lost the
   basemap on a phone.

@@ -93,7 +93,15 @@ describe('ReadinessCard (App Fixes 1a)', () => {
   it('says a neutral line in grey, never the accent, and opens Analytics', () => {
     render(<ReadinessCard status={STATUS} />)
     expect(screen.getByTestId('readiness-status').getAttribute('style')).toContain('var(--muted-foreground)')
-    expect(screen.getByRole('link', { name: t.dashboard.readiness.open })).toHaveAttribute('href', '/analytics')
+    expect(screen.getByTestId('readiness-card-link')).toHaveAttribute('href', '/analytics')
+  })
+
+  it('names the numbers link by the numbers on show, then where it goes', () => {
+    render(<ReadinessCard status={STATUS} />)
+    const link = screen.getByTestId('readiness-card-link')
+    expect(link).not.toHaveAttribute('aria-label')
+    expect(link).toHaveAccessibleName(expect.stringContaining(t.dashboard.readiness.ctl))
+    expect(link).toHaveAccessibleName(expect.stringContaining(t.dashboard.readiness.open))
   })
 
   it('turns the status line to warn when it is a caution', () => {

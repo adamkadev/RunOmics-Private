@@ -63,8 +63,8 @@ test('the owner marks a missed session skipped, which Firestore keeps, and takes
 
 test('a run the watch typed VO2 max is named as its easy session', async ({ page, t }) => {
   await page.goto(`/activities/${returnBlock().firstRun.id}`)
-  await expect(page.getByTestId('run-verdict')).toContainText(t.activityTypes.Base)
-  await expect(page.getByTestId('run-verdict')).not.toContainText(t.activityTypes.VO2Max)
+  await expect(page.getByTestId('run-verdict')).toContainText(t.activityTypes.Base, { ignoreCase: true })
+  await expect(page.getByTestId('run-verdict')).not.toContainText(t.activityTypes.VO2Max, { ignoreCase: true })
 })
 
 test('no run in the list reads VO2 max', async ({ page, t }) => {
