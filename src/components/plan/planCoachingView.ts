@@ -1,6 +1,7 @@
 import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { TargetEvent, TrainingBlock, WorkoutBlock, WorkoutPrescription } from '@/domain/coaching/types'
 import { pickDefined } from '@/components/pickDefined'
+import { ownBlockStart, type BlockSpan } from '@/domain/coaching/blockSpan'
 
 /** Only what /plan draws: the overview also carries the coach's reasoning, which must stay out of the public page payload. */
 const PRESCRIPTION_FIELDS = [
@@ -39,6 +40,7 @@ export interface PlanCoachingView {
     tuneUpEvents?: PlanEvent[]
   }
   workouts: PlanPrescriptionView[]
+  pastBlocks?: BlockSpan[]
 }
 
 function withoutNotes(block: WorkoutBlock): WorkoutBlock {
@@ -56,15 +58,16 @@ function planEvent(event: TargetEvent): PlanEvent {
   return pickDefined(event, EVENT_FIELDS)
 }
 
-export function planCoachingView(overview: CoachingOverview): PlanCoachingView {
+export function planCoachingView(overview: CoachingOverview, pastBlocks: BlockSpan[] = []): PlanCoachingView {
   const { block, macrocycleStartDate, targetEvent, tuneUpEvents } = overview.plan
   return {
     plan: {
-      block: { startDate: block.startDate, endDate: block.endDate },
+      block: { startDate: ownBlockStart(overview.plan), endDate: block.endDate },
       ...(macrocycleStartDate ? { macrocycleStartDate } : {}),
       ...(targetEvent ? { targetEvent: planEvent(targetEvent) } : {}),
       ...(tuneUpEvents ? { tuneUpEvents: tuneUpEvents.map(planEvent) } : {}),
     },
     workouts: overview.workouts.map((view) => ({ ...view, prescription: planPrescription(view.prescription) })),
+    ...(pastBlocks.length ? { pastBlocks } : {}),
   }
 }

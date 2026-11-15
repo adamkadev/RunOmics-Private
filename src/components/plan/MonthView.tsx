@@ -192,7 +192,9 @@ export function MonthView({
       const span = spanOfWeek(spans, monday)
       const label =
         span && span !== previous
-          ? span.startDate < monday && r === 0
+          ? span.key === 'general'
+            ? span.shortName
+            : span.startDate < monday && r === 0
             ? t.plan.month.phaseEnds(span.shortName, formatDate(span.endDate, { style: 'bare' }))
             : t.plan.month.phaseWeeks(span.shortName, spanWeeks(span))
           : null

@@ -16,6 +16,10 @@ All notable changes to this project are documented in this file.
 - A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
   distance the week shows no plan total rather than the part that has one (Plan › Week read "48.8 / 21 km"). Today's
   week card, Analytics › Volume and the weekly digest read the same total.
+- Plan's block card: the bar fills to today whichever week is shown, and the shown week is outlined. A past week
+  shows the block it belonged to ("Block week 4 of 4", not "4 of 9"), a renewed block starts on its own first week
+  (the day carried over from the last block no longer makes a "Lead-in week"), and "Week X of 12" follows the shown
+  week. General prep carries no end date in Week or Month: each block adds four weeks to it.
 - Round 13: the stale-data banner reads "No sync for 49 h" / "Fri 14:46 · a run may be missing" ("Pas de synchro
   depuis 49 h" / "Ven. 14:46 · …" in French), and the refresh icon stays amber in the collapsed header while the
   data is a day late. Plan › Week draws a missed session in amber, as Today does. Records uses Analytics' tab

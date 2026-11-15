@@ -95,6 +95,20 @@ export function generalBlockWeek(phase: PhaseWeek | null, block: { startDate: st
   return phaseWeek([span], monday) ?? phase
 }
 
+/** The block a week belongs to: one starting midweek takes the week as its lead-in. */
+export function blockOfWeek<B extends { startDate: string; endDate: string }>(blocks: readonly B[], monday: string): B | null {
+  const sunday = isoDate(addDays(new Date(`${monday}T00:00:00`), 6))
+  const covering = blocks.filter((block) => block.startDate <= sunday && monday <= block.endDate)
+  return covering.reduce<B | null>((latest, block) => (!latest || block.startDate > latest.startDate ? block : latest), null)
+}
+
+/** Today's place in a phase: 0 before its first week, past the last one once it is over. */
+export function progressWeek(span: Pick<PhaseSpan, 'startDate' | 'endDate'>, total: number, today: string): number {
+  if (today > span.endDate) return total + 1
+  const monday = mondayOf(today)
+  return monday < mondayOf(span.startDate) ? 0 : Math.floor(daysBetween(mondayOf(span.startDate), monday) / 7) + 1
+}
+
 export function raceCountdown(race: PlanRace, today: string): string | null {
   const days = daysUntil(race.date, today)
   if (days < 0) return null

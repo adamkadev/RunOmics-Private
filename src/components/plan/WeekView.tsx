@@ -23,7 +23,7 @@ import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './pl
 import { sessionTitle } from './sessionTitle'
 import { dayKind, kindLetter } from './sessionKind'
 import { planWeekTarget } from './weekPlanDays'
-import { generalBlockWeek, phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
+import { blockOfWeek, generalBlockWeek, phaseWeek, planPhaseSpans, progressWeek, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
@@ -44,7 +44,7 @@ function proposalLine(proposal: BlockGuideProposal): string {
 }
 
 /** Phase over block, its weeks and the 12-week count in one card, the count's line opening the checkpoint. */
-function PhaseCard({ phase, name, week, total, race, cycle, proposals = [] }: { phase: string | null; name: string; week: number; total: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
+function PhaseCard({ phase, name, week, total, progress, race, cycle, proposals = [] }: { phase: string | null; name: string; week: number; total: number; progress: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
@@ -63,10 +63,16 @@ function PhaseCard({ phase, name, week, total, race, cycle, proposals = [] }: { 
         </p>
       </div>
       <div aria-hidden className="flex gap-[3px]" data-testid="phase-segments">
-        {/* The week under way is half full: a full bar would say the block is done. */}
+        {/* Filled to today, the week under way half: a full bar would say the block is done. The week shown is outlined. */}
         {Array.from({ length: total }, (_, i) => (
-          <span key={i} data-done={i < week - 1 || undefined} data-current={i === week - 1 || undefined} className={cn('relative h-[5px] flex-1 overflow-hidden rounded-full', i < week - 1 ? 'bg-accent' : 'bg-[var(--line-2)]')}>
-            {i === week - 1 && <span className="absolute inset-y-0 left-0 w-1/2 bg-accent" />}
+          <span
+            key={i}
+            data-done={i < progress - 1 || undefined}
+            data-current={i === progress - 1 || undefined}
+            data-viewed={(i === week - 1 && week !== progress) || undefined}
+            className={cn('relative h-[5px] flex-1 overflow-hidden rounded-full', i < progress - 1 ? 'bg-accent' : 'bg-[var(--line-2)]', i === week - 1 && week !== progress && 'ring-1 ring-inset ring-accent')}
+          >
+            {i === progress - 1 && <span className="absolute inset-y-0 left-0 w-1/2 bg-accent" />}
           </span>
         ))}
       </div>
@@ -201,17 +207,23 @@ export function WeekView({
 
   const block = useMemo(() => blockLifecycle(coaching, today), [coaching, today])
 
+  const pastBlock = useMemo(() => {
+    if (!coaching) return null
+    const shown = blockOfWeek([...(coaching.pastBlocks ?? []), coaching.plan.block], firstDay)
+    return shown && shown !== coaching.plan.block ? (shown as { name: string; startDate: string; endDate: string }) : null
+  }, [coaching, firstDay])
   const phase = useMemo(() => {
     const week = phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay)
-    return coaching ? generalBlockWeek(week, coaching.plan.block, firstDay) : week
-  }, [coaching, planPhaseRanges, firstDay])
+    return coaching ? generalBlockWeek(week, pastBlock ?? coaching.plan.block, firstDay) : week
+  }, [coaching, planPhaseRanges, firstDay, pastBlock])
   const words = useCoachWords(coaching !== null)
-  const blockName = phase?.span.key === 'general' ? words?.block.name || null : null
+  const blockName = phase?.span.key === 'general' ? (pastBlock ? pastBlock.name : words?.block.name) || null : null
   const cycleLine = useMemo(() => {
     if (!coaching) return null
-    const cycle = checkpointCycle(coaching.plan.macrocycleStartDate ?? coaching.plan.block.startDate, today)
+    const shownDay = today >= firstDay && today <= lastDay ? today : today < firstDay ? firstDay : lastDay
+    const cycle = checkpointCycle(coaching.plan.macrocycleStartDate ?? coaching.plan.block.startDate, shownDay)
     return cycle.mode === 'rolling' || cycle.complete ? null : t.plan.phase.checkpoint(cycle.week, formatDate(cycle.current.end, { style: 'bare', year: 'never' }))
-  }, [coaching, today])
+  }, [coaching, today, firstDay, lastDay])
   const race = useMemo(() => {
     const next = planRace(coaching, nextRace, today)
     return next ? raceCountdown(next, today) : null
@@ -287,13 +299,14 @@ export function WeekView({
     <div className="flex flex-col gap-3.5">
       {phase && (
         <PhaseCard
-          phase={blockName && t.plan.month.phaseEnds(phase.span.shortName, formatDate(phase.span.endDate, { style: 'bare', year: 'never' }))}
+          phase={blockName && phase.span.shortName}
           name={blockName ?? phase.span.name}
           week={phase.week}
           total={phase.total}
+          progress={progressWeek(phase.span, phase.total, today)}
           race={race}
           cycle={cycleLine}
-          proposals={phase.span.key === 'general' ? words?.block.guideProposals : undefined}
+          proposals={phase.span.key === 'general' && !pastBlock ? words?.block.guideProposals : undefined}
         />
       )}
 
