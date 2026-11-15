@@ -8,6 +8,8 @@ All notable changes to this project are documented in this file.
 
 - Naming rules: an easy run with strides is "Easy run + 6 strides" (shortName "Easy + 6 strides"), never a bare "Easy"
   or the easy part's length; the app shows the name as written. Applies from the next block.
+- Controlled threshold blocks: the week after a 5K check returns to the full threshold dose. The check takes one
+  session's place, so its week no longer counts as the baseline the 15-minute weekly step is measured from.
 
 ### Interface
 
