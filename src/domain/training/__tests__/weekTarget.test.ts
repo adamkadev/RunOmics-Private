@@ -29,6 +29,12 @@ describe('weekTarget', () => {
     expect(target.planSessions).toBe(5)
   })
 
+  it('gives no plan total when a session has no distance, rather than a part of it', () => {
+    const week = WEEK.map((d) => (d.date === '2026-09-23' ? { ...d, plannedKm: null } : d))
+
+    expect(weekTarget(week, TODAY, 23).planKm).toBeNull()
+  })
+
   it('gives no plan km when every session is timed, not 0', () => {
     const timed = WEEK.map((d) => ({ ...d, plannedKm: null }))
     expect(weekTarget(timed, TODAY, null).planKm).toBeNull()

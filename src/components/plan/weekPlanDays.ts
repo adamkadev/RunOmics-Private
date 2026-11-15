@@ -1,6 +1,7 @@
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { weekTarget, type WeekTarget, type WeekTargetDay } from '@/domain/training/weekTarget'
+import { plannedWorkoutKm } from '@/domain/training/plannedKm'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { intendedType } from '@/lib/activityTitle'
 import type { PlanPrescriptionView } from './planCoachingView'
@@ -87,10 +88,10 @@ export function weekPlanDays(
     if (coach.length > 0) {
       plannedSessions = coach.length
       const meters = coach.map((view) => view.distanceMeters)
-      if (meters.some((m) => m !== null)) plannedKm = meters.reduce<number>((sum, m) => sum + (m ?? 0), 0) / 1000
+      if (meters.every((m) => m !== null)) plannedKm = meters.reduce<number>((sum, m) => sum + (m ?? 0), 0) / 1000
     } else if (garmin) {
       plannedSessions = 1
-      plannedKm = garmin.distanceM !== undefined ? garmin.distanceM / 1000 : null
+      plannedKm = plannedWorkoutKm(garmin)
     }
 
     const typed = runs.filter((a): a is typeof a & { type: ActivityType } => a.type !== undefined)

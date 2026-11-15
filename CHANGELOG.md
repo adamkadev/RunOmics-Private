@@ -13,6 +13,9 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
+  distance the week shows no plan total rather than the part that has one (Plan › Week read "48.8 / 21 km"). Today's
+  week card, Analytics › Volume and the weekly digest read the same total.
 - Round 13: the stale-data banner reads "No sync for 49 h" / "Fri 14:46 · a run may be missing" ("Pas de synchro
   depuis 49 h" / "Ven. 14:46 · …" in French), and the refresh icon stays amber in the collapsed header while the
   data is a day late. Plan › Week draws a missed session in amber, as Today does. Records uses Analytics' tab
