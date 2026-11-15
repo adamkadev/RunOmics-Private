@@ -8,8 +8,21 @@ All notable changes to this project are documented in this file.
 
 - Naming rules: an easy run with strides is "Easy run + 6 strides" (shortName "Easy + 6 strides"), never a bare "Easy"
   or the easy part's length; the app shows the name as written. Applies from the next block.
+- Controlled threshold blocks: the week after a 5K check returns to the full threshold dose. The check takes one
+  session's place, so its week no longer counts as the baseline the 15-minute weekly step is measured from.
 
 ### Interface
+
+- Round 13: the stale-data banner reads "No sync for 49 h" / "Fri 14:46 · a run may be missing" ("Pas de synchro
+  depuis 49 h" / "Ven. 14:46 · …" in French), and the refresh icon stays amber in the collapsed header while the
+  data is a day late. Plan › Week draws a missed session in amber, as Today does. Records uses Analytics' tab
+  control, French "Chronos · Étapes · Reprise · Parcours" fits one screen. Bilan's back returns to Progress when
+  opened from there.
+- Shoe page: "What you run in it" uses Plan's kinds (easy, threshold with tempo folded in, intervals) and colours,
+  and each run's dot takes the colour the bar counts it under; the French "Allure" stat is no longer cut off.
+- Run map and share card name a cathedral, a main station or a stadium within 300 m of the route (two at most,
+  three on the card for a route over 8 km across). On the run map the style's place names keep off the route
+  line and the buttons.
 
 - Today: the readiness numbers link is named by the numbers it shows, then "Open Load in Analytics", so voice
   control can reach it by what is on screen (WCAG 2.5.3).

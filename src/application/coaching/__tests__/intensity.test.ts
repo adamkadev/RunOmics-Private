@@ -326,6 +326,14 @@ describe('controlled threshold sessions', () => {
     expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
   })
 
+  it('returns to the full dose after a week whose 5K check took one session', () => {
+    const block = draft(
+      week('2026-11-16', [workout('easy', [easy(11_000)]), controlled(3, 10), workout('easy', [easy(9_000), strides(6)]), workout('race', [warmup(2000), { kind: 'effort', target: { distanceMeters: 5_000 } }, cooldown(2000)]), workout('long_run', [easy(15_000)])]),
+      controlledWeek('2026-11-23', controlled(3, 10), controlled(5, 6, MEDIUM, 60)),
+    )
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
+  })
+
   it('holds each repetition length to its own guide, so a short-repetition week may run faster', () => {
     // Week B: 10 x 3 minutes at 260-265 s/km, alternating with 5 x 6 minutes at 268-274.
     const block = draft(

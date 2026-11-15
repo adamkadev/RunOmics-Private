@@ -48,8 +48,8 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
           tabs={recordTabs}
           items={tabIds.map((id) => ({ id, label: s[id] }))}
           label={t.pages.records.title}
-          size="md"
-          scroll
+          fill
+          pinned
         />
       </StickyBar>
 

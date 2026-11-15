@@ -226,10 +226,11 @@ function loadingWeeks(doses: WeekDose[]): WeekDose[] {
 
 /**
  * Controlled threshold time may hold - a repeated week is the point of the method - and its growth is bounded.
- * A week after a lighter one is measured against the loading week before it, so returning to the dose is no jump.
+ * A week after a lighter one or a race is measured against the loading week before it, so returning to the dose is no jump.
  */
 function controlledRampCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): void {
-  const loading = loadingWeeks(doses)
+  // A 5K check takes one session's place by rule, so its week is no baseline to grow from.
+  const loading = loadingWeeks(doses).filter(({ week }) => !week.workouts.some((workout) => workout.type === 'race'))
   const step = CONTROLLED_THRESHOLD.dose.maxWeeklyStepMinutes * 60
   for (let index = 1; index < loading.length; index++) {
     const current = loading[index]!

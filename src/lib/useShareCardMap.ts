@@ -21,6 +21,7 @@ import {
 import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
 import { endsJoined, MARKER_CLEARANCE } from '@/lib/routeMarkers'
 import { SURFACES } from '@/lib/themeTokens'
+import { famousLimit, findFamousPlaces } from '@/lib/famousPlaces'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
 
 export interface ShareCardMap {
@@ -139,9 +140,11 @@ const AREA_SPACING_PX = 60
 
 interface LabelContext extends RouteNamesContext {
   mode: ThemeMode
+  /** The route on the ground, for what lies within metres of it. */
+  path: LngLat[]
 }
 
-/** Chooses the card's names: the start's area, the finish's, the landmark, the water, then the areas passed. */
+/** Chooses the card's names: the start's area, the finish's, the famous places, the landmark, the water, then the areas passed. */
 async function routeLabels(context: LabelContext): Promise<{ labels: ShareMapLabel[]; place: string | null }> {
   const { map, route, mode, token, project } = context
   const surface = SURFACES[mode]
@@ -165,6 +168,12 @@ async function routeLabels(context: LabelContext): Promise<{ labels: ShareMapLab
     if (finishArea && !(startArea && sameArea(finishArea.name, startArea.name))) {
       labels.push({ text: finishArea.name, x: finish[0], y: finish[1], kind: 'finish', priority: LABEL_PRIORITY.finish, ...areaStyle(finishArea.level) })
     }
+  }
+
+  for (const famous of await findFamousPlaces(map, context.path, token, famousLimit(context.path))) {
+    if (labels.some((l) => sameArea(l.text, famous.name))) continue
+    const [x, y] = project(famous.at)
+    labels.push({ text: famous.name, x, y, size: CARD_LABEL_SIZE, color: LANDMARK_INK[mode], opacity: 1, priority: LABEL_PRIORITY.famous, kind: 'famous' })
   }
 
   const landmark = await routeLandmark(context, places, mPerPx, joined, labels.map((l) => l.text))
@@ -288,7 +297,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     const mode = isDark ? 'dark' : 'light'
     const project = (c: LngLat): Px => { const p = map.project(c); return [p.x, p.y] }
     const screen = points.map(project)
-    const { labels, place } = await routeLabels({ map, route: screen, mode, token, project, room: [frame.left, frame.top, width - frame.right, height - frame.bottom] })
+    const { labels, place } = await routeLabels({ map, route: screen, path: points, mode, token, project, room: [frame.left, frame.top, width - frame.right, height - frame.bottom] })
     const drawnByCard = labels.filter((l) => l.kind === 'landmark' || l.kind === 'water').map((l) => l.text)
     if (drawnByCard.length > 0) {
       hideFromMap(map, drawnByCard)

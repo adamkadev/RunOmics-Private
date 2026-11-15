@@ -58,16 +58,21 @@ export interface ShareMapLabel {
   size: number
   color: string
   opacity: number
-  /** Lower survives a collision: the start area, the finish's, the landmark, the water, then every other area. */
+  /** Lower survives a collision: the start area, the finish's, a famous place, the park, the water, then every other area. */
   priority?: number
   /** How the card places it; an area by default. */
   kind?: LabelKind
 }
 
-/** start, finish: nudged, never dropped; landmark: off the route if it can; water: off it or dropped; area: at its point. */
-export type LabelKind = 'start' | 'finish' | 'landmark' | 'water' | 'area'
+/** start, finish: nudged, never dropped; famous, landmark: off the route if they can; water: off it or dropped; area: at its point. */
+export type LabelKind = 'start' | 'finish' | 'famous' | 'landmark' | 'water' | 'area'
 
-export const LABEL_PRIORITY = { start: 1, finish: 2, landmark: 3, water: 4, area: 5 } as const
+export const LABEL_PRIORITY = { start: 1, finish: 2, famous: 3, landmark: 4, water: 5, area: 6 } as const
+
+/** A famous place's mark above its name, as the Activity map draws one. */
+const FAMOUS_MARK_R = 3
+const FAMOUS_MARK_GAP = 3
+const famousMarkH = (label: ShareMapLabel) => (label.kind === 'famous' ? FAMOUS_MARK_R * 2 + FAMOUS_MARK_GAP : 0)
 
 /** Set `runomics:debug-labels` in localStorage to log why each name was dropped. */
 export function labelDebug(...args: unknown[]): void {
@@ -613,7 +618,7 @@ export function arrangeLabels(
     ctx.font = `600 ${label.size}px ${fonts.text}`
     const wraps = label.kind && label.kind !== 'area'
     const lines = wraps ? (balanceLines(ctx, label.text, BESIDE_MAX_W) ?? [label.text]) : [label.text]
-    const fit = { lines, halfW: Math.max(...lines.map((line) => ctx.measureText(line).width)) / 2, halfH: (label.size * lines.length + (lines.length - 1) * 2) / 2 }
+    const fit = { lines, halfW: Math.max(...lines.map((line) => ctx.measureText(line).width)) / 2, halfH: (label.size * lines.length + (lines.length - 1) * 2 + famousMarkH(label)) / 2 }
     fits.set(label, fit)
     return fit
   }
@@ -655,7 +660,7 @@ export function arrangeLabels(
     }
     return false
   }
-  const order = labels.map((label, i) => ({ label, i })).sort((a, b) => (a.label.priority ?? 5) - (b.label.priority ?? 5) || a.i - b.i)
+  const order = labels.map((label, i) => ({ label, i })).sort((a, b) => (a.label.priority ?? LABEL_PRIORITY.area) - (b.label.priority ?? LABEL_PRIORITY.area) || a.i - b.i)
   const dropped: ShareMapLabel[] = []
   for (const { label } of order) {
     const kind = label.kind ?? 'area'
@@ -663,7 +668,7 @@ export function arrangeLabels(
     if (kind === 'start' || kind === 'finish') {
       reason = tryPlace(label, spotsAt(NUDGE_RADII), false)
       if (reason && force(label)) reason = null
-    } else if (kind === 'landmark') {
+    } else if (kind === 'famous' || kind === 'landmark') {
       reason = tryPlace(label, spotsAt(BESIDE_RADII), true)
       if (reason) reason = tryPlace(label, spotsAt(BESIDE_RADII), false)
     } else if (kind === 'water') {
@@ -704,8 +709,17 @@ function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
     ctx.font = `600 ${label.size}px ${fonts.text}`
     ctx.globalAlpha = base * label.opacity
     ctx.lineWidth = 3
+    const mark = famousMarkH(label)
+    if (mark) {
+      ctx.beginPath()
+      ctx.arc(x, y - (label.size * lines.length + (lines.length - 1) * 2 + mark) / 2 + FAMOUS_MARK_R, FAMOUS_MARK_R, 0, Math.PI * 2)
+      ctx.strokeStyle = palette.bg
+      ctx.stroke()
+      ctx.fillStyle = label.color
+      ctx.fill()
+    }
     lines.forEach((line, i) => {
-      const ly = y + (i - (lines.length - 1) / 2) * (label.size + 2)
+      const ly = y + mark / 2 + (i - (lines.length - 1) / 2) * (label.size + 2)
       ctx.strokeStyle = palette.bg
       ctx.strokeText(line, x, ly)
       ctx.fillStyle = label.color

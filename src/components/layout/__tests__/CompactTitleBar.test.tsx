@@ -230,7 +230,7 @@ describe('CompactTitleBar', () => {
 
     document.body.innerHTML = ''
     tabPage()
-    document.querySelector('main')!.insertAdjacentHTML('beforeend', '<button data-bar-action="refresh" data-bar-busy aria-label="Synced 2h ago"></button><a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
+    document.querySelector('main')!.insertAdjacentHTML('beforeend', '<button data-bar-action="refresh" data-bar-busy data-tone="caution" aria-label="Synced 2h ago"></button><a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
     const sync = vi.fn()
     document.querySelector('[data-bar-action="refresh"]')!.addEventListener('click', sync)
     await mount(60)
@@ -241,6 +241,7 @@ describe('CompactTitleBar', () => {
     expect(refresh!.getAttribute('aria-label')).toBe('Synced 2h ago')
     expect(refresh!.className).not.toMatch(/(^|\s)lg(\s|$)/)
     expect(refresh!.className).toContain('size-11')
+    expect(refresh!.className).toContain('text-[var(--tone-caution)]')
     expect(disc!.className).toContain('size-8')
     expect(disc!.className).toContain('bg-accent')
     expect(refresh!.querySelector('svg')!.getAttribute('class')).toContain('animate-spin')

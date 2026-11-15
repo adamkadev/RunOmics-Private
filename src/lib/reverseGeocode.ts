@@ -166,3 +166,28 @@ const TOWN_TYPES = new Set(["municipality", "joint_municipality"]);
 export async function townAt(lon: number, lat: number, token: string): Promise<string | null> {
   return (await geocodeAreas(lon, lat, token, START_DECIMALS)).find((f) => TOWN_TYPES.has(f.placeType))?.text ?? null;
 }
+
+/** West, south, east, north. */
+export type GeoBox = readonly [number, number, number, number];
+
+/** The tiles carry a place of worship only at zoom 15 and never say which is a cathedral; the geocoder's category does. */
+export async function cathedralsIn(box: GeoBox, token: string): Promise<{ name: string; at: [number, number] }[]> {
+  const bbox = box.map((v) => v.toFixed(3)).join(",");
+  const key = `cathedrals:${CACHE_VERSION}:${bbox}`;
+  const cached = readCache(key);
+  if (cached) return JSON.parse(cached) as { name: string; at: [number, number] }[];
+  try {
+    const res = await fetch(
+      `https://api.maptiler.com/geocoding/cathedral.json?key=${token}&types=poi&bbox=${bbox}&limit=10&language=${GEOCODE_LANGUAGE}`,
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as { features?: PoiFeature[] };
+    const found = (json.features ?? [])
+      .filter((f) => f.text && f.center && f.properties?.categories?.includes("cathedral"))
+      .map((f) => ({ name: f.text!, at: f.center! }));
+    writeCache(key, JSON.stringify(found));
+    return found;
+  } catch {
+    return [];
+  }
+}

@@ -202,7 +202,7 @@ function ScrollingTabs({
       aria-label={label}
       onScroll={measure}
       data-fade-end={edges.end || undefined}
-      className="relative flex min-w-0 flex-1 gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="relative flex min-w-0 flex-1 gap-0.5 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       style={{ maskImage: mask, WebkitMaskImage: mask }}
     >
       {children}

@@ -9,7 +9,8 @@ import { basemapStyle, TEST_MAPS } from '@/lib/maptiler'
 import { MapAttribution } from '@/components/ui/MapAttribution'
 import { Glass, GlassLayers, GLASS_CIRCLE, GLASS_GROUP_BUTTON, glassClass } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
-import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, setRouteNames, showPlacesAtAnyZoom } from '@/lib/maplibre'
+import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, setFamousPlaces, setRouteNames, showPlacesAtAnyZoom } from '@/lib/maplibre'
+import { findFamousPlaces, type FamousPlace } from '@/lib/famousPlaces'
 import { findRouteNames, type FoundRouteName } from '@/lib/runMapNames'
 import { MARKER_CLEARANCE } from '@/lib/routeMarkers'
 import { SURFACES } from '@/lib/themeTokens'
@@ -20,6 +21,7 @@ import {
   ROUTE_FIT_PADDING,
   RUN_START_FENCE_LAYER,
   addEdgeFence,
+  addLabelFence,
   addRunLayers,
   setRunAccent,
   pointAlongRoute,
@@ -28,6 +30,7 @@ import {
   setRunEnds,
   setRunRoute,
   startDotRadius,
+  type ScreenRect,
 } from '@/lib/runMapLayers'
 
 type LngLat = [number, number]
@@ -53,6 +56,20 @@ const MAP_LANG = t.locale.split('-')[0] ?? 'en'
 
 const MAP_STYLES = ['dark', 'light'] as const
 type MapStyle = (typeof MAP_STYLES)[number]
+
+/** At most two, so a city run's map stays a map of the run. */
+const FAMOUS_LIMIT = 2
+
+/** The page's buttons over the canvas, in its px: a name under one could not be read. */
+function obstacleRects(host: HTMLElement | null): ScreenRect[] {
+  if (!host) return []
+  const root = host.closest('[data-map-root]') ?? host.closest('.activity-map')
+  const origin = host.getBoundingClientRect()
+  return [...(root?.querySelectorAll<HTMLElement>('[data-map-obstacle]') ?? [])].map((el) => {
+    const r = el.getBoundingClientRect()
+    return [r.left - origin.left, r.top - origin.top, r.right - origin.left, r.bottom - origin.top]
+  })
+}
 
 const themeStyle = (): MapStyle => (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
 
@@ -157,6 +174,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--background').trim()) ||
       SURFACES[darkMap ? 'dark' : 'light'].background
     let removeFence: (() => void) | null = null
+    let removeLabelFence: (() => void) | null = null
     let stopObserving: (() => void) | null = null
 
     async function initMap() {
@@ -229,12 +247,15 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
       }
 
       let names: FoundRouteName[] | null = null
+      let famous: FamousPlace[] | null = null
       const showNames = () => {
-        if (!names?.length) return
         const mode = dark ? 'dark' : 'light'
+        const markerFence = map.getLayer(RUN_START_FENCE_LAYER) ? RUN_START_FENCE_LAYER : undefined
+        if (famous?.length) setFamousPlaces(map, famous, { halo: SURFACES[mode].background, landmark: LANDMARK_INK[mode], lang: MAP_LANG }, markerFence)
+        if (!names?.length) return
         const ink = { halo: SURFACES[mode].background, start: SURFACES[mode].text2, green: PARK_INK[mode], lang: MAP_LANG }
         const startClear = startDotRadius(SHARE_MARKER_HEX[mode].outline) + MARKER_CLEARANCE
-        setRouteNames(map, names, { ...ink, startClear }, map.getLayer(RUN_START_FENCE_LAYER) ? RUN_START_FENCE_LAYER : undefined)
+        setRouteNames(map, names, { ...ink, startClear }, markerFence)
       }
       // Asked once, at the fitted camera: the tiles there hold the start's quarter and the greens the route crosses.
       map.once('idle', async () => {
@@ -243,9 +264,13 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         const { width, height } = map.getContainer().getBoundingClientRect()
         const { top, right, bottom, left } = ROUTE_FIT_PADDING
         const joined = !finish || runEndsJoined(map, start, finish)
-        const found = await findRouteNames(map, route, token, [left, top, width - right, height - bottom], joined).catch(() => [])
+        const [found, near] = await Promise.all([
+          findRouteNames(map, route, token, [left, top, width - right, height - bottom], joined).catch(() => []),
+          findFamousPlaces(map, route, token, FAMOUS_LIMIT).catch(() => []),
+        ])
         if (cancelled) return
         names = found
+        famous = near
         if (layersReadyRef.current) showNames()
       })
 
@@ -272,6 +297,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         addLandmarkLabels(map, { halo: SURFACES[mode].background, landmark: LANDMARK_INK[mode], lang: MAP_LANG })
         addWaterLabels(map, { halo: SURFACES[mode].background, water: WATER_INK[mode], lang: MAP_LANG })
         showPlacesAtAnyZoom(map)
+        removeLabelFence?.()
+        removeLabelFence = addLabelFence(map, route, () => obstacleRects(hostRef.current))
         showNames()
         layersReadyRef.current = true
         removeFence?.()
@@ -293,6 +320,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         layersReadyRef.current = false
         removeFence?.()
         removeFence = null
+        removeLabelFence?.()
+        removeLabelFence = null
         map.setStyle(basemapStyle(dark)!, { diff: false })
       }
       applyStyleRef.current = applyStyle
@@ -317,6 +346,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
       stopObserving?.()
       applyStyleRef.current = null
       removeFence?.()
+      removeLabelFence?.()
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
       mapRef.current = null
@@ -360,11 +390,11 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         <>
           <div aria-hidden className="map-top-edge pointer-events-none absolute inset-x-0 top-0 z-10"><i /><i /></div>
           <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between px-4">
-            <button type="button" onClick={close} aria-label={m.exitFullscreen} className={glassClass('regular', GLASS_CIRCLE)}>
+            <button type="button" onClick={close} aria-label={m.exitFullscreen} data-map-obstacle className={glassClass('regular', GLASS_CIRCLE)}>
               <GlassLayers />
               <X size={20} strokeWidth={2} aria-hidden="true" />
             </button>
-            <Glass className="flex h-11">
+            <Glass data-map-obstacle="" className="flex h-11">
               <button type="button" onClick={recenter} aria-label={m.recenter} className={GLASS_GROUP_BUTTON}>
                 <LocateFixed size={18} strokeWidth={2} aria-hidden="true" />
               </button>
@@ -385,6 +415,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
               <Glass
                 ref={cardRef}
                 data-testid="map-card"
+                data-map-obstacle=""
                 className="w-full rounded-[28px] px-[18px] py-3.5"
               >
                 <div>{card}</div>

@@ -11,6 +11,8 @@ interface Props {
   fallbackHref?: string
   className?: string
   variant?: 'link' | 'round'
+  /** Other parents the page opens from: when the page just left is one of them, back returns to it. */
+  alsoFrom?: readonly { href: string; label: string }[]
 }
 
 /**
@@ -18,19 +20,21 @@ interface Props {
  * only when the parent is the page just left, which keeps its scroll and
  * filters. `data-bar-back` lets the compact title bar's chevron press it.
  */
-export function BackButton({ label, fallbackHref = '/', className, variant = 'link' }: Props) {
+export function BackButton({ label, fallbackHref = '/', className, variant = 'link', alsoFrom = [] }: Props) {
   const router = useRouter()
   const origin = useNavigationOrigin()
+  const left = origin?.isImmediate ? origin.path.split('?')[0] : null
+  const other = alsoFrom.find((parent) => parent.href === left)
 
   return (
     <button
       type="button"
       data-bar-back
       onClick={() => {
-        if (origin?.isImmediate && origin.path.split('?')[0] === fallbackHref) router.back()
+        if (left === fallbackHref || other) router.back()
         else router.push(fallbackHref)
       }}
-      aria-label={label}
+      aria-label={other?.label ?? label}
       className={glassClass(variant === 'round' ? 'clear' : 'bar', cn(GLASS_CIRCLE, className))}
     >
       <GlassLayers />

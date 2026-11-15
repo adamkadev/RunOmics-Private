@@ -17,6 +17,6 @@ export default async function CheckpointPage() {
   const view = checkpointView(getCycleCheckpoint(today), today)
 
   return (
-    <Checkpoint view={view} back={<BackButton label={t.nav.items.plan} fallbackHref="/plan" />} />
+    <Checkpoint view={view} back={<BackButton label={t.nav.items.plan} fallbackHref="/plan" alsoFrom={[{ href: '/profile', label: t.nav.items.profile }]} />} />
   )
 }

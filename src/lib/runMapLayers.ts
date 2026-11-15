@@ -4,6 +4,7 @@ import { distanceKm } from '@/lib/math'
 import { firstSymbolLayerId } from '@/lib/maplibre'
 import { JOIN_PX as JOIN_DISTANCE_PX, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 import { MAP_PADDING } from './routeFrame'
+import { routeFencePoints } from './shareCardMap'
 
 export const ROUTE_SOURCE = 'route'
 export const ROUTE_LINE_LAYER = 'route-line'
@@ -300,6 +301,61 @@ export function addEdgeFence(map: MapLibreMap): () => void {
       return { type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [lng, lat] } }
     })
     ;(map.getSource(EDGE_FENCE_SOURCE) as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features })
+  }
+
+  update()
+  map.on('moveend', update)
+  map.on('resize', update)
+  return () => {
+    map.off('moveend', update)
+    map.off('resize', update)
+  }
+}
+
+export const LABEL_FENCE_SOURCE = 'run-label-fence'
+export const LABEL_FENCE_LAYER = 'run-label-fence'
+const LABEL_FENCE_ICON = 'run-label-fence'
+/** As wide as the line and its halo: wider, it reaches the point of a district the run went through and drops its name. */
+const LABEL_FENCE_PX = 6
+
+/** In the canvas's px: left, top, right, bottom. */
+export type ScreenRect = readonly [number, number, number, number]
+
+export function rectPoints([left, top, right, bottom]: ScreenRect, step = LABEL_FENCE_PX): [number, number][] {
+  const points: [number, number][] = []
+  for (let x = left; x <= right; x += step) for (let y = top; y <= bottom; y += step) points.push([x, y])
+  return points
+}
+
+/**
+ * The route goes under the labels and the page's buttons over the canvas: clear icons along one and over the
+ * other drop a style name that would sit on the line or under a button. Below the run's own names, which may.
+ */
+export function addLabelFence(map: MapLibreMap, route: readonly LngLat[], obstacles: () => readonly ScreenRect[]): () => void {
+  const size = LABEL_FENCE_PX
+  if (!map.hasImage(LABEL_FENCE_ICON)) map.addImage(LABEL_FENCE_ICON, { width: size, height: size, data: new Uint8Array(size * size * 4) })
+  if (!map.getSource(LABEL_FENCE_SOURCE)) map.addSource(LABEL_FENCE_SOURCE, { type: 'geojson', data: EMPTY })
+  if (!map.getLayer(LABEL_FENCE_LAYER)) {
+    map.addLayer({
+      id: LABEL_FENCE_LAYER,
+      type: 'symbol',
+      source: LABEL_FENCE_SOURCE,
+      layout: { 'icon-image': LABEL_FENCE_ICON, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
+    }, map.getLayer(RUN_FINISH_LAYER) ? RUN_FINISH_LAYER : undefined)
+  }
+
+  function update() {
+    const screen: [number, number][] = []
+    for (const c of route) {
+      const { x, y } = map.project(c)
+      const last = screen[screen.length - 1]
+      if (!last || Math.hypot(x - last[0], y - last[1]) >= size) screen.push([x, y])
+    }
+    const features = [...routeFencePoints(screen, size), ...obstacles().flatMap((rect) => rectPoints(rect))].map(([x, y]) => {
+      const { lng, lat } = map.unproject([x, y])
+      return { type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [lng, lat] } }
+    })
+    ;(map.getSource(LABEL_FENCE_SOURCE) as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features })
   }
 
   update()

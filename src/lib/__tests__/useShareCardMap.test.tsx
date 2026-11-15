@@ -335,6 +335,7 @@ describe('the share card names', () => {
   it('names the green by the geocoder at its centre, then at points inside it, then by a landform there', async () => {
     const calls: string[] = []
     geocoder((url) => {
+      if (url.includes('/cathedral.json')) return []
       calls.push(url.includes('types=poi') ? 'poi' : 'areas')
       return url.includes('types=poi') ? [] : [{ text: 'Forêt des Hêtres', place_type: ['major_landform'], properties: { categories: ['forest'] }, center: at(0, 0) }]
     })
@@ -365,7 +366,7 @@ describe('the share card names', () => {
       fake.rendered = [square(1690, 1690, 1810, 1860)]
       fake.sourceFeatures = { place_label: [point('Le Bois-Joli', 1760, 1780, { class: 'suburb' })] }
     })
-    expect(labels).toContainEqual(expect.objectContaining({ text: 'Le Bois-Joli', priority: 3 }))
+    expect(labels).toContainEqual(expect.objectContaining({ text: 'Le Bois-Joli', priority: 4 }))
   })
 
   it('names the park from the tiles when the geocoder names none, and keeps the map from drawing it too', async () => {
@@ -377,7 +378,7 @@ describe('the share card names', () => {
       fake.sourceFeatures = { poi_public: [point('Parc des Tilleuls', 2150, 2170, { subclass: 'park' })] }
       fake.layers.push({ id: 'runomics-park-label', source: 'maptiler' })
     })
-    expect(labels).toContainEqual(expect.objectContaining({ text: 'Parc des Tilleuls', kind: 'landmark', priority: 3, color: '#5f8a6d' }))
+    expect(labels).toContainEqual(expect.objectContaining({ text: 'Parc des Tilleuls', kind: 'landmark', priority: 4, color: '#5f8a6d' }))
     expect(JSON.stringify(map.filters.get('runomics-park-label'))).toContain('Parc des Tilleuls')
   })
 })
