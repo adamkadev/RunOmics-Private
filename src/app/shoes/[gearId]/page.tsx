@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { getShoeDetail, type ShoeTypeBucket } from '@/application/usecases/GetShoeDetail'
+import { shoeTypeBucket } from '@/domain/shoe/types'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
@@ -11,7 +12,6 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { cardClass } from '@/components/ui/Card'
 import { Unit } from '@/components/ui/Stat'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { TypeDot } from '@/components/ui/TypeDot'
 import { VerdictBlock, type VerdictTone } from '@/components/ui/Verdict'
 import { zoneColor } from '@/lib/colors'
 import Link from 'next/link'
@@ -20,7 +20,7 @@ import { isWatchId } from '@/lib/garminConnect'
 import { WearBar } from '@/components/shoes/WearBar'
 import { formatClock, formatDate, formatDateRange, formatDistance, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { activityTitle, intendedType } from '@/lib/activityTitle'
+import { activityTitle } from '@/lib/activityTitle'
 import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
@@ -29,10 +29,9 @@ const TITLE = 'text-[15px] font-semibold text-foreground'
 
 const VERDICT_TONE: Record<'watch' | 'replace', VerdictTone> = { watch: 'warn', replace: 'neg' }
 
-// Activity-type colours, so each dot in the run list has its colour in the bar and legend.
+// Plan's colours, so each dot in the run list has its colour in the bar and legend.
 const BUCKET_COLOR: Record<ShoeTypeBucket, string> = {
   base: zoneColor(2),
-  tempo: zoneColor(3),
   threshold: zoneColor(4),
   intervals: zoneColor(5),
 }
@@ -40,7 +39,7 @@ const BUCKET_COLOR: Record<ShoeTypeBucket, string> = {
 function typeShareLabel(bucket: ShoeTypeBucket): string {
   if (bucket === 'base') return t.shoes.easy
   if (bucket === 'intervals') return t.shoes.detail.typeShareLabels.intervals
-  return t.activityTypes[bucket === 'tempo' ? 'Tempo' : 'Threshold']
+  return t.activityTypes.Threshold
 }
 
 const RECENT_RUNS = 5
@@ -121,13 +120,12 @@ export default async function ShoeDetailPage({
   const typeShareEntries: { bucket: ShoeTypeBucket; percent: number }[] = (
     [
       { bucket: 'base', percent: shoe.typeShare.base },
-      { bucket: 'tempo', percent: shoe.typeShare.tempo },
       { bucket: 'threshold', percent: shoe.typeShare.threshold },
       { bucket: 'intervals', percent: shoe.typeShare.intervals },
     ] as const
   ).filter((entry) => entry.percent >= TYPE_SHARE_FLOOR)
 
-  const keySessionShare = shoe.typeShare.tempo + shoe.typeShare.threshold + shoe.typeShare.intervals
+  const keySessionShare = shoe.typeShare.threshold + shoe.typeShare.intervals
   const usageInsight = shoe.retired
     ? keySessionShare > 50
       ? d.whatItWasFor.keySessionPair(keySessionShare)
@@ -282,7 +280,7 @@ export default async function ShoeDetailPage({
                 href={`/activities/${a.id}`}
                 className="flex items-center gap-3 border-b border-border px-5 py-[13px] transition-colors last:border-b-0 hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)]"
               >
-                <TypeDot type={intendedType(a)} size={8} />
+                <span aria-hidden data-bucket={shoeTypeBucket(a.type)} className="size-2 shrink-0 rounded-full" style={{ background: BUCKET_COLOR[shoeTypeBucket(a.type)] }} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="break-words text-sm font-semibold text-pretty text-foreground">{activityTitle(a)}</span>
                   <span className="truncate text-xs text-muted-foreground">

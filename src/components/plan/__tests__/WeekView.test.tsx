@@ -219,7 +219,7 @@ describe('the day selector', () => {
     renderWeek({ planned: [{ date: '2026-09-08', name: 'Easy', type: 'Base', distanceM: 8_000 }] })
 
     expect(bar('2026-09-08').getAttribute('data-bar-state')).toBe('missed')
-    expect(bar('2026-09-08').className).toContain('border-muted-foreground')
+    expect(bar('2026-09-08').className).toContain('border-[var(--warn)]')
   })
 
   it('selects a day on tap', async () => {

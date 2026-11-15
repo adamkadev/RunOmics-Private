@@ -245,7 +245,7 @@ export function relativeTimeParts(iso: string, now: Date = new Date()): { unit: 
 
 export function formatWeekdayTime(iso: string): string {
   const at = new Date(iso)
-  const weekday = stableSpaces(dateFormat({ weekday: 'short' }).format(at).replace(/\.$/, ''))
+  const weekday = stableSpaces(dateFormat({ weekday: 'short' }).format(at))
   const time = stableSpaces(dateFormat({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at))
   return `${weekday} ${time}`
 }

@@ -65,8 +65,8 @@ export function RunMapHero({
       <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between px-4">
         {/* Keyed: back and share are elements the server page made, and React
             asks a key of one set beside other children of a client element. */}
-        <Fragment key="back">{back ?? <span />}</Fragment>
-        <Glass material="clear" className="flex h-11">
+        <div key="back" data-map-obstacle>{back}</div>
+        <Glass material="clear" data-map-obstacle="" className="flex h-11">
           {route && (
             <button
               type="button"

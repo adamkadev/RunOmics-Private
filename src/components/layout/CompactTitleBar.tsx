@@ -64,6 +64,8 @@ interface BarAction {
   /** `data-bar-busy`: the sync running, its arrows turning. */
   busy: boolean
   disabled: boolean
+  /** `data-tone="caution"`: a late or failed sync stays amber once the header collapses. */
+  caution: boolean
   /** It opens a menu: Analytics' period. Null for a plain button. */
   expanded: boolean | null
 }
@@ -189,6 +191,7 @@ export function CompactTitleBar() {
         name: nameOf(el),
         text: el.textContent?.trim() ?? '',
         busy: el.hasAttribute('data-bar-busy'),
+        caution: el.dataset.tone === 'caution',
         disabled: el.hasAttribute('disabled'),
         expanded: el.hasAttribute('aria-expanded') ? el.getAttribute('aria-expanded') === 'true' : null,
       }))
@@ -324,6 +327,7 @@ export function CompactTitleBar() {
         attributes: true,
         attributeFilter: [
           'data-bar-busy',
+          'data-tone',
           'disabled',
           'aria-label',
           'aria-expanded',
@@ -435,7 +439,7 @@ export function CompactTitleBar() {
           'flex shrink-0 items-center justify-center rounded-full disabled:opacity-60',
           action.kind === 'avatar'
             ? cn('bg-accent font-bold text-accent-foreground', inCapsule ? 'hit-44 size-8 text-[13px]' : 'size-11 text-base shadow-[0_6px_20px_rgb(0_0_0/0.2)]')
-            : cn('text-foreground', Icon ? 'size-11' : 'h-11 min-w-11 gap-0.5 pl-3.5 pr-2.5 text-[15px] font-semibold', inCapsule ? 'lg-press' : glassClass('bar')),
+            : cn(action.caution ? 'text-[var(--tone-caution)]' : 'text-foreground', Icon ? 'size-11' : 'h-11 min-w-11 gap-0.5 pl-3.5 pr-2.5 text-[15px] font-semibold', inCapsule ? 'lg-press' : glassClass('bar')),
           action.kind === 'avatar' && inCapsule && 'lg-press',
         )}
       >

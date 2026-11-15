@@ -769,8 +769,8 @@ export const fr = {
       },
     },
     stale: {
-      title: (hours: number) => `Données de la montre vieilles de ${hours} h`,
-      line: (when: string) => `Dernière synchro ${when} · une sortie peut manquer`,
+      title: (hours: number) => `Pas de synchro depuis ${hours} h`,
+      line: (when: string) => `${when.charAt(0).toUpperCase()}${when.slice(1)} · une sortie peut manquer`,
       sync: 'Synchroniser',
     },
     syncStatus: {
@@ -1724,7 +1724,7 @@ export const fr = {
     roles: { workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
     easy: 'Facile',
-    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure moy.', avgHr: 'FC moy.' },
+    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure', avgHr: 'FC moy.' },
     lastRuns: 'Dernières sorties',
     neverUsed: 'Jamais utilisée',
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
@@ -1917,7 +1917,7 @@ export const fr = {
     badgeLabels: { longest: 'Distance' } as Record<string, string>,
     raceTag: 'course',
     segmented: {
-      best: 'Meilleurs temps',
+      best: 'Chronos',
       milestones: 'Étapes',
       routes: 'Parcours',
     },

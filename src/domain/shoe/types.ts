@@ -1,4 +1,4 @@
-import type { Activity } from '@/domain/activity/types'
+import type { Activity, ActivityType } from '@/domain/activity/types'
 import { SHOE_DOT_RAMP } from '@/lib/colors'
 
 export interface ShoeInfo {
@@ -39,8 +39,14 @@ export function buildShoeRegistry(records: ShoeRecord[]): Record<string, ShoeInf
   return registry
 }
 
-/** The type mix by zone, as the run dots draw it: Z2, Z3, Z4 and Z5. */
-export type ShoeTypeBucket = 'base' | 'tempo' | 'threshold' | 'intervals'
+/** Plan's three kinds of run: the plan writes no tempo, so a tempo run counts as threshold. */
+export type ShoeTypeBucket = 'base' | 'threshold' | 'intervals'
+
+export function shoeTypeBucket(type: ActivityType): ShoeTypeBucket {
+  if (type === 'Base') return 'base'
+  if (type === 'Tempo' || type === 'Threshold') return 'threshold'
+  return 'intervals'
+}
 
 export interface ShoeDetail {
   gearId: string

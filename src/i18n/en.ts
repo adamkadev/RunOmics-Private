@@ -814,8 +814,8 @@ export const en = {
       },
     },
     stale: {
-      title: (hours: number) => `Watch data ${hours} h old`,
-      line: (when: string) => `Last sync ${when} · a run may be missing`,
+      title: (hours: number) => `No sync for ${hours} h`,
+      line: (when: string) => `${when.charAt(0).toUpperCase()}${when.slice(1)} · a run may be missing`,
       sync: 'Sync',
     },
     syncStatus: {

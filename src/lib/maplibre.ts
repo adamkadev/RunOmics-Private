@@ -169,6 +169,55 @@ export function addLandmarkLabels(map: MapLibreMap, options: LandmarkLabelOption
   }
 }
 
+export const FAMOUS_SOURCE = 'runomics-famous'
+export const FAMOUS_LABEL_LAYER = 'runomics-famous-label'
+/** The sprite's icons for a cathedral, a station and a stadium. */
+const FAMOUS_ICONS = { cathedral: 'church', station: 'railway', stadium: 'stadium' } as const
+
+/** Places already chosen near the route, so at any zoom: the tiles hold no cathedral under zoom 15. */
+export function setFamousPlaces(
+  map: MapLibreMap,
+  places: readonly { name: string; kind: keyof typeof FAMOUS_ICONS; at: [number, number] }[],
+  options: LandmarkLabelOptions,
+  before?: string,
+): void {
+  const data: GeoJSON.FeatureCollection = {
+    type: 'FeatureCollection',
+    features: places.map(({ name, kind, at }) => ({ type: 'Feature', properties: { name, icon: FAMOUS_ICONS[kind] }, geometry: { type: 'Point', coordinates: at } })),
+  }
+  const source = map.getSource(FAMOUS_SOURCE) as { setData?: (d: GeoJSON.FeatureCollection) => void } | undefined
+  if (source?.setData) source.setData(data)
+  else map.addSource(FAMOUS_SOURCE, { type: 'geojson', data })
+  if (map.getLayer(FAMOUS_LABEL_LAYER)) return
+  map.addLayer({
+    id: FAMOUS_LABEL_LAYER,
+    type: 'symbol',
+    source: FAMOUS_SOURCE,
+    layout: {
+      'icon-image': ['get', 'icon'],
+      'icon-size': 0.6,
+      'icon-optional': true,
+      'text-field': ['get', 'name'],
+      'text-font': PLACE_FONT,
+      'text-size': options.size ?? 11,
+      'text-anchor': 'top',
+      'text-offset': [0, 0.7],
+      'text-optional': true,
+      'text-padding': 2,
+      'text-max-width': 8,
+    },
+    paint: {
+      'icon-color': options.landmark,
+      'icon-halo-color': options.halo,
+      'icon-halo-width': 1,
+      'text-color': options.landmark,
+      'text-halo-color': options.halo,
+      'text-halo-width': 1.4,
+      'text-halo-blur': 0.5,
+    },
+  } as Parameters<MapLibreMap['addLayer']>[0], before)
+}
+
 export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): void {
   if (map.getLayer(WATER_LABEL_LAYER)) return
   const source = vectorSourceOf(map, WATER_LABEL_SOURCE_LAYER)

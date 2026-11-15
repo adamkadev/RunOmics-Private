@@ -121,7 +121,7 @@ describe('getShoeDetail', () => {
     })
   })
 
-  it('splits the distance by session zone: base, tempo, threshold, intervals', () => {
+  it('splits the distance by Plan\'s kinds of run, tempo counted as threshold', () => {
     const typed = (type: Activity['type'], date: string, km: number) => ({ ...run('daily', date, km), type }) as Activity
     getAllActivities.mockReturnValue([
       typed('Base', '2026-07-01', 50),
@@ -131,6 +131,6 @@ describe('getShoeDetail', () => {
       typed('Race', '2026-07-05', 5),
     ])
 
-    expect(getShoeDetail('daily')!.typeShare).toEqual({ base: 50, tempo: 20, threshold: 20, intervals: 10 })
+    expect(getShoeDetail('daily')!.typeShare).toEqual({ base: 50, threshold: 40, intervals: 10 })
   })
 })
