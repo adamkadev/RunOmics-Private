@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { t } from '@/i18n'
 import type { PlanCoachingView } from '../planCoachingView'
-import { blockOfWeek, generalBlockWeek, phaseWeek, planPhaseSpans, progressWeek, raceCountdown, spanOfWeek } from '../planPhaseSpans'
+import { blockOfWeek, generalBlockWeek, phaseWeek, planPhaseSpans, progressWeek, raceCountdown, segmentFill, spanOfWeek } from '../planPhaseSpans'
 
 const GARMIN = [
   { phase: 'base' as const, startDate: '2026-09-08', endDate: '2026-09-28' },
@@ -83,6 +83,12 @@ describe('the block bar', () => {
     expect(progressWeek(block, 4, '2026-11-15')).toBe(0)
     expect(progressWeek(block, 4, '2026-11-25')).toBe(2)
     expect(progressWeek(block, 4, '2026-12-14')).toBe(5)
+  })
+
+  it('fills the week under way by the days reached, so its Sunday is full', () => {
+    expect(segmentFill(3, 4, '2026-11-15')).toBe(1)
+    expect(segmentFill(0, 1, '2026-11-18')).toBeCloseTo(3 / 7)
+    expect(segmentFill(1, 1, '2026-11-18')).toBe(0)
   })
 
   it('gives a week to the block that starts in it, as its lead-in', () => {

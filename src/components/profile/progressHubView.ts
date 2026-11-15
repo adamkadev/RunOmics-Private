@@ -40,7 +40,7 @@ export interface ProgressHubView {
   } | null
   /** The coach's current block, drawn in the race card's place while no race is planned. */
   /** `general`: a block toward no race, which the coach's own name replaces once the signed-in client reads it. */
-  block: { name: string; general: boolean; week: number; total: number; done: number; planned: number } | null
+  block: { name: string; general: boolean; week: number; total: number; today: string; done: number; planned: number } | null
   vo2max: {
     value: number
     delta: number | null
@@ -202,6 +202,7 @@ export function currentBlock(coaching: CoachingOverview | null | undefined, toda
     general: phase.span.key === 'general',
     week: phase.week,
     total: phase.total,
+    today,
     done: sessions.filter((w) => w.state === 'completed').length,
     planned: sessions.length,
   }

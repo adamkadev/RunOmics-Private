@@ -3,6 +3,7 @@ import { withEffectiveTypes } from '@/domain/activity/effectiveType'
 import { sessionForRun, sessionsAcrossPlans, type RunSession } from '@/domain/coaching/sessionForRun'
 import type { CoachingPlan, NumberRange, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import { planEasyPace, prescriptionMeters } from '@/domain/coaching/sessionDistance'
+import { pastBlocks } from '@/domain/coaching/blockSpan'
 import { trainingZonesOn } from '@/application/usecases/GetTrainingZones'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -85,6 +86,18 @@ export function archivedPlans(repository: Pick<CoachingRepository, 'getArchivedP
     console.error('[coaching] archived plans unreadable', error)
     return []
   }
+}
+
+/** Weeks a renewal left behind keep the sessions of the block that planned them, as it last stood. */
+export function getPastSessions(current: CoachingPlan, today = appTodayIso(), repository: Pick<CoachingRepository, 'getEvaluations' | 'getArchivedPlans'> = new JsonCoachingRepository()): PrescriptionView[] {
+  const blocks = pastBlocks(current, archivedPlans(repository))
+  if (blocks.length === 0) return []
+  const held = new Set(current.weeks.flatMap((week) => week.workouts.map((workout) => workout.date)))
+  const evaluations = repository.getEvaluations()
+  const activities = getAllActivities()
+  return blocks.flatMap(({ plan, span }) =>
+    buildCoachingOverview(plan, evaluations, activities, today, easyPaceFor(plan, today)).workouts.filter(({ prescription: { date } }) =>
+      date >= span.startDate && date <= span.endDate && !held.has(date)))
 }
 
 export function getRunSessions(

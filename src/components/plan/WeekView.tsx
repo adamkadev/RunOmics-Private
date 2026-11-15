@@ -23,7 +23,7 @@ import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './pl
 import { sessionTitle } from './sessionTitle'
 import { dayKind, kindLetter } from './sessionKind'
 import { planWeekTarget } from './weekPlanDays'
-import { blockOfWeek, generalBlockWeek, phaseWeek, planPhaseSpans, progressWeek, raceCountdown } from './planPhaseSpans'
+import { blockOfWeek, generalBlockWeek, phaseWeek, planPhaseSpans, progressWeek, raceCountdown, segmentFill } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
@@ -44,7 +44,7 @@ function proposalLine(proposal: BlockGuideProposal): string {
 }
 
 /** Phase over block, its weeks and the 12-week count in one card, the count's line opening the checkpoint. */
-function PhaseCard({ phase, name, week, total, progress, race, cycle, proposals = [] }: { phase: string | null; name: string; week: number; total: number; progress: number; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
+function PhaseCard({ phase, name, week, total, progress, today, race, cycle, proposals = [] }: { phase: string | null; name: string; week: number; total: number; progress: number; today: string; race: string | null; cycle: string | null; proposals?: BlockGuideProposal[] }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
   return (
@@ -63,18 +63,22 @@ function PhaseCard({ phase, name, week, total, progress, race, cycle, proposals 
         </p>
       </div>
       <div aria-hidden className="flex gap-[3px]" data-testid="phase-segments">
-        {/* Filled to today, the week under way half: a full bar would say the block is done. The week shown is outlined. */}
-        {Array.from({ length: total }, (_, i) => (
-          <span
-            key={i}
-            data-done={i < progress - 1 || undefined}
-            data-current={i === progress - 1 || undefined}
-            data-viewed={(i === week - 1 && week !== progress) || undefined}
-            className={cn('relative h-[5px] flex-1 overflow-hidden rounded-full', i < progress - 1 ? 'bg-accent' : 'bg-[var(--line-2)]', i === week - 1 && week !== progress && 'ring-1 ring-inset ring-accent')}
-          >
-            {i === progress - 1 && <span className="absolute inset-y-0 left-0 w-1/2 bg-accent" />}
-          </span>
-        ))}
+        {/* Filled to today; the week shown is outlined so a past or coming week reads as itself. */}
+        {Array.from({ length: total }, (_, i) => {
+          const fill = segmentFill(i, progress, today)
+          const viewed = i === week - 1 && week !== progress
+          return (
+            <span
+              key={i}
+              data-done={fill === 1 || undefined}
+              data-current={i === progress - 1 || undefined}
+              data-viewed={viewed || undefined}
+              className={cn('relative h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--line-2)]', viewed && 'outline outline-1 outline-offset-1 outline-foreground/70')}
+            >
+              {fill > 0 && <span className="absolute inset-y-0 left-0 bg-accent" style={{ width: `${fill * 100}%` }} />}
+            </span>
+          )
+        })}
       </div>
       {proposals.map((proposal) => (
         <p key={`${proposal.source}:${proposal.repClass}`} className="text-xs text-muted-foreground" data-testid="phase-proposal">{proposalLine(proposal)}</p>
@@ -304,6 +308,7 @@ export function WeekView({
           week={phase.week}
           total={phase.total}
           progress={progressWeek(phase.span, phase.total, today)}
+          today={today}
           race={race}
           cycle={cycleLine}
           proposals={phase.span.key === 'general' && !pastBlock ? words?.block.guideProposals : undefined}

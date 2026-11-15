@@ -17,9 +17,9 @@ export function ownBlockStart(plan: PlanBlock): string {
 }
 
 /** A superseded block ran only until the next one began, and a rewrite of the same block replaces it. */
-export function pastBlockSpans(current: PlanBlock, archived: readonly (PlanBlock & Pick<CoachingPlan, 'provenance'>)[]): BlockSpan[] {
+export function pastBlocks<P extends PlanBlock & Pick<CoachingPlan, 'provenance'>>(current: PlanBlock, archived: readonly P[]): { plan: P; span: BlockSpan }[] {
   const currentStart = ownBlockStart(current)
-  const byStart = new Map<string, PlanBlock & Pick<CoachingPlan, 'provenance'>>()
+  const byStart = new Map<string, P>()
   for (const plan of archived) {
     const start = ownBlockStart(plan)
     const held = byStart.get(start)
@@ -30,6 +30,10 @@ export function pastBlockSpans(current: PlanBlock, archived: readonly (PlanBlock
     const plan = byStart.get(start)!
     const next = starts[index + 1] ?? currentStart
     const endDate = plan.block.endDate < next ? plan.block.endDate : dayBefore(next)
-    return endDate < start ? [] : [{ name: plan.block.name, startDate: start, endDate }]
+    return endDate < start ? [] : [{ plan, span: { name: plan.block.name, startDate: start, endDate } }]
   })
+}
+
+export function pastBlockSpans(current: PlanBlock, archived: readonly (PlanBlock & Pick<CoachingPlan, 'provenance'>)[]): BlockSpan[] {
+  return pastBlocks(current, archived).map(({ span }) => span)
 }

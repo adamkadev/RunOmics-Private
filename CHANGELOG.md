@@ -23,6 +23,9 @@ All notable changes to this project are documented in this file.
   shows the block it belonged to ("Block week 4 of 4", not "4 of 9"), a renewed block starts on its own first week
   (the day carried over from the last block no longer makes a "Lead-in week"), and "Week X of 12" follows the shown
   week. General prep carries no end date in Week or Month: each block adds four weeks to it.
+- A past week keeps the sessions and planned total of the block that planned it after a new block is written (block 1's
+  weeks read "/ 21", "/ 22" or nothing once block 2 replaced it). The bar fills today's week by the days reached, in Plan
+  and Progress alike, and the shown week's outline also shows on a filled segment.
 - Round 13: the stale-data banner reads "No sync for 49 h" / "Fri 14:46 · a run may be missing" ("Pas de synchro
   depuis 49 h" / "Ven. 14:46 · …" in French), and the refresh icon stays amber in the collapsed header while the
   data is a day late. Plan › Week draws a missed session in amber, as Today does. Records uses Analytics' tab

@@ -5,7 +5,7 @@ import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getMonthKmGoals } from '@/application/usecases/GetGoalsData'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getAthleteProfile } from '@/application/usecases/GetAthleteProfile'
-import { archivedPlans, getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { archivedPlans, getCoachingOverview, getPastSessions } from '@/application/coaching/GetCoachingView'
 import { pastBlockSpans } from '@/domain/coaching/blockSpan'
 import { getExploreHome } from '@/application/usecases/GetExploreAreas'
 import { getCrossTrainingEntries } from '@/application/usecases/GetCrossTraining'
@@ -42,7 +42,7 @@ export default async function PlanPage() {
       nextRace={nextRace}
       trainingZones={trainingZones}
       hrZoneBoundsBpm={athlete.hrZoneBoundsBpm ?? null}
-      coaching={coaching ? planCoachingView(coaching, pastBlockSpans(coaching.plan, archivedPlans())) : null}
+      coaching={coaching ? planCoachingView(coaching, pastBlockSpans(coaching.plan, archivedPlans()), getPastSessions(coaching.plan, today)) : null}
       returnProgress={returnProgress?.ongoing ? returnProgress : null}
       monthKmGoals={await getMonthKmGoals(today)}
       today={today}

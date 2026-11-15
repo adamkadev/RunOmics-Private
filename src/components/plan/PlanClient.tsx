@@ -99,7 +99,7 @@ export function PlanClient({ activities, crossTraining = [], plannedWorkouts, pl
 
   const byDateCoach = useMemo(() => {
     const map = new Map<string, PlanPrescriptionView[]>()
-    for (const view of coaching?.workouts ?? []) map.set(view.prescription.date, [...(map.get(view.prescription.date) ?? []), view])
+    for (const view of [...(coaching?.pastWorkouts ?? []), ...(coaching?.workouts ?? [])]) map.set(view.prescription.date, [...(map.get(view.prescription.date) ?? []), view])
     return map
   }, [coaching])
 

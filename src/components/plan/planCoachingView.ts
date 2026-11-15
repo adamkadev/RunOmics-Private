@@ -40,6 +40,8 @@ export interface PlanCoachingView {
     tuneUpEvents?: PlanEvent[]
   }
   workouts: PlanPrescriptionView[]
+  /** Days before this block, from the archived blocks that planned them. */
+  pastWorkouts?: PlanPrescriptionView[]
   pastBlocks?: BlockSpan[]
 }
 
@@ -58,7 +60,7 @@ function planEvent(event: TargetEvent): PlanEvent {
   return pickDefined(event, EVENT_FIELDS)
 }
 
-export function planCoachingView(overview: CoachingOverview, pastBlocks: BlockSpan[] = []): PlanCoachingView {
+export function planCoachingView(overview: CoachingOverview, pastBlocks: BlockSpan[] = [], pastSessions: PrescriptionView[] = []): PlanCoachingView {
   const { block, macrocycleStartDate, targetEvent, tuneUpEvents } = overview.plan
   return {
     plan: {
@@ -68,6 +70,7 @@ export function planCoachingView(overview: CoachingOverview, pastBlocks: BlockSp
       ...(tuneUpEvents ? { tuneUpEvents: tuneUpEvents.map(planEvent) } : {}),
     },
     workouts: overview.workouts.map((view) => ({ ...view, prescription: planPrescription(view.prescription) })),
+    ...(pastSessions.length ? { pastWorkouts: pastSessions.map((view) => ({ ...view, prescription: planPrescription(view.prescription) })) } : {}),
     ...(pastBlocks.length ? { pastBlocks } : {}),
   }
 }

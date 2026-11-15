@@ -109,6 +109,13 @@ export function progressWeek(span: Pick<PhaseSpan, 'startDate' | 'endDate'>, tot
   return monday < mondayOf(span.startDate) ? 0 : Math.floor(daysBetween(mondayOf(span.startDate), monday) / 7) + 1
 }
 
+/** How full a block bar's segment is: whole weeks done, today's week by the days reached, Sunday full. */
+export function segmentFill(index: number, progress: number, today: string): number {
+  if (index < progress - 1) return 1
+  if (index > progress - 1) return 0
+  return (daysBetween(mondayOf(today), today) + 1) / 7
+}
+
 export function raceCountdown(race: PlanRace, today: string): string | null {
   const days = daysUntil(race.date, today)
   if (days < 0) return null
