@@ -33,7 +33,7 @@ export type WeekTargetDayState = WeekTargetDay & { state: WeekDayState } & Pick<
 export interface WeekTarget {
   ranKm: number
   ranSessions: number
-  /** The plan's total, missed sessions included; null when nothing is planned or no session gives a distance. */
+  /** The plan's total, missed sessions included; null when nothing is planned or a session gives no distance, never a part. */
   planKm: number | null
   planSessions: number
   /** Planned sessions that were run on their day or a day either side; unplanned runs never count here. */
@@ -64,7 +64,7 @@ export function weekTarget(days: WeekTargetDay[], today: string, goalKm: number 
   return {
     ranKm: round1(days.reduce((sum, d) => sum + d.ranKm, 0)),
     ranSessions: days.reduce((sum, d) => sum + d.runs, 0),
-    planKm: planned.some((d) => d.plannedKm !== null) ? round1(planned.reduce((sum, d) => sum + (d.plannedKm ?? 0), 0)) : null,
+    planKm: planned.length > 0 && planned.every((d) => d.plannedKm !== null) ? round1(planned.reduce((sum, d) => sum + (d.plannedKm ?? 0), 0)) : null,
     planSessions: planned.reduce((sum, d) => sum + d.plannedSessions, 0),
     plannedDone: states.reduce((sum, d) => sum + (d.plannedSessions === 0 ? 0 : d.ranOn ? 1 : Math.min(d.runs, d.plannedSessions)), 0),
     unplannedRuns: states.filter((d) => d.plannedSessions === 0).reduce((sum, d) => sum + d.runs - (d.standsFor ? 1 : 0), 0),

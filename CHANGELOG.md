@@ -13,6 +13,22 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
+  distance the week shows no plan total rather than the part that has one (Plan › Week read "48.8 / 21 km"). Today's
+  week card, Analytics › Volume and the weekly digest read the same total.
+- Run map: a landmark's name (a cathedral, a station, a stadium) no longer sits on the route. It takes the first free
+  side of its icon, or the icon stays alone. The route is fitted again when the map's frame settles after it was
+  made, so it fills the hero rather than staying at the first, smaller zoom (until you move the map). The hero's padding
+  is even top and foot (56 pt), so the route sits on its middle rather than 21 pt above it.
+  The start's town name ("Metz") also takes a side the route leaves free, out of eight; a park's name may still sit
+  on the line it runs through.
+- Plan's block card: the bar fills to today whichever week is shown, and the shown week is outlined. A past week
+  shows the block it belonged to ("Block week 4 of 4", not "4 of 9"), a renewed block starts on its own first week
+  (the day carried over from the last block no longer makes a "Lead-in week"), and "Week X of 12" follows the shown
+  week. General prep carries no end date in Week or Month: each block adds four weeks to it.
+- A past week keeps the sessions and planned total of the block that planned it after a new block is written (block 1's
+  weeks read "/ 21", "/ 22" or nothing once block 2 replaced it). The bar fills today's week by the days reached, in Plan
+  and Progress alike, and the shown week's outline also shows on a filled segment.
 - Round 13: the stale-data banner reads "No sync for 49 h" / "Fri 14:46 · a run may be missing" ("Pas de synchro
   depuis 49 h" / "Ven. 14:46 · …" in French), and the refresh icon stays amber in the collapsed header while the
   data is a day late. Plan › Week draws a missed session in amber, as Today does. Records uses Analytics' tab

@@ -13,6 +13,7 @@ import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
 import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { generalBlockWeek, phaseWeek, planPhaseSpans } from '@/components/plan/planPhaseSpans'
+import { ownBlockStart } from '@/domain/coaching/blockSpan'
 
 export interface ProgressHubView {
   year: number
@@ -39,7 +40,7 @@ export interface ProgressHubView {
   } | null
   /** The coach's current block, drawn in the race card's place while no race is planned. */
   /** `general`: a block toward no race, which the coach's own name replaces once the signed-in client reads it. */
-  block: { name: string; general: boolean; week: number; total: number; done: number; planned: number } | null
+  block: { name: string; general: boolean; week: number; total: number; today: string; done: number; planned: number } | null
   vo2max: {
     value: number
     delta: number | null
@@ -192,7 +193,8 @@ export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
 export function currentBlock(coaching: CoachingOverview | null | undefined, today: string): ProgressHubView['block'] {
   if (!coaching || today > coaching.plan.block.endDate) return null
   const monday = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
-  const phase = generalBlockWeek(phaseWeek(planPhaseSpans(coaching, []), monday), coaching.plan.block, monday)
+  const block = { startDate: ownBlockStart(coaching.plan), endDate: coaching.plan.block.endDate }
+  const phase = generalBlockWeek(phaseWeek(planPhaseSpans(coaching, []), monday), block, monday)
   if (!phase) return null
   const sessions = coaching.workouts.filter((w) => w.state !== 'cancelled')
   return {
@@ -200,6 +202,7 @@ export function currentBlock(coaching: CoachingOverview | null | undefined, toda
     general: phase.span.key === 'general',
     week: phase.week,
     total: phase.total,
+    today,
     done: sessions.filter((w) => w.state === 'completed').length,
     planned: sessions.length,
   }

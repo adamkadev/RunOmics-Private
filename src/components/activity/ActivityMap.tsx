@@ -18,6 +18,7 @@ import { SHARE_MARKER_HEX } from '@/lib/shareCardPalette'
 import { MAP_PADDING } from '@/lib/routeFrame'
 import { watchMapMoving } from '@/lib/mapMoving'
 import {
+  LABEL_FENCE_LAYER,
   ROUTE_FIT_PADDING,
   RUN_START_FENCE_LAYER,
   addEdgeFence,
@@ -135,7 +136,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     return () => window.removeEventListener('keydown', handler)
   }, [isFullscreen, close])
 
+  const fullscreenRef = useRef(isFullscreen)
   useLayoutEffect(() => {
+    fullscreenRef.current = isFullscreen
     const host = hostRef.current
     const el = mapElRef.current
     if (!host || !el) return
@@ -176,6 +179,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     let removeFence: (() => void) | null = null
     let removeLabelFence: (() => void) | null = null
     let stopObserving: (() => void) | null = null
+    let stopSizing: (() => void) | null = null
 
     async function initMap() {
       const mgl = await loadMapLibre()
@@ -211,6 +215,21 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
       mapRef.current = map
       // Cheaper glass over the canvas while it moves.
       watchMapMoving(map)
+
+      // The hero can still be sizing when the map is made, and a resize keeps the first zoom: fit again until touched.
+      let touched = false
+      map.on('movestart', (event) => { if (event.originalEvent) touched = true })
+      let refit = 0
+      const sizeObserver = new ResizeObserver(() => {
+        cancelAnimationFrame(refit)
+        refit = requestAnimationFrame(() => {
+          if (cancelled || touched || fullscreenRef.current) return
+          map.resize()
+          map.fitBounds(bounds, { padding: ROUTE_FIT_PADDING, maxZoom: 15, animate: false })
+        })
+      })
+      sizeObserver.observe(mapEl)
+      stopSizing = () => { cancelAnimationFrame(refit); sizeObserver.disconnect() }
 
       // A loop's start and finish are one marker while they would touch: asked
       // again at every zoom, so zooming in parts them.
@@ -251,11 +270,13 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
       const showNames = () => {
         const mode = dark ? 'dark' : 'light'
         const markerFence = map.getLayer(RUN_START_FENCE_LAYER) ? RUN_START_FENCE_LAYER : undefined
-        if (famous?.length) setFamousPlaces(map, famous, { halo: SURFACES[mode].background, landmark: LANDMARK_INK[mode], lang: MAP_LANG }, markerFence)
+        // Under the label fence, as the style's names are: a landmark is no run name and must not sit on the line.
+        const labelFence = map.getLayer(LABEL_FENCE_LAYER) ? LABEL_FENCE_LAYER : markerFence
+        if (famous?.length) setFamousPlaces(map, famous, { halo: SURFACES[mode].background, landmark: LANDMARK_INK[mode], lang: MAP_LANG }, labelFence)
         if (!names?.length) return
         const ink = { halo: SURFACES[mode].background, start: SURFACES[mode].text2, green: PARK_INK[mode], lang: MAP_LANG }
         const startClear = startDotRadius(SHARE_MARKER_HEX[mode].outline) + MARKER_CLEARANCE
-        setRouteNames(map, names, { ...ink, startClear }, markerFence)
+        setRouteNames(map, names, { ...ink, startClear }, markerFence, labelFence)
       }
       // Asked once, at the fitted camera: the tiles there hold the start's quarter and the greens the route crosses.
       map.once('idle', async () => {
@@ -344,6 +365,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     return () => {
       cancelled = true
       stopObserving?.()
+      stopSizing?.()
       applyStyleRef.current = null
       removeFence?.()
       removeLabelFence?.()

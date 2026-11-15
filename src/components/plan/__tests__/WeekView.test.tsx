@@ -547,7 +547,7 @@ describe('the coach’s words', () => {
     const card = screen.getByTestId('phase-line')
     expect(await within(card).findByText('Reprise en douceur')).toBeInTheDocument()
     expect(within(card).getByRole('heading').textContent).not.toContain(t.plan.weekPurpose.generalPreparation)
-    expect(within(card).getByTestId('phase-eyebrow').textContent).toBe(t.plan.month.phaseEnds(t.plan.phase.generalShort, 'Oct 4'))
+    expect(within(card).getByTestId('phase-eyebrow').textContent).toBe(t.plan.phase.generalShort)
     expect(card).not.toHaveTextContent('On démarre doucement.')
     expect(card).not.toHaveTextContent(WORDS.block.focus)
   })

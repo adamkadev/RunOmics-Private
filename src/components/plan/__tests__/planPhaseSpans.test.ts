@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { t } from '@/i18n'
 import type { PlanCoachingView } from '../planCoachingView'
-import { generalBlockWeek, phaseWeek, planPhaseSpans, raceCountdown, spanOfWeek } from '../planPhaseSpans'
+import { blockOfWeek, generalBlockWeek, phaseWeek, planPhaseSpans, progressWeek, raceCountdown, segmentFill, spanOfWeek } from '../planPhaseSpans'
 
 const GARMIN = [
   { phase: 'base' as const, startDate: '2026-09-08', endDate: '2026-09-28' },
@@ -73,5 +73,28 @@ describe('the race countdown', () => {
     expect(raceCountdown({ date: '2027-05-09', name: 'City Half', distance: 'Half-Marathon' }, '2026-10-19')).toBe(t.plan.phase.raceInWeeks(t.goals.half, 29))
     expect(raceCountdown({ date: '2026-10-22', name: '10 km', distance: '10K', location: 'Metz' }, '2026-10-19')).toBe(t.plan.phase.raceInDays('10K', 3))
     expect(raceCountdown({ date: '2026-10-18', name: '10K', distance: '10K' }, '2026-10-19')).toBeNull()
+  })
+})
+
+describe('the block bar', () => {
+  const block = { startDate: '2026-11-16', endDate: '2026-12-13' }
+
+  it('fills to today, whichever week is shown', () => {
+    expect(progressWeek(block, 4, '2026-11-15')).toBe(0)
+    expect(progressWeek(block, 4, '2026-11-25')).toBe(2)
+    expect(progressWeek(block, 4, '2026-12-14')).toBe(5)
+  })
+
+  it('fills the week under way by the days reached, so its Sunday is full', () => {
+    expect(segmentFill(3, 4, '2026-11-15')).toBe(1)
+    expect(segmentFill(0, 1, '2026-11-18')).toBeCloseTo(3 / 7)
+    expect(segmentFill(1, 1, '2026-11-18')).toBe(0)
+  })
+
+  it('gives a week to the block that starts in it, as its lead-in', () => {
+    const earlier = { startDate: '2026-10-15', endDate: '2026-11-11' }
+    const later = { startDate: '2026-11-12', endDate: '2026-12-13' }
+    expect(blockOfWeek([earlier, later], '2026-11-09')).toBe(later)
+    expect(blockOfWeek([earlier, later], '2026-11-02')).toBe(earlier)
   })
 })

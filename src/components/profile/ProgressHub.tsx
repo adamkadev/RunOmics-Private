@@ -7,6 +7,7 @@ import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { formatDate, formatDecimal, formatDuration, formatKm, formatNumber, formatPercent } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { segmentFill } from '@/components/plan/planPhaseSpans'
 import { t } from '@/i18n'
 import type { ProgressHubView } from './progressHubView'
 import { shortDist } from '@/components/goals/shortDistance'
@@ -69,7 +70,9 @@ function BlockCard({ block }: { block: NonNullable<ProgressHubView['block']> }) 
       </div>
       <div aria-hidden className="flex gap-[3px]">
         {Array.from({ length: block.total }, (_, i) => (
-          <span key={i} className={cn('h-[5px] flex-1 rounded-full', i < block.week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
+          <span key={i} className="relative h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--line-2)]">
+            <span className="absolute inset-y-0 left-0 bg-accent" style={{ width: `${segmentFill(i, block.week, block.today) * 100}%` }} />
+          </span>
         ))}
       </div>
       {block.planned > 0 && (

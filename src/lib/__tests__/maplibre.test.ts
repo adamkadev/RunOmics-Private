@@ -288,6 +288,12 @@ describe('setRouteNames', () => {
     expect(ids).toEqual(['Place labels', ROUTE_START_NAME_LAYER, ROUTE_GREEN_NAME_LAYER, 'run-start-fence'])
   })
 
+  it('puts the start name under the route fence so the line moves it, and leaves the green over it', () => {
+    const { map, layers } = withSources([{ id: 'run-label-fence', type: 'symbol' }, { id: 'run-start-fence', type: 'symbol' }])
+    setRouteNames(map, NAMES, INK, 'run-start-fence', 'run-label-fence')
+    expect(layers.map((l) => l.id)).toEqual([ROUTE_START_NAME_LAYER, 'run-label-fence', ROUTE_GREEN_NAME_LAYER, 'run-start-fence'])
+  })
+
   it('puts the start name clear of the dot and its fence', () => {
     const { map, layers } = withSources([])
     setRouteNames(map, NAMES, INK)

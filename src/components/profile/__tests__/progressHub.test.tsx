@@ -158,7 +158,7 @@ describe('the hub without a race, a goal or PBs', () => {
   const sparse: HubInput = { ...INPUT, spotlight: null, goal: null, records: [], coaching: GENERAL_BLOCK }
 
   it('shows the current block in the race card\'s place, as Plan names and counts it', () => {
-    expect(progressHubView(sparse).block).toEqual({ name: t.plan.weekPurpose.generalPreparation, general: true, week: 3, total: 4, done: 1, planned: 3 })
+    expect(progressHubView(sparse).block).toMatchObject({ name: t.plan.weekPurpose.generalPreparation, general: true, week: 3, total: 4, done: 1, planned: 3 })
     render(<ProgressHub view={progressHubView(sparse)} />)
     expect(screen.queryByTestId('race-tile')).toBeNull()
     const tile = screen.getByTestId('block-tile')
