@@ -155,14 +155,20 @@ function applyTransforms(staging, target, config, warnings) {
     fs.writeFileSync(full, text.replace(line, `${key}=${value}`))
   }
 
-  for (const { path: file, from, to } of config.replacements) {
-    const full = path.join(staging, file)
-    const text = fs.existsSync(full) ? fs.readFileSync(full, 'utf-8') : ''
-    if (!text.includes(from)) {
-      warnings.push(`replacement matches nothing: "${from}" is not in ${file}`)
-      continue
+  const stagedFiles = fs.readdirSync(staging, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => path.relative(staging, path.join(entry.parentPath, entry.name)).split(path.sep).join('/'))
+  for (const { path: pattern, from, to } of config.replacements) {
+    const files = pattern.includes('*') ? stagedFiles.filter((file) => matchesPath(file, pattern)) : [pattern]
+    let replaced = 0
+    for (const file of files) {
+      const full = path.join(staging, file)
+      const text = fs.existsSync(full) ? fs.readFileSync(full, 'utf-8') : ''
+      if (!text.includes(from)) continue
+      fs.writeFileSync(full, text.split(from).join(to))
+      replaced++
     }
-    fs.writeFileSync(full, text.split(from).join(to))
+    if (!replaced) warnings.push(`replacement matches nothing: "${from}" is not in ${pattern}`)
   }
   return pkg
 }

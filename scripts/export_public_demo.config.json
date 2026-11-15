@@ -1,5 +1,8 @@
 {
   "deny": [
+    {"path": "src/proxy.ts", "reason": "The sign-in gate: the demo is public, and the proxy ran on every page request, crawlers included"},
+    {"path": "src/__tests__/proxy.test.ts", "reason": "Tests the sign-in gate the demo does not ship"},
+    {"path": "src/lib/__tests__/exploreAccess.test.ts", "reason": "Checks the private site's gate in front of /api/explore, through the proxy the demo does not ship"},
     {"path": ".claude/", "reason": "Agent tooling: the coaching skill and its methodology are written for the two athletes"},
     {"path": ".github/workflows/sync.yml", "reason": "Needs each athlete's Garmin and data-repository secrets in a GitHub Environment"},
     {"path": ".github/workflows/capability-audit.yml", "reason": "Probes each athlete's Garmin account from a GitHub Environment"},
@@ -126,6 +129,7 @@
     {"path": ".env.e2e", "key": "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", "value": "", "reason": "The private dev Firebase project; left unset, the e2e build runs as the demo does, without Firebase"}
   ],
   "replacements": [
+    {"path": "src/app/**.tsx", "from": "export const revalidate = 3600", "to": "export const revalidate = 86400", "reason": "The demo's data never changes: a page rebuilt once a day keeps its date right without spending CPU on every crawler's visit"},
     {"path": "e2e/owner.ts", "from": "runomics-dev", "to": "demo-runomics", "reason": "The emulators' project must match .env.e2e"},
     {"path": ".env.example", "from": "runomics-data-adam", "to": "runomics-data-you", "reason": "The owner's private data repository"},
     {"path": ".env.example", "from": "GITHUB_SYNC_PROFILE=adam", "to": "GITHUB_SYNC_PROFILE=you", "reason": "The owner's sync profile"},
@@ -192,7 +196,6 @@
       {"path": "scripts/__tests__/exploreRunnable.test.ts", "pattern": "home-coordinates", "reason": "A round bbox"},
       {"path": "src/components/dashboard/__tests__/DashboardGreeting.test.tsx", "pattern": "athlete-name", "reason": "The owner's public first name as a greeting fixture"},
       {"path": "src/components/auth/__tests__/SignInClient.test.tsx", "pattern": "athlete-name", "match": "adam@example.com", "reason": "The owner's public first name as a fixture identity"},
-      {"path": "src/__tests__/proxy.test.ts", "pattern": "athlete-name", "match": "adam@example.com", "reason": "The owner's public first name as a fixture identity"},
       {"path": "src/lib/__tests__/siteAccess.test.ts", "pattern": "athlete-name", "match": "adam@example.com", "reason": "The owner's public first name as a fixture identity"},
       {"path": "src/app/api/session/__tests__/route.test.ts", "pattern": "athlete-name", "match": "adam@example.com", "reason": "The owner's public first name as a fixture identity"},
       {"path": "src/lib/__tests__/ownerRoute.test.ts", "pattern": "athlete-name", "match": "profile=adam", "reason": "The owner's public first name as a sync profile"},
