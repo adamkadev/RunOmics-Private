@@ -6,13 +6,12 @@ export interface LngLatBounds {
 }
 
 /**
- * Keeps every route clear of the glass over a map. The hero's buttons sit in
- * its top corners, so a route reaches them only at a corner of its own; its
- * foot clears the 64 pt fade, so an end dot under it never reads washed out;
+ * Keeps every route clear of the glass over a map. The hero's is even top and foot, so the route sits on its middle:
+ * its buttons sit in the top corners, and an end dot dips at most 8 pt into the 64 pt fade.
  * districtsFullscreen clears the ~190 pt stack at its foot plus a name's height.
  */
 export const MAP_PADDING = {
-  hero: { top: 32, right: 24, bottom: 74, left: 24 },
+  hero: { top: 56, right: 24, bottom: 56, left: 24 },
   fullscreen: { top: 80, right: 24, bottom: 124, left: 24 },
   card: { top: 64, right: 16, bottom: 52, left: 16 },
   districtsFullscreen: { top: 80, right: 24, bottom: 216, left: 24 },

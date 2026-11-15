@@ -235,6 +235,6 @@ describe('the run map layers (v4.17)', () => {
   })
 
   it('fits the route as large as 3.0 drew it in the hero', () => {
-    expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 74, left: 24 })
+    expect(ROUTE_FIT_PADDING).toEqual({ top: 56, right: 24, bottom: 56, left: 24 })
   })
 })
