@@ -16,6 +16,15 @@ describe('famous places', () => {
     expect(pickFamousPlaces(places, route, 2).map((p) => p.name)).toEqual(['Cathédrale', 'Gare'])
   })
 
+  it('keeps a name twice in the tiles at its nearer entry', () => {
+    const places: FamousPlace[] = [
+      { name: 'Gare', kind: 'station', at: [6.16, north(900)] },
+      { name: 'Gare', kind: 'station', at: [6.16, north(100)] },
+    ]
+
+    expect(pickFamousPlaces(places, route, 2)).toEqual([places[1]])
+  })
+
   it('measures to the nearest stretch of the route, not its nearest point', () => {
     expect(metresFromRoute([6.16, north(100)], route)).toBeCloseTo(100, 0)
   })
@@ -24,6 +33,8 @@ describe('famous places', () => {
     expect(isStadiumName('Stade de France')).toBe(true)
     expect(isStadiumName('Wembley Stadium')).toBe(true)
     expect(isStadiumName('City-stade')).toBe(false)
+    expect(isStadiumName('Stade municipal')).toBe(false)
+    expect(isStadiumName('Stade annexe de la Plaine')).toBe(false)
     expect(isStadiumName('Gymnase Jean Moulin')).toBe(false)
   })
 

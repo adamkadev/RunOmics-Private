@@ -18,11 +18,13 @@ const LARGE_ROUTE_M = 8000
 const KIND_RANK: Record<FamousKind, number> = { cathedral: 0, station: 1, stadium: 2 }
 /** The tiles file a stadium under its sport, with every pitch and gym: only its name says it is one. "City-stade" is a court. */
 const STADIUM_NAME = /^(stade|stadium|stadion|estadio|estádio|stadio)\s|\s(stadium|stadion|arena)$/i
+/** Every village has one: a town's own pitch is no place a friend would picture. */
+const LOCAL_GROUND = /\b(municipal|municipale|communal|communale|annexe|terrain|entraînement|synthétique|city|sportplatz|recreation)\b/i
 
 const M_PER_DEG = 111_320
 
 export function isStadiumName(name: string): boolean {
-  return STADIUM_NAME.test(name.trim())
+  return STADIUM_NAME.test(name.trim()) && !LOCAL_GROUND.test(name)
 }
 
 /** Stations and stadiums from the tiles, which carry both at a run's zoom. */
@@ -67,14 +69,14 @@ export function metresFromRoute(at: LngLat, route: readonly LngLat[]): number {
   return best
 }
 
-/** Within 300 m of the route, a cathedral before a station before a stadium, the nearer first, each name once. */
+/** Within 300 m of the route, a cathedral before a station before a stadium, the nearer first, each name once at its nearest. */
 export function pickFamousPlaces(places: readonly FamousPlace[], route: readonly LngLat[], limit: number): FamousPlace[] {
   const seen = new Set<string>()
   return places
-    .filter((p) => !seen.has(p.name) && seen.add(p.name))
     .map((place) => ({ place, metres: metresFromRoute(place.at, route) }))
     .filter(({ metres }) => metres <= FAMOUS_WITHIN_M)
     .sort((a, b) => KIND_RANK[a.place.kind] - KIND_RANK[b.place.kind] || a.metres - b.metres)
+    .filter(({ place }) => !seen.has(place.name) && seen.add(place.name))
     .slice(0, limit)
     .map(({ place }) => place)
 }
