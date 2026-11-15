@@ -276,7 +276,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         if (!names?.length) return
         const ink = { halo: SURFACES[mode].background, start: SURFACES[mode].text2, green: PARK_INK[mode], lang: MAP_LANG }
         const startClear = startDotRadius(SHARE_MARKER_HEX[mode].outline) + MARKER_CLEARANCE
-        setRouteNames(map, names, { ...ink, startClear }, markerFence)
+        setRouteNames(map, names, { ...ink, startClear }, markerFence, labelFence)
       }
       // Asked once, at the fitted camera: the tiles there hold the start's quarter and the greens the route crosses.
       map.once('idle', async () => {

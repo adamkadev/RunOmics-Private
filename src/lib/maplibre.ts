@@ -345,7 +345,8 @@ const ROUTE_NAME_PADDING = 2
  * The start's quarter and the run's park, found as the share card finds them:
  * the tiles name no park at a run's zoom and fence the start's quarter off its dot.
  */
-export function setRouteNames(map: MapLibreMap, names: readonly RouteName[], ink: RouteNameInk, before?: string): void {
+/** `startBefore` puts the start's name under the route's fence, so it takes a side the line leaves free. */
+export function setRouteNames(map: MapLibreMap, names: readonly RouteName[], ink: RouteNameInk, before?: string, startBefore = before): void {
   const data: GeoJSON.FeatureCollection = {
     type: 'FeatureCollection',
     features: names.map(({ name, at, kind }) => ({ type: 'Feature', properties: { name, kind }, geometry: { type: 'Point', coordinates: at } })),
@@ -355,10 +356,10 @@ export function setRouteNames(map: MapLibreMap, names: readonly RouteName[], ink
   else map.addSource(ROUTE_NAMES_SOURCE, { type: 'geojson', data })
   hideNamedInStyle(map, names.map((n) => n.name), ink.lang)
   const layers = [
-    [ROUTE_START_NAME_LAYER, 'start', ink.start, ['bottom', 'top', 'left', 'right'], (ink.startClear + ROUTE_NAME_PADDING + 1) / ROUTE_NAME_SIZE],
-    [ROUTE_GREEN_NAME_LAYER, 'green', ink.green, ['center', 'top', 'bottom', 'left', 'right'], 0.6],
+    [ROUTE_START_NAME_LAYER, 'start', ink.start, ['bottom', 'top', 'left', 'right', 'bottom-left', 'bottom-right', 'top-left', 'top-right'], (ink.startClear + ROUTE_NAME_PADDING + 1) / ROUTE_NAME_SIZE, startBefore],
+    [ROUTE_GREEN_NAME_LAYER, 'green', ink.green, ['center', 'top', 'bottom', 'left', 'right'], 0.6, before],
   ] as const
-  for (const [id, kind, color, anchors, offset] of layers) {
+  for (const [id, kind, color, anchors, offset, below] of layers) {
     if (map.getLayer(id)) continue
     map.addLayer({
       id,
@@ -375,7 +376,7 @@ export function setRouteNames(map: MapLibreMap, names: readonly RouteName[], ink
         'text-radial-offset': offset,
       },
       paint: { 'text-color': color, 'text-halo-color': ink.halo, 'text-halo-width': 1.5, 'text-halo-blur': 0.5 },
-    } as unknown as Parameters<MapLibreMap['addLayer']>[0], before)
+    } as unknown as Parameters<MapLibreMap['addLayer']>[0], below)
   }
 }
 
