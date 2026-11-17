@@ -69,10 +69,9 @@ export type LabelKind = 'start' | 'finish' | 'famous' | 'landmark' | 'water' | '
 
 export const LABEL_PRIORITY = { start: 1, finish: 2, famous: 3, landmark: 4, water: 5, area: 6 } as const
 
-/** A famous place's mark above its name, as the Activity map draws one. */
+/** A famous place's mark at the place itself, its name beside it, as the Activity map draws one. */
 const FAMOUS_MARK_R = 3
 const FAMOUS_MARK_GAP = 3
-const famousMarkH = (label: ShareMapLabel) => (label.kind === 'famous' ? FAMOUS_MARK_R * 2 + FAMOUS_MARK_GAP : 0)
 
 /** Set `runomics:debug-labels` in localStorage to log why each name was dropped. */
 export function labelDebug(...args: unknown[]): void {
@@ -556,6 +555,8 @@ interface Placed {
   x: number
   y: number
   box: [number, number, number, number]
+  /** A famous place's mark, at the place itself. */
+  mark?: [number, number, number, number]
 }
 
 function overlaps(a: Placed['box'], b: Placed['box']): boolean {
@@ -618,7 +619,7 @@ export function arrangeLabels(
     ctx.font = `600 ${label.size}px ${fonts.text}`
     const wraps = label.kind && label.kind !== 'area'
     const lines = wraps ? (balanceLines(ctx, label.text, BESIDE_MAX_W) ?? [label.text]) : [label.text]
-    const fit = { lines, halfW: Math.max(...lines.map((line) => ctx.measureText(line).width)) / 2, halfH: (label.size * lines.length + (lines.length - 1) * 2 + famousMarkH(label)) / 2 }
+    const fit = { lines, halfW: Math.max(...lines.map((line) => ctx.measureText(line).width)) / 2, halfH: (label.size * lines.length + (lines.length - 1) * 2) / 2 }
     fits.set(label, fit)
     return fit
   }
@@ -627,12 +628,14 @@ export function arrangeLabels(
     if (box[1] < top || box[3] > bottom) return 'band'
     if (box[0] < PAD_X || box[2] > W - PAD_X) return 'margin'
     if (obstacles.some((o) => touches(box, o))) return 'marker'
-    if (placed.some((p) => overlaps(p.box, box))) return 'collision'
+    if (placed.some((p) => overlaps(p.box, box) || (p.mark && overlaps(p.mark, box)))) return 'collision'
     if (avoidRoute && onRoute(box)) return 'route'
     return null
   }
-  const tryPlace = (label: ShareMapLabel, spots: readonly [number, number][], avoidRoute: boolean): DropReason | null => {
+  const tryPlace = (label: ShareMapLabel, spots: readonly [number, number][], avoidRoute: boolean, mark?: Placed['mark']): DropReason | null => {
     const { lines, halfW, halfH } = fitOf(label)
+    const markReason = mark ? why(mark, false) : null
+    if (markReason) return markReason
     let first: DropReason | null = null
     for (const [dx, dy] of spots) {
       const x = label.x + dx
@@ -640,7 +643,7 @@ export function arrangeLabels(
       const box: Placed['box'] = [x - halfW, y - halfH, x + halfW, y + halfH]
       const reason = why(box, avoidRoute)
       if (!reason) {
-        placed.push({ label, lines, x, y, box })
+        placed.push({ label, lines, x, y, box, ...(mark ? { mark } : {}) })
         return null
       }
       first ??= reason
@@ -668,7 +671,15 @@ export function arrangeLabels(
     if (kind === 'start' || kind === 'finish') {
       reason = tryPlace(label, spotsAt(NUDGE_RADII), false)
       if (reason && force(label)) reason = null
-    } else if (kind === 'famous' || kind === 'landmark') {
+    } else if (kind === 'famous') {
+      // A moved mark would put the place somewhere it is not: only its name may move.
+      const { halfW, halfH } = fitOf(label)
+      const off = FAMOUS_MARK_R + FAMOUS_MARK_GAP
+      const beside: [number, number][] = [[0, off + halfH], [0, -off - halfH], [off + halfW, 0], [-off - halfW, 0]]
+      const mark: Placed['mark'] = [label.x - FAMOUS_MARK_R, label.y - FAMOUS_MARK_R, label.x + FAMOUS_MARK_R, label.y + FAMOUS_MARK_R]
+      reason = tryPlace(label, beside, true, mark)
+      if (reason) reason = tryPlace(label, beside, false, mark)
+    } else if (kind === 'landmark') {
       reason = tryPlace(label, spotsAt(BESIDE_RADII), true)
       if (reason) reason = tryPlace(label, spotsAt(BESIDE_RADII), false)
     } else if (kind === 'water') {
@@ -686,6 +697,7 @@ export function arrangeLabels(
   // A card always names two places: the start, and the best of what is left, nudged where it fits.
   if (placed.length < 2) {
     for (const label of dropped) {
+      if (label.kind === 'famous') continue
       if (!tryPlace(label, spotsAt(NUDGE_RADII), false)) break
     }
     if (placed.length < 2 && labels.length > 0) console.warn(`Share card: ${placed.length} place name(s) on the map, two wanted`)
@@ -705,21 +717,20 @@ function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
   const still = scene.progress === undefined
   const placed = arrangeLabels(ctx, mapLabels, route, layout, fonts, obstacles ?? [], still ? (label, reason) => labelDebug(`dropped "${label.text}" (${label.kind ?? 'area'}): ${reason}`) : undefined)
   if (still) labelDebug('placed', placed.map((p) => `${p.label.text} (${p.label.kind ?? 'area'})`))
-  for (const { label, lines, x, y } of placed) {
+  for (const { label, lines, x, y, mark } of placed) {
     ctx.font = `600 ${label.size}px ${fonts.text}`
     ctx.globalAlpha = base * label.opacity
     ctx.lineWidth = 3
-    const mark = famousMarkH(label)
     if (mark) {
       ctx.beginPath()
-      ctx.arc(x, y - (label.size * lines.length + (lines.length - 1) * 2 + mark) / 2 + FAMOUS_MARK_R, FAMOUS_MARK_R, 0, Math.PI * 2)
+      ctx.arc((mark[0] + mark[2]) / 2, (mark[1] + mark[3]) / 2, FAMOUS_MARK_R, 0, Math.PI * 2)
       ctx.strokeStyle = palette.bg
       ctx.stroke()
       ctx.fillStyle = label.color
       ctx.fill()
     }
     lines.forEach((line, i) => {
-      const ly = y + mark / 2 + (i - (lines.length - 1) / 2) * (label.size + 2)
+      const ly = y + (i - (lines.length - 1) / 2) * (label.size + 2)
       ctx.strokeStyle = palette.bg
       ctx.strokeText(line, x, ly)
       ctx.fillStyle = label.color
