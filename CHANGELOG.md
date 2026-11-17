@@ -13,6 +13,8 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Share card: a famous place's mark stays where the place is. Only its name moves off the route, to a free side of the
+  mark, and a place whose mark cannot show where it is stays off the card (a cathedral's mark moved with its name).
 - A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
   distance the week shows no plan total rather than the part that has one (Plan › Week read "48.8 / 21 km"). Today's
   week card, Analytics › Volume and the weekly digest read the same total.

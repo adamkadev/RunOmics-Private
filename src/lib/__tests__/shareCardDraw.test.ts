@@ -704,6 +704,24 @@ describe('arranging the place names', () => {
     expect(arrangeLabels(measure, [name('Parc Central', 150, 'landmark')], grid, l, FALLBACK_FONTS)).toHaveLength(1)
   })
 
+  it('keeps a famous place\'s mark on the place and moves only its name off the route', () => {
+    const [famous] = arrangeLabels(measure, [name('Cathédrale', 150, 'famous')], across, l, FALLBACK_FONTS)
+    expect(famous!.mark).toEqual([147, y - 3, 153, y + 3])
+    expect(famous!.box[3] < y - 4 || famous!.box[1] > y + 4).toBe(true)
+  })
+
+  it('drops a famous place whose mark lies under a higher name rather than draw it elsewhere', () => {
+    const drops: string[] = []
+    const placed = arrangeLabels(measure, [name('Les Prés', 150, 'start'), name('Cathédrale', 150, 'famous', y + 2), name('Quartier Nord', 60, 'area', y - 60)], null, l, FALLBACK_FONTS, [], (label, reason) => drops.push(`${label.text}: ${reason}`))
+    expect(placed.map((p) => p.label.text)).toEqual(['Les Prés', 'Quartier Nord'])
+    expect(drops).toEqual(['Cathédrale: collision'])
+  })
+
+  it('leaves out a famous place off the card\'s map rather than pull it in', () => {
+    expect(arrangeLabels(measure, [name('Les Prés', 150, 'start'), name('Cathédrale', 150, 'famous', l.textTop - 10)], null, l, FALLBACK_FONTS)
+      .map((p) => p.label.text)).toEqual(['Les Prés'])
+  })
+
   it('always shows a second name: the best one dropped is nudged where it fits', () => {
     const marker = { x: 150, y, r: 12 }
     const placed = arrangeLabels(measure, [name('Les Prés', 60, 'start', y - 60), name('Quartier Nord', 150, 'area')], null, l, FALLBACK_FONTS, [marker])
