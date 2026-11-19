@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { arrangeLabels, type LabelKind, balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { arrangeLabels, type LabelKind, balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoRouteTone, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, SHARE_MARKER_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
@@ -504,10 +504,22 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
   })
 
-  it('draws the route over the photo only when asked', () => {
+  it('draws the route over the photo in one plain colour, reps and all, only when asked', () => {
     const photo = { width: 1000, height: 800 } as HTMLImageElement
-    expect(draw({ design: 'photo', photo }).filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(0)
-    expect(draw({ design: 'photo', photo, photoRoute: true }).filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(1)
+    const strokes = (ops: Op[]) => ops.filter((o) => o.op === 'stroke').map((o) => o.stroke)
+    for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
+      const without = strokes(draw({ design: 'photo', photo, activity }))
+      expect(strokes(draw({ design: 'photo', photo, photoRoute: true, activity }))).toEqual(['#ffffff', ...without])
+    }
+  })
+
+  it('picks a white route over a dark photo and a dark one over a light photo', () => {
+    expect(photoRouteTone([0.02, 0.05, 0.1])).toBe('light')
+    expect(photoRouteTone([0.3, 0.5, 0.9])).toBe('dark')
+    expect(photoRouteTone([0.01, 0.02, 0.6, 0.7, 0.8])).toBe('dark')
+    expect(photoRouteTone([0.17])).toBe('light')
+    expect(photoRouteTone([0.19])).toBe('dark')
+    expect(photoRouteTone([])).toBe('light')
   })
 
   it('darkens the top enough for the date line to read 4.5:1 on a white photo, clears, and darkens the foot under its words', () => {

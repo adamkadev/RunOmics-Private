@@ -1136,12 +1136,78 @@ function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
   ctx.fillRect(0, 0, W, height)
 }
 
-function drawPhotoRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
-  const bare = { ...scene, mapImage: null, mapPoints: null }
-  const pts = routePoints(bare, layout)
-  if (!pts) return
-  drawRoute(ctx, bare, pts, STILL_MOTION, layout.height)
-  drawMarkers(ctx, bare, pts, STILL_MOTION)
+export type PhotoRouteTone = 'light' | 'dark'
+
+const PHOTO_ROUTE_INK: Record<PhotoRouteTone, { line: string; halo: string }> = {
+  light: { line: '#ffffff', halo: 'rgba(0, 0, 0, 0.45)' },
+  dark: { line: '#0c0d0d', halo: 'rgba(255, 255, 255, 0.55)' },
+}
+
+/** Where white and black give the same contrast: (1 + .05) / (L + .05) = (L + .05) / .05. */
+const TONE_SPLIT = Math.sqrt(1.05 * 0.05) - 0.05
+
+/** The route in whichever of white or black stands out more from the median of what lies under it. */
+export function photoRouteTone(luminances: readonly number[]): PhotoRouteTone {
+  if (luminances.length === 0) return 'light'
+  const sorted = [...luminances].sort((a, b) => a - b)
+  return sorted[Math.floor(sorted.length / 2)]! > TONE_SPLIT ? 'dark' : 'light'
+}
+
+function relativeLuminance(r: number, g: number, b: number): number {
+  const lin = (c: number) => { const v = c / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+}
+
+const TONE_STEP = 4
+
+/** Empty without a 2D canvas (tests, a tainted image): the route then stays white. */
+function luminanceUnder(photo: HTMLImageElement, pts: [number, number][], layout: ShareCardLayout): number[] {
+  if (typeof document === 'undefined') return []
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = Math.round(layout.height)
+  let data: Uint8ClampedArray
+  try {
+    const off = canvas.getContext('2d', { willReadFrequently: true })
+    if (!off) return []
+    drawPhoto(off, photo, layout)
+    data = off.getImageData(0, 0, canvas.width, canvas.height).data
+  } catch {
+    return []
+  }
+  return samplesAlong(pts, TONE_STEP).flatMap(([x, y]) => {
+    const px = Math.min(canvas.width - 1, Math.max(0, Math.round(x)))
+    const py = Math.min(canvas.height - 1, Math.max(0, Math.round(y)))
+    const i = (py * canvas.width + px) * 4
+    return [relativeLuminance(data[i]!, data[i + 1]!, data[i + 2]!)]
+  })
+}
+
+function samplesAlong(pts: [number, number][], step: number): [number, number][] {
+  const at = cumulative(pts)
+  const length = at[at.length - 1]!
+  if (length <= 0) return [pts[0]!]
+  const count = Math.max(1, Math.ceil(length / step))
+  return Array.from({ length: count + 1 }, (_, i) => slicePolyline(pts, 0, i / count).at(-1)!)
+}
+
+/** One plain colour under a soft halo rather than a casing: a photo can be any colour. */
+function drawPhotoRoute(ctx: Ctx, { activity, photo }: ShareCardScene, layout: ShareCardLayout) {
+  const route = activity.route
+  if (!route || route.length < 2 || !photo) return
+  const pts = projectRoute(route, W, layout.height, layout.routeFrame)
+  const { line, halo } = PHOTO_ROUTE_INK[photoRouteTone(luminanceUnder(photo, pts, layout))]
+  const first = pts[0]!
+  const last = pts[pts.length - 1]!
+  ctx.save()
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.shadowColor = halo
+  ctx.shadowBlur = 6
+  strokeLine(ctx, pts, line, TRACE_W)
+  if (!endsJoined(first, last)) drawRouteMarker(ctx, 'finish', last, line, MARKER_SCALE)
+  drawStartDot(ctx, first, { fill: line, ring: line, outline: halo }, MARKER_SCALE)
+  ctx.restore()
 }
 
 /** Two stats spread edge to edge read as unrelated: they sit side by side instead. */
