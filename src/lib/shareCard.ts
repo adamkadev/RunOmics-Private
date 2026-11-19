@@ -15,6 +15,7 @@ export interface RenderOptions {
   accent: AccentId
   theme: ThemeMode
   photoImage?: HTMLImageElement | null
+  photoRoute?: boolean
   locationName?: string | null
   mapImage?: HTMLCanvasElement | null
   mapPoints?: [number, number][] | null
@@ -71,6 +72,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     fonts,
     place: options.locationName,
     photo: options.photoImage,
+    photoRoute: options.photoRoute,
     mapImage: options.mapImage,
     mapPoints: options.mapPoints,
     mapLabels: options.mapLabels,

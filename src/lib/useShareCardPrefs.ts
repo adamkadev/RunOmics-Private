@@ -24,6 +24,7 @@ export function useShareCardPrefs(appTheme: ThemeMode, hasRoute: boolean) {
   const [design, setDesign] = useState<ShareDesign>(hasRoute ? 'route' : 'stats')
   const [chosenTheme, setChosenTheme] = useState<ThemeMode | null>(null)
   const [showReps, setShowReps] = useState(true)
+  const [photoRoute, setPhotoRoute] = useState(false)
   const [size, setSizeState] = useState<ShareSize>(storedSize)
   const setSize = (next: ShareSize) => {
     setSizeState(next)
@@ -38,6 +39,7 @@ export function useShareCardPrefs(appTheme: ThemeMode, hasRoute: boolean) {
     theme: chosenTheme ?? appTheme,
     setTheme: setChosenTheme,
     showReps, setShowReps,
+    photoRoute, setPhotoRoute,
     size, setSize,
   }
 }

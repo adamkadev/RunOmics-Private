@@ -37,6 +37,8 @@ export interface ShareCardScene {
   size?: ShareSize
   place?: string | null
   photo?: HTMLImageElement | null
+  /** The run's trace over the photo, without the map. */
+  photoRoute?: boolean
   /** Drawn for the layout's route frame; mapPoints is the route projected onto it. */
   mapImage?: HTMLCanvasElement | null
   mapPoints?: [number, number][] | null
@@ -1134,6 +1136,14 @@ function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
   ctx.fillRect(0, 0, W, height)
 }
 
+function drawPhotoRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
+  const bare = { ...scene, mapImage: null, mapPoints: null }
+  const pts = routePoints(bare, layout)
+  if (!pts) return
+  drawRoute(ctx, bare, pts, STILL_MOTION, layout.height)
+  drawMarkers(ctx, bare, pts, STILL_MOTION)
+}
+
 /** Two stats spread edge to edge read as unrelated: they sit side by side instead. */
 const STAT_PAIR_GAP = 28
 /** A single U+2013 en dash: Geist draws it digit-wide, so a clock of dashes read as long rules. */
@@ -1210,6 +1220,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const photo = scene.design === 'photo' ? scene.photo : null
   if (photo) {
     drawPhoto(ctx, photo, layout)
+    if (scene.photoRoute) drawPhotoRoute(ctx, scene, layout)
   } else if (scene.design === 'route') {
     drawMapLayer(ctx, scene, layout, motion)
     drawBands(ctx, scene, layout)

@@ -1311,6 +1311,8 @@ export const fr = {
       repsLegend: 'Fractions',
       // L’interrupteur d’une séance de fractionné : éteint, la carte est celle d’une sortie facile.
       showReps: 'Voir l’allure des fractions',
+      // L’interrupteur de la carte Photo : le tracé de la sortie sur la photo.
+      showRoute: 'Voir le parcours',
       // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
       repPaceStat: 'Allure fractions',
       secPerKm: (n: number) => `${n} s/km`,
