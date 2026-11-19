@@ -504,6 +504,12 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
   })
 
+  it('draws the route over the photo only when asked', () => {
+    const photo = { width: 1000, height: 800 } as HTMLImageElement
+    expect(draw({ design: 'photo', photo }).filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(0)
+    expect(draw({ design: 'photo', photo, photoRoute: true }).filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(1)
+  })
+
   it('darkens the top enough for the date line to read 4.5:1 on a white photo, clears, and darkens the foot under its words', () => {
     const linear = (c: number) => { const v = c / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }
     const contrast = (a: number, b: number) => (Math.max(linear(a), linear(b)) + 0.05) / (Math.min(linear(a), linear(b)) + 0.05)

@@ -61,7 +61,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const hasRoute = (activity.route?.length ?? 0) > 1
   const designs = hasRoute ? SHARE_DESIGNS : SHARE_DESIGNS.filter((d) => d !== 'route')
 
-  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, size, setSize } = useShareCardPrefs(appTheme, hasRoute)
+  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, photoRoute, setPhotoRoute, size, setSize } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   // Without its reps the card is an easy run's: one colour on the route, the
   // average pace back in the stats.
@@ -139,12 +139,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     accent,
     theme,
     photoImage,
+    photoRoute,
     locationName,
     mapImage,
     mapPoints,
     mapLabels,
     fonts: pageFonts(),
-  }), [card, design, size, accent, theme, photoImage, locationName, mapImage, mapPoints, mapLabels])
+  }), [card, design, size, accent, theme, photoImage, photoRoute, locationName, mapImage, mapPoints, mapLabels])
 
   const videoKey = [card.id, size, theme, accent, showReps, locationName ?? '', mapImage ? 'map' : 'plain', fontsReady].join('|')
   const videoReady = !!videoFiles[videoKey]
@@ -407,6 +408,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {design === 'photo' && photoImage && hasRoute && (
+              <div data-testid="share-photo-route" className={optionRow} style={{ minHeight: 52 }}>
+                <span className="text-foreground" style={{ fontSize: 17 }}>{s.showRoute}</span>
+                <Toggle checked={photoRoute} onChange={setPhotoRoute} label={s.showRoute} />
               </div>
             )}
 

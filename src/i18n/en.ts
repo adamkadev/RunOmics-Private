@@ -1401,6 +1401,8 @@ export const en = {
       repsLegend: 'Reps',
       // The switch on an interval session: off, the card is an easy run's.
       showReps: 'Show rep pace',
+      // The switch on the Photo card: the run's trace over the photo.
+      showRoute: 'Show route',
       // The stat row's first cell on an interval session's Route card.
       repPaceStat: 'Rep pace',
       // The accent line under the header of an interval session: "9 s/km under target".
