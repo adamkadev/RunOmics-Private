@@ -27,15 +27,18 @@ test('a chart readout stays inside its card, even over the last bars', async ({ 
 
 test('the period button keeps its place whichever period is picked from its menu', async ({ page, t }) => {
   await page.setViewportSize({ width: 393, height: 852 })
-  await page.goto('/analytics')
+  await page.goto('/analytics?period=4w')
   const control = page.getByTestId('period-button')
   const places: { x: number; y: number }[] = []
-  for (const period of ['4w', '12w', '1y']) {
-    const name = t.analytics.cards.period.words[period]!
-    await control.click()
-    await page.getByTestId('period-menu').getByRole('radio', { name, exact: true }).click()
-    await expect(control).toHaveAccessibleName(`${t.analytics.cards.period.short[period]} · ${t.analytics.cards.period.button(name)}`)
+  const placeAt = async (period: string) => {
+    await expect(control).toHaveAccessibleName(`${t.analytics.cards.period.short[period]} · ${t.analytics.cards.period.button(t.analytics.cards.period.words[period]!)}`)
     places.push(await control.evaluate((el) => ({ x: el.getBoundingClientRect().right + scrollX, y: el.getBoundingClientRect().top + scrollY })))
+  }
+  await placeAt('4w')
+  for (const period of ['12w', '1y']) {
+    await control.click()
+    await page.getByTestId('period-menu').getByRole('radio', { name: t.analytics.cards.period.words[period]!, exact: true }).click()
+    await placeAt(period)
   }
   for (const place of places.slice(1)) {
     expect(place.y).toBe(places[0]!.y)

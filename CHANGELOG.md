@@ -14,7 +14,8 @@ All notable changes to this project are documented in this file.
 ### Interface
 
 - Share card: the Photo card has a Show route switch again, off by default, to draw the run's trace and its start and
-  finish over the photo, between the title and the stats.
+  finish over the photo, between the title and the stats. The trace is white on a dark photo and near-black on a light
+  one, judged from what lies under it, with a soft halo, and an interval session's reps are not coloured on it.
 - Share card: a famous place's mark stays where the place is. Only its name moves off the route, to a free side of the
   mark, and a place whose mark cannot show where it is stays off the card (a cathedral's mark moved with its name).
 - A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
