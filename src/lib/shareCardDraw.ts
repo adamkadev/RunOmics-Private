@@ -1183,12 +1183,15 @@ function luminanceUnder(photo: HTMLImageElement, pts: [number, number][], layout
   })
 }
 
-function samplesAlong(pts: [number, number][], step: number): [number, number][] {
-  const at = cumulative(pts)
-  const length = at[at.length - 1]!
-  if (length <= 0) return [pts[0]!]
-  const count = Math.max(1, Math.ceil(length / step))
-  return Array.from({ length: count + 1 }, (_, i) => slicePolyline(pts, 0, i / count).at(-1)!)
+export function samplesAlong(pts: [number, number][], step: number): [number, number][] {
+  const samples: [number, number][] = [pts[0]!]
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i - 1]!
+    const [x2, y2] = pts[i]!
+    const n = Math.max(1, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / step))
+    for (let k = 1; k <= n; k++) samples.push([x1 + ((x2 - x1) * k) / n, y1 + ((y2 - y1) * k) / n])
+  }
+  return samples
 }
 
 /** One plain colour under a soft halo rather than a casing: a photo can be any colour. */
