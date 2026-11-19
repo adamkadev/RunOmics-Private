@@ -35,7 +35,7 @@ async function mouseSwipe(target: Locator, dx: number) {
 const swipe = (isMobile: boolean) => (isMobile ? touchSwipe : mouseSwipe)
 
 test('a horizontal swipe pages the Consistency week sheet\'s month, and stops at this month', async ({ page, t, isMobile }) => {
-  await page.goto('/consistency')
+  await page.goto('/consistency?range=3m')
   await page.getByTestId('week-column').last().click()
   const calendar = page.getByTestId('week-calendar')
   await expect(calendar).toBeVisible()

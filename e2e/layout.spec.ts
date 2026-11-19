@@ -72,12 +72,11 @@ for (const key of ['overview', 'intervals', 'charts', 'dynamics'] as const) {
 
 for (const key of ['fitness', 'performance', 'volume', 'health'] as const) {
   test(`nothing runs past the screen on Analytics' ${en.analytics.tabs[key]} tab, in any period`, async ({ page, t }) => {
-    await page.goto('/analytics')
-    await page.getByRole('tab', { name: t.analytics.tabs[key] }).click()
     for (const period of ['4w', '12w', '1y']) {
       const name = t.analytics.cards.period.words[period]!
-      await page.getByTestId('period-button').click()
-      await page.getByTestId('period-menu').getByRole('radio', { name, exact: true }).click()
+      await page.goto(`/analytics?tab=${key}&period=${period}`)
+      await page.waitForLoadState('networkidle')
+      await expect(page.getByRole('tab', { name: t.analytics.tabs[key] })).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 })
       await expect(page.getByTestId('period-button')).toHaveAccessibleName(`${t.analytics.cards.period.short[period]} · ${t.analytics.cards.period.button(name)}`)
       expect(await overflows(page), `${key}, ${period}`).toEqual([])
     }
