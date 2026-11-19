@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { arrangeLabels, type LabelKind, balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoRouteTone, photoScrim, shareMarkerRadius, shareCardLayout, slicePolyline, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { arrangeLabels, type LabelKind, balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoRouteTone, photoScrim, samplesAlong, shareMarkerRadius, shareCardLayout, slicePolyline, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, SHARE_MARKER_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
@@ -511,6 +511,15 @@ describe('the Photo design (design review, Oct 2026)', () => {
       const without = strokes(draw({ design: 'photo', photo, activity }))
       expect(strokes(draw({ design: 'photo', photo, photoRoute: true, activity }))).toEqual(['#ffffff', ...without])
     }
+  })
+
+  it('samples the photo route from its start to its finish, every step or closer', () => {
+    const samples = samplesAlong([[0, 0], [10, 0], [10, 5]], 4)
+    expect(samples[0]).toEqual([0, 0])
+    expect(samples.at(-1)).toEqual([10, 5])
+    expect(samples.every((p) => Array.isArray(p) && p.every(Number.isFinite))).toBe(true)
+    for (let i = 1; i < samples.length; i++) expect(Math.hypot(samples[i]![0] - samples[i - 1]![0], samples[i]![1] - samples[i - 1]![1])).toBeLessThanOrEqual(4)
+    expect(samplesAlong([[3, 3], [3, 3]], 4)).toEqual([[3, 3], [3, 3]])
   })
 
   it('picks a white route over a dark photo and a dark one over a light photo', () => {
