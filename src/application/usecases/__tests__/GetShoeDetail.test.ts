@@ -71,11 +71,10 @@ describe('getShoeDetail', () => {
     expect(getShoeDetail('daily')?.firstUsedDate).toBe('2026-01-05')
   })
 
-  it('averages the weekly mileage over the weeks between the first and most recent run, not weeks to today', () => {
+  it('averages the weekly mileage over the weeks the pair was run in, not the pause between them', () => {
     getAllActivities.mockReturnValue([run('daily', '2026-06-03', 10), run('daily', '2026-07-01', 50)])
 
-    // 28 days between the two runs = 4 weeks, over 60 km total.
-    expect(getShoeDetail('daily')?.kmPerWeek).toBe(15)
+    expect(getShoeDetail('daily')?.kmPerWeek).toBe(30)
   })
 
   it('counts a pair worn only once as a full week old rather than dividing by zero', () => {

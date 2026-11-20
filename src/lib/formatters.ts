@@ -98,6 +98,11 @@ export function formatPercent(percent: number, maxDecimals = 0): string {
   return numberSpaces(numberFormat({ style: 'percent', maximumFractionDigits: maxDecimals }).format(percent / 100))
 }
 
+export function formatDeltaPercent(percent: number, decimals = 0): string {
+  const rounded = Number(percent.toFixed(decimals))
+  return `${rounded === 0 ? PLUS_MINUS : rounded > 0 ? '+' : MINUS}${formatPercent(Math.abs(rounded), decimals)}`
+}
+
 export function formatNumber(value: number, maxDecimals = 1): string {
   return numberSpaces(numberFormat({ maximumFractionDigits: maxDecimals }).format(value))
 }

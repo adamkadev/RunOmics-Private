@@ -67,7 +67,7 @@ const RENDER_TIMEOUT_MS = 15_000
 const DISTRICT_OPACITY = { light: 0.7, dark: 0.8 } as const
 const WATER_INK = { light: '#5f7f9a', dark: '#5b7d99' } as const
 const PARK_INK = { light: '#5e7f65', dark: '#5f8a6d' } as const
-const LANDMARK_INK = { light: '#7d6f8c', dark: '#9a8ca8' } as const
+const LANDMARK_INK = { light: '#6f7472', dark: '#a3a9a7' } as const
 /** The card's map is 300 px wide: its names sit a step under the app's. */
 const CARD_LABEL_SIZE = 10
 

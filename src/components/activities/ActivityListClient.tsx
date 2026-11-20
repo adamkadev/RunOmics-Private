@@ -534,15 +534,17 @@ export function ActivityListClient({
                     <section key={block.key} data-testid="month">
                       <div
                         data-sticky-strip
-                        className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5"
+                        className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']"
                         style={{ top: `calc(${PINNED_TOP} + ${PINNED_ROW_H}px)` }}
                       >
                         <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>
-                        <span className="text-[13px] text-muted-foreground" data-testid="month-line">
-                          {onlyGroup
-                            ? `${t.activities.filter.groupCount[onlyGroup](block.runs)} · ${formatKm(block.km)} ${t.units.km}`
-                            : `${formatKm(block.km)} ${t.units.km} · ${t.activities.weekLine.runs(block.runs)}`}
-                        </span>
+                        {block.runs > 0 && (
+                          <span className="text-[13px] text-muted-foreground" data-testid="month-line">
+                            {onlyGroup
+                              ? `${t.activities.filter.groupCount[onlyGroup](block.runs)} · ${formatKm(block.km)} ${t.units.km}`
+                              : `${formatKm(block.km)} ${t.units.km} · ${t.activities.weekLine.runs(block.runs)}`}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-col gap-3">
                         {block.weeks.map((g) => (

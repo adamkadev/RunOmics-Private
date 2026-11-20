@@ -113,10 +113,16 @@ export function ThisWeekCard({
       <Link href="/plan?view=week" aria-label={t.plan.openPlanner} className="absolute inset-0 rounded-[24px] active:bg-[var(--fill-4)]" data-testid="this-week-link" />
       <div className="pointer-events-none relative flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 className="text-headline text-foreground">{s.title}</h2>
-        <p className="text-[13px] tabular-nums text-text-2">
-          <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
-          {targetKm !== null ? ` / ${formatPlannedKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
-        </p>
+        {target.ranKm === 0 && targetKm !== null ? (
+          <p className="text-[13px] tabular-nums text-text-2" data-testid="week-in-progress">
+            <b className="font-semibold text-foreground">{formatPlannedKm(targetKm)}</b> {t.units.km} · <span className="text-accent-text">{t.plan.month.inProgressWord}</span>
+          </p>
+        ) : (
+          <p className="text-[13px] tabular-nums text-text-2">
+            <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
+            {targetKm !== null ? ` / ${formatPlannedKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
+          </p>
+        )}
       </div>
 
       {/* Read before the bars, on one line: the key and what is left this week. */}

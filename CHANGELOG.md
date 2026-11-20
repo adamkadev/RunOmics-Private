@@ -23,6 +23,12 @@ All notable changes to this project are documented in this file.
   their bars; the long-run warning needs four runs a week and stays quiet in reprise; Records links to Goals only
   when there are goals; plus fixes to the compact title, filters, best efforts, splits, plan, checkpoint, race,
   home runs, settings, 404 and the map's top edge.
+- Design review, second pass: the Home runs canvas has its edge in dark; a current week at 0 km reads "in progress"
+  on Plan, Today and Volume; no empty month count in Activities and a fade under the month strip; Records' plain
+  line loses its chevron; the map's top fade sits only behind its controls; landmark names on share cards take a
+  neutral ink; dark Z1 is lighter than Z3; reprise milestones wrap to two lines; Découplage carries the French
+  space; Settings turns amber once the sync is a day old; shoe wear forecasts use the last 8 weeks with runs; French
+  footing days read "F".
 - Maps: new light and dark basemaps, designed in MapTiler Cloud and pulled into the repo by `npm run map:styles`.
   Light is a paler ground with white roads on a hairline casing; dark is lifted to charcoal with clearer roads,
   greener parks and bluer water; place names are a step brighter in both. The share card still deepens parks and

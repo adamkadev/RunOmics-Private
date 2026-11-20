@@ -485,8 +485,8 @@ export const en = {
     },
     notFound: {
       code: '404',
-      heading: "This page went on a run and didn't come back.",
-      sub: "The route you're looking for doesn't exist.",
+      heading: "This page went on a run and didn’t come back.",
+      sub: "The route you’re looking for doesn’t exist.",
       back: 'Back to Today',
     },
     error: {

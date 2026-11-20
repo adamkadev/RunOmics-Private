@@ -1,7 +1,7 @@
 import type { ActivityType } from '@/domain/activity/types'
 import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
-import { kmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
+import { recentKmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
 import { round } from '@/lib/math'
 
 export interface ShoeStats {
@@ -32,11 +32,15 @@ export function getShoeStats(): ShoeStats[] {
   const lastUsedByGear = new Map<string, string>()
   const firstUsedByGear = new Map<string, string>()
   const typesByGear = new Map<string, Map<ActivityType, number>>()
+  const runsByGear = new Map<string, { date: string; distanceKm: number }[]>()
 
   for (const a of activities) {
     if (!a.gearId) continue
     byGear.set(a.gearId, (byGear.get(a.gearId) ?? 0) + a.distanceKm)
     sessionsByGear.set(a.gearId, (sessionsByGear.get(a.gearId) ?? 0) + 1)
+    const runs = runsByGear.get(a.gearId) ?? []
+    runs.push(a)
+    runsByGear.set(a.gearId, runs)
     if (!lastUsedByGear.has(a.gearId)) lastUsedByGear.set(a.gearId, a.date)
     // Runs come newest-first: the first date seen per gear is its last use.
     const earliest = firstUsedByGear.get(a.gearId)
@@ -62,7 +66,7 @@ export function getShoeStats(): ShoeStats[] {
         sessionCount: sessionsByGear.get(gearId) ?? 0,
         lastUsedDate,
         firstUsedDate,
-        kmPerWeek: Math.round(kmPerWeek(firstUsedDate, lastUsedDate, totalKm)),
+        kmPerWeek: Math.round(recentKmPerWeek(runsByGear.get(gearId) ?? [])),
         wearPercent: wearPercent({ totalKm, maxKm: info.maxKm, retired: info.retired }),
         nearingLimit: !info.retired && totalKm >= info.alertThresholdKm,
         mainType: [...(typesByGear.get(gearId) ?? new Map<ActivityType, number>())].sort((x, y) => y[1] - x[1])[0]?.[0] ?? null,

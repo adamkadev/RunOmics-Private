@@ -104,7 +104,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, onDa
             {device?.name ?? s.dataSource.connected(s.dataSource.garmin)}
           </p>
           <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-            {lastSyncedAt && !sync.progress && <ConnectedMark />}
+            {lastSyncedAt && !sync.progress && <ConnectedMark lastSyncedAt={lastSyncedAt} />}
             <span data-testid="sync-line">
               {sync.progress ??
                 (lastSyncedAt

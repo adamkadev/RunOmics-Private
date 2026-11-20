@@ -185,7 +185,7 @@ describe('the share card basemap', () => {
     await act(() => vi.advanceTimersByTimeAsync(100))
     expect(waterCalls.at(-1)).toMatchObject({ water: '#5b7d99', size: 10 })
     expect(parkCalls.at(-1)).toMatchObject({ park: '#5f8a6d', size: 10 })
-    expect(landmarkCalls.at(-1)).toMatchObject({ landmark: '#9a8ca8', size: 10 })
+    expect(landmarkCalls.at(-1)).toMatchObject({ landmark: '#a3a9a7', size: 10 })
   })
 
   it('is tried again in the next sheet after one that never settled', async () => {

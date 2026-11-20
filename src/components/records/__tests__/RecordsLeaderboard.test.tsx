@@ -92,7 +92,7 @@ describe('RecordsLeaderboard', () => {
     const records = [record('1k', '1 km', 300), { ...record('5k', '5 km', 0), seconds: null }, { ...record('10k', '10 km', 0), seconds: null }]
     render(<RecordsLeaderboard records={records} topEfforts={{}} predictions={[prediction('5k', 1500)]} />)
 
-    expect(screen.getByTestId('records-missing')).toHaveTextContent(t.records.missing(['5 km', '10 km'], true))
+    expect(screen.getByTestId('records-missing')).toHaveTextContent(t.records.missing(['5 km', '10 km'], false))
     expect(screen.getAllByText(/5 km/)).toHaveLength(1)
   })
 })

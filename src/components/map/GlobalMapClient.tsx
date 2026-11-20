@@ -584,13 +584,18 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
           />
         )}
 
-        {/* Labels half-hidden under the floating row read as clutter, so the card's top fades them out. */}
+        {/* Names half-hidden under the floating controls read as clutter; a full-width band cut the district fills. */}
         {!generatorOpen && !isFullscreen && (
-          <div
-            aria-hidden="true"
-            data-testid="map-top-scrim"
-            className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 bg-gradient-to-b from-[var(--surface-2)] from-50% to-transparent"
-          />
+          <div aria-hidden="true" data-testid="map-top-scrim" className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16">
+            <div
+              className="absolute left-0 top-0 h-16 w-[62%] max-w-[280px]"
+              style={{ background: "radial-gradient(ellipse 100% 100% at 0 0, color-mix(in srgb, var(--surface-2) 85%, transparent) 45%, transparent 100%)" }}
+            />
+            <div
+              className="absolute right-0 top-0 h-16 w-32"
+              style={{ background: "radial-gradient(ellipse 100% 100% at 100% 0, color-mix(in srgb, var(--surface-2) 85%, transparent) 45%, transparent 100%)" }}
+            />
+          </div>
         )}
 
         {!generatorOpen && (
