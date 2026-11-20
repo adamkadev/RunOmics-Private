@@ -517,6 +517,17 @@ describe('the 9:16 story', () => {
     expect(strip.ty + (strip.args[1] as number) - panelBottom).toBeLessThan(40)
   })
 
+  it('colours Z3 reps and their zone alike when the athlete\'s threshold sits in Z3', () => {
+    const hrSamples = Array.from({ length: 200 }, (_, i) => ([0.2, 0.45, 0.7].some((a) => i / 199 >= a + 0.01 && i / 199 <= a + 0.14) ? 150 : 130))
+    const activity = { ...RUN, type: 'Threshold' as const, reps: REPS, hrSamples }
+    const route = draw({ design: 'route', activity }).filter((o) => o.op === 'stroke').map((o) => o.stroke)
+    expect(route).toContain(palette.zones[2])
+    expect(route).not.toContain(palette.zones[3])
+    const fills = draw({ design: 'stats', activity: { ...activity, reps: null, repWindows: REPS.windows } }).filter((o) => o.op === 'fillRect').map((o) => o.fill)
+    expect(fills).toContain(palette.zones[2])
+    expect(fills).not.toContain(palette.hrZones[2])
+  })
+
   it('draws the strides on the Stats card\'s trace in the Route card\'s pink', () => {
     const hrSamples = Array.from({ length: 120 }, (_, i) => (i >= 100 && i % 4 === 0 ? 160 : 140))
     const activity = { ...RUN, hrSamples, strides: { count: 5, windows: [[100 / 120, 1]] as [number, number][] } }

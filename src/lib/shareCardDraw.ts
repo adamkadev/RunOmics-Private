@@ -11,13 +11,20 @@ import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
-import { shareTrace, STRIDE_TAG, type ShareTrace } from '@/lib/shareCardTrace'
+import { repZone, shareTrace, STRIDE_TAG, type ShareTrace } from '@/lib/shareCardTrace'
 
 /** A fifth under the map's: on a 300 px card its dots outweighed a 2.5 px route. */
 const MARKER_SCALE = MAP_MARKER_SCALE * 0.8
 
+/** The zone the reps ran in, else the session type's: a threshold rep sits in Z3 on some athletes' synced zones. */
 function repColor(activity: ShareActivity, palette: SharePalette): string {
-  return palette.zones[runTypeZone(activity.type) - 1] ?? palette.zones[3]!
+  return palette.zones[(repZone(activity) ?? runTypeZone(activity.type)) - 1] ?? palette.zones[3]!
+}
+
+/** The reps' zone takes their colour on the zone bar, so a Z3 rep is not the grey of an easy run's moderate time. */
+function zoneFill(activity: ShareActivity, palette: SharePalette, zone: number): string {
+  if (zone === repZone(activity)) return repColor(activity, palette)
+  return palette.hrZones[zone - 1] ?? palette.mu
 }
 
 /** Z5: a stride is the hardest running in an easy session, and the pink stands off any accent. */
@@ -960,7 +967,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   let at = PAD_X
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
-    ctx.fillStyle = palette.hrZones[zoneTint(row) - 1] ?? palette.mu
+    ctx.fillStyle = zoneFill(activity, palette, zoneTint(row))
     ctx.fillRect(at, barTop, w, ZONE_BAR_H)
     at += w
   }
@@ -970,7 +977,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
   for (const entry of legendEntries(ctx, zones.rows, fonts, barW)) {
-    ctx.fillStyle = palette.hrZones[zoneTint(entry.row) - 1] ?? palette.mu
+    ctx.fillStyle = zoneFill(activity, palette, zoneTint(entry.row))
     ctx.beginPath()
     ctx.arc(entry.x + SWATCH / 2, mid, SWATCH / 2, 0, Math.PI * 2)
     ctx.fill()
@@ -1053,13 +1060,13 @@ export function zoneBarLabels(rows: readonly ShareZoneRow[], left: number, width
 const ZONE_STRIP_H = VERDICT_BAR_H + VERDICT_LABEL_GAP + VERDICT_LABEL
 
 /** The 6 px bar of the run's zones and their percents, under a verdict or a rep pace. */
-function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: ShareZones, top: number) {
+function drawZoneStrip(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, zones: ShareZones, top: number) {
   const barW = RIGHT - PAD_X
   let at = PAD_X
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
     const last = row === zones.rows[zones.rows.length - 1]
-    ctx.fillStyle = palette.hrZones[zoneTint(row) - 1] ?? palette.mu
+    ctx.fillStyle = zoneFill(activity, palette, zoneTint(row))
     roundRect(ctx, at, top, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
     ctx.fill()
     at += w
@@ -1144,7 +1151,7 @@ const TRACE_PANEL_MAX_H = TRACE_PANEL_H * 1.5
 function traceColor(scene: ShareCardScene, trace: ShareTrace, tag: number): string {
   const { activity, palette } = scene
   if (trace.kind === 'hr' && tag === STRIDE_TAG) return strideColor(palette)
-  if (trace.kind === 'hr') return palette.hrZones[tag - 1] ?? palette.route
+  if (trace.kind === 'hr') return zoneFill(activity, palette, tag)
   if (!activity.reps?.windows.length) return palette.route
   return tag ? repColor(activity, palette) : palette.trace
 }

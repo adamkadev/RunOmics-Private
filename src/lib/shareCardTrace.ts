@@ -73,6 +73,36 @@ function zoneOf(bpm: number, zones: ShareActivity['hrZones']): number {
   return Math.max(2, reached)
 }
 
+/** Each heart-rate sample's share of the distance, by the pace sampled with it when there is one. */
+function sampleShares(activity: ShareActivity, n: number): number[] {
+  const paces = valid(activity.paceSamples)
+  return paces?.length === n ? distanceShares(paces) : Array.from({ length: n }, (_, i) => i / Math.max(1, n - 1))
+}
+
+const REP_ZONES = new WeakMap<ShareActivity, number | null>()
+
+/** The zone the reps' heart rate spent most of its time in, read against the athlete's own synced zones. */
+export function repZone(activity: ShareActivity): number | null {
+  if (REP_ZONES.has(activity)) return REP_ZONES.get(activity)!
+  const hr = valid(activity.hrSamples)
+  const windows = activity.reps?.windows ?? activity.repWindows ?? []
+  let zone: number | null = null
+  if (hr && windows.length && activity.hrZones.length) {
+    const shares = sampleShares(activity, hr.length)
+    const counts = new Map<number, number>()
+    hr.forEach((bpm, i) => {
+      if (bpm > 0 && windows.some(([a, b]) => shares[i]! >= a && shares[i]! <= b)) {
+        const z = zoneOf(bpm, activity.hrZones)
+        counts.set(z, (counts.get(z) ?? 0) + 1)
+      }
+    })
+    const [top] = [...counts].sort((a, b) => b[1] - a[1] || b[0] - a[0])
+    zone = top && top[0] >= 3 ? top[0] : null
+  }
+  REP_ZONES.set(activity, zone)
+  return zone
+}
+
 function spread(points: TracePoint[]): TracePoint[] {
   return points.map((p, i) => ({ ...p, x: points.length > 1 ? i / (points.length - 1) : 0 }))
 }
@@ -116,8 +146,7 @@ function hrTrace(activity: ShareActivity, hr: number[]): ShareTrace {
   const lo = (low + high - span) / 2
   const hi = lo + span
   const n = hr.length
-  const paces = valid(activity.paceSamples)
-  const shares = paces?.length === n ? distanceShares(paces) : hr.map((_, i) => i / Math.max(1, n - 1))
+  const shares = sampleShares(activity, n)
   const strides = activity.reps?.windows.length ? [] : (activity.strides?.windows ?? [])
   const inStride = (from: number, to: number) =>
     strides.some(([a, b]) => shares[Math.max(from, to - 1)]! >= a && shares[from]! <= b)
