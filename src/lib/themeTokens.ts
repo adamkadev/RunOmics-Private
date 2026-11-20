@@ -161,54 +161,6 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
   }
 }
 
-/**
- * Baked into src/map/styles by scripts/build-map-styles.ts. Only parks and
- * water take a muted hue, so the accent route stays the one bright colour.
- */
-export const MAP_STYLE_COLORS = {
-  dark: {
-    background: '#111212',
-    land: '#141615',
-    park: '#15261d',
-    water: '#13212e',
-    waterway: '#13212e',
-    building: '#171918',
-    roadMajor: '#252b2a',
-    roadMinor: '#1b201f',
-    roadCasing: '#171918',
-    path: '#232625',
-    rail: SURFACES.dark.line,
-    border: SURFACES.dark.line2,
-    placeLabel: SURFACES.dark.text2,
-    streetLabel: '#4f5856',
-    halo: SURFACES.dark.background,
-    hillshadeShadow: 'rgba(0, 0, 0, 0.07)',
-    hillshadeHighlight: 'rgba(255, 255, 255, 0.03)',
-  },
-  light: {
-    background: '#eef0ef',
-    // A whisper more contrast under clear glass: the rim still reads as an edge over a white road.
-    land: '#e3e8e5',
-    park: '#d3e6d0',
-    water: '#c6dbee',
-    waterway: '#c6dbee',
-    building: SURFACES.light.line,
-    roadMajor: '#fbfcfb',
-    roadMinor: '#f8f9f8',
-    roadCasing: SURFACES.light.line,
-    path: '#ffffff',
-    rail: SURFACES.light.line2,
-    border: SURFACES.light.line2,
-    placeLabel: SURFACES.light.text2,
-    streetLabel: '#9aa19f',
-    halo: SURFACES.light.background,
-    hillshadeShadow: 'rgba(0, 0, 0, 0.06)',
-    hillshadeHighlight: 'rgba(255, 255, 255, 0.07)',
-  },
-} as const
-
-export type MapStyleColors = { [K in keyof (typeof MAP_STYLE_COLORS)['dark']]: string }
-
 /** Text's AA floor: small accent labels must clear it. */
 const TEXT_CONTRAST = 4.5
 

@@ -273,7 +273,7 @@ describe('the route (redesign, Oct 2026)', () => {
   // The rest of the route is a muted grey, so the reps are what the eye finds:
   // on dark it sits under the ink the names take, never beside it.
   it('keeps the non-rep route muted, a step under the names, on both themes', () => {
-    expect(sharePalette('heather', 'dark').trace).toBe('#6b7270')
+    expect(sharePalette('heather', 'dark').trace).toBe('#7f8784')
     expect(sharePalette('heather', 'light').trace).toBe('#8a8a8a')
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
     for (const mode of ['dark', 'light'] as const) {

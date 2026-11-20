@@ -675,19 +675,27 @@ but still sends once a day.
 
 ### Map styles
 
-The basemaps are RunOmics' own, kept in the repo: `src/map/styles/runomics-light.json` and
-`runomics-dark.json`, built from MapTiler's Dataviz styles (`dataviz-v4`, `dataviz-v4-dark`) in greys
-only, so the athlete's accent-coloured runs are the one colour on a map. The colours come from
-`MAP_STYLE_COLORS` in `src/lib/themeTokens.ts`. The MapTiler API cannot save a style, so after a
-MapTiler update (or a colour change) rebuild them by hand and commit the result:
+The basemaps are designed in MapTiler Cloud, as the `runomics-light` and `runomics-dark` maps of the
+project's MapTiler account, and a copy of each is kept in the repo: `src/map/styles/runomics-light.json`
+and `runomics-dark.json`. The app reads the copies, so a style change shows in a pull request and a
+map never waits on the style API. After editing a style on the website, pull both and commit the result:
 
 ```bash
 MAPTILER_KEY=your_maptiler_key npm run map:styles
 ```
 
-The script matches layers by pattern, fails if a colour with a hue is left in a visible layer, and
-writes `{key}` in place of the key; `maptilerStyle()` in `src/lib/maptiler.ts` fills it in at run time
-and names places in the app's language.
+The script writes `{key}` in place of the key; `maptilerStyle()` in `src/lib/maptiler.ts` fills it in at
+run time and names places in the app's language. When editing on the website:
+
+- Keep greys outside parks and water, so the athlete's route is the one colour on a map: the script
+  warns on a hue anywhere else.
+- Keep `name:en` in label fields: the app swaps it for `name:fr` on the French deployment.
+- Keep the layer names. The heat map greys layers by name (`heatBasemapStyle`) and the share card
+  deepens parks and water by layer (`shareBasemapStyle`).
+- Leave landmarks to the app. The run maps hide every style label except place names, and the
+  names a run passes (rivers, parks, cathedrals, stations, stadiums) are chosen near the route and
+  placed off it in code (`famousPlaces.ts`, `runMapNames.ts`), on the activity map and the share card
+  alike. A style label layer would show every such place in view and sit on the route.
 
 ### Releases
 
