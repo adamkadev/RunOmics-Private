@@ -46,7 +46,7 @@ describe('the zone scale (design reviews, Oct 2026)', () => {
   })
 
   it('takes the colour-blind-safe scale', () => {
-    expect(ZONE_HEX.dark).toEqual(['#a9d3e6', '#31aff7', '#6781f0', '#d04bcb', '#f4438f'])
+    expect(ZONE_HEX.dark).toEqual(['#a9d3e6', '#0e86d2', '#b488fc', '#d44fcf', '#f4438f'])
     expect(ZONE_HEX.light).toEqual(['#5f97b0', '#2f74e0', '#651aa2', '#9549dc', '#d63a77'])
   })
 

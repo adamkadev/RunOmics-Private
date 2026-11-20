@@ -17,7 +17,7 @@ const c = HUE
  */
 export const ZONE_HEX = {
   light: [c.roZone1Light, '#2f74e0', '#651aa2', '#9549dc', '#d63a77'],
-  dark: [c.roZone1, '#31aff7', '#6781f0', '#d04bcb', '#f4438f'],
+  dark: [c.roZone1, '#0e86d2', '#b488fc', '#d44fcf', '#f4438f'],
 } as const
 
 /** Moderate, time in Z3: a neutral grey-blue, so it never joins the Z4-Z5 purple beside it. Sessions keep the ramp's Z3. */
