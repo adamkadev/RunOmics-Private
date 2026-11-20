@@ -489,6 +489,32 @@ describe('the 9:16 story', () => {
     const ops = draw({ design: 'route', size: 'story', mapImage: {} as HTMLCanvasElement, mapPoints: [[40, 100], [200, 400], [260, 120]] })
     expect(ops.find((o) => o.op === 'drawImage')?.args.slice(1)).toEqual([0, 0, W, W * 16 / 9])
   })
+
+  it('grows the Stats card\'s trace by half on a story, the rest above the hero', () => {
+    const hrSamples = Array.from({ length: 120 }, (_, i) => 140 + (i % 5))
+    const activity = { ...RUN, hrSamples }
+    const panel = (ops: Op[]) => ops.find((o) => o.op === 'roundRect' && o.args[0] === 16 && o.args[4] === 12)!
+    const portrait = panel(draw({ design: 'stats', activity }))
+    const story = panel(draw({ design: 'stats', activity, size: 'story' }))
+    expect(portrait.args[3]).toBe(74)
+    expect(story.args[3]).toBe(111)
+    const hero = (ops: Op[]) => ops.find((o) => o.op === 'fillText' && o.args[0] === '80%')!
+    expect(hero(draw({ design: 'stats', activity, size: 'story' })).ty).toBeGreaterThan(hero(draw({ design: 'stats', activity })).ty)
+  })
+
+  it('draws the strides on the Stats card\'s trace in the Route card\'s pink', () => {
+    const hrSamples = Array.from({ length: 120 }, (_, i) => (i >= 100 && i % 4 === 0 ? 160 : 140))
+    const activity = { ...RUN, hrSamples, strides: { count: 5, windows: [[100 / 120, 1]] as [number, number][] } }
+    const strokes = draw({ design: 'stats', activity, size: 'story' }).filter((o) => o.op === 'stroke').map((o) => o.stroke)
+    expect(strokes).toContain(palette.zones[4])
+  })
+
+  it('shades the hidden reps behind the Stats card\'s heart rate', () => {
+    const hrSamples = Array.from({ length: 120 }, (_, i) => 140 + (i % 5))
+    const activity = { ...RUN, type: 'Threshold' as const, hrSamples, repWindows: REPS.windows }
+    const shades = draw({ design: 'stats', activity, size: 'story' }).filter((o) => o.op === 'roundRect' && o.args[4] === 3)
+    expect(shades).toHaveLength(3)
+  })
 })
 
 describe('the Photo design (design review, Oct 2026)', () => {
@@ -532,7 +558,7 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(strokes(draw({ design: 'photo', photo, photoRoute: true }))).toEqual(['#ffffff', ...without])
   })
 
-  it('colours each rep on the outline, on a white edge', () => {
+  it('colours each rep on the outline, on an edge in the route\'s tone', () => {
     const photo = { width: 1000, height: 800 } as HTMLImageElement
     const activity = { ...RUN, type: 'Threshold' as const, reps: REPS }
     const strokes = (ops: Op[]) => ops.filter((o) => o.op === 'stroke').map((o) => o.stroke)

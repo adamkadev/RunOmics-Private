@@ -67,6 +67,12 @@ describe('shareZones', () => {
     expect(zoneTint({ zone: 4, tint: 3 })).toBe(3)
   })
 
+  it('keeps a lone hard sliver apart from the easy row', () => {
+    expect(mergeSlivers([{ zone: 2, from: 1, percent: 97 }, { zone: 3, percent: 1 }, { zone: 4, percent: 1 }, { zone: 5, percent: 1 }])).toEqual([
+      { zone: 2, from: 1, percent: 97 }, { zone: 5, from: 3, percent: 3 },
+    ])
+  })
+
   it('heads an easy session that ran mostly harder with that zone, merged as its legend row', () => {
     const footing = { ...RUN, type: 'Base' as const, hrZones: [300, 900, 2400, 150, 0].map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) }
     expect(shareZones(footing)!.headline).toEqual({ percent: 68, label: 'in Z3–Z4' })

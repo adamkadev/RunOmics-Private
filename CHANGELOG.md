@@ -19,7 +19,12 @@ All notable changes to this project are documented in this file.
   "6 strides" legend; they never become reps, so the card stays an easy run's.
 - Share card: the Photo card has a Show route switch again, off by default. It draws the run as a small outline in the
   top-right corner beside the title, so the photo stays the picture: white on a dark photo and near-black on a light
-  one, judged from what lies under it, with a soft halo, and an interval session's reps in their colour over a white edge.
+  one, judged from what lies under it, with a soft halo, and an interval session's reps in their colour over an edge in
+  the route's own tone.
+- Share card, Stats: strides show on the heart-rate trace in the Route card's pink, read from their laps and drawn at
+  their peak; with Show rep pace off, the reps are shaded behind the heart rate. On 9:16 the trace grows by half and the
+  rest of the height goes above the headline. A lone hard sliver keeps its own row on the zone bar (an easy run with
+  strides read "Z1–Z3 Easy 100%" beside "96% easy").
 - Share card: a famous place's mark stays where the place is. Only its name moves off the route, to a free side of the
   mark, and a place whose mark cannot show where it is stays off the card (a cathedral's mark moved with its name).
 - A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no

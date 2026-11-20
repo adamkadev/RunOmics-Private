@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shareTrace, TRACE_POINTS } from '@/lib/shareCardTrace'
+import { shareTrace, STRIDE_TAG, TRACE_POINTS } from '@/lib/shareCardTrace'
 import type { ShareActivity } from '@/lib/shareCardStats'
 
 const ZONES: ShareActivity['hrZones'] = [
@@ -51,6 +51,20 @@ describe('shareTrace', () => {
     expect(tags.slice(-10)).toContain(3)
   })
 
+  it('marks the strides from their windows, at their peak', () => {
+    const strides = { count: 6, windows: [[130 / 150, 1]] as [number, number][] }
+    const plain = shareTrace({ ...RUN, hrSamples: easyHr, paceSamples: easyHr.map(() => 340) })!
+    const marked = shareTrace({ ...RUN, hrSamples: easyHr, paceSamples: easyHr.map(() => 340), strides })!
+    expect(marked.points.slice(0, 60).some((p) => p.tag === STRIDE_TAG)).toBe(false)
+    expect(marked.points.slice(-10).every((p) => p.tag === STRIDE_TAG)).toBe(true)
+    const meanY = (points: { y: number }[]) => points.reduce((a, p) => a + p.y, 0) / points.length
+    expect(meanY(marked.points.slice(-10))).toBeLessThan(meanY(plain.points.slice(-10)))
+  })
+
+  it('shades nothing on a run without reps', () => {
+    expect(shareTrace({ ...RUN, hrSamples: easyHr })!.shade).toEqual([])
+  })
+
   it('draws Z1 as Z2, the zone bar joining them', () => {
     const trace = shareTrace({ ...RUN, hrSamples: Array.from({ length: 60 }, () => 125) })!
     expect(new Set(trace.points.map((p) => p.tag))).toEqual(new Set([2]))
@@ -96,6 +110,24 @@ describe('shareTrace', () => {
 
     it('draws its heart rate when the reps are hidden', () => {
       expect(shareTrace({ ...session, reps: null })!.kind).toBe('hr')
+    })
+
+    it('shades the hidden reps on the heart rate, where they ran', () => {
+      const trace = shareTrace({ ...session, reps: null, repWindows: session.reps!.windows })!
+      expect(trace.shade).toHaveLength(1)
+      const [from, to] = trace.shade[0]!
+      expect(from).toBeGreaterThan(0.25)
+      expect(to).toBeLessThan(0.75)
+      expect(to).toBeGreaterThan(from)
+    })
+
+    it('shades nothing on its pace trace, the reps already in their colour', () => {
+      expect(shareTrace(session)!.shade).toEqual([])
+    })
+
+    it('leaves strides unmarked when the reps are shown', () => {
+      const trace = shareTrace({ ...session, paceSamples: null, strides: { count: 2, windows: [[0.9, 1]] } })!
+      expect(trace.points.some((p) => p.tag === STRIDE_TAG)).toBe(false)
     })
   })
 })

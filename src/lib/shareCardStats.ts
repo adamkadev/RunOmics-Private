@@ -13,6 +13,8 @@ export type ShareActivity = Pick<
   sessionTitle?: string | null
   reps?: ShareReps | null
   strides?: ShareStrides | null
+  /** The reps' windows on a card that hides their pace, shaded on the heart-rate trace. */
+  repWindows?: [number, number][] | null
 }
 
 /** Accelerations after an easy run: marked on the route, never graded like reps. */
@@ -219,8 +221,10 @@ const MIN_ROW_PERCENT = 5
 /** A sliver joins the zone above, or below when last, so the easy row stays whole; the bigger part keeps its colour. */
 export function mergeSlivers(rows: readonly ShareZoneRow[]): ShareZoneRow[] {
   const out = [...rows]
+  // A lone hard sliver stays apart: merged into the easy row, a run's strides would read as 100% easy.
+  const lastHard = (k: number) => k === 1 && out.length === 2 && out[0]!.from === 1
   for (;;) {
-    const i = out.findIndex((row) => row.percent < MIN_ROW_PERCENT)
+    const i = out.findIndex((row, k) => row.percent < MIN_ROW_PERCENT && !lastHard(k))
     if (i < 0 || out.length < 2) return out
     const j = i < out.length - 1 ? i + 1 : i - 1
     const [low, high] = i < j ? [out[i]!, out[j]!] : [out[j]!, out[i]!]

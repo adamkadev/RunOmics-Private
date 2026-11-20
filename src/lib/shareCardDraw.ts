@@ -11,7 +11,7 @@ import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
-import { shareTrace, type ShareTrace } from '@/lib/shareCardTrace'
+import { shareTrace, STRIDE_TAG, type ShareTrace } from '@/lib/shareCardTrace'
 
 function repColor(activity: ShareActivity, palette: SharePalette): string {
   return palette.zones[runTypeZone(activity.type) - 1] ?? palette.zones[3]!
@@ -1128,20 +1128,24 @@ const TRACE_PANEL_GAP = 12
 const TRACE_PANEL_FOOT = 4
 /** What the zones or the rep pace need above the panel, or the panel is left out. */
 const TRACE_ROOM = { zones: 120, reps: 156 } as const
+/** The zones' height with fixed gaps: a taller card gives the rest to the trace, then above the hero. */
+const ZONES_H = 150
+const TRACE_PANEL_MAX_H = TRACE_PANEL_H * 1.5
 
 function traceColor(scene: ShareCardScene, trace: ShareTrace, tag: number): string {
   const { activity, palette } = scene
+  if (trace.kind === 'hr' && tag === STRIDE_TAG) return strideColor(palette)
   if (trace.kind === 'hr') return palette.hrZones[tag - 1] ?? palette.route
   if (!activity.reps?.windows.length) return palette.route
   return tag ? repColor(activity, palette) : palette.trace
 }
 
-function drawTrace(ctx: Ctx, scene: ShareCardScene, trace: ShareTrace, top: number) {
+function drawTrace(ctx: Ctx, scene: ShareCardScene, trace: ShareTrace, top: number, panelH = TRACE_PANEL_H) {
   const { palette, fonts, activity } = scene
   const s = t.activity.shareCard
   const width = RIGHT - PAD_X
   ctx.fillStyle = palette.card
-  roundRect(ctx, PAD_X, top, width, TRACE_PANEL_H, 12)
+  roundRect(ctx, PAD_X, top, width, panelH, 12)
   ctx.fill()
 
   const inner = PAD_X + TRACE_PANEL_PAD
@@ -1169,7 +1173,12 @@ function drawTrace(ctx: Ctx, scene: ShareCardScene, trace: ShareTrace, top: numb
   ctx.textBaseline = 'alphabetic'
 
   const plotTop = top + TRACE_PANEL_PAD + TRACE_HEAD + TRACE_PLOT_GAP
-  const plotH = TRACE_PANEL_H - TRACE_PANEL_PAD * 2 - TRACE_HEAD - TRACE_PLOT_GAP
+  const plotH = panelH - TRACE_PANEL_PAD * 2 - TRACE_HEAD - TRACE_PLOT_GAP
+  ctx.fillStyle = withAlpha(repColor(activity, palette), 0.14)
+  for (const [a, b] of trace.shade) {
+    roundRect(ctx, inner + a * innerW, plotTop - 3, (b - a) * innerW, plotH + 6, 3)
+    ctx.fill()
+  }
   const at = (p: { x: number; y: number }): [number, number] => [inner + p.x * innerW, plotTop + p.y * plotH]
   if (trace.band) {
     const [a, b] = trace.band
@@ -1205,8 +1214,18 @@ function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
     drawRepMiddle(ctx, scene, layout.repHeadline, layout, shown)
     return
   }
-  drawZones(ctx, scene, shown ? { ...layout, middleH: room } : layout)
-  if (shown) drawTrace(ctx, scene, shown, layout.middleH - TRACE_PANEL_H - TRACE_PANEL_FOOT)
+  if (!shown) {
+    drawZones(ctx, scene, layout)
+    return
+  }
+  const zonesH = Math.max(TRACE_ROOM.zones, Math.min(ZONES_H, room))
+  const panelH = Math.min(TRACE_PANEL_MAX_H, layout.middleH - zonesH - TRACE_PANEL_GAP - TRACE_PANEL_FOOT)
+  const spare = layout.middleH - zonesH - TRACE_PANEL_GAP - panelH - TRACE_PANEL_FOOT
+  ctx.save()
+  ctx.translate(0, spare)
+  drawZones(ctx, scene, { ...layout, middleH: zonesH })
+  drawTrace(ctx, scene, shown, zonesH + TRACE_PANEL_GAP, panelH)
+  ctx.restore()
 }
 
 /** The app's 24 px line icon, scaled to `size`. */
@@ -1336,9 +1355,9 @@ export function samplesAlong(pts: [number, number][], step: number): [number, nu
 
 /** One plain colour under a soft halo rather than a casing: a photo can be any colour. */
 /** The top-right corner beside the title, so the photo stays the picture: the route is a sign, not a map. */
-export const PHOTO_ROUTE_BOX = { x: RIGHT - 64, y: 16, size: 64 } as const
+export const PHOTO_ROUTE_BOX = { x: RIGHT - 70, y: 16, size: 70 } as const
 const PHOTO_ROUTE_GAP = 10
-const PHOTO_ROUTE_W = 2.2
+const PHOTO_ROUTE_W = 2.5
 
 function drawPhotoRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const { activity, photo, palette } = scene
@@ -1353,12 +1372,12 @@ function drawPhotoRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout
   ctx.shadowColor = halo
   ctx.shadowBlur = 4
   strokeLine(ctx, pts, line, PHOTO_ROUTE_W)
-  // A white edge keeps the rep colour off a photo of the same hue; strides are under a pixel here, so only reps.
+  // An edge in the route's tone keeps the rep colour off a photo of the same hue; strides are under a pixel here.
   if (hasReps(scene)) {
     ctx.shadowColor = 'transparent'
     for (const [from, to] of activity.reps!.windows) {
       const rep = slicePolyline(pts, from, to)
-      strokeLine(ctx, rep, '#ffffff', PHOTO_ROUTE_W + 2)
+      strokeLine(ctx, rep, line, PHOTO_ROUTE_W + 2)
       strokeLine(ctx, rep, repColor(activity, palette), PHOTO_ROUTE_W)
     }
   }
