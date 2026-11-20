@@ -2,7 +2,7 @@ import type { Activity, ActivitySplit, ActivityType, PlannedWorkout, WorkoutStep
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
 import { prescribedRepPace } from '@/domain/coaching/repPace'
-import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
+import type { ShareActivity, ShareReps, ShareStrides } from '@/lib/shareCardStats'
 import { pickDefined } from '@/components/pickDefined'
 import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
@@ -52,6 +52,8 @@ const SHARE_FIELDS = [
   'elevationGain',
   'route',
   'hrZones',
+  'hrSamples',
+  'paceSamples',
   'type',
 ] as const satisfies readonly (keyof ShareActivity)[]
 
@@ -113,6 +115,14 @@ export function shareReps(
     target: repTarget(prescription, planned),
     windows: repWindows(activity.splits, set.reps.length),
   }
+}
+
+export function shareStrides(activity: Pick<Activity, 'type' | 'splits'>): ShareStrides | null {
+  if (isIntervalType(activity.type) || !activity.splits) return null
+  const set = repSet(activity.splits)
+  if (!set?.strides) return null
+  const windows = repWindows(activity.splits, set.reps.length)
+  return windows.length ? { count: set.reps.length, windows } : null
 }
 
 /**
@@ -183,5 +193,6 @@ export function shareActivity(
     type,
     sessionTitle: session ? sessionName(session) : null,
     reps: shareReps({ type, splits: activity.splits }, session, planned),
+    strides: shareStrides({ type, splits: activity.splits }),
   }
 }

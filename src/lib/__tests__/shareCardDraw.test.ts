@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { arrangeLabels, type LabelKind, balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, markerObstacles, photoRouteTone, photoScrim, samplesAlong, shareMarkerRadius, shareCardLayout, slicePolyline, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { arrangeLabels, type LabelKind, balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, LABEL_PRIORITY, legendBox, legendCorner, markerObstacles, PHOTO_ROUTE_BOX, photoRouteTone, photoScrim, samplesAlong, shareMarkerRadius, shareCardLayout, slicePolyline, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, SHARE_MARKER_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
@@ -204,11 +204,11 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'Rep pace')?.fill).toBe(palette.zones[2])
   })
 
-  it('keeps the Reps legend at the map\'s top right, on the card\'s own margin', () => {
-    const ops = draw({ design: 'route', activity: session })
+  it('keeps the Reps legend at the map\'s top right while the route leaves it clear, on the card\'s own margin', () => {
+    const clear = { ...session, route: [[7.70, 48.62], [7.71, 48.61], [7.73, 48.60]] as [number, number][] }
+    const ops = draw({ design: 'route', activity: clear })
     const legend = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Reps')!
-    expect(legend.args[2] as number).toBeLessThan(layout(session).textTop + 40)
-    // Its pill ends where the words do, 16 px off the card's edge.
+    expect(legend.args[2] as number).toBeLessThan(layout(clear).textTop + 40)
     const at = ops.indexOf(legend)
     const pill = ops.filter((o, i) => o.op === 'roundRect' && i < at).at(-2)!
     const [x, , width] = pill.args as [number, number, number, number, number]
@@ -504,13 +504,50 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
   })
 
-  it('draws the route over the photo in one plain colour, reps and all, only when asked', () => {
+  it('keeps the route to an outline in the top-right corner, clear of the photo', () => {
+    const photo = { width: 1000, height: 800 } as HTMLImageElement
+    const without = draw({ design: 'photo', photo }).filter((o) => o.op === 'lineTo').length
+    const lines = draw({ design: 'photo', photo, photoRoute: true }).filter((o) => o.op === 'lineTo').slice(without)
+    const { x, y, size } = PHOTO_ROUTE_BOX
+    expect(lines.length).toBeGreaterThan(0)
+    for (const { args: [px, py] } of lines) {
+      expect(px as number).toBeGreaterThanOrEqual(x - 0.01)
+      expect(px as number).toBeLessThanOrEqual(x + size + 0.01)
+      expect(py as number).toBeGreaterThanOrEqual(y - 0.01)
+      expect(py as number).toBeLessThanOrEqual(y + size + 0.01)
+    }
+  })
+
+  it('narrows the header beside the route outline only', () => {
+    const ctx = { font: '', measureText: (text: string) => ({ width: text.length * 7 }) } as unknown as CanvasRenderingContext2D
+    expect(shareCardLayout(ctx, RUN, FALLBACK_FONTS, 'photo', 'portrait', true).textRight).toBeLessThan(PHOTO_ROUTE_BOX.x)
+    expect(shareCardLayout(ctx, RUN, FALLBACK_FONTS, 'photo', 'portrait', false).textRight).toBe(W - 16)
+    expect(shareCardLayout(ctx, RUN, FALLBACK_FONTS, 'stats', 'portrait', true).textRight).toBe(W - 16)
+  })
+
+  it('draws the route in one plain colour, only when asked', () => {
     const photo = { width: 1000, height: 800 } as HTMLImageElement
     const strokes = (ops: Op[]) => ops.filter((o) => o.op === 'stroke').map((o) => o.stroke)
-    for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
-      const without = strokes(draw({ design: 'photo', photo, activity }))
-      expect(strokes(draw({ design: 'photo', photo, photoRoute: true, activity }))).toEqual(['#ffffff', ...without])
-    }
+    const without = strokes(draw({ design: 'photo', photo }))
+    expect(strokes(draw({ design: 'photo', photo, photoRoute: true }))).toEqual(['#ffffff', ...without])
+  })
+
+  it('colours each rep on the outline, on a white edge', () => {
+    const photo = { width: 1000, height: 800 } as HTMLImageElement
+    const activity = { ...RUN, type: 'Threshold' as const, reps: REPS }
+    const strokes = (ops: Op[]) => ops.filter((o) => o.op === 'stroke').map((o) => o.stroke)
+    const white = (list: string[]) => list.filter((c) => c === '#ffffff').length
+    const without = strokes(draw({ design: 'photo', photo, activity }))
+    const withRoute = strokes(draw({ design: 'photo', photo, photoRoute: true, activity }))
+    expect(withRoute.filter((c) => c === palette.zones[3])).toHaveLength(3)
+    expect(white(withRoute) - white(without)).toBe(4)
+  })
+
+  it('leaves strides off the outline', () => {
+    const photo = { width: 1000, height: 800 } as HTMLImageElement
+    const activity = { ...RUN, strides: { count: 6, windows: [[0.9, 0.91]] as [number, number][] } }
+    const strokes = draw({ design: 'photo', photo, photoRoute: true, activity }).filter((o) => o.op === 'stroke').map((o) => o.stroke)
+    expect(strokes).not.toContain(palette.zones[4])
   })
 
   it('samples the photo route from its start to its finish, every step or closer', () => {
@@ -778,5 +815,57 @@ describe('arranging the place names', () => {
   it('breaks a long park name over two balanced lines', () => {
     const [park] = arrangeLabels(measure, [name('Forêt de la Clairière', 150, 'landmark')], null, l, FALLBACK_FONTS)
     expect(park!.lines).toEqual(['Forêt de la', 'Clairière'])
+  })
+})
+
+describe('an easy run with strides', () => {
+  const STRIDES = { count: 6, windows: [[0.82, 0.83], [0.85, 0.86], [0.88, 0.89], [0.91, 0.92], [0.94, 0.95], [0.97, 0.98]] as [number, number][] }
+  const strokes = (ops: Op[]) => ops.filter((o) => o.op === 'stroke').map((o) => o.stroke)
+
+  it('draws each stride over the route in the Z5 colour, with a legend naming how many', () => {
+    const ops = draw({ design: 'route', activity: { ...RUN, strides: STRIDES } })
+    expect(strokes(ops).filter((c) => c === palette.zones[4])).toHaveLength(6)
+    expect(texts(ops)).toContain('6 strides')
+  })
+
+  it('lets reps win when a session has both', () => {
+    const ops = draw({ design: 'route', activity: { ...RUN, type: 'Threshold', reps: REPS, strides: STRIDES } })
+    expect(texts(ops)).not.toContain('6 strides')
+    expect(texts(ops)).toContain('Reps')
+  })
+
+  it('leaves the Stats card as it was', () => {
+    expect(texts(draw({ design: 'stats', activity: { ...RUN, strides: STRIDES } }))).not.toContain('6 strides')
+  })
+})
+
+describe('the route legend\'s corner', () => {
+  const room = { textTop: 90, textBottom: 300 }
+  const top = legendBox('topRight', 84, room)
+  const bottom = legendBox('bottomLeft', 84, room)
+
+  it('sits top right while the route leaves it clear', () => {
+    expect(legendCorner([[60, 150], [200, 250]], room)).toBe('topRight')
+    expect(legendCorner(null, room)).toBe('topRight')
+  })
+
+  it('moves bottom left when the route runs under the top right', () => {
+    expect(legendCorner([[top.x - 10, top.y + 9], [top.x + top.w + 10, top.y + 9]], room)).toBe('bottomLeft')
+  })
+
+  it('moves bottom right when the route runs under both of the others', () => {
+    const across = (box: typeof top): [number, number][] => [[box.x - 10, box.y + 9], [box.x + box.w + 10, box.y + 9]]
+    expect(legendCorner([...across(top), ...across(bottom)], room)).toBe('bottomRight')
+  })
+
+  it('takes the corner the route covers least when none is clear', () => {
+    const right = legendBox('bottomRight', 84, room)
+    const across = (box: typeof top, dy = 9): [number, number][] => [[box.x - 10, box.y + dy], [box.x + box.w + 10, box.y + dy]]
+    expect(legendCorner([...across(top), ...across(top, 4), ...across(bottom), ...across(right)], room)).not.toBe('topRight')
+  })
+
+  it('keeps bottom left above the stats, inside the map', () => {
+    expect(bottom.y + bottom.h).toBeLessThan(room.textBottom)
+    expect(bottom.x).toBe(16)
   })
 })

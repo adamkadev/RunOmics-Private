@@ -13,9 +13,13 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
-- Share card: the Photo card has a Show route switch again, off by default, to draw the run's trace and its start and
-  finish over the photo, between the title and the stats. The trace is white on a dark photo and near-black on a light
-  one, judged from what lies under it, with a soft halo, and an interval session's reps are not coloured on it.
+- Share card: the Stats card draws the run's trace under its headline, heart rate coloured by zone on a run, pace
+  with the reps and their target band on an interval session; left out where the card has no room (a 4:5 interval card).
+- Share card: an easy run's strides are marked on the Route card in the Z5 pink, read from the watch's laps, with a
+  "6 strides" legend; they never become reps, so the card stays an easy run's.
+- Share card: the Photo card has a Show route switch again, off by default. It draws the run as a small outline in the
+  top-right corner beside the title, so the photo stays the picture: white on a dark photo and near-black on a light
+  one, judged from what lies under it, with a soft halo, and an interval session's reps in their colour over a white edge.
 - Share card: a famous place's mark stays where the place is. Only its name moves off the route, to a free side of the
   mark, and a place whose mark cannot show where it is stays off the card (a cathedral's mark moved with its name).
 - A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
@@ -327,6 +331,10 @@ All notable changes to this project are documented in this file.
 - French: the morning check-in names « Humeur », not "Mood". Running jargon (Splits, RPE) stays in English.
 - Smooth scrolling is off under "Reduce motion".
 - French: the map page is « Carte » in the sidebar and for screen readers, not "Heatmap".
+
+### Security
+
+- Next.js 16.4.2 → 16.4.6 (with `eslint-config-next` and `@next/bundle-analyzer`), for a published security advisory.
 
 ## [3.3.0] - 2026-10-28
 

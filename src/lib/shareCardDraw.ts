@@ -11,9 +11,15 @@ import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
+import { shareTrace, type ShareTrace } from '@/lib/shareCardTrace'
 
 function repColor(activity: ShareActivity, palette: SharePalette): string {
   return palette.zones[runTypeZone(activity.type) - 1] ?? palette.zones[3]!
+}
+
+/** Z5: a stride is the hardest running in an easy session, and the pink stands off any accent. */
+function strideColor(palette: SharePalette): string {
+  return palette.zones[4]!
 }
 
 type Ctx = CanvasRenderingContext2D
@@ -161,8 +167,7 @@ export interface ShareTitle {
   lineHeight: number
 }
 
-function titleLines(ctx: Ctx, text: string, fonts: ShareFonts): ShareTitle {
-  const max = RIGHT - PAD_X
+function titleLines(ctx: Ctx, text: string, fonts: ShareFonts, max: number): ShareTitle {
   for (const size of TITLE_SIZES) {
     ctx.font = `700 ${size}px ${fonts.display}`
     const lines = balanceLines(ctx, text, max)
@@ -180,6 +185,8 @@ function titleLines(ctx: Ctx, text: string, fonts: ShareFonts): ShareTitle {
 export interface ShareCardLayout {
   height: number
   title: ShareTitle
+  /** The header's right edge: short of the route outline on a Photo card that shows one. */
+  textRight: number
   /** The reps' result under the header, on the Route and Stats cards. */
   result: string | null
   hero: ShareRepHero | null
@@ -202,10 +209,11 @@ export interface ShareCardLayout {
 
 /** The Route card carries the rep pace in its stat row, so the map keeps its full height. */
 export function shareCardLayout(
-  ctx: Ctx, activity: ShareActivity, fonts: ShareFonts, design: ShareDesign = 'route', size: ShareSize = 'portrait',
+  ctx: Ctx, activity: ShareActivity, fonts: ShareFonts, design: ShareDesign = 'route', size: ShareSize = 'portrait', photoRoute = false,
 ): ShareCardLayout {
   const height = shareCardHeight(size)
-  const title = titleLines(ctx, shareCardTitle(activity), fonts)
+  const textRight = design === 'photo' && photoRoute ? PHOTO_ROUTE_BOX.x - PHOTO_ROUTE_GAP : RIGHT
+  const title = titleLines(ctx, shareCardTitle(activity), fonts, textRight - PAD_X)
   const result = design === 'photo' ? null : shareRepResult(activity)
   const middleTop = HEADER_BASE + (title.lines.length - 1) * title.lineHeight + (result ? RESULT_H : 0)
   const repHeadline = design === 'stats' ? shareRepHeadline(activity) : null
@@ -219,6 +227,7 @@ export function shareCardLayout(
   return {
     height,
     title,
+    textRight,
     result,
     hero,
     repHeadline,
@@ -266,7 +275,7 @@ const SUBTITLE_ALPHA = 0.82
 
 const PHOTO_INK: Ink = { tx: '#ffffff', mu: 'rgba(255, 255, 255, 0.85)', mark: '#ffffff' }
 
-function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { title, result }: ShareCardLayout, ink: Ink) {
+function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { title, result, textRight }: ShareCardLayout, ink: Ink) {
   ctx.textAlign = 'left'
   ctx.save()
   ctx.globalAlpha = LOCKUP_ALPHA
@@ -292,7 +301,7 @@ function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { titl
   ctx.save()
   ctx.fillStyle = ink.tx
   ctx.globalAlpha *= SUBTITLE_ALPHA
-  ctx.fillText(fit(ctx, shareCardSubtitle(activity, place), RIGHT - PAD_X), PAD_X, last + 18)
+  ctx.fillText(fit(ctx, shareCardSubtitle(activity, place), textRight - PAD_X), PAD_X, last + 18)
   ctx.restore()
   if (!result) return
 
@@ -423,8 +432,9 @@ interface ChipPart {
 function legendParts(scene: ShareCardScene, palette: SharePalette): { parts: ChipPart[]; bar: string } {
   const { activity, progress } = scene
   const s = t.activity.shareCard
-  const rep = repColor(activity, palette)
   const muted = (text: string): ChipPart => ({ text, color: palette.mu, weight: 400 })
+  if (!hasReps(scene)) return { parts: [muted(s.stridesLegend(activity.strides!.count))], bar: strideColor(palette) }
+  const rep = repColor(activity, palette)
   if (progress !== undefined && progress < 1) {
     const phase = repPhase(activity.reps!.windows, progress)
     switch (phase.kind) {
@@ -441,19 +451,54 @@ function legendParts(scene: ShareCardScene, palette: SharePalette): { parts: Chi
   return { parts: [muted(s.repsLegend)], bar: rep }
 }
 
-function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, top: number) {
+const LEGEND_PILL_H = 18
+const LEGEND_INSET = 8
+/** Wide enough for "Rep 2 of 3": the video's legend changes width, its corner must not. */
+const LEGEND_PROBE_W = 84
+/** Half the route and its casing, then a gap. */
+const LEGEND_CLEAR = 8
+
+export type LegendCorner = 'topRight' | 'bottomLeft' | 'bottomRight'
+
+/** In order of preference: beside the title first. */
+const LEGEND_CORNERS: readonly LegendCorner[] = ['topRight', 'bottomLeft', 'bottomRight']
+
+export function legendBox(corner: LegendCorner, width: number, { textTop, textBottom }: Pick<ShareCardLayout, 'textTop' | 'textBottom'>) {
+  const y = corner === 'topRight' ? textTop + LEGEND_INSET : textBottom - LEGEND_INSET - LEGEND_PILL_H
+  return { x: corner === 'bottomLeft' ? PAD_X : RIGHT - width, y, w: width, h: LEGEND_PILL_H }
+}
+
+/** The first corner the route leaves clear, else the one it covers least. */
+export function legendCorner(pts: [number, number][] | null, layout: Pick<ShareCardLayout, 'textTop' | 'textBottom'>): LegendCorner {
+  if (!pts || pts.length < 2) return 'topRight'
+  const samples = samplesAlong(pts, 2)
+  const covered = (corner: LegendCorner) => {
+    const { x, y, w, h } = legendBox(corner, LEGEND_PROBE_W, layout)
+    return samples.filter(([px, py]) =>
+      px >= x - LEGEND_CLEAR && px <= x + w + LEGEND_CLEAR && py >= y - LEGEND_CLEAR && py <= y + h + LEGEND_CLEAR).length
+  }
+  let best: LegendCorner = 'topRight'
+  let least = Infinity
+  for (const corner of LEGEND_CORNERS) {
+    const count = covered(corner)
+    if (count === 0) return corner
+    if (count < least) [best, least] = [corner, count]
+  }
+  return best
+}
+
+function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const { palette, fonts } = scene
   const BAR_W = 14
   const BAR_H = 3
-  const PILL_H = 18
+  const PILL_H = LEGEND_PILL_H
   const { parts, bar } = legendParts(scene, palette)
   const widths = parts.map((part) => {
     ctx.font = `${part.weight} 9px ${fonts.text}`
     return ctx.measureText(part.text).width
   })
   const width = 7 + BAR_W + 5 + widths.reduce((a, b) => a + b, 0) + 7
-  const x = RIGHT - width
-  const y = top + 8
+  const { x, y } = legendBox(legendCorner(routePoints(scene, layout), layout), width, layout)
   ctx.save()
   ctx.fillStyle = palette.bg
   roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)
@@ -479,6 +524,10 @@ function drawRepsLegend(ctx: Ctx, scene: ShareCardScene, top: number) {
 
 function hasReps(scene: ShareCardScene): boolean {
   return (scene.activity.reps?.windows.length ?? 0) > 0
+}
+
+function hasStrides(scene: ShareCardScene): boolean {
+  return !hasReps(scene) && (scene.activity.strides?.windows.length ?? 0) > 0
 }
 
 function routePoints(scene: ShareCardScene, layout: ShareCardLayout): [number, number][] | null {
@@ -520,6 +569,11 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], mot
     }
   } else {
     strokeLine(ctx, drawn, palette.route, TRACE_W)
+    if (hasStrides(scene)) {
+      for (const [from, to] of activity.strides!.windows) {
+        if (from < progress) strokeLine(ctx, slicePolyline(pts, from, Math.min(to, progress)), strideColor(palette), REP_W)
+      }
+    }
   }
   ctx.restore()
 }
@@ -1024,13 +1078,14 @@ const REP_CAPTION_GAP = 10
 const ZONE_STRIP_PAD_BOTTOM = 14
 
 /** The rep pace leads; the zones drop to the strip at the middle's foot. */
-function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadline, { middleH }: ShareCardLayout) {
+function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadline, { middleH }: ShareCardLayout, trace: ShareTrace | null) {
   const { activity, palette, fonts } = scene
   const zones = shareZones(activity)
   const detail = shareRepDetail(activity)
   const stripTop = zones ? middleH - ZONE_STRIP_PAD_BOTTOM - ZONE_STRIP_H : middleH
   const detailH = detail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[detail.kind] : 0
-  const top = Math.max(0, (stripTop - (HEADLINE_SIZE + REP_CAPTION_GAP + REP_CAPTION + detailH)) / 2)
+  const traceH = trace ? TRACE_PANEL_GAP + TRACE_PANEL_H : 0
+  const top = Math.max(0, (stripTop - (HEADLINE_SIZE + REP_CAPTION_GAP + REP_CAPTION + detailH + traceH)) / 2)
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
@@ -1061,12 +1116,97 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
 
   const ink = { tx: palette.tx, mu: palette.mu, mark: palette.tx }
   if (detail) drawRepDetail(ctx, scene, detail, captionTop + REP_CAPTION + REP_DETAIL_PAD_TOP, ink)
+  if (trace) drawTrace(ctx, scene, trace, captionTop + REP_CAPTION + detailH + TRACE_PANEL_GAP)
   if (zones) drawZoneStrip(ctx, scene, zones, stripTop)
 }
 
+const TRACE_PANEL_H = 74
+const TRACE_PANEL_PAD = 10
+const TRACE_HEAD = 10
+const TRACE_PLOT_GAP = 8
+const TRACE_PANEL_GAP = 12
+const TRACE_PANEL_FOOT = 4
+/** What the zones or the rep pace need above the panel, or the panel is left out. */
+const TRACE_ROOM = { zones: 120, reps: 156 } as const
+
+function traceColor(scene: ShareCardScene, trace: ShareTrace, tag: number): string {
+  const { activity, palette } = scene
+  if (trace.kind === 'hr') return palette.hrZones[tag - 1] ?? palette.route
+  if (!activity.reps?.windows.length) return palette.route
+  return tag ? repColor(activity, palette) : palette.trace
+}
+
+function drawTrace(ctx: Ctx, scene: ShareCardScene, trace: ShareTrace, top: number) {
+  const { palette, fonts, activity } = scene
+  const s = t.activity.shareCard
+  const width = RIGHT - PAD_X
+  ctx.fillStyle = palette.card
+  roundRect(ctx, PAD_X, top, width, TRACE_PANEL_H, 12)
+  ctx.fill()
+
+  const inner = PAD_X + TRACE_PANEL_PAD
+  const innerW = width - TRACE_PANEL_PAD * 2
+  const headY = top + TRACE_PANEL_PAD + TRACE_HEAD / 2
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  ctx.font = `600 9.5px ${fonts.text}`
+  ctx.fillStyle = palette.mu
+  ctx.fillText(trace.kind === 'hr' ? s.traceHr : s.tracePace, inner, headY)
+  ctx.textAlign = 'right'
+  if (trace.kind === 'hr' && trace.avgHr) {
+    ctx.font = `400 9px ${fonts.text}`
+    ctx.fillText(s.traceAvgHr(Math.round(trace.avgHr)), inner + innerW, headY)
+  } else if (trace.band) {
+    ctx.font = `400 9px ${fonts.text}`
+    const label = s.traceTarget
+    ctx.fillText(label, inner + innerW, headY)
+    ctx.fillStyle = withAlpha(repColor(activity, palette), 0.3)
+    const swatchX = inner + innerW - ctx.measureText(label).width - 16
+    roundRect(ctx, swatchX, headY - 3.5, 11, 7, 2)
+    ctx.fill()
+  }
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+
+  const plotTop = top + TRACE_PANEL_PAD + TRACE_HEAD + TRACE_PLOT_GAP
+  const plotH = TRACE_PANEL_H - TRACE_PANEL_PAD * 2 - TRACE_HEAD - TRACE_PLOT_GAP
+  const at = (p: { x: number; y: number }): [number, number] => [inner + p.x * innerW, plotTop + p.y * plotH]
+  if (trace.band) {
+    const [a, b] = trace.band
+    ctx.fillStyle = withAlpha(repColor(activity, palette), 0.18)
+    const bandH = Math.max(4, Math.abs(b - a) * plotH)
+    ctx.fillRect(inner, plotTop + (a + b) / 2 * plotH - bandH / 2, innerW, bandH)
+  }
+  ctx.save()
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = 2
+  const pts = trace.points
+  let from = 0
+  for (let i = 1; i <= pts.length; i++) {
+    if (i < pts.length && pts[i]!.tag === pts[from]!.tag) continue
+    // Each run of one colour joins the next at its first point, so the line never breaks.
+    const run = pts.slice(from, Math.min(i + 1, pts.length)).map(at)
+    ctx.strokeStyle = traceColor(scene, trace, pts[from]!.tag)
+    ctx.beginPath()
+    ctx.moveTo(run[0]![0], run[0]![1])
+    for (const [x, y] of run.slice(1)) ctx.lineTo(x, y)
+    ctx.stroke()
+    from = i
+  }
+  ctx.restore()
+}
+
 function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
-  if (layout.repHeadline) drawRepMiddle(ctx, scene, layout.repHeadline, layout)
-  else drawZones(ctx, scene, layout)
+  const trace = shareTrace(scene.activity)
+  const room = layout.middleH - TRACE_PANEL_H - TRACE_PANEL_GAP - TRACE_PANEL_FOOT
+  const shown = trace && room >= TRACE_ROOM[layout.repHeadline ? 'reps' : 'zones'] ? trace : null
+  if (layout.repHeadline) {
+    drawRepMiddle(ctx, scene, layout.repHeadline, layout, shown)
+    return
+  }
+  drawZones(ctx, scene, shown ? { ...layout, middleH: room } : layout)
+  if (shown) drawTrace(ctx, scene, shown, layout.middleH - TRACE_PANEL_H - TRACE_PANEL_FOOT)
 }
 
 /** The app's 24 px line icon, scaled to `size`. */
@@ -1195,21 +1335,33 @@ export function samplesAlong(pts: [number, number][], step: number): [number, nu
 }
 
 /** One plain colour under a soft halo rather than a casing: a photo can be any colour. */
-function drawPhotoRoute(ctx: Ctx, { activity, photo }: ShareCardScene, layout: ShareCardLayout) {
+/** The top-right corner beside the title, so the photo stays the picture: the route is a sign, not a map. */
+export const PHOTO_ROUTE_BOX = { x: RIGHT - 64, y: 16, size: 64 } as const
+const PHOTO_ROUTE_GAP = 10
+const PHOTO_ROUTE_W = 2.2
+
+function drawPhotoRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
+  const { activity, photo, palette } = scene
   const route = activity.route
   if (!route || route.length < 2 || !photo) return
-  const pts = projectRoute(route, W, layout.height, layout.routeFrame)
+  const { x, y, size } = PHOTO_ROUTE_BOX
+  const pts = projectRoute(route, W, layout.height, { top: y, right: W - x - size, bottom: layout.height - y - size, left: x })
   const { line, halo } = PHOTO_ROUTE_INK[photoRouteTone(luminanceUnder(photo, pts, layout))]
-  const first = pts[0]!
-  const last = pts[pts.length - 1]!
   ctx.save()
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
   ctx.shadowColor = halo
-  ctx.shadowBlur = 6
-  strokeLine(ctx, pts, line, TRACE_W)
-  if (!endsJoined(first, last)) drawRouteMarker(ctx, 'finish', last, line, MARKER_SCALE)
-  drawStartDot(ctx, first, { fill: line, ring: line, outline: halo }, MARKER_SCALE)
+  ctx.shadowBlur = 4
+  strokeLine(ctx, pts, line, PHOTO_ROUTE_W)
+  // A white edge keeps the rep colour off a photo of the same hue; strides are under a pixel here, so only reps.
+  if (hasReps(scene)) {
+    ctx.shadowColor = 'transparent'
+    for (const [from, to] of activity.reps!.windows) {
+      const rep = slicePolyline(pts, from, to)
+      strokeLine(ctx, rep, '#ffffff', PHOTO_ROUTE_W + 2)
+      strokeLine(ctx, rep, repColor(activity, palette), PHOTO_ROUTE_W)
+    }
+  }
   ctx.restore()
 }
 
@@ -1279,7 +1431,7 @@ const MIDDLES: Record<Exclude<ShareDesign, 'route'>, (ctx: Ctx, scene: ShareCard
 }
 
 export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
-  const layout = shareCardLayout(ctx, scene.activity, scene.fonts, scene.design, scene.size)
+  const layout = shareCardLayout(ctx, scene.activity, scene.fonts, scene.design, scene.size, !!scene.photoRoute && !!scene.photo)
   const motion = sceneMotion(scene)
   const { palette } = scene
   const { height } = layout
@@ -1294,7 +1446,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
     drawMapLayer(ctx, scene, layout, motion)
     drawBands(ctx, scene, layout)
     // Over the bands, so the stats' fade does not cover it.
-    if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop)
+    if (hasReps(scene) || hasStrides(scene)) drawRepsLegend(ctx, scene, layout)
   } else {
     if (scene.design === 'stats') drawGlow(ctx, scene, height)
     ctx.save()

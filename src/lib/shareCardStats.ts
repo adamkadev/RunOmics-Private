@@ -7,11 +7,19 @@ export type ShareActivity = Pick<
   Activity,
   | 'id' | 'date' | 'dayOfWeek' | 'description' | 'distanceKm' | 'durationSeconds' | 'paceSecPerKm'
   | 'avgHeartRate' | 'elevationGain' | 'route' | 'hrZones'
-> & {
+> & Partial<Pick<Activity, 'hrSamples' | 'paceSamples'>> & {
   type?: ActivityType
   /** The coach's name for the session this run matched. */
   sessionTitle?: string | null
   reps?: ShareReps | null
+  strides?: ShareStrides | null
+}
+
+/** Accelerations after an easy run: marked on the route, never graded like reps. */
+export interface ShareStrides {
+  count: number
+  /** Shares of the run's distance. */
+  windows: [number, number][]
 }
 
 export interface ShareReps {
