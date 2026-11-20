@@ -1,3 +1,4 @@
+import { weekStartOf } from '@/domain/activity/weekGroups'
 import { DAY_MS } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
@@ -43,11 +44,15 @@ export function weeksInRotation(firstUsedDate: string | null, lastDate: string |
   )
 }
 
-/**
- * Anchored to the last activity, not to today: a retired pair stopped
- * accumulating weeks the day it was last worn.
- */
-export function kmPerWeek(firstUsedDate: string | null, lastUsedDate: string | null, totalKm: number): number {
-  if (!firstUsedDate) return 0
-  return totalKm / weeksInRotation(firstUsedDate, lastUsedDate)
+/** Weeks with a run: a long pause would otherwise stretch the forecast past a year. */
+const RECENT_WEEKS = 8
+
+export function recentKmPerWeek(runs: readonly { date: string; distanceKm: number }[], weeks = RECENT_WEEKS): number {
+  const byWeek = new Map<string, number>()
+  for (const run of runs) {
+    const key = weekStartOf(run.date.slice(0, 10))
+    byWeek.set(key, (byWeek.get(key) ?? 0) + run.distanceKm)
+  }
+  const recent = [...byWeek].sort(([a], [b]) => b.localeCompare(a)).slice(0, weeks)
+  return recent.length === 0 ? 0 : recent.reduce((sum, [, km]) => sum + km, 0) / recent.length
 }

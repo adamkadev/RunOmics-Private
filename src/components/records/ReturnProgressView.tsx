@@ -36,7 +36,7 @@ export function ReturnProgressView({ progress, today }: { progress: ReturnProgre
                   <span className="flex size-[30px] items-center justify-center text-foreground" aria-hidden>
                     <Check className="size-4" strokeWidth={2.5} />
                   </span>
-                  <span className="min-w-0 truncate text-sm font-semibold text-foreground">{r.milestones[milestone.key]}</span>
+                  <span className="min-w-0 line-clamp-2 text-pretty text-sm font-semibold text-foreground">{r.milestones[milestone.key]}</span>
                   <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
                     {formatDate(milestone.date, { style: 'bare', now })}
                   </time>
@@ -66,7 +66,7 @@ export function ReturnProgressView({ progress, today }: { progress: ReturnProgre
                 <span className="flex size-[30px] items-center justify-center rounded-full bg-[var(--fill-3)] text-muted-foreground" aria-hidden>
                   <Circle className="size-3.5" strokeWidth={2} />
                 </span>
-                <span className="min-w-0 truncate text-sm text-muted-foreground">{r.milestones[key]}</span>
+                <span className="min-w-0 line-clamp-2 text-pretty text-sm text-muted-foreground">{r.milestones[key]}</span>
               </li>
             ))}
           </ul>

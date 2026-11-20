@@ -111,7 +111,7 @@ describe('SettingsClient owner gate', () => {
     expect(appearance.indexOf(t.settings.appearance.themeLabel)).toBeLessThan(appearance.indexOf(t.settings.accent.title))
     expect(appearance).toContain(t.settings.accent.caption)
     expect(screen.getByTestId('garmin-row').textContent).toContain(t.settings.dataSource.garmin)
-    expect(screen.getByTestId('garmin-connected').className).toContain('text-[var(--pos)]')
+    expect(screen.getByTestId('garmin-connected').className).toContain('text-[var(--warn)]')
     // The sync is the owner's: signed out there is no Sync.
     expect(screen.queryByText(t.settings.sync.action)).not.toBeInTheDocument()
     expect(screen.getAllByText(new RegExp(t.common.runs(12))).length).toBeGreaterThan(0)

@@ -1,6 +1,6 @@
 import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
-import { kmPerWeek as computeKmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
+import { recentKmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
 import { round } from '@/lib/math'
 import { shoeTypeBucket, type ShoeTypeBucket, type ShoeDetail } from '@/domain/shoe/types'
 
@@ -22,8 +22,7 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
 
   const totalKm = round(activities.reduce((sum, a) => sum + a.distanceKm, 0), 1)
   const firstUsedDate = activities.at(-1)?.date ?? null
-  const lastUsedDate = activities[0]?.date ?? null
-  const kmPerWeek = Math.round(computeKmPerWeek(firstUsedDate, lastUsedDate, totalKm))
+  const kmPerWeek = Math.round(recentKmPerWeek(activities))
 
   const avgPaceSecPerKm = mean(activities.map((a) => a.paceSecPerKm))
   const avgHeartRate = mean(activities.map((a) => a.avgHeartRate))

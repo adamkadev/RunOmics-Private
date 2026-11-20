@@ -46,7 +46,7 @@ describe('the zone scale (design reviews, Oct 2026)', () => {
   })
 
   it('takes the 3.0 dark scale and the reviewed light Z3', () => {
-    expect(ZONE_HEX.dark).toEqual(['#7fb2c9', '#5b9cf5', '#8f7cf0', '#c565f8', '#f4438f'])
+    expect(ZONE_HEX.dark).toEqual(['#a9d3e6', '#5b9cf5', '#8f7cf0', '#c565f8', '#f4438f'])
     expect(ZONE_HEX.light[2]).toBe('#6a52d9')
   })
 

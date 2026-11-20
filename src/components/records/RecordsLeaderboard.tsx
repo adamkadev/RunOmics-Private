@@ -60,7 +60,8 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [], hasG
   if (!records.some((r) => r.seconds !== null)) return null
   const ranked = records.filter((r) => r.key !== 'longest')
   const missing = ranked.filter((r) => r.seconds === null)
-  const missingText = t.records.missing(missing.map((r) => r.label), missing.some((r) => predictionByKey.has(r.key)))
+  const missingLinks = hasGoals && missing.some((r) => predictionByKey.has(r.key))
+  const missingText = t.records.missing(missing.map((r) => r.label), missingLinks)
 
   // Only the rows drawn: a prediction for a distance with no record yet left two empty columns.
   const predicted = ranked.some((r) => r.seconds !== null && predictionByKey.has(r.key))
@@ -171,7 +172,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [], hasG
       })}
       {missing.length > 0 && (
         <div className="border-t border-border py-3" data-testid="records-missing">
-          {hasGoals && missing.some((r) => predictionByKey.has(r.key)) ? (
+          {missingLinks ? (
             <Link href="/goals" className="block text-xs font-semibold text-accent-text text-pretty">{missingText}</Link>
           ) : (
             <p className="text-xs text-muted-foreground text-pretty">{missingText}</p>

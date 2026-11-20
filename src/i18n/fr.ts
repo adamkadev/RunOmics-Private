@@ -2303,14 +2303,14 @@ export const fr = {
     },
     kinds: { easy: 'Footing', long: 'Sortie longue' },
     typeLetters: {
-      easy: 'E',
+      easy: 'F',
       long: 'L',
       Sprint: 'Sp',
       Anaerobic: 'A',
       VO2Max: 'V',
       Threshold: 'S',
       Tempo: 'Tm',
-      Base: 'E',
+      Base: 'F',
       Race: 'C',
     } as Record<string, string>,
     phase: {

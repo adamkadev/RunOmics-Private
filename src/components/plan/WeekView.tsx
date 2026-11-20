@@ -336,8 +336,16 @@ export function WeekView({
         </div>
         {/* Km only: Coming up and the selector count the runs. */}
         <p className="text-[13px] tabular-nums text-muted-foreground" data-testid="week-summary">
-          <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
-          {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatPlannedKm(planKm))}`}
+          {atPresent && target.ranKm === 0 && planKm !== null ? (
+            <>
+              <b className="font-semibold text-foreground">{formatPlannedKm(planKm)}</b> {t.units.km} · <span className="text-accent-text">{t.plan.month.inProgressWord}</span>
+            </>
+          ) : (
+            <>
+              <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
+              {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatPlannedKm(planKm))}`}
+            </>
+          )}
         </p>
       </div>
 

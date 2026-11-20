@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Check, ChevronDown, ChevronRight, MapPin, X } from "lucide-react";
 import { GlassLayers, glassClass } from "@/components/ui/GlassSurface";
 import { t } from "@/i18n";
-import { formatKm } from "@/lib/formatters";
+import { formatKm, formatPercent } from "@/lib/formatters";
 import { OWN_ROW_SHARE, type AreaRow } from "./mapUtils";
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
@@ -31,7 +31,7 @@ function AreaOption({ row, name, selected, onPick }: { row: AreaRow; name: strin
             {t.common.runs(row.runs)} · {formatKm(row.km)} {t.units.km}
           </span>
         </span>
-        <span className="font-display text-[15px] font-semibold tabular-nums text-foreground">{row.sharePercent}%</span>
+        <span className="font-display text-[15px] font-semibold tabular-nums text-foreground">{formatPercent(row.sharePercent)}</span>
         <span className="flex justify-end text-accent-text">{selected && <Check size={16} strokeWidth={2.5} />}</span>
       </button>
     </li>

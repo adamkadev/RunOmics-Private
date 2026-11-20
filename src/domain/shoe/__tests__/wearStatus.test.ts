@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { wearOutlook, wearPercent, wearStatus } from '../wearStatus'
+import { recentKmPerWeek, wearOutlook, wearPercent, wearStatus } from '../wearStatus'
 
 describe('wearStatus', () => {
   it('bands the wear percentage', () => {
@@ -44,5 +44,21 @@ describe('wearPercent', () => {
   it('reads a shoe with no lifespan set as unworn, not NaN', () => {
     expect(wearPercent({ totalKm: 0, maxKm: 0, retired: false })).toBe(0)
     expect(wearPercent({ totalKm: 120, maxKm: 0, retired: false })).toBe(0)
+  })
+})
+
+describe('recentKmPerWeek', () => {
+  it('averages the last eight weeks with a run, so a long pause does not slow the forecast', () => {
+    const mondays = ['2026-09-07', '2026-09-14', '2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26']
+    const runs = [
+      { date: '2025-09-01', distanceKm: 40 },
+      ...mondays.flatMap((date) => [{ date, distanceKm: 5 }, { date: date.replace(/-(\d\d)$/, (_, d: string) => `-${String(Number(d) + 2).padStart(2, '0')}`), distanceKm: 7 }]),
+    ]
+
+    expect(recentKmPerWeek(runs)).toBe(12)
+  })
+
+  it('is zero for an unworn pair', () => {
+    expect(recentKmPerWeek([])).toBe(0)
   })
 })

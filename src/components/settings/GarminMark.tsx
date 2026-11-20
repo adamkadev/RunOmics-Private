@@ -1,4 +1,8 @@
+'use client'
+
 import { siGarmin } from 'simple-icons'
+import { isSyncLate } from '@/components/dashboard/DashboardGreeting'
+import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
 
 export function GarminTile() {
@@ -12,10 +16,12 @@ export function GarminTile() {
   )
 }
 
-export function ConnectedMark() {
+/** Amber past the age Today's stale banner warns at, so the two screens agree. */
+export function ConnectedMark({ lastSyncedAt }: { lastSyncedAt: string }) {
+  const late = useMounted() && isSyncLate(lastSyncedAt)
   return (
-    <span className="text-[var(--pos)]" data-testid="garmin-connected">
-      <span aria-hidden className="mr-1.5 inline-block size-1.5 -translate-y-px rounded-full bg-[var(--pos)] align-middle" />
+    <span className={late ? 'text-[var(--warn)]' : 'text-[var(--pos)]'} data-testid="garmin-connected">
+      <span aria-hidden className={`mr-1.5 inline-block size-1.5 -translate-y-px rounded-full align-middle ${late ? 'bg-[var(--warn)]' : 'bg-[var(--pos)]'}`} />
       <span className="sr-only">{t.settings.dataSource.connectedNow} · </span>
     </span>
   )

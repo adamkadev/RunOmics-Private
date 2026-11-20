@@ -77,7 +77,11 @@ function WeeklyDistanceCard({ rows, live, onShift }: { rows: WeekRow[]; live: bo
     <Card className="gap-3.5" testId="weekly-card">
       <CardHead title={s.title} caption={hasPlan ? s.caption : undefined} about={s.about} />
       <div className="grid grid-cols-3 gap-2.5" data-testid="weekly-stats">
-        <VolumeStat value={formatRanKm(last.km)} of={last.planKm !== null ? formatKm(last.planKm) : undefined} label={s.underWeek(when)} />
+        {last.current && last.km === 0 && last.planKm !== null ? (
+          <VolumeStat value={formatKm(last.planKm)} label={`${s.underWeek(when)} · ${t.plan.month.inProgressWord}`} testId="weekly-in-progress" />
+        ) : (
+          <VolumeStat value={formatRanKm(last.km)} of={last.planKm !== null ? formatKm(last.planKm) : undefined} label={s.underWeek(when)} />
+        )}
         {view.avg !== null && <VolumeStat value={formatKm(view.avg)} label={s.underAvg(avgWeeks)} />}
         {view.onPlan && <VolumeStat value={view.onPlan.hit} of={view.onPlan.of} label={s.underOnPlan} />}
       </div>

@@ -96,8 +96,9 @@ export const HUE = {
   roRust:    '#a1662f',
   roSage:    '#a7b1aa',
   // Not the "no time logged" grey, so a dominant Z1 never reads as an empty bar.
-  roZone1:   '#7fb2c9',
-  // Z1 a step darker for light mode: 3.2:1 on white, where #7fb2c9 is 2.3.
+  // Lighter than Z3 by 18 L, not only another hue.
+  roZone1:   '#a9d3e6',
+  // Z1 a step darker for light mode: 3.2:1 on white, still 11 L above Z3.
   roZone1Light: '#5f97b0',
   // Zone fills: never replaced by the accent.
   zone2Dark: '#7ab8ff',

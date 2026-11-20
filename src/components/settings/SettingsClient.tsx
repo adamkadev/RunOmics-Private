@@ -129,7 +129,7 @@ export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{device?.name ?? t.settings.dataSource.garmin}</p>
                 <p className="mt-0.5 text-xs leading-snug text-muted-foreground text-pretty">
-                  {lastSyncedAt && <ConnectedMark />}
+                  {lastSyncedAt && <ConnectedMark lastSyncedAt={lastSyncedAt} />}
                   {lastSyncedAt && mounted
                     ? t.settings.dataSource.readOnlySynced(formatRelativeAgo(lastSyncedAt), t.common.runs(activityCount))
                     : t.settings.dataSource.readOnly}

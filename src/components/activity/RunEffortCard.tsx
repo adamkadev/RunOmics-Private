@@ -6,7 +6,7 @@ import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { Legend, LegendItem } from '@/components/ui/Legend'
 import { STAT_TONE_CLASS, type StatTone } from '@/components/ui/Stat'
 import { hrZoneColor, type SessionZone } from '@/lib/colors'
-import { formatDecimal, formatDeltaFixed, formatPercent } from '@/lib/formatters'
+import { formatDecimal, formatDeltaPercent, formatPercent } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -141,7 +141,7 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
             <Row
               term="decoupling"
               label={t.glossary.decoupling.term}
-              value={`${formatDeltaFixed(decoupling.percent, 1)}%`}
+              value={formatDeltaPercent(decoupling.percent, 1)}
               word={decouplingHeld ? d.held : d.faded}
               tone={decouplingHeld ? 'pos' : 'warn'}
               onClick={onShowCharts}

@@ -216,13 +216,17 @@ export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: 
           ))}
         </div>
       )}
-      <canvas
-        ref={canvasRef}
-        role="img"
-        aria-label={t.homeRuns.canvasLabel(runs.length)}
-        data-testid="home-runs-canvas"
-        className="aspect-[9/16] w-full max-w-[420px] rounded-[24px] bg-[#0a0c10] ring-1 ring-inset ring-border"
-      />
+      <div className="relative w-full max-w-[420px]">
+        <canvas
+          ref={canvasRef}
+          role="img"
+          aria-label={t.homeRuns.canvasLabel(runs.length)}
+          data-testid="home-runs-canvas"
+          className="block aspect-[9/16] w-full rounded-[24px] bg-[#0a0c10]"
+        />
+        {/* An inset ring on the canvas itself is painted under its bitmap. */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[24px] ring-1 ring-inset ring-border" />
+      </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button
           variant="secondary"
