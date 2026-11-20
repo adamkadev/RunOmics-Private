@@ -154,11 +154,15 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(new Set(chips.map((c) => c[1])).size).toBe(1)
   })
 
-  it('tints the rep chips with the ink, so they show over the glow', () => {
+  it('tints the rep chips and the trace panel with the ink, so they show over the glow', () => {
     const ops = draw({ design: 'stats', activity: session })
     const fills = ops.filter((o, i) => o.op === 'fill' && ops[i - 1]?.op === 'roundRect' && ops[i - 1]!.args[3] === 22).map((o) => o.fill)
     expect(fills).toHaveLength(3)
-    expect(new Set(fills)).toEqual(new Set([`rgba(${[1, 3, 5].map((i) => Number.parseInt(palette.tx.slice(i, i + 2), 16)).join(', ')}, 0.08)`]))
+    const tint = `rgba(${[1, 3, 5].map((i) => Number.parseInt(palette.tx.slice(i, i + 2), 16)).join(', ')}, 0.08)`
+    expect(new Set(fills)).toEqual(new Set([tint]))
+    const traced = draw({ design: 'stats', size: 'story', activity: { ...session, paceSamples: Array.from({ length: 120 }, (_, i) => (i % 40 < 20 ? 262 : 360)) } })
+    const panel = traced.findIndex((o) => o.op === 'roundRect' && o.args[0] === 16 && o.args[4] === 12)
+    expect(traced[panel + 1]).toMatchObject({ op: 'fill', fill: tint })
   })
 
   it('leads the Stats card with the rep pace, the zones dropped to a thin bar', () => {

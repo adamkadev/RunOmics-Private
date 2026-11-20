@@ -118,6 +118,8 @@ const HERO_PACE_SIZE = 32
 const CHIP_H = 22
 const CHIP_GAP = 6
 const CHIP_TEXT = 10
+/** The chips and the trace panel take a tint of the ink, not the card's grey: on the glow's purple that grey vanished. */
+const PANEL_TINT = 0.08
 const BAR_MAX = 16
 const REP_DETAIL_PAD_TOP = 8
 const REP_DETAIL_H = { chips: CHIP_H, bars: BAR_MAX + 12 } as const
@@ -358,8 +360,7 @@ function drawRepDetail(ctx: Ctx, { activity, fonts, palette }: ShareCardScene, d
       const labelW = ctx.measureText(`${chip.label} `).width
       ctx.font = `600 ${CHIP_TEXT}px ${fonts.text}`
       const from = x + (width - labelW - ctx.measureText(chip.pace).width) / 2
-      // A tint of the ink, not the card's grey: on the glow's purple that grey vanished.
-      ctx.fillStyle = withAlpha(ink.tx, 0.08)
+      ctx.fillStyle = withAlpha(ink.tx, PANEL_TINT)
       roundRect(ctx, x, top, width, CHIP_H, 7)
       ctx.fill()
       ctx.font = `400 ${CHIP_TEXT}px ${fonts.text}`
@@ -1154,7 +1155,7 @@ function drawTrace(ctx: Ctx, scene: ShareCardScene, trace: ShareTrace, top: numb
   const { palette, fonts, activity } = scene
   const s = t.activity.shareCard
   const width = RIGHT - PAD_X
-  ctx.fillStyle = palette.card
+  ctx.fillStyle = withAlpha(palette.tx, PANEL_TINT)
   roundRect(ctx, PAD_X, top, width, panelH, 12)
   ctx.fill()
 
