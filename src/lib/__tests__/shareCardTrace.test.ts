@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { repZone, shareTrace, STRIDE_TAG, TRACE_POINTS } from '@/lib/shareCardTrace'
+import { shareTrace, STRIDE_TAG, TRACE_POINTS } from '@/lib/shareCardTrace'
 import type { ShareActivity } from '@/lib/shareCardStats'
 
 const ZONES: ShareActivity['hrZones'] = [
@@ -129,19 +129,6 @@ describe('shareTrace', () => {
 
     it('shades nothing on its pace trace, the reps already in their colour', () => {
       expect(shareTrace(session)!.shade).toEqual([])
-    })
-
-    it('reads the zone the reps ran in from the athlete\'s own zones', () => {
-      const hr = paces.map((p) => (p === 270 ? 170 : 140))
-      expect(repZone({ ...session, hrSamples: hr })).toBe(3)
-      expect(repZone({ ...session, hrSamples: hr.map((v) => (v === 170 ? 178 : v)) })).toBe(4)
-      expect(repZone({ ...session, reps: null, repWindows: session.reps!.windows, hrSamples: hr })).toBe(3)
-    })
-
-    it('has no rep zone without heart rate, or when the reps stayed easy', () => {
-      expect(repZone({ ...session, hrSamples: null })).toBeNull()
-      expect(repZone({ ...session, hrSamples: paces.map(() => 150) })).toBeNull()
-      expect(repZone({ ...RUN, hrSamples: easyHr })).toBeNull()
     })
 
     it('leaves strides unmarked when the reps are shown', () => {
