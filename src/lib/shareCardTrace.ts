@@ -5,6 +5,7 @@ const MIN_HR_SPAN = 40
 /** Past the five zones: a stride on the heart-rate trace. */
 export const STRIDE_TAG = 6
 const MIN_SAMPLES = 20
+const STRIDE_RECOVERY_SEC = 30
 
 export interface TracePoint {
   /** 0 at the start, 1 at the finish. */
@@ -107,6 +108,12 @@ function paceTrace(activity: ShareActivity, paces: number[]): ShareTrace {
   return { kind: 'pace', points: spread(points), band, avgHr: null, shade: [] }
 }
 
+/** Each stride through its own recovery: to the next stride, or `tail` past its end, whichever comes first. */
+export function strideReach(windows: readonly (readonly [number, number])[], tail: number): [number, number][] {
+  const sorted = [...windows].sort((p, q) => p[0] - q[0])
+  return sorted.map(([a, b], i) => [a, Math.min(1, b + tail, sorted[i + 1]?.[0] ?? 1)])
+}
+
 function hrTrace(activity: ShareActivity, hr: number[]): ShareTrace {
   const sorted = hr.filter((v) => v > 0).sort((a, b) => a - b)
   const low = quantile(sorted, 0.02) - 4
@@ -121,13 +128,17 @@ function hrTrace(activity: ShareActivity, hr: number[]): ShareTrace {
   const strides = activity.reps?.windows.length ? [] : (activity.strides?.windows ?? [])
   const inStride = (from: number, to: number) =>
     strides.some(([a, b]) => shares[Math.max(from, to - 1)]! >= a && shares[from]! <= b)
+  // Heart rate peaks after a stride ends, so each one keeps its colour through its recovery.
+  const reach = strideReach(strides, STRIDE_RECOVERY_SEC / Math.max(1, activity.durationSeconds))
+  const inReach = (from: number, to: number) =>
+    reach.some(([a, b]) => shares[Math.max(from, to - 1)]! >= a && shares[from]! <= b)
   // A stride by its peak: averaged into a 40 s bucket, 20 s of it barely lifts the line.
   const points = buckets(hr, TRACE_POINTS).map(({ value, peak, from, to }) => {
     const stride = inStride(from, to)
     return {
       x: (from + to) / 2 / n,
       y: scale(stride ? peak : value, lo, hi, false),
-      tag: stride ? STRIDE_TAG : zoneOf(peak, activity.hrZones),
+      tag: stride || inReach(from, to) ? STRIDE_TAG : zoneOf(peak, activity.hrZones),
     }
   })
   const at = (share: number) => {
@@ -137,6 +148,24 @@ function hrTrace(activity: ShareActivity, hr: number[]): ShareTrace {
   const reps = activity.reps?.windows ?? activity.repWindows ?? []
   const shade = reps.map(([a, b]): [number, number] => [at(a), at(b)])
   return { kind: 'hr', points: spread(points), band: null, avgHr: activity.avgHeartRate, shade }
+}
+
+/** The heart-rate zone holding most of the reps' time, so the zone strip can name the minutes the reps are drawn in. */
+export function repZone(activity: ShareActivity): number | null {
+  const hr = valid(activity.hrSamples)
+  const windows = activity.reps?.windows ?? activity.repWindows ?? []
+  if (!hr || !windows.length || !activity.hrZones.length) return null
+  const paces = valid(activity.paceSamples)
+  const shares = paces?.length === hr.length ? distanceShares(paces) : hr.map((_, i) => i / Math.max(1, hr.length - 1))
+  const counts = new Map<number, number>()
+  hr.forEach((bpm, i) => {
+    if (!(bpm > 0) || !windows.some(([a, b]) => shares[i]! >= a && shares[i]! <= b)) return
+    const zone = zoneOf(bpm, activity.hrZones)
+    counts.set(zone, (counts.get(zone) ?? 0) + 1)
+  })
+  let best: number | null = null
+  for (const [zone, count] of counts) if (best === null || count > counts.get(best)!) best = zone
+  return best
 }
 
 /** An interval session's pace shows its reps against the target; any other run's heart rate shows its zones. */

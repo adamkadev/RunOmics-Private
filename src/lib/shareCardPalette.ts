@@ -79,7 +79,7 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     marker: curatedAccent(accent)[mode].acc,
     markerRing: SHARE_MARKER_HEX[mode].ring,
     markerOutline: SHARE_MARKER_HEX[mode].outline,
-    trace: mode === 'light' ? '#8a8a8a' : '#7f8784',
+    trace: mode === 'light' ? '#7a807e' : '#b9bfbc',
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
   }
 }

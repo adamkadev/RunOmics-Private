@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shareTrace, STRIDE_TAG, TRACE_POINTS } from '@/lib/shareCardTrace'
+import { shareTrace, strideReach, STRIDE_TAG, TRACE_POINTS } from '@/lib/shareCardTrace'
 import type { ShareActivity } from '@/lib/shareCardStats'
 
 const ZONES: ShareActivity['hrZones'] = [
@@ -59,6 +59,17 @@ describe('shareTrace', () => {
     expect(marked.points.slice(-10).every((p) => p.tag === STRIDE_TAG)).toBe(true)
     const meanY = (points: { y: number }[]) => points.reduce((a, p) => a + p.y, 0) / points.length
     expect(meanY(marked.points.slice(-10))).toBeLessThan(meanY(plain.points.slice(-10)))
+  })
+
+  it('carries each stride through its own recovery, up to the next stride', () => {
+    expect(strideReach([[0.7, 0.72], [0.8, 0.82], [0.75, 0.77]], 0.02)).toEqual([[0.7, 0.74], [0.75, expect.closeTo(0.79, 9)], [0.8, expect.closeTo(0.84, 9)]])
+    expect(strideReach([[0.7, 0.72], [0.73, 0.75]], 0.05)).toEqual([[0.7, 0.73], [0.73, 0.8]])
+    expect(strideReach([], 0.02)).toEqual([])
+    const strides = { count: 2, windows: [[100 / 150, 104 / 150], [120 / 150, 124 / 150]] as [number, number][] }
+    const tags = shareTrace({ ...RUN, hrSamples: easyHr, paceSamples: easyHr.map(() => 340), strides })!.points.map((p) => p.tag)
+    const first = tags.indexOf(STRIDE_TAG)
+    const last = tags.lastIndexOf(STRIDE_TAG)
+    expect(tags.slice(first, last + 1).some((tag) => tag !== STRIDE_TAG)).toBe(true)
   })
 
   it('keeps a steady run\'s heart rate flat, never stretched to the full height', () => {

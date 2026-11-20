@@ -4,6 +4,7 @@ import {
   type ShareActivity, type ShareRepDetail, type ShareRepHeadline, type ShareRepHero, type ShareZoneRow, type ShareZones,
 } from '@/lib/shareCardStats'
 import { W, H, shareCardHeight, type ShareDesign, type SharePalette, type ShareSize } from '@/lib/shareCardPalette'
+import { sameArea } from '@/lib/shareCardPlaces'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
 import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE as MAP_MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
@@ -11,7 +12,7 @@ import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
-import { shareTrace, STRIDE_TAG, type ShareTrace } from '@/lib/shareCardTrace'
+import { repZone, shareTrace, STRIDE_TAG, type ShareTrace } from '@/lib/shareCardTrace'
 
 /** A fifth under the map's: on a 300 px card its dots outweighed a 2.5 px route. */
 const MARKER_SCALE = MAP_MARKER_SCALE * 0.8
@@ -551,9 +552,8 @@ function sceneMotion(scene: ShareCardScene): VideoMotion {
  * An interval session draws the run in grey and its reps over it, wider, so a
  * rep run down the warm-up's road still shows.
  */
-function drawRoute(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], motion: VideoMotion, height: number) {
-  const { activity, palette, mapImage, mapPoints } = scene
-  if (mapImage && mapPoints && mapPoints.length > 1) ctx.drawImage(mapImage, 0, 0, W, height)
+function drawRoute(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], motion: VideoMotion) {
+  const { activity, palette } = scene
   const progress = scene.progress ?? 1
   if (progress <= 0) return
   const drawn = progress >= 1 ? pts : slicePolyline(pts, 0, progress)
@@ -575,12 +575,46 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], mot
   } else {
     strokeLine(ctx, drawn, palette.route, TRACE_W)
     if (hasStrides(scene)) {
-      for (const [from, to] of activity.strides!.windows) {
-        if (from < progress) strokeLine(ctx, slicePolyline(pts, from, Math.min(to, progress)), strideColor(palette), REP_W)
+      const length = cumulative(pts).at(-1) ?? 0
+      if (stridesOverStart(scene, pts) && motion.startPop > 0) drawStartDot(ctx, pts[0]!, startInk(palette), MARKER_SCALE * motion.startPop)
+      for (const window of activity.strides!.windows) {
+        if (window[0] >= progress) continue
+        const [from, to] = strideSpan(window, length)
+        const stride = slicePolyline(pts, from, Math.min(to, progress))
+        ctx.save()
+        ctx.globalAlpha *= 0.85
+        strokeLine(ctx, stride, palette.casing, REP_W + 3)
+        ctx.restore()
+        strokeLine(ctx, stride, strideColor(palette), REP_W)
       }
     }
   }
   ctx.restore()
+}
+
+/** A 3 px stride reads as a speck on a loop's start: each one draws at least this long. */
+const STRIDE_MIN_PX = 8
+
+/** Strides that end a loop sit on its start: the dot goes under them, or it hides them. */
+function stridesOverStart(scene: ShareCardScene, pts: [number, number][]): boolean {
+  if (!hasStrides(scene)) return false
+  const [x, y] = pts[0]!
+  const reach = shareMarkerRadius('start', scene.palette) + REP_W
+  const length = cumulative(pts).at(-1) ?? 0
+  return scene.activity.strides!.windows.some((window) => {
+    const [from, to] = strideSpan(window, length)
+    return slicePolyline(pts, from, to).some(([px, py]) => Math.hypot(px - x, py - y) <= reach)
+  })
+}
+
+function startInk(palette: SharePalette) {
+  return { fill: palette.marker, ring: palette.markerRing, outline: palette.markerOutline }
+}
+
+function strideSpan([from, to]: [number, number], length: number, minPx = STRIDE_MIN_PX): [number, number] {
+  const min = length > 0 ? minPx / length : 0
+  const short = min - (to - from)
+  return short > 0 ? [Math.max(0, from - short / 2), Math.min(1, to + short / 2)] : [from, to]
 }
 
 /** Over the place names, so no name covers the start. */
@@ -589,11 +623,11 @@ function drawMarkers(ctx: Ctx, scene: ShareCardScene, pts: [number, number][], m
   const first = pts[0]!
   const last = pts[pts.length - 1]!
   const progress = scene.progress ?? 1
-  const ink = { fill: palette.marker, ring: palette.markerRing, outline: palette.markerOutline }
+  const ink = startInk(palette)
   if (progress >= 1 && !endsJoined(first, last) && motion.finishPop > 0) {
     drawRouteMarker(ctx, 'finish', last, palette.marker, MARKER_SCALE * motion.finishPop)
   }
-  if (motion.startPop > 0) drawStartDot(ctx, first, ink, MARKER_SCALE * motion.startPop)
+  if (motion.startPop > 0 && !stridesOverStart(scene, pts)) drawStartDot(ctx, first, ink, MARKER_SCALE * motion.startPop)
   if (progress > 0 && progress < 1) {
     const head = slicePolyline(pts, 0, progress).at(-1) ?? first
     const inRep = hasReps(scene) && repPhase(activity.reps!.windows, progress).kind === 'rep'
@@ -768,7 +802,9 @@ export function arrangeLabels(
 
 /** Only between the bands, where no fade can cut one, only a name whole inside the side margins, and none under a marker. */
 function drawPlaceLabels(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, obstacles: MarkerObstacle[] | null, route: [number, number][] | null) {
-  const { mapLabels, palette, fonts } = scene
+  const { palette, fonts, place } = scene
+  // The subtitle already names the town: the start's name, and a finish in the same town, would repeat it.
+  const mapLabels = scene.mapLabels?.filter((l) => l.kind !== 'start' && !(l.kind === 'finish' && place && sameArea(l.text, place)))
   if (!mapLabels?.length) return
   ctx.save()
   ctx.textAlign = 'center'
@@ -812,8 +848,11 @@ function drawMapLayer(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout, 
     ctx.scale(zoom, zoom)
     ctx.translate(-x, -y)
   }
-  if (pts) drawRoute(ctx, scene, pts, motion, layout.height)
+  const { mapImage, mapPoints } = scene
+  if (pts && mapImage && mapPoints && mapPoints.length > 1) ctx.drawImage(mapImage, 0, 0, W, layout.height)
+  // Under the route, as a basemap's names are: a name that cannot clear the line must not cut it.
   drawPlaceLabels(ctx, scene, layout, pts && markerObstacles(pts, scene.palette), pts)
+  if (pts) drawRoute(ctx, scene, pts, motion)
   if (pts) drawMarkers(ctx, scene, pts, motion)
   ctx.restore()
 }
@@ -1055,13 +1094,14 @@ export function zoneBarLabels(rows: readonly ShareZoneRow[], left: number, width
 const ZONE_STRIP_H = VERDICT_BAR_H + VERDICT_LABEL_GAP + VERDICT_LABEL
 
 /** The 6 px bar of the run's zones and their percents, under a verdict or a rep pace. */
-function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: ShareZones, top: number) {
+function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: ShareZones, top: number, rep?: { zone: number; color: string } | null) {
   const barW = RIGHT - PAD_X
   let at = PAD_X
   for (const row of zones.rows) {
     const w = (row.percent / 100) * barW
     const last = row === zones.rows[zones.rows.length - 1]
-    ctx.fillStyle = palette.hrZones[zoneTint(row) - 1] ?? palette.mu
+    const holdsReps = rep && (row.from ?? row.zone) <= rep.zone && rep.zone <= row.zone
+    ctx.fillStyle = holdsReps ? rep.color : palette.hrZones[zoneTint(row) - 1] ?? palette.mu
     roundRect(ctx, at, top, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
     ctx.fill()
     at += w
@@ -1082,17 +1122,28 @@ const REP_CAPTION = 12
 const REP_CAPTION_GAP = 10
 const ZONE_STRIP_PAD_BOTTOM = 14
 const ZONE_STRIP_GAP = 16
+const REP_HEADLINE_TIGHT = 48
+const REP_TRACE_MIN_H = 56
 
 /** The rep pace leads; the zones drop to the strip at the middle's foot, or under the trace when there is one. */
-function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadline, { middleH }: ShareCardLayout, trace: ShareTrace | null) {
+function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadline, { middleH }: ShareCardLayout, wanted: ShareTrace | null) {
   const { activity, palette, fonts } = scene
   const zones = shareZones(activity)
-  const detail = shareRepDetail(activity)
-  const detailH = detail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[detail.kind] : 0
-  const blockH = HEADLINE_SIZE + REP_CAPTION_GAP + REP_CAPTION + detailH
   const stripH = zones ? ZONE_STRIP_GAP + ZONE_STRIP_H : 0
   const room = middleH - ZONE_STRIP_PAD_BOTTOM
-  const panelH = trace ? Math.max(TRACE_PANEL_H, Math.min(TRACE_PANEL_MAX_H, room - blockH - TRACE_PANEL_GAP - stripH)) : 0
+  const fullDetail = shareRepDetail(activity)
+  const blockOf = (size: number, withDetail: boolean) =>
+    size + REP_CAPTION_GAP + REP_CAPTION + (withDetail && fullDetail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[fullDetail.kind] : 0)
+  const panelFor = (size: number, withDetail: boolean) => Math.min(TRACE_PANEL_MAX_H, room - blockOf(size, withDetail) - TRACE_PANEL_GAP - stripH)
+  // The trace before the chips: 4:5 is the feed's format, and the trace is the session's shape.
+  const plans = [[HEADLINE_SIZE, true, TRACE_PANEL_H], [HEADLINE_SIZE, false, TRACE_PANEL_H], [REP_HEADLINE_TIGHT, false, REP_TRACE_MIN_H]] as const
+  const plan = wanted ? plans.find(([size, withDetail, min]) => panelFor(size, withDetail) >= min) : undefined
+  const trace = plan ? wanted : null
+  const headSize = plan ? plan[0] : HEADLINE_SIZE
+  const detail = !plan || plan[1] ? fullDetail : null
+  const detailH = detail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[detail.kind] : 0
+  const blockH = headSize + REP_CAPTION_GAP + REP_CAPTION + detailH
+  const panelH = plan ? panelFor(plan[0], plan[1]) : 0
   const groupH = trace ? blockH + TRACE_PANEL_GAP + panelH + stripH : blockH
   const stripTop = trace ? null : zones ? middleH - ZONE_STRIP_PAD_BOTTOM - ZONE_STRIP_H : middleH
   const top = Math.max(0, ((stripTop ?? room) - groupH) / 2)
@@ -1101,7 +1152,7 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
   ctx.textBaseline = 'alphabetic'
   ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
   const unitW = ctx.measureText(headline.unit).width
-  let size = HEADLINE_SIZE
+  let size = headSize
   const paceFont = () => {
     ctx.font = `700 ${size}px ${fonts.display}`
     setSpacing(ctx, -0.04 * size)
@@ -1111,7 +1162,7 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
     size -= 4
     paceFont()
   }
-  const baseline = top + Math.round(HEADLINE_SIZE * 0.8)
+  const baseline = top + Math.round(headSize * 0.8)
   ctx.fillStyle = palette.tx
   ctx.fillText(headline.pace, PAD_X, baseline)
   const paceW = ctx.measureText(headline.pace).width
@@ -1119,7 +1170,7 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
   ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
   ctx.fillText(headline.unit, PAD_X + paceW + HEADLINE_GAP, baseline)
 
-  const captionTop = top + HEADLINE_SIZE + REP_CAPTION_GAP
+  const captionTop = top + headSize + REP_CAPTION_GAP
   ctx.font = `600 ${REP_CAPTION}px ${fonts.text}`
   ctx.fillStyle = repColor(activity, palette)
   ctx.fillText(fit(ctx, headline.caption, RIGHT - PAD_X), PAD_X, captionTop + Math.round(REP_CAPTION * 0.8))
@@ -1128,7 +1179,8 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
   if (detail) drawRepDetail(ctx, scene, detail, captionTop + REP_CAPTION + REP_DETAIL_PAD_TOP, ink)
   const traceTop = captionTop + REP_CAPTION + detailH + TRACE_PANEL_GAP
   if (trace) drawTrace(ctx, scene, trace, traceTop, panelH)
-  if (zones) drawZoneStrip(ctx, scene, zones, stripTop ?? traceTop + panelH + ZONE_STRIP_GAP)
+  const held = repZone(activity)
+  if (zones) drawZoneStrip(ctx, scene, zones, stripTop ?? traceTop + panelH + ZONE_STRIP_GAP, held ? { zone: held, color: repColor(activity, palette) } : null)
 }
 
 const TRACE_PANEL_H = 74
@@ -1136,9 +1188,9 @@ const TRACE_PANEL_PAD = 10
 const TRACE_HEAD = 10
 const TRACE_PLOT_GAP = 8
 const TRACE_PANEL_GAP = 12
-const TRACE_PANEL_FOOT = 4
-/** What the zones or the rep pace need above the panel, or the panel is left out. */
-const TRACE_ROOM = { zones: 120, reps: 156 } as const
+const TRACE_PANEL_FOOT = 14
+/** What the zones need above the panel, or the panel is left out. */
+const TRACE_ROOM_ZONES = 120
 /** The zones' height with fixed gaps: a taller card gives the rest to the trace, then centres the two. */
 const ZONES_H = 150
 const TRACE_PANEL_MAX_H = TRACE_PANEL_H * 1.5
@@ -1219,17 +1271,17 @@ function drawTrace(ctx: Ctx, scene: ShareCardScene, trace: ShareTrace, top: numb
 
 function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const trace = shareTrace(scene.activity)
-  const room = layout.middleH - TRACE_PANEL_H - TRACE_PANEL_GAP - TRACE_PANEL_FOOT
-  const shown = trace && room >= TRACE_ROOM[layout.repHeadline ? 'reps' : 'zones'] ? trace : null
   if (layout.repHeadline) {
-    drawRepMiddle(ctx, scene, layout.repHeadline, layout, shown)
+    drawRepMiddle(ctx, scene, layout.repHeadline, layout, trace)
     return
   }
+  const room = layout.middleH - TRACE_PANEL_H - TRACE_PANEL_GAP - TRACE_PANEL_FOOT
+  const shown = trace && room >= TRACE_ROOM_ZONES ? trace : null
   if (!shown) {
     drawZones(ctx, scene, layout)
     return
   }
-  const zonesH = Math.max(TRACE_ROOM.zones, Math.min(ZONES_H, room))
+  const zonesH = Math.max(TRACE_ROOM_ZONES, Math.min(ZONES_H, room))
   const panelH = Math.min(TRACE_PANEL_MAX_H, layout.middleH - zonesH - TRACE_PANEL_GAP - TRACE_PANEL_FOOT)
   const spare = layout.middleH - zonesH - TRACE_PANEL_GAP - panelH - TRACE_PANEL_FOOT
   ctx.save()
@@ -1369,6 +1421,8 @@ export function samplesAlong(pts: [number, number][], step: number): [number, nu
 export const PHOTO_ROUTE_BOX = { x: RIGHT - 70, y: 16, size: 70 } as const
 const PHOTO_ROUTE_GAP = 10
 const PHOTO_ROUTE_W = 2.5
+/** A stride is under a pixel on the 70 px outline. */
+const PHOTO_STRIDE_MIN_PX = 4
 
 function drawPhotoRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const { activity, photo, palette } = scene
@@ -1383,14 +1437,18 @@ function drawPhotoRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout
   ctx.shadowColor = halo
   ctx.shadowBlur = 4
   strokeLine(ctx, pts, line, PHOTO_ROUTE_W)
-  // An edge in the route's tone keeps the rep colour off a photo of the same hue; strides are under a pixel here.
-  if (hasReps(scene)) {
-    ctx.shadowColor = 'transparent'
-    for (const [from, to] of activity.reps!.windows) {
-      const rep = slicePolyline(pts, from, to)
-      strokeLine(ctx, rep, line, PHOTO_ROUTE_W + 2)
-      strokeLine(ctx, rep, repColor(activity, palette), PHOTO_ROUTE_W)
-    }
+  // An edge in the route's tone keeps the rep colour off a photo of the same hue.
+  const length = cumulative(pts).at(-1) ?? 0
+  const marked = hasReps(scene)
+    ? activity.reps!.windows.map((w) => ({ span: w, color: repColor(activity, palette) }))
+    : hasStrides(scene)
+      ? activity.strides!.windows.map((w) => ({ span: strideSpan(w, length, PHOTO_STRIDE_MIN_PX), color: strideColor(palette) }))
+      : []
+  ctx.shadowColor = 'transparent'
+  for (const { span: [from, to], color } of marked) {
+    const part = slicePolyline(pts, from, to)
+    strokeLine(ctx, part, line, PHOTO_ROUTE_W + 2)
+    strokeLine(ctx, part, color, PHOTO_ROUTE_W)
   }
   ctx.restore()
 }

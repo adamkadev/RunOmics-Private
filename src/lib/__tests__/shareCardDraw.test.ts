@@ -270,11 +270,9 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(texts(ops)).toContain('Reps')
   })
 
-  // The rest of the route is a muted grey, so the reps are what the eye finds:
-  // on dark it sits under the ink the names take, never beside it.
-  it('keeps the non-rep route muted, a step under the names, on both themes', () => {
-    expect(sharePalette('heather', 'dark').trace).toBe('#7f8784')
-    expect(sharePalette('heather', 'light').trace).toBe('#8a8a8a')
+  it('draws the non-rep route in a light neutral the map\'s roads never reach, on both themes', () => {
+    expect(sharePalette('heather', 'dark').trace).toBe('#b9bfbc')
+    expect(sharePalette('heather', 'light').trace).toBe('#7a807e')
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
     for (const mode of ['dark', 'light'] as const) {
       const colours = sharePalette('heather', mode)
@@ -512,7 +510,7 @@ describe('the 9:16 story', () => {
     const story = shareCardLayout(recorder().ctx, activity, FALLBACK_FONTS, 'stats', 'story')
     const above = hero(storyOps).ty - hero(portraitOps).ty
     const { ty, args } = panel(storyOps)
-    const below = story.middleTop + story.middleH - 4 - (ty + (args[1] as number) + 111)
+    const below = story.middleTop + story.middleH - 14 - (ty + (args[1] as number) + 111)
     expect(above).toBeGreaterThan(0)
     expect(above).toBeCloseTo(below, 6)
   })
@@ -526,6 +524,28 @@ describe('the 9:16 story', () => {
     const panelBottom = panel.ty + (panel.args[1] as number) + (panel.args[3] as number)
     const strip = ops.find((o) => o.ty + (o.args[1] as number) > panelBottom && o.op === 'fillText' && /^Z\d/.test(o.args[0] as string))!
     expect(strip.ty + (strip.args[1] as number) - panelBottom).toBeLessThan(40)
+  })
+
+  it('keeps the trace on a 4:5 rep card, the chips giving way, and both on a story', () => {
+    const paceSamples = Array.from({ length: 120 }, (_, i) => (i % 40 < 20 ? 262 : 360))
+    const activity = { ...RUN, type: 'Threshold' as const, reps: REPS, paceSamples }
+    const panels = (ops: Op[]) => ops.filter((o) => o.op === 'roundRect' && o.args[0] === 16 && o.args[4] === 12)
+    const portrait = draw({ design: 'stats', activity })
+    expect(panels(portrait)).toHaveLength(1)
+    expect(texts(portrait)).not.toContain('Rep 1')
+    const story = draw({ design: 'stats', activity, size: 'story' })
+    expect(panels(story)).toHaveLength(1)
+    expect(texts(story)).toContain('Rep 1')
+  })
+
+  it('gives the zone segment the reps ran in the rep colour', () => {
+    const hrSamples = Array.from({ length: 120 }, (_, i) => (REPS.windows.some(([a, b]) => i / 119 >= a && i / 119 <= b) ? 150 : 130))
+    const activity = { ...RUN, type: 'Threshold' as const, reps: REPS, hrSamples }
+    const ops = draw({ design: 'stats', activity })
+    const segments = ops.filter((o, i) => o.op === 'fill' && ops[i - 1]?.op === 'roundRect' && ops[i - 1]!.args[3] === 6).map((o) => o.fill)
+    expect(segments).toEqual([palette.hrZones[1], palette.zones[3]])
+    const plain = draw({ design: 'stats', activity: { ...activity, hrSamples: undefined } })
+    expect(plain.filter((o, i) => o.op === 'fill' && plain[i - 1]?.op === 'roundRect' && plain[i - 1]!.args[3] === 6).map((o) => o.fill)).not.toContain(palette.zones[3])
   })
 
   it('draws the strides on the Stats card\'s trace in the Route card\'s pink', () => {
@@ -595,11 +615,11 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(white(withRoute) - white(without)).toBe(4)
   })
 
-  it('leaves strides off the outline', () => {
+  it('colours the strides on the outline', () => {
     const photo = { width: 1000, height: 800 } as HTMLImageElement
     const activity = { ...RUN, strides: { count: 6, windows: [[0.9, 0.91]] as [number, number][] } }
     const strokes = draw({ design: 'photo', photo, photoRoute: true, activity }).filter((o) => o.op === 'stroke').map((o) => o.stroke)
-    expect(strokes).not.toContain(palette.zones[4])
+    expect(strokes).toContain(palette.zones[4])
   })
 
   it('samples the photo route from its start to its finish, every step or closer', () => {
@@ -648,13 +668,13 @@ describe('the Photo design (design review, Oct 2026)', () => {
 describe('the place names on the Route card', () => {
   const label = (text: string, y: number) => ({ text, x: 150, y, size: 9, color: '#8d9391', opacity: 0.8 })
 
-  it('draws them over the route, on a halo of the ground, and none a band would cut', () => {
+  it('draws them under the route, on a halo of the ground, and none a band would cut', () => {
     const l = layout()
     const inside = (l.textTop + l.textBottom) / 2
     const ops = draw({ design: 'route', mapLabels: [label('Devant-les-Ponts', inside), { ...label('Les Prés', inside + 40), x: 80 }, label('Under the header', l.textTop + 2)] })
     const name = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'Devant-les-Ponts')
-    const lastTrace = ops.map((o) => o.op).lastIndexOf('lineTo')
-    expect(name).toBeGreaterThan(lastTrace)
+    const firstTrace = ops.map((o) => o.op).indexOf('lineTo')
+    expect(name).toBeLessThan(firstTrace)
     expect(ops.find((o) => o.op === 'strokeText' && o.args[0] === 'Devant-les-Ponts')?.stroke).toBe(sharePalette('heather', 'dark').bg)
     expect(texts(ops)).not.toContain('Under the header')
   })
@@ -852,10 +872,21 @@ describe('arranging the place names', () => {
     warn.mockRestore()
   })
 
+  it('leaves the start\'s name, and a finish in the same town, to the subtitle', () => {
+    const pts: [number, number][] = [[60, 120], [150, 200], [220, 250]]
+    const ops = draw({ design: 'route', place: 'Metz', mapImage: {} as HTMLCanvasElement, mapPoints: pts, mapLabels: [
+      { text: 'Metz', x: 60, y: 120, size: 10, color: '#8d9391', opacity: 1, kind: 'start', priority: 1 },
+      { text: 'Metz', x: 220, y: 250, size: 10, color: '#8d9391', opacity: 1, kind: 'finish', priority: 2 },
+      { text: 'Parc', x: 150, y: 160, size: 10, color: '#8d9391', opacity: 1, kind: 'landmark', priority: 4 },
+    ] })
+    expect(texts(ops).filter((text) => text === 'Metz')).toHaveLength(0)
+    expect(texts(ops)).toContain('Parc')
+  })
+
   it('draws no name over the finish marker on the card', () => {
     const pts: [number, number][] = [[60, 120], [150, 200], [220, 250]]
     const ops = draw({ design: 'route', mapImage: {} as HTMLCanvasElement, mapPoints: pts, mapLabels: [
-      { text: 'Les Prés', x: 60, y: 120, size: 10, color: '#8d9391', opacity: 1, kind: 'start', priority: 1 },
+      { text: 'Les Prés', x: 60, y: 120, size: 10, color: '#8d9391', opacity: 1, kind: 'finish', priority: 2 },
       { text: 'Parc', x: 150, y: 160, size: 10, color: '#8d9391', opacity: 1, kind: 'landmark', priority: 3 },
       { text: 'Au Bout', x: 220, y: 250, size: 10, color: '#8d9391', opacity: 1 },
     ] })
@@ -878,6 +909,17 @@ describe('an easy run with strides', () => {
     const ops = draw({ design: 'route', activity: { ...RUN, strides: STRIDES } })
     expect(strokes(ops).filter((c) => c === palette.zones[4])).toHaveLength(6)
     expect(texts(ops)).toContain('6 strides')
+  })
+
+  it('cases each stride, and draws the start dot under strides that end on it', () => {
+    const loop: ShareActivity['route'] = [[7.70, 48.60], [7.72, 48.61], [7.74, 48.60], [7.72, 48.59], [7.7001, 48.6001]]
+    const ops = draw({ design: 'route', activity: { ...RUN, route: loop, strides: { count: 1, windows: [[0.97, 0.99]] } } })
+    const stroked = strokes(ops)
+    expect(stroked.filter((c) => c === palette.casing).length).toBeGreaterThanOrEqual(1)
+    const stride = stroked.lastIndexOf(palette.zones[4])
+    const dot = ops.findLastIndex((o) => o.op === 'arc')
+    expect(dot).toBeLessThan(ops.findLastIndex((o) => o.op === 'stroke' && o.stroke === palette.zones[4]))
+    expect(stride).toBeGreaterThan(-1)
   })
 
   it('lets reps win when a session has both', () => {

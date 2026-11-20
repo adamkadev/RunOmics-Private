@@ -21,4 +21,9 @@ describe('useShareCardPrefs', () => {
     first.unmount()
     expect(renderHook(() => useShareCardPrefs('dark', true)).result.current.theme).toBe('dark')
   })
+
+  it('shows the route over a photo by default when the run has one', () => {
+    expect(renderHook(() => useShareCardPrefs('dark', true)).result.current.photoRoute).toBe(true)
+    expect(renderHook(() => useShareCardPrefs('dark', false)).result.current.photoRoute).toBe(false)
+  })
 })
