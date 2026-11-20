@@ -13,6 +13,11 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Maps: new light and dark basemaps, designed in MapTiler Cloud and pulled into the repo by `npm run map:styles`.
+  Light is a paler ground with white roads on a hairline casing; dark is lifted to charcoal with clearer roads,
+  greener parks and bluer water; place names are a step brighter in both. Stadiums show from a run's zoom and
+  museums from zoom 13. The share card still deepens parks and water, now by layer rather than by colour, and on
+  dark an interval's grey route is a step lighter so it reads over the brighter roads.
 - Share card: the Stats card draws the run's trace under its headline, heart rate coloured by zone on a run, pace
   with the reps and their target band on an interval session; left out where the card has no room (a 4:5 interval card).
 - Share card: an easy run's strides are marked on the Route card in the Z5 pink, read from the watch's laps, with a

@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type { StyleSpecification } from 'maplibre-gl'
 import { HEAT_BASEMAP, heatBasemapStyle, maptilerStyle, shareBasemapStyle, withLanguage } from '../maptiler'
-import { MAP_STYLE_COLORS } from '../themeTokens'
+import light from '@/map/styles/runomics-light.json'
+import dark from '@/map/styles/runomics-dark.json'
+
+const committedPaint = (style: unknown, id: string) => ((style as StyleSpecification).layers.find((l) => l.id === id)!.paint ?? {}) as Record<string, unknown>
 
 describe('maptilerStyle (v4.17)', () => {
   it('fills the key into every URL and leaves no placeholder', () => {
@@ -12,10 +15,10 @@ describe('maptilerStyle (v4.17)', () => {
     }
   })
 
-  it('draws each theme on its own ground, from the token file', () => {
+  it('draws each theme on its own ground, from the committed style', () => {
     const background = (s: StyleSpecification) => s.layers.find((l) => l.type === 'background')!.paint!
-    expect(background(maptilerStyle(true, 'k'))).toMatchObject({ 'background-color': MAP_STYLE_COLORS.dark.background })
-    expect(background(maptilerStyle(false, 'k'))).toMatchObject({ 'background-color': MAP_STYLE_COLORS.light.background })
+    expect(background(maptilerStyle(true, 'k'))).toMatchObject({ 'background-color': committedPaint(dark, 'Background')['background-color'] })
+    expect(background(maptilerStyle(false, 'k'))).toMatchObject({ 'background-color': committedPaint(light, 'Background')['background-color'] })
   })
 })
 
@@ -69,22 +72,27 @@ describe('heatBasemapStyle (Wave 4, App Fixes 4d)', () => {
   it('leaves the style it was given alone', () => {
     const source = maptilerStyle(false, 'k')
     heatBasemapStyle(source, false)
-    expect(paintOf(source, 'Grass')['fill-color']).toBe(MAP_STYLE_COLORS.light.park)
+    expect(paintOf(source, 'Grass')['fill-color']).toBe(committedPaint(light, 'Grass')['fill-color'])
   })
 })
 
-describe('shareBasemapStyle (3.0.1)', () => {
-  it('deepens the parks and water the card draws, in both themes', () => {
+describe('shareBasemapStyle', () => {
+  const paintOf = (s: StyleSpecification, id: string) => (s.layers.find((l) => l.id === id)!.paint ?? {}) as Record<string, unknown>
+
+  it('deepens the parks and water the card draws, found by layer, in both themes', () => {
     for (const isDark of [true, false]) {
-      const mode = isDark ? 'dark' : 'light'
-      const json = JSON.stringify(shareBasemapStyle(maptilerStyle(isDark, 'k'), isDark))
-      for (const role of ['park', 'water'] as const) expect(json).not.toContain(MAP_STYLE_COLORS[mode][role])
+      const base = maptilerStyle(isDark, 'k')
+      const card = shareBasemapStyle(base, isDark)
+      expect(paintOf(card, 'Grass')['fill-color']).not.toBe(paintOf(base, 'Grass')['fill-color'])
+      expect(paintOf(card, 'Water')['fill-color']).not.toBe(paintOf(base, 'Water')['fill-color'])
+      expect(paintOf(card, 'River')['line-color']).toBe(paintOf(card, 'Water')['fill-color'])
+      expect(paintOf(card, 'Road network')).toEqual(paintOf(base, 'Road network'))
     }
   })
 
   it('leaves the style it was given alone', () => {
     const source = maptilerStyle(false, 'k')
     shareBasemapStyle(source, false)
-    expect(JSON.stringify(source)).toContain(MAP_STYLE_COLORS.light.park)
+    expect(paintOf(source, 'Grass')['fill-color']).toBe(committedPaint(light, 'Grass')['fill-color'])
   })
 })

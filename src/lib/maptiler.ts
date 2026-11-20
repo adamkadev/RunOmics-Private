@@ -1,5 +1,4 @@
 import type { StyleSpecification } from 'maplibre-gl'
-import { MAP_STYLE_COLORS } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import light from '@/map/styles/runomics-light.json'
 import dark from '@/map/styles/runomics-dark.json'
@@ -97,17 +96,25 @@ export function heatBasemapStyle(style: StyleSpecification, isDark: boolean): St
   }
 }
 
-const SHARE_BASEMAP: Record<'light' | 'dark', Partial<Record<keyof typeof MAP_STYLE_COLORS.light, string>>> = {
-  light: { park: '#c6e0c2', water: '#b4d2ea', waterway: '#b4d2ea', roadCasing: '#d5d9d7' },
-  dark: { park: '#1f3b2c', water: '#16304a', waterway: '#16304a', roadMajor: '#2a3030' },
-}
+/** The card is seen small and recompressed, so its parks and water take a deeper step than the app's maps. */
+const SHARE_NATURE = {
+  light: { park: '#c6e0c2', water: '#b4d2ea' },
+  dark: { park: '#1f3b2c', water: '#16304a' },
+} as const
+
+const SHARE_PARK = /park|wood|forest|grass|cemetery|leisure|pitch|golf|garden|meadow|scrub/
+const SHARE_WATER = /water|river|stream|canal/
 
 export function shareBasemapStyle(style: StyleSpecification, isDark: boolean): StyleSpecification {
-  const mode = isDark ? 'dark' : 'light'
-  let json = JSON.stringify(style)
-  for (const [role, stronger] of Object.entries(SHARE_BASEMAP[mode])) {
-    const painted = MAP_STYLE_COLORS[mode][role as keyof typeof MAP_STYLE_COLORS.light]
-    json = json.replaceAll(`"${painted}"`, `"${stronger}"`)
+  const colours = SHARE_NATURE[isDark ? 'dark' : 'light']
+  return {
+    ...style,
+    layers: style.layers.map((layer) => {
+      const key = `${layer.id} ${'source-layer' in layer ? layer['source-layer'] ?? '' : ''}`.toLowerCase()
+      if (layer.type === 'fill' && SHARE_WATER.test(key)) return { ...layer, paint: { ...layer.paint, 'fill-color': colours.water } }
+      if (layer.type === 'fill' && SHARE_PARK.test(key)) return { ...layer, paint: { ...layer.paint, 'fill-color': colours.park } }
+      if (layer.type === 'line' && SHARE_WATER.test(key)) return { ...layer, paint: { ...layer.paint, 'line-color': colours.water } }
+      return layer
+    }),
   }
-  return JSON.parse(json) as StyleSpecification
 }
