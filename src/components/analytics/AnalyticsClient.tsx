@@ -216,7 +216,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             returnDate={data.returnDate ?? null}
           />
         )}
-        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} />}
+        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} reprise={data.reprise} />}
         {tab === 'health' && weeks && <IntensityTab rows={rows} live={weeks.live} onShift={shift} plan={data.plan} />}
       </div>
     </div>

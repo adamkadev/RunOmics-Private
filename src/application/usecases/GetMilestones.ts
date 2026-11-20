@@ -10,6 +10,8 @@ import { t } from '@/i18n'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 
 const DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
+const NEXT_DISTANCE_TIERS_KM = [100, 150, 200, 250, ...DISTANCE_TIERS_KM]
+const PACE_WEEKS = 8
 const MIN_STREAK_WEEKS = 8
 const MAX_STREAK_WEEKS_TO_CHECK = 208
 
@@ -196,7 +198,8 @@ export function findNextMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   year: number,
   countTiers: number[] = ACTIVITY_COUNT_TIERS,
-  distanceTiers: number[] = DISTANCE_TIERS_KM,
+  distanceTiers: number[] = NEXT_DISTANCE_TIERS_KM,
+  today?: string,
 ): NextMilestone[] {
   const next: NextMilestone[] = []
 
@@ -213,7 +216,8 @@ export function findNextMilestones(
 
   // The rounded year total Goals subtracts from, so both pages print the same km to go.
   const yearKm = yearDistanceKm(activitiesAscByDate, year)
-  const distanceTier = distanceTiers.find((tier) => tier > yearKm)
+  const reach = today === undefined ? Infinity : yearEndReachKm(activitiesAscByDate, yearKm, today)
+  const distanceTier = distanceTiers.find((tier) => tier > yearKm && tier <= reach)
   if (distanceTier !== undefined) {
     next.push({
       kind: 'distance-tier',
@@ -226,9 +230,18 @@ export function findNextMilestones(
   return next
 }
 
+/** The year's km by 31 Dec at the pace of the last weeks: a tier beyond it is out of reach. */
+function yearEndReachKm(activities: { date: string; distanceKm: number }[], yearKm: number, today: string): number {
+  const day = new Date(`${today}T12:00:00`)
+  const from = isoDate(addDays(day, -PACE_WEEKS * 7))
+  const recentKm = activities.filter((a) => a.date > from && a.date <= today).reduce((sum, a) => sum + a.distanceKm, 0)
+  const daysLeft = Math.max(0, (new Date(`${today.slice(0, 4)}-12-31T12:00:00`).getTime() - day.getTime()) / DAY_MS)
+  return yearKm + (recentKm / (PACE_WEEKS * 7)) * daysLeft
+}
+
 export function getNextMilestones(today: string = appTodayIso()): NextMilestone[] {
   const ascending = [...getAllActivities()].sort((a, b) => a.date.localeCompare(b.date))
-  return findNextMilestones(ascending, Number(today.slice(0, 4)))
+  return findNextMilestones(ascending, Number(today.slice(0, 4)), ACTIVITY_COUNT_TIERS, NEXT_DISTANCE_TIERS_KM, today)
 }
 
 export async function getMilestones(today: string = appTodayIso()): Promise<Milestone[]> {

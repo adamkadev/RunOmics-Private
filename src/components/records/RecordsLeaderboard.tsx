@@ -12,7 +12,7 @@ import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 import { EFFORT_LIST_FIRST, allEffortsLabel, effortGap, predictionGap } from './recordsView'
 
-const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_64px_56px_44px] items-center gap-2'
+const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_68px_60px_48px] items-center gap-2'
 const ROW_GRID_NO_PREDICTION = 'grid grid-cols-[minmax(0,1fr)_76px] items-center gap-2'
 
 const DATE = { style: 'bare', year: 'always' } as const
@@ -48,9 +48,11 @@ interface Props {
   records: RecordEntry[]
   topEfforts: TopEfforts
   predictions?: RacePrediction[]
+  /** Without goals, /goals has nothing to show for a missing distance. */
+  hasGoals?: boolean
 }
 
-export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Props) {
+export function RecordsLeaderboard({ records, topEfforts, predictions = [], hasGoals = false }: Props) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   const predictionByKey = new Map(predictions.map((p) => [p.key, p]))
@@ -71,7 +73,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
 
   return (
     <section className={cardClass({ padding: 'none', className: 'px-4 py-1' })}>
-      <div className={cn(grid, EYEBROW_CLASS, 'border-b border-border py-2.5 text-muted-foreground')}>
+      <div className={cn(grid, EYEBROW_CLASS, 'border-b border-border py-2.5 tracking-normal text-muted-foreground')}>
         <span>{t.records.cols.distance}</span>
         <span className="text-right">{t.records.cols.best}</span>
         {predicted && (
@@ -169,7 +171,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
       })}
       {missing.length > 0 && (
         <div className="border-t border-border py-3" data-testid="records-missing">
-          {missing.some((r) => predictionByKey.has(r.key)) ? (
+          {hasGoals && missing.some((r) => predictionByKey.has(r.key)) ? (
             <Link href="/goals" className="block text-xs font-semibold text-accent-text text-pretty">{missingText}</Link>
           ) : (
             <p className="text-xs text-muted-foreground text-pretty">{missingText}</p>

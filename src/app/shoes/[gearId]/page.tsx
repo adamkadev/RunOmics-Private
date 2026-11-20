@@ -18,7 +18,7 @@ import Link from 'next/link'
 import { GARMIN_GEAR_URL, WEAR_COLOR, shoeProjection, shoeWearCopy } from '@/components/shoes/shoeWear'
 import { isWatchId } from '@/lib/garminConnect'
 import { WearBar } from '@/components/shoes/WearBar'
-import { formatClock, formatDate, formatDateRange, formatDistance, formatKm } from '@/lib/formatters'
+import { formatClock, formatDate, formatDateRange, formatDistance, formatKm, formatPercent } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { activityTitle } from '@/lib/activityTitle'
 import { loadData } from '@/application/usecases/LoadData'
@@ -250,7 +250,7 @@ export default async function ShoeDetailPage({
             {typeShareEntries.map((entry) => (
               <span key={entry.bucket} className="flex items-center gap-1.5">
                 <span aria-hidden className="size-[7px] rounded-full" style={{ background: BUCKET_COLOR[entry.bucket] }} />
-                {typeShareLabel(entry.bucket)} <b className="font-semibold text-foreground">{entry.percent}%</b>
+                {typeShareLabel(entry.bucket)} <b className="font-semibold text-foreground">{formatPercent(entry.percent)}</b>
               </span>
             ))}
           </div>

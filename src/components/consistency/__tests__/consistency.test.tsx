@@ -144,7 +144,7 @@ describe('Consistency', () => {
     expect(screen.getByTestId('streak-weeks').textContent).toBe('9')
     expect(screen.getByText(t.consistency.streakEyebrow).className).toContain('text-muted-foreground')
     expect(screen.getByText(t.consistency.streakRule(3))).toBeTruthy()
-    expect(screen.getByTestId('best-streak').textContent).toBe(`${t.consistency.bestStreak}9 ${t.consistency.weeks(9)}`)
+    expect(screen.getByTestId('best-streak').textContent).toBe(`${t.consistency.bestStreak} 9 ${t.consistency.weeks(9)}`)
     const thisWeek = screen.getByTestId('consistency-this-week')
     expect(thisWeek.querySelectorAll('[data-filled]')).toHaveLength(0)
     expect(thisWeek.querySelectorAll('.rounded-full')).toHaveLength(2)

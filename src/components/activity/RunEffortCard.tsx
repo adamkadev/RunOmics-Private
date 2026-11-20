@@ -6,7 +6,7 @@ import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { Legend, LegendItem } from '@/components/ui/Legend'
 import { STAT_TONE_CLASS, type StatTone } from '@/components/ui/Stat'
 import { hrZoneColor, type SessionZone } from '@/lib/colors'
-import { formatDecimal, formatDeltaFixed } from '@/lib/formatters'
+import { formatDecimal, formatDeltaFixed, formatPercent } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -109,7 +109,7 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
               <LegendItem key={zone.zone} swatch="square" color={hrZoneColor(zone.zone as SessionZone)}>
                 <span>
                   {`Z${zone.zone} ${t.zoneLabels[zone.zone] ?? ''} `}
-                  <b className="font-semibold text-foreground">{Math.round(zone.percent)}%</b>
+                  <b className="font-semibold text-foreground">{formatPercent(zone.percent)}</b>
                 </span>
               </LegendItem>
             ))}

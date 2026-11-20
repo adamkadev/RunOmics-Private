@@ -110,8 +110,8 @@ export function IntervalSet({ set, bare = false }: Props) {
           // 20 s accelerations: the heart rate lags them, so a band, a spread or a drift would grade noise.
           <StatGrid columns={3}>
             <Stat label={s.stridesLabel} value={set.reps.length} />
-            <Stat label={s.fastest} value={stridePaces.length ? formatClock(Math.min(...stridePaces)) : '—'} />
-            <Stat label={s.average} value={strideAverage ? formatClock(strideAverage) : '—'} />
+            <Stat label={s.fastest} value={stridePaces.length ? formatClock(Math.min(...stridePaces)) : '—'} unit={stridePaces.length ? t.units.perKm : undefined} />
+            <Stat label={s.average} value={strideAverage ? formatClock(strideAverage) : '—'} unit={strideAverage ? t.units.perKm : undefined} />
           </StatGrid>
         ) : (
         <StatGrid columns={3}>

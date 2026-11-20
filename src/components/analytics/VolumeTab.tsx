@@ -23,12 +23,15 @@ const unplanned = (r: WeekRow, hasPlan: boolean) => hasPlan && r.planKm === null
 
 const missedWeek = (r: WeekRow) => r.km === 0 && r.planKm !== null && r.planKm > 0
 
-export function weekLabels(weeks: string[], live: boolean): string[] {
-  const n = weeks.length
+export function weekLabelSlots(n: number): number[] {
   if (!n) return []
   const step = Math.max(1, Math.ceil(n / 3))
-  const picks = [0, step, step * 2].filter((i) => i < n - 1)
-  return [...picks.map((i) => bare(weeks[i]!)), live ? t.analytics.cards.thisWeek : bare(weeks[n - 1]!)]
+  return [...[0, step, step * 2].filter((i) => i < n - 1), n - 1]
+}
+
+export function weekLabels(weeks: string[], live: boolean): string[] {
+  const n = weeks.length
+  return weekLabelSlots(n).map((i) => (i === n - 1 && live ? t.analytics.cards.thisWeek : bare(weeks[i]!)))
 }
 
 export const onPlan = (r: WeekRow) => r.planKm !== null && r.planKm > 0 && r.km >= r.planKm * ON_PLAN_SHARE
@@ -94,7 +97,7 @@ function WeeklyDistanceCard({ rows, live, onShift }: { rows: WeekRow[]; live: bo
             return (
               <div key={r.week} className="relative flex flex-col justify-end" style={{ height: H }}>
                 {marks && r.planKm !== null && (
-                  <div className="absolute inset-x-0 z-[1] h-0.5 bg-foreground" style={{ bottom: planH }} data-testid="plan-tick" />
+                  <div className="absolute inset-x-0 z-[1] h-0.5 bg-card shadow-[0_0_0_1px_var(--foreground)]" style={{ bottom: planH }} data-testid="plan-tick" />
                 )}
                 {r.km > 0 ? (
                   <div
@@ -123,7 +126,7 @@ function WeeklyDistanceCard({ rows, live, onShift }: { rows: WeekRow[]; live: bo
         </div>
       </ChartScrub>
       <div className="flex flex-col gap-2.5">
-        <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} className="text-[11px] text-[var(--axis-text)]" />
+        <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} at={weekLabelSlots(rows.length)} slots={rows.length} className="text-[11px] text-[var(--axis-text)]" />
         <Legend className="gap-x-3.5 gap-y-2 text-[var(--text-2)]">
           {hasPlan && <LegendItem swatch="square" size={9} color={DONE}>{s.onOrAbove}</LegendItem>}
           {hasPlan ? <LegendItem swatch="outline" color={DONE}>{s.belowPlan}</LegendItem> : <LegendItem swatch="square" size={9} color={DONE}>{s.done}</LegendItem>}
@@ -177,10 +180,12 @@ function YtdRow({ ytd }: { ytd: YtdInput }) {
 /** The long run chart's top: at least half the week, so the 35% guide sits in its lower two thirds. */
 const LONG_RUN_TOP = 0.55
 
-function LongRunCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void }) {
+function LongRunCard({ rows, live, onShift, reprise }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void; reprise: boolean }) {
   const s = t.analytics.cards.longRun
-  const view = longRunView(rows)
-  if (!view) return null
+  const longRuns = longRunView(rows)
+  if (!longRuns) return null
+  // A comeback's short weeks always break the share rule: no warning while the athlete builds back.
+  const view = reprise ? { ...longRuns, over: 0, bars: longRuns.bars.map((b) => ({ ...b, over: false })) } : longRuns
   const H = 70
   const wide = rows.length > 20
   // Each bar is the long run's share of its week, against the 35% rule.
@@ -235,14 +240,15 @@ export interface VolumeTabProps {
   rows: WeekRow[]
   live: boolean
   onShift: (step: 1 | -1) => void
+  reprise?: boolean
   ytd: YtdInput | null
 }
 
-export function VolumeTab({ rows, live, onShift, ytd }: VolumeTabProps) {
+export function VolumeTab({ rows, live, onShift, ytd, reprise = false }: VolumeTabProps) {
   return (
     <div className="flex flex-col gap-3.5">
       <WeeklyDistanceCard rows={rows} live={live} onShift={onShift} />
-      <LongRunCard rows={rows} live={live} onShift={onShift} />
+      <LongRunCard rows={rows} live={live} onShift={onShift} reprise={reprise} />
       {ytd && <YtdRow ytd={ytd} />}
     </div>
   )

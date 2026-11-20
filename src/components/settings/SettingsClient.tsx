@@ -16,6 +16,7 @@ import { t } from '@/i18n'
 import { BackButton } from '@/components/ui/BackButton'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
+import { cardClass } from '@/components/ui/Card'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
@@ -111,7 +112,7 @@ export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device
         <SettingsHeader />
         {/* One account card says what signing in gives: the rows it unlocks only say they need it. */}
         <Section title={t.settings.sections.account} testId="account-card">
-          <div className={`${GROUP_CARD} flex flex-col gap-3.5 px-4 py-4`}>
+          <div className={cardClass({ padding: 'none', className: 'flex flex-col gap-3.5 px-4 py-4' })}>
             <p className="text-sm text-muted-foreground text-pretty">{t.settings.auth.unlocks}</p>
             <Button variant="primary" onClick={handleSignIn} disabled={signingIn} className="h-11 w-full rounded-xl text-sm">
               {signingIn ? t.settings.auth.signingIn : t.settings.auth.signIn}
@@ -127,7 +128,7 @@ export function SettingsClient({ goalsRaces, lastSyncedAt, activityCount, device
               <GarminTile />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{device?.name ?? t.settings.dataSource.garmin}</p>
-                <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                <p className="mt-0.5 text-xs leading-snug text-muted-foreground text-pretty">
                   {lastSyncedAt && <ConnectedMark />}
                   {lastSyncedAt && mounted
                     ? t.settings.dataSource.readOnlySynced(formatRelativeAgo(lastSyncedAt), t.common.runs(activityCount))

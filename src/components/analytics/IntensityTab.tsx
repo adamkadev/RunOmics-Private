@@ -10,7 +10,7 @@ import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, Sentence, THIS_WEEK_BORDER } from './AnalyticsKit'
 import { easyHardView, qualityView, smooth, zonesView, type PlanWeekInput, type QualityDot, type WeekRow } from './analyticsView'
 import { heartRateView } from './trendView'
-import { weekLabels } from './VolumeTab'
+import { weekLabelSlots, weekLabels } from './VolumeTab'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 const hours = (sec: number) => formatKm(sec / 3600, 1)
@@ -135,7 +135,7 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
         </div>
       </ChartScrub>
       <div className="flex flex-col gap-2.5">
-        <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
+        <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} at={weekLabelSlots(rows.length)} slots={rows.length} />
         <ZoneKey zoneHours={held !== null && view.weeks[held] ? view.weeks[held]!.hours : view.zoneHours} held={held !== null} windowHours={view.zoneHours} />
       </div>
     </Card>
@@ -154,6 +154,8 @@ function slotPath(values: (number | null)[], lo: number, hi: number, w: number, 
 
 const BPM_STEP = 5
 const FELT_H = 20
+// The strip's 12 px gap, its 1 px rule and 4 px padding, so the °C label sits level with it.
+const FELT_GAP = 17
 const FELT_FILL = 'color-mix(in srgb, var(--band) 45%, transparent)'
 
 function HeartRateCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void }) {
@@ -168,8 +170,8 @@ function HeartRateCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean
   const hardLine = smooth(view.hard)
   const bpm = [...easyLine, ...hardLine].filter((v): v is number => v !== null)
   const lo = Math.floor((Math.min(...bpm) - 2) / BPM_STEP) * BPM_STEP
-  // An even number of steps, so the middle line is a round figure too.
-  const hi = lo + Math.max(2, Math.ceil((Math.max(...bpm) + 2 - lo) / (2 * BPM_STEP)) * 2) * BPM_STEP
+  // An even number of steps, so the middle line is a round figure too; 20 bpm at least, so noise stays flat.
+  const hi = lo + Math.max(4, Math.ceil((Math.max(...bpm) + 2 - lo) / (2 * BPM_STEP)) * 2) * BPM_STEP
   const ticks = [lo, (lo + hi) / 2, hi]
   const felt = view.felt.filter((v): v is number => v !== null)
   const feltLo = Math.min(...felt)
@@ -183,12 +185,19 @@ function HeartRateCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean
       <CardHead title={s.title} caption={t.units.bpm} about={s.footnote} />
       <Sentence testId="heart-rate-sentence">{reading}</Sentence>
       <div className="flex gap-2 py-1.5">
-        <div className="relative w-8 shrink-0 text-[11px] leading-none text-muted-foreground" style={{ height: H }} aria-hidden>
-          {ticks.map((v) => (
-            <span key={v} className="absolute right-0 -translate-y-1/2" style={{ top: `${100 - ((v - lo) / (hi - lo)) * 100}%` }}>
-              {v}
-            </span>
-          ))}
+        <div className="w-8 shrink-0 text-[11px] leading-none text-muted-foreground" aria-hidden>
+          <div className="relative" style={{ height: H }}>
+            {ticks.map((v) => (
+              <span key={v} className="absolute right-0 -translate-y-1/2" style={{ top: `${100 - ((v - lo) / (hi - lo)) * 100}%` }}>
+                {v}
+              </span>
+            ))}
+          </div>
+          {felt.length > 0 && (
+            <div className="flex items-end justify-end" style={{ height: FELT_H, marginTop: FELT_GAP }}>
+              {t.units.celsius}
+            </div>
+          )}
         </div>
         <ChartScrub
           className="min-w-0 flex-1"
@@ -214,7 +223,7 @@ function HeartRateCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean
           </svg>
           {felt.length > 0 && (
             // Under the lines, on its own scale: the warm weeks a higher heart rate may owe to the weather.
-            <div className="mt-2 grid items-end" style={{ height: FELT_H, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 1 : 4 }} data-testid="felt-strip">
+            <div className="grid items-end border-t border-[var(--line-2)] pt-1" style={{ marginTop: 12, height: FELT_H + 5, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 1 : 4 }} data-testid="felt-strip">
               {view.felt.map((c, i) => (
                 <span key={rows[i]!.week} className="rounded-[2px]" style={{ height: c === null ? 0 : Math.max(2, ((c - feltBase) / Math.max(1, feltHi - feltBase)) * FELT_H), background: FELT_FILL }} />
               ))}
@@ -222,7 +231,7 @@ function HeartRateCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean
           )}
         </ChartScrub>
       </div>
-      <AxisLabels className="ml-10" labels={weekLabels(rows.map((r) => r.week), live)} />
+      <AxisLabels className="ml-10" labels={weekLabels(rows.map((r) => r.week), live)} at={weekLabelSlots(rows.length)} slots={rows.length} />
       <Legend className="gap-x-4">
         {easyNow !== null && (
           <LegendItem swatch="dot" color="var(--zone-2)">
@@ -303,7 +312,7 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
           ))}
         </div>
       </ChartScrub>
-      <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
+      <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} at={weekLabelSlots(rows.length)} slots={rows.length} />
       <Legend className="gap-x-3">
         <LegendItem swatch="square" color="var(--zone-4)">{s.done}</LegendItem>
         {totals.missed > 0 && (

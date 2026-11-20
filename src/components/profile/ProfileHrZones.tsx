@@ -5,6 +5,7 @@ import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRe
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatClock as fmt, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { hrZoneColor, type SessionZone } from '@/lib/colors'
 
 type Bounds = [number, number, number, number, number]
 
@@ -75,7 +76,7 @@ export function ProfileHrZones({ athlete, paceZones }: Props) {
         {zones.map(({ zone, min, max, pace }) => (
           <div key={zone} className={`${rowGrid} min-h-[38px] border-t border-border py-1.5`} data-testid={`zone-row-${zone}`}>
             <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
-              <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
+              <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: hrZoneColor(zone as SessionZone) }} />
               <span className="min-w-0 leading-tight">
                 <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
               </span>

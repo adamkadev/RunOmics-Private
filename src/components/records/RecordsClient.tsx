@@ -28,9 +28,10 @@ interface Props {
   recurringRoutes: RecurringRoute[]
   returnProgress?: ReturnProgress | null
   today: string
+  hasGoals?: boolean
 }
 
-export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, nextMilestones, recurringRoutes, returnProgress = null, today: serverToday }: Props) {
+export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, nextMilestones, recurringRoutes, returnProgress = null, today: serverToday, hasGoals = false }: Props) {
   const today = useToday(serverToday)
   const thisYear = Number(today.slice(0, 4))
   // The tab lives in the URL, so /milestones can land on it and a run's page comes back to it.
@@ -57,7 +58,7 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
         {tab === 'best' && (
           <div className="space-y-3">
             <PbAlertLine alerts={pbAlerts} />
-            <RecordsLeaderboard records={records} topEfforts={topEfforts} predictions={predictions} />
+            <RecordsLeaderboard records={records} topEfforts={topEfforts} predictions={predictions} hasGoals={hasGoals} />
           </div>
         )}
 

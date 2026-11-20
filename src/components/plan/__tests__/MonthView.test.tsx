@@ -118,12 +118,12 @@ describe('the phases down the side', () => {
 })
 
 describe('the km column', () => {
-  it('reads each week as run over planned, and a week to come as planned', () => {
+  it('reads each week as run over planned, this week before a run as in progress, and a week to come as planned', () => {
     renderMonth(vi.fn(), { planned: [...PLANNED, { date: '2026-10-28', name: 'Easy', type: 'Base', distanceM: 6_000 }] })
 
     const totals = screen.getAllByTestId('month-week-total').map((c) => c.textContent)
     expect(totals[2]).toBe('18/ 24')
-    expect(totals[3]).toBe('0/ 29')
+    expect(totals[3]).toBe(`29${t.plan.month.inProgressWord}`)
     expect(totals[4]).toBe(`6${t.plan.month.plannedWord}`)
   })
 })

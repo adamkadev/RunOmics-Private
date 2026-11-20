@@ -218,15 +218,21 @@ describe('the archive under its months', () => {
   })
 
   it('filters by four groups, without dots', () => {
-    renderList([run('a', '2026-09-20', 25)])
+    renderList([run('a', '2026-09-20', 25), { ...run('b', '2026-09-18', 10), type: 'Tempo' }, { ...run('c', '2026-09-14', 21), type: 'Race' }])
     const rail = screen.getByTestId('type-chips')
     const names = within(rail).getAllByRole('button').map((b) => b.textContent)
     expect(names).toEqual([t.activities.all, t.activities.groups.easy, t.activities.groups.workouts, t.activities.groups.races])
     expect(rail.querySelector('span[aria-hidden]')).toBeNull()
   })
 
-  it('lays the search field and the chip row each on one blur, the chips tint only', () => {
+  it('hides a group no run falls in', () => {
     renderList([run('a', '2026-09-20', 25)])
+    const names = within(screen.getByTestId('type-chips')).getAllByRole('button').map((b) => b.textContent)
+    expect(names).toEqual([t.activities.all, t.activities.groups.easy])
+  })
+
+  it('lays the search field and the chip row each on one blur, the chips tint only', () => {
+    renderList([run('a', '2026-09-20', 25), { ...run('b', '2026-09-18', 10), type: 'Tempo' }, { ...run('c', '2026-09-14', 21), type: 'Race' }])
     const search = screen.getByPlaceholderText(t.activities.searchPlaceholder).closest('label')!
     const row = screen.getByTestId('type-chips').parentElement!
     for (const group of [search.parentElement!, row]) {

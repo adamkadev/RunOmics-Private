@@ -303,7 +303,7 @@ export function ProgressHub({ view, checkpoint = null, explored = null, homeRuns
             // Every pair, the worn one leading the list with its tag: its own page alone hid the others.
             href="/shoes"
             label={`${h.shoes} · ${shoe.name}`}
-            value={shoe.status !== 'ok' ? t.shoes.status[shoe.status].toLocaleLowerCase(t.locale) : undefined}
+            value={shoe.status !== 'ok' ? t.shoes.status[shoe.status].toLocaleLowerCase(t.locale) : `${formatKm(shoe.km)} ${t.units.km}`}
             valueColor={shoe.status !== 'ok' ? WEAR_COLOR[shoe.status] : undefined}
             line={<DataBar pct={shoe.wearPct} color={WEAR_COLOR[shoe.status]} testId="shoes-bar" />}
             testId="shoes-row"

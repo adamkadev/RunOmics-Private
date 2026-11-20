@@ -4,6 +4,7 @@ import { getRacePredictions } from '@/application/usecases/GetRacePredictions'
 import { getMilestones, getNextMilestones } from '@/application/usecases/GetMilestones'
 import { getRecurringRoutes } from '@/application/usecases/GetRecurringRoutes'
 import { getReturnProgress } from '@/application/usecases/GetReturnProgress'
+import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { RecordsClient } from '@/components/records/RecordsClient'
 import { appTodayIso } from '@/lib/calendarDate'
 import { EFFORT_LIST_MAX } from '@/components/records/recordsView'
@@ -24,6 +25,7 @@ export default async function RecordsPage() {
   const milestones = await getMilestones(today)
   const nextMilestones = getNextMilestones(today)
   const recurringRoutes = getRecurringRoutes()
+  const hasGoals = (await getGoalsPageData(today)).years.length > 0
 
   return (
     <div className="space-y-6">
@@ -39,6 +41,7 @@ export default async function RecordsPage() {
         recurringRoutes={recurringRoutes}
         returnProgress={getReturnProgress(today)}
         today={today}
+        hasGoals={hasGoals}
       />
     </div>
   )

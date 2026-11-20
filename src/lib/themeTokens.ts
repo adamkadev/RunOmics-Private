@@ -16,8 +16,8 @@ const c = HUE
  * table. Light keeps deeper steps: a zone mark needs 3:1 on a white card.
  */
 export const ZONE_HEX = {
-  light: ['#61788f', '#2f74e0', '#6a52d9', '#ae3cc2', '#d63a77'],
-  dark: ['#8a9bb0', '#5b9cf5', '#8f7cf0', '#c565f8', '#f4438f'],
+  light: [c.roZone1Light, '#2f74e0', '#6a52d9', '#ae3cc2', '#d63a77'],
+  dark: [c.roZone1, '#5b9cf5', '#8f7cf0', '#c565f8', '#f4438f'],
 } as const
 
 /** Moderate, time in Z3: a neutral grey-blue, so it never joins the Z4-Z5 purple beside it. Sessions keep the ramp's Z3. */

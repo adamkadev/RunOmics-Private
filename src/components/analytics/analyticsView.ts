@@ -559,6 +559,9 @@ export function missedClusters(missed: readonly string[], rows: WeekRow[]): Miss
 /** A long run above this share of its week's distance loads one day heavily. */
 export const LONG_RUN_SHARE = 0.35
 
+/** Below this many runs one run is most of any week, so the share rule says nothing. */
+export const LONG_RUN_MIN_RUNS = 4
+
 export interface LongRunView {
   km: number
   date: string | null
@@ -574,7 +577,8 @@ export function longRunView(rows: WeekRow[]): LongRunView | null {
   const bars = rows.map((r) => {
     const km = r.point?.longestKm ?? 0
     // Never the week under way: its first runs are all of its distance so far.
-    return { km, over: !r.current && r.km > 0 && km / r.km > LONG_RUN_SHARE, current: r.current }
+    const enoughRuns = (r.point?.runs ?? LONG_RUN_MIN_RUNS) >= LONG_RUN_MIN_RUNS
+    return { km, over: !r.current && r.km > 0 && enoughRuns && km / r.km > LONG_RUN_SHARE, current: r.current }
   })
   return {
     km: last.point?.longestKm ?? 0,

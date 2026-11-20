@@ -349,7 +349,12 @@ export function MonthView({
                   )
                 })}
                 <span data-testid="month-week-total" className="flex min-w-0 flex-col items-end pr-1 leading-tight tabular-nums">
-                  {row.future ? (
+                  {row.current && row.ranKm === 0 ? (
+                    <>
+                      {row.plannedKm > 0 && <span className="text-sm font-semibold text-muted-foreground">{formatPlannedKm(row.plannedKm)}</span>}
+                      <span className="text-[11px] text-accent-text">{m.inProgressWord}</span>
+                    </>
+                  ) : row.future ? (
                     row.plannedKm > 0 && (
                       <>
                         <span className="text-sm font-semibold text-muted-foreground">{formatPlannedKm(row.plannedKm)}</span>

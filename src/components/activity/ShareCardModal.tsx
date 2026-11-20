@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from 'next-themes'
-import { Camera, X } from 'lucide-react'
+import { Camera, Loader2, X } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import {
   renderShareCard, loadImage, pageFonts, shareCardHeight, shareCardMapFrame, SHARE_DESIGNS, SHARE_SIZES, W,
@@ -97,6 +97,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
   const awaitingPhoto = design === 'photo' && !photoImage
+  // A quick save before the map renders would post the bare line; after a failure the line alone is the card.
+  const awaitingMap = design === 'route' && !mapSettled
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -323,8 +325,14 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               else if (design === 'photo' && photoImage) fileInputRef.current?.click()
             }}
             onPointerCancel={() => { swipeX.current = null }}
+            aria-busy={awaitingMap}
           >
             <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: awaitingPhoto ? 'none' : 'block' }} />
+            {awaitingMap && (
+              <div data-testid="share-map-pending" className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                <Loader2 size={22} strokeWidth={2} className="animate-spin text-muted-foreground" />
+              </div>
+            )}
             {/* The empty frame is the picker, and the exact crop the photo gets. */}
             {awaitingPhoto && (
               <button
@@ -432,7 +440,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             canShareFiles={canShareFiles}
             canCopyImage={canCopyImage}
             copyState={copyState}
-            disabled={awaitingPhoto}
+            disabled={awaitingPhoto || awaitingMap}
             video={video}
             preparing={preparing}
             onShare={video ? handleShareVideo : handleShare}

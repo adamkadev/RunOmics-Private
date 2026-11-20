@@ -32,6 +32,7 @@ function week(date: string, i: number): WeeklyTrendPoint {
     zoneSeconds: { 1: 1800, 2: 3 * 3600, 3: 600, 4: 1500, 5: 300 },
     longestKm: 16,
     longestDate: date,
+    runs: 4,
     thresholdSessions: 1,
     intervalSessions: i % 2,
   }

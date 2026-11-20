@@ -191,7 +191,9 @@ function sections(data: CycleCheckpoint): CompareSection[] {
     recoveryRows.push(row({ key: 'restingHr', label: m.restingHr, pair: data.restingHr, value: Math.round, format: (v) => String(Math.round(v)), unit: t.units.bpm, delta: (d) => formatDelta(d, t.units.bpm), metric: 'heartRate', context: { flatBelow: 1 } }))
   }
   if (data.ctl) {
-    recoveryRows.push(row({ key: 'ctl', label: cycle.complete ? m.fitnessEnd : m.fitnessToday, pair: data.ctl, value: Math.round, format: (v) => formatDecimal(v, 0), delta: (d) => formatDelta(d), metric: 'fitness' }))
+    const fitness = row({ key: 'ctl', label: cycle.complete ? m.fitnessEnd : m.fitnessToday, pair: data.ctl, value: Math.round, format: (v) => formatDecimal(v, 0), delta: (d) => formatDelta(d), metric: 'fitness' })
+    // A fitness score means nothing on its own scale: it shows only against the cycle before.
+    if (fitness.previous !== null) recoveryRows.push(fitness)
   }
   if (recoveryRows.length > 0) out.push({ key: 'recovery', ...sec.recovery, caption: null, rows: recoveryRows })
 
@@ -206,7 +208,7 @@ function asStartingPoint(section: CompareSection): CompareSection {
   return {
     ...section,
     rows: section.rows
-      .filter((r) => r.current !== null)
+      .filter((r) => r.current !== null && r.key !== 'ctl')
       .map((r) => ({ ...r, previous: null, delta: null, direction: null, tone: 'flat' as const, missing: null, absent: null })),
   }
 }

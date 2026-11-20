@@ -584,6 +584,15 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
           />
         )}
 
+        {/* Labels half-hidden under the floating row read as clutter, so the card's top fades them out. */}
+        {!generatorOpen && !isFullscreen && (
+          <div
+            aria-hidden="true"
+            data-testid="map-top-scrim"
+            className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 bg-gradient-to-b from-[var(--surface-2)] from-50% to-transparent"
+          />
+        )}
+
         {!generatorOpen && (
           <div
             data-testid="heat-filter-row"

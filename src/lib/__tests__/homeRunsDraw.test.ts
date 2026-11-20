@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildReplayScene, drawReplay, formatClock, REPLAY_CUES, replaySeconds } from '../homeRunsDraw'
 import { encodeIntegers, encodePolyline } from '../polyline'
 
-const labels = { title: '', subtitle: '', running: (n: number, of: number) => `${n} of ${of} out`, finished: () => '', histogram: 'by duration', elapsed: 'elapsed' }
+const labels = { title: '', subtitle: '', running: (n: number, of: number) => `${n} of ${of} out`, finished: () => '', histogram: 'by duration', elapsed: 'elapsed', minutes: (n: number) => `${n} min` }
 
 describe('formatClock', () => {
   it('reads hours, minutes and seconds', () => {
@@ -36,7 +36,8 @@ describe('buildReplayScene', () => {
     expect(y).toBeLessThanOrEqual(1)
     expect(scene.runs[1]!.times).toEqual([0, 1200])
     expect(scene.maxSeconds).toBe(1200)
-    expect(scene.binCount).toBe(2)
+    expect(scene.binStart).toBe(600)
+    expect(scene.binCount).toBe(1)
   })
 
   it('labels the finish-time bars and the timer, and counts the runs still out of all of them in ink', () => {
@@ -48,7 +49,7 @@ describe('buildReplayScene', () => {
     }) as unknown as CanvasRenderingContext2D
     drawReplay(ctx, scene, 300, 1080, 1920)
 
-    expect(texts.map((t) => t.text)).toEqual(expect.arrayContaining(['by duration', 'elapsed']))
+    expect(texts.map((t) => t.text)).toEqual(expect.arrayContaining(['by duration', 'elapsed', '10 min', '20 min']))
     expect(texts.find((t) => t.text === '2 of 2 out')?.fill).toBe('#ffffff')
   })
 

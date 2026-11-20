@@ -11,7 +11,7 @@ function point(km: number, longestKm: number, zones: Record<number, number> = { 
   return {
     date: '', label: '', distanceKm: km, sessionCount: 4, easyPace: 350, hardPace: 290, ef: null, efAdjusted: null, apparentTempC: null,
     easyAvgHr: null, hardAvgHr: null, cadenceSpm: null, groundContactMs: null, verticalOscillationMm: null, verticalRatioPct: null,
-    strideLengthM: null, avgRpe: null, aer: null, ana: null, zoneSeconds: zones, longestKm, longestDate: null, durationSeconds: 3600,
+    strideLengthM: null, avgRpe: null, aer: null, ana: null, zoneSeconds: zones, longestKm, longestDate: null, runs: 4, durationSeconds: 3600,
     thresholdSessions: 0, intervalSessions: 0,
   } as WeeklyTrendPoint
 }

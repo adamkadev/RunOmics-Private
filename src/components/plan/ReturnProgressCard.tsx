@@ -64,7 +64,7 @@ export function ReturnProgressCard({ progress, today }: { progress: ReturnProgre
                         style={{ height: minutes > 0 || current ? Math.max(current ? 8 : 4, (week.runningSec / peak) * BAR_AREA_PX) : 2 }}
                       />
                     </span>
-                    <span className="text-center text-[11px] tabular-nums text-muted-foreground" aria-hidden>{minutes}</span>
+                    <span className="text-center text-[11px] tabular-nums text-muted-foreground" aria-hidden>{current && minutes === 0 ? '\u00a0' : minutes}</span>
                     <span
                       className={cn('text-center text-[11px] leading-tight', current ? 'font-semibold text-accent-text' : 'whitespace-nowrap text-muted-foreground')}
                       aria-hidden

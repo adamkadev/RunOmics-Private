@@ -14,6 +14,7 @@ import {
   formView,
   heatView,
   longRunView,
+  LONG_RUN_MIN_RUNS,
   MISSED_CLUSTER,
   missedClusters,
   openingPeriod,
@@ -54,6 +55,7 @@ function week(date: string, over: Partial<WeeklyTrendPoint> = {}): WeeklyTrendPo
     zoneSeconds: {},
     longestKm: 0,
     longestDate: null,
+    runs: 4,
     thresholdSessions: 0,
     intervalSessions: 0,
     ...over,
@@ -247,6 +249,11 @@ describe('D3 Volume', () => {
     expect(view.bars.filter((b) => b.over)).toHaveLength(2)
     expect(view.bars.at(-1)).toMatchObject({ over: false, current: true })
     expect(view.over).toBe(2)
+  })
+
+  it('flags no week of fewer than four runs, where one run is most of any week', () => {
+    const few = rows.map((r) => (r.point ? { ...r, point: { ...r.point, runs: LONG_RUN_MIN_RUNS - 1 } } : r))
+    expect(longRunView(few)!.over).toBe(0)
   })
 
   it('takes the weekly average it is given while the window is the current one', () => {

@@ -67,9 +67,9 @@ describe('homeRunPeriods', () => {
     expect(homeRunPeriods(runs, '2026-11-13').map((tab) => [tab.id, tab.runs.length])).toEqual([['all', 95], ['2026', 25]])
   })
 
-  it('keeps last year until this one has its 21 runs, as in January', () => {
+  it('keeps last year beside this one until this one has its 21 runs, as in January', () => {
     const january = [...days('2024', 30), ...days('2025', 40), ...days('2026', 3)]
-    expect(homeRunPeriods(january, '2026-01-20').map((tab) => [tab.id, tab.runs.length])).toEqual([['all', 73], ['2025', 40]])
+    expect(homeRunPeriods(january, '2026-01-20').map((tab) => [tab.id, tab.runs.length])).toEqual([['all', 73], ['2025', 40], ['2026', 3]])
   })
 
   it('leaves the row out when the year would hold every run', () => {

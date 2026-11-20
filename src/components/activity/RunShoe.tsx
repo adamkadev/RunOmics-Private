@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { Footprints } from 'lucide-react'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { readRunShoe, writeRunShoe } from '@/lib/shoeChoices'
@@ -88,6 +89,7 @@ export function RunShoe({ activityId, shoe, options, garminUrl }: Props) {
           className={cn(RUN_CHIP_CLASS, !shown && 'font-medium text-accent-text')}
           data-testid="run-shoe"
         >
+        {shown && <Footprints size={14} aria-hidden="true" className="shrink-0" />}
         <span className="truncate">{shown ? shown.name : s.add}</span>
         </button>
         {open && (
@@ -115,6 +117,7 @@ export function RunShoe({ activityId, shoe, options, garminUrl }: Props) {
         className={cn(RUN_CHIP_CLASS, !shown && 'font-medium text-accent-text')}
         data-testid="run-shoe"
       >
+        {shown && <Footprints size={14} aria-hidden="true" className="shrink-0" />}
         <span className="truncate">{shown ? shown.name : s.add}</span>
       </a>
     )
@@ -122,6 +125,7 @@ export function RunShoe({ activityId, shoe, options, garminUrl }: Props) {
 
   return shown ? (
     <span className={RUN_CHIP_CLASS} data-testid="run-shoe">
+      <Footprints size={14} aria-hidden="true" className="shrink-0" />
       <span className="truncate">{shown.name}</span>
     </span>
   ) : null

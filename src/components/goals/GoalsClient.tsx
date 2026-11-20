@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import { cardClass } from '@/components/ui/Card'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import { useToday } from '@/lib/useToday'
 import { YearView } from './YearView'
 import type { SeasonBlock } from './SeasonTimeline'
@@ -82,10 +83,10 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
         {yearData ? (
           <YearView key={yearData.year} yearData={yearData} today={today} block={block} />
         ) : (
-          <section className={cardClass({ className: 'flex flex-col gap-2 py-10 text-center' })} data-testid="goals-empty">
-            <p className="text-sm font-semibold text-foreground">{t.goals.empty}</p>
-            <p className="text-sm text-subtle text-pretty">{t.goals.emptyHow}</p>
-            <Link href={GOALS_RACES_HREF} className="hit-44 self-center text-sm font-medium text-accent-text" data-testid="goals-empty-action">
+          <section className={cardClass({ className: 'flex flex-col gap-1.5' })} data-testid="goals-empty">
+            <CardTitle as="h2">{t.goals.empty}</CardTitle>
+            <p className="text-sm text-muted-foreground text-pretty">{t.goals.emptyHow}</p>
+            <Link href={GOALS_RACES_HREF} className="hit-44 self-start text-sm font-medium text-accent-text" data-testid="goals-empty-action">
               {t.goals.emptyAction}
             </Link>
           </section>

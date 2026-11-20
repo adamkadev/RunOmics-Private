@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { milestoneIcon } from './milestoneVisuals'
 
+const capitalize = (text: string) => text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
+
 function MilestoneRow({ milestone }: { milestone: Milestone }) {
   const { Icon, className } = milestoneIcon(milestone.type)
   return (
@@ -70,7 +72,7 @@ export function MilestonesTimeline({ milestones, today }: { milestones: Mileston
       {groupMilestonesByMonth(milestones).map(({ key, items }) => (
         <section key={key} className="space-y-2">
           <SectionDivider as="h2" className="px-0.5">
-            {formatDate(`${key}-01`, { precision: 'month', style: 'full', now })}
+            {capitalize(formatDate(`${key}-01`, { precision: 'month', style: 'full', now }))}
           </SectionDivider>
           <div className={cardClass({ padding: 'none', className: 'px-3.5 py-0.5' })}>
             <ol className="divide-y divide-border">
