@@ -63,9 +63,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, photoRoute, setPhotoRoute, size, setSize } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
-  // Without its reps the card is an easy run's: one colour on the route, the
-  // average pace back in the stats.
-  const card = useMemo(() => (showReps || !activity.reps ? activity : { ...activity, reps: null }), [activity, showReps])
+  // Without its reps the card is an easy run's: one colour on the route, the average pace back, the reps only shaded.
+  const card = useMemo(
+    () => (showReps || !activity.reps ? activity : { ...activity, reps: null, repWindows: activity.reps.windows }),
+    [activity, showReps],
+  )
   const { locationName: roughPlace } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
   // Measured again once Geist has loaded: the title's lines set the stats'

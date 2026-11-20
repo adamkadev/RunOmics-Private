@@ -19,7 +19,7 @@ export const MARKER_SPECS: Record<MarkerKind, MarkerSpec> = {
   finish: { diameter: 18, ring: 2.5, outline: 1 },
 }
 
-/** The share card's dots are drawn at this size, and the Activity map's match them. */
+/** The Activity map's dots; the share card draws them a fifth smaller. */
 export const MARKER_SCALE = 0.85
 
 export const JOIN_PX = 20

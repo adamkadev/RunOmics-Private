@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
-import { activityDetailView, runName, sessionNames, sessionTypes, shareActivity, shownType } from '../activityViews'
+import { activityDetailView, runName, sessionNames, sessionTypes, shareActivity, shareStrides, shownType } from '../activityViews'
 
 const ACTIVITY = {
   id: '90000273',
@@ -59,11 +59,11 @@ describe('activityDetailView', () => {
 })
 
 describe('shareActivity', () => {
-  it('carries the card, its route and the zone times, nothing else: no stream', () => {
+  it('carries the card, its route, the zone times and the trace\'s two streams, nothing else', () => {
     expect(Object.keys(shareActivity(ACTIVITY)).sort()).toEqual(
       [
         'avgHeartRate', 'date', 'dayOfWeek', 'description', 'distanceKm', 'durationSeconds', 'elevationGain',
-        'hrZones', 'id', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'type',
+        'hrSamples', 'hrZones', 'id', 'paceSamples', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'strides', 'type',
       ].sort()
     )
   })
@@ -193,5 +193,31 @@ describe('the type a run is shown as', () => {
     thursday.prescription = { ...thursday.prescription, title: 'Easy · 7.5 km + 6 strides', blocks: [] }
     expect(sessionNames([thursday], [friday])).toEqual({ 'run-4': 'Easy run + 6 strides' })
     expect(sessionNames([], [friday])).toEqual({})
+  })
+})
+
+describe('the share card of an easy run with strides', () => {
+  const STRIDES = [
+    lap('interval_active', 2400, 7000),
+    ...[1, 2, 3, 4, 5, 6].flatMap(() => [lap('interval_active', 20, 100), lap('interval_recovery', 60, 150)]),
+  ]
+
+  it('marks each stride where it was run, at the end of the run', () => {
+    const strides = shareStrides({ type: 'Base', splits: STRIDES })!
+    expect(strides.count).toBe(6)
+    expect(strides.windows).toHaveLength(6)
+    expect(strides.windows[0]![0]).toBeCloseTo(7000 / 8500)
+    expect(strides.windows.at(-1)![1]).toBeCloseTo((8500 - 150) / 8500)
+  })
+
+  it('leaves them out of the reps, so the card is still an easy run\'s', () => {
+    const card = shareActivity({ ...ACTIVITY, type: 'Base', splits: STRIDES })
+    expect(card.reps).toBeNull()
+    expect(card.strides?.count).toBe(6)
+  })
+
+  it('has none on an interval session or a run without laps', () => {
+    expect(shareStrides({ type: 'Threshold', splits: STRIDES })).toBeNull()
+    expect(shareStrides({ type: 'Base', splits: null })).toBeNull()
   })
 })

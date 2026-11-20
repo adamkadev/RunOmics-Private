@@ -7,11 +7,21 @@ export type ShareActivity = Pick<
   Activity,
   | 'id' | 'date' | 'dayOfWeek' | 'description' | 'distanceKm' | 'durationSeconds' | 'paceSecPerKm'
   | 'avgHeartRate' | 'elevationGain' | 'route' | 'hrZones'
-> & {
+> & Partial<Pick<Activity, 'hrSamples' | 'paceSamples'>> & {
   type?: ActivityType
   /** The coach's name for the session this run matched. */
   sessionTitle?: string | null
   reps?: ShareReps | null
+  strides?: ShareStrides | null
+  /** The reps' windows on a card that hides their pace, shaded on the heart-rate trace. */
+  repWindows?: [number, number][] | null
+}
+
+/** Accelerations after an easy run: marked on the route, never graded like reps. */
+export interface ShareStrides {
+  count: number
+  /** Shares of the run's distance. */
+  windows: [number, number][]
 }
 
 export interface ShareReps {
@@ -174,6 +184,9 @@ export type ShareRepDetail =
   | { kind: 'chips'; chips: ShareRepChip[] }
   | { kind: 'bars'; bars: number[]; range: string }
 
+const MAX_CHIPS = 4
+const BAR_MIN_SPAN = 15
+
 export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
   const paces = activity.reps?.paces ?? []
   if (paces.length < 2) return null
@@ -181,12 +194,14 @@ export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
   const slowest = Math.max(...paces)
   if (fastest === slowest) return null
   const s = t.activity.shareCard
-  if (paces.length <= 3) {
-    return { kind: 'chips', chips: paces.map((pace, i) => ({ label: s.rep(i + 1), pace: formatClock(pace) })) }
+  if (paces.length <= MAX_CHIPS) {
+    // Four chips leave no room for "Rep 1", nor "Fraction 1".
+    const label = paces.length === MAX_CHIPS ? s.repShort : s.rep
+    return { kind: 'chips', chips: paces.map((pace, i) => ({ label: label(i + 1), pace: formatClock(pace) })) }
   }
-  // Taller is faster.
-  const span = slowest - fastest
-  const bars = paces.map((pace) => (span > 0 ? 1 - (pace - fastest) / span : 1))
+  // Taller is faster, on a span of at least BAR_MIN_SPAN: 2 s between reps is not a third of a bar.
+  const span = Math.max(BAR_MIN_SPAN, slowest - fastest)
+  const bars = paces.map((pace) => 1 - (pace - fastest) / span)
   return { kind: 'bars', bars, range: s.repRange(formatClock(fastest), formatClock(slowest)) }
 }
 
@@ -211,8 +226,10 @@ const MIN_ROW_PERCENT = 5
 /** A sliver joins the zone above, or below when last, so the easy row stays whole; the bigger part keeps its colour. */
 export function mergeSlivers(rows: readonly ShareZoneRow[]): ShareZoneRow[] {
   const out = [...rows]
+  // A lone hard sliver stays apart: merged into the easy row, a run's strides would read as 100% easy.
+  const lastHard = (k: number) => k === 1 && out.length === 2 && out[0]!.from === 1
   for (;;) {
-    const i = out.findIndex((row) => row.percent < MIN_ROW_PERCENT)
+    const i = out.findIndex((row, k) => row.percent < MIN_ROW_PERCENT && !lastHard(k))
     if (i < 0 || out.length < 2) return out
     const j = i < out.length - 1 ? i + 1 : i - 1
     const [low, high] = i < j ? [out[i]!, out[j]!] : [out[j]!, out[i]!]

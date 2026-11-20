@@ -1306,13 +1306,20 @@ export const fr = {
       repPace: 'Allure des fractions',
       target: (pace: string) => `cible ${pace}`,
       rep: (n: number) => `Fraction ${n}`,
+      repShort: (n: number) => `n°${n}`,
       repRange: (fastest: string, slowest: string) => `Plus rapide ${fastest} · Plus lente ${slowest}`,
       // La légende du parcours d’une séance de fractionné : elle marque les fractions.
       repsLegend: 'Fractions',
+      stridesLegend: (n: number) => `${n} accélérations`,
       // L’interrupteur d’une séance de fractionné : éteint, la carte est celle d’une sortie facile.
       showReps: 'Voir l’allure des fractions',
       // L’interrupteur de la carte Photo : le tracé de la sortie sur la photo.
       showRoute: 'Voir le parcours',
+      // Le tracé de la sortie sur la carte Stats, dans le temps.
+      traceHr: 'Fréquence cardiaque',
+      tracePace: 'Allure',
+      traceTarget: 'Cible',
+      traceAvgHr: (bpm: number) => `moy. ${bpm} bpm`,
       // La première case de la ligne de stats sur la carte Parcours d’une séance de fractionné.
       repPaceStat: 'Allure fractions',
       secPerKm: (n: number) => `${n} s/km`,

@@ -13,9 +13,24 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
-- Share card: the Photo card has a Show route switch again, off by default, to draw the run's trace and its start and
-  finish over the photo, between the title and the stats. The trace is white on a dark photo and near-black on a light
-  one, judged from what lies under it, with a soft halo, and an interval session's reps are not coloured on it.
+- Share card: the Stats card draws the run's trace under its headline, heart rate coloured by zone on a run, pace
+  with the reps and their target band on an interval session; left out where the card has no room (a 4:5 interval card).
+- Share card: an easy run's strides are marked on the Route card in the Z5 pink, read from the watch's laps, with a
+  "6 strides" legend; they never become reps, so the card stays an easy run's.
+- Share card: the Photo card has a Show route switch again, off by default. It draws the run as a small outline in the
+  top-right corner beside the title, so the photo stays the picture: white on a dark photo and near-black on a light
+  one, judged from what lies under it, with a soft halo, and an interval session's reps in their colour over an edge in
+  the route's own tone.
+- Share card, Stats: strides show on the heart-rate trace in the Route card's pink, read from their laps and drawn at
+  their peak; with Show rep pace off, the reps are shaded behind the heart rate. On 9:16 the trace grows by half, an
+  interval card's zone strip sits right under it, and the whole block is centred. A steady run's heart rate keeps a
+  40 bpm scale, so its noise no longer reads as spikes. A lone hard sliver keeps its own row on the zone bar (an easy run with
+  strides read "Z1–Z3 Easy 100%" beside "96% easy").
+- Share card: four reps read as chips like three ("#1 4:21"), the bars kept for five or more and drawn on a span of
+  at least 15 s, so reps 2 s apart no longer look a third apart. The chips and the trace panel take a tint of the text,
+  so they no longer vanish into the card's glow and match each other on light.
+- Share card: the start dot and chequered finish are a fifth smaller on the card than on the Activity map, where they
+  outweighed the route.
 - Share card: a famous place's mark stays where the place is. Only its name moves off the route, to a free side of the
   mark, and a place whose mark cannot show where it is stays off the card (a cathedral's mark moved with its name).
 - A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
@@ -327,6 +342,10 @@ All notable changes to this project are documented in this file.
 - French: the morning check-in names « Humeur », not "Mood". Running jargon (Splits, RPE) stays in English.
 - Smooth scrolling is off under "Reduce motion".
 - French: the map page is « Carte » in the sidebar and for screen readers, not "Heatmap".
+
+### Security
+
+- Next.js 16.4.2 → 16.4.6 (with `eslint-config-next` and `@next/bundle-analyzer`), for a published security advisory.
 
 ## [3.3.0] - 2026-10-28
 

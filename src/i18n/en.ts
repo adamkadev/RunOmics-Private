@@ -1396,13 +1396,22 @@ export const en = {
       repPace: 'Rep pace',
       target: (pace: string) => `target ${pace}`,
       rep: (n: number) => `Rep ${n}`,
+      // A rep's chip when four share the row.
+      repShort: (n: number) => `#${n}`,
       repRange: (fastest: string, slowest: string) => `Fastest ${fastest} · Slowest ${slowest}`,
       // The route's legend on an interval session: the reps are what it marks.
       repsLegend: 'Reps',
+      // The route's legend on an easy run that ended with strides.
+      stridesLegend: (n: number) => `${n} strides`,
       // The switch on an interval session: off, the card is an easy run's.
       showReps: 'Show rep pace',
       // The switch on the Photo card: the run's trace over the photo.
       showRoute: 'Show route',
+      // The Stats card's trace of the run, over time.
+      traceHr: 'Heart rate',
+      tracePace: 'Pace',
+      traceTarget: 'Target',
+      traceAvgHr: (bpm: number) => `avg ${bpm} bpm`,
       // The stat row's first cell on an interval session's Route card.
       repPaceStat: 'Rep pace',
       // The accent line under the header of an interval session: "9 s/km under target".

@@ -67,6 +67,12 @@ describe('shareZones', () => {
     expect(zoneTint({ zone: 4, tint: 3 })).toBe(3)
   })
 
+  it('keeps a lone hard sliver apart from the easy row', () => {
+    expect(mergeSlivers([{ zone: 2, from: 1, percent: 97 }, { zone: 3, percent: 1 }, { zone: 4, percent: 1 }, { zone: 5, percent: 1 }])).toEqual([
+      { zone: 2, from: 1, percent: 97 }, { zone: 5, from: 3, percent: 3 },
+    ])
+  })
+
   it('heads an easy session that ran mostly harder with that zone, merged as its legend row', () => {
     const footing = { ...RUN, type: 'Base' as const, hrZones: [300, 900, 2400, 150, 0].map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) }
     expect(shareZones(footing)!.headline).toEqual({ percent: 68, label: 'in Z3–Z4' })
@@ -162,6 +168,25 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(many.range).toBe('Fastest 4:20 · Slowest 4:30')
     expect(shareRepDetail({ ...RUN, reps: { ...REPS, paces: [264, 264, 264] } })).toBeNull()
     expect(shareRepDetail(RUN)).toBeNull()
+  })
+
+  it('keeps four reps as chips, numbered short to fit the row', () => {
+    expect(shareRepDetail({ ...RUN, reps: { ...REPS, count: 4, paces: [261, 263, 262, 262] } })).toEqual({
+      kind: 'chips',
+      chips: [
+        { label: '#1', pace: '4:21' },
+        { label: '#2', pace: '4:23' },
+        { label: '#3', pace: '4:22' },
+        { label: '#4', pace: '4:22' },
+      ],
+    })
+  })
+
+  it('draws reps a few seconds apart as bars of nearly one height', () => {
+    const close = shareRepDetail({ ...RUN, reps: { ...REPS, count: 5, paces: [261, 263, 262, 262, 261] } })
+    if (close?.kind !== 'bars') throw new Error('expected bars')
+    expect(Math.min(...close.bars)).toBeGreaterThan(0.8)
+    expect(Math.max(...close.bars)).toBe(1)
   })
 
   it('titles a rep session by its set and its pace, its type leading the subtitle', () => {
