@@ -8,7 +8,7 @@ import { SURFACES, TOKEN_BLOCKS, ZONE_HEX } from '@/lib/themeTokens'
  * Z3's violet sits close to its neighbours for a red-green colour-blind eye, so the share card names each zone.
  */
 const NORMAL_MIN = 9
-const CVD_FLOOR = 2.5
+const CVD_FLOOR = 7
 
 type Matrix = readonly [readonly number[], readonly number[], readonly number[]]
 const PROTAN: Matrix = [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]]
@@ -45,9 +45,9 @@ describe('the zone scale (design reviews, Oct 2026)', () => {
     }
   })
 
-  it('takes the 3.0 dark scale and the reviewed light Z3', () => {
-    expect(ZONE_HEX.dark).toEqual(['#a9d3e6', '#5b9cf5', '#8f7cf0', '#c565f8', '#f4438f'])
-    expect(ZONE_HEX.light[2]).toBe('#6a52d9')
+  it('takes the colour-blind-safe scale', () => {
+    expect(ZONE_HEX.dark).toEqual(['#a9d3e6', '#0e86d2', '#b488fc', '#d44fcf', '#f4438f'])
+    expect(ZONE_HEX.light).toEqual(['#5f97b0', '#2f74e0', '#651aa2', '#9549dc', '#d63a77'])
   })
 
   // Plan's session bars write their minutes on the zone's fill in --zone-ink.
