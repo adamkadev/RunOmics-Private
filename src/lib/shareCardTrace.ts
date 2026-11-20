@@ -1,6 +1,7 @@
 import type { ShareActivity } from '@/lib/shareCardStats'
 
 export const TRACE_POINTS = 90
+const MIN_HR_SPAN = 40
 /** Past the five zones: a stride on the heart-rate trace. */
 export const STRIDE_TAG = 6
 const MIN_SAMPLES = 20
@@ -108,8 +109,12 @@ function paceTrace(activity: ShareActivity, paces: number[]): ShareTrace {
 
 function hrTrace(activity: ShareActivity, hr: number[]): ShareTrace {
   const sorted = hr.filter((v) => v > 0).sort((a, b) => a - b)
-  const lo = quantile(sorted, 0.02) - 4
-  const hi = quantile(sorted, 1) + 4
+  const low = quantile(sorted, 0.02) - 4
+  const high = quantile(sorted, 1) + 4
+  // A steady run's 20 bpm stretched to the full height would read as spikes.
+  const span = Math.max(MIN_HR_SPAN, high - low)
+  const lo = (low + high - span) / 2
+  const hi = lo + span
   const n = hr.length
   const paces = valid(activity.paceSamples)
   const shares = paces?.length === n ? distanceShares(paces) : hr.map((_, i) => i / Math.max(1, n - 1))

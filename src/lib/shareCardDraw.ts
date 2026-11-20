@@ -6,12 +6,15 @@ import {
 import { W, H, shareCardHeight, type ShareDesign, type SharePalette, type ShareSize } from '@/lib/shareCardPalette'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
-import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
+import { drawRouteMarker, drawStartDot, endsJoined, MARKER_CLEARANCE, MARKER_SCALE as MAP_MARKER_SCALE, MARKER_SPECS } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatKm, formatPercent } from '@/lib/formatters'
 import { repPhase, STILL_MOTION, videoMotion, type VideoMotion } from '@/lib/shareCardTimeline'
 import { shareTrace, STRIDE_TAG, type ShareTrace } from '@/lib/shareCardTrace'
+
+/** A fifth under the map's: on a 300 px card its dots outweighed a 2.5 px route. */
+const MARKER_SCALE = MAP_MARKER_SCALE * 0.8
 
 function repColor(activity: ShareActivity, palette: SharePalette): string {
   return palette.zones[runTypeZone(activity.type) - 1] ?? palette.zones[3]!
@@ -1076,16 +1079,21 @@ function drawZoneStrip(ctx: Ctx, { palette, fonts }: ShareCardScene, zones: Shar
 const REP_CAPTION = 12
 const REP_CAPTION_GAP = 10
 const ZONE_STRIP_PAD_BOTTOM = 14
+const ZONE_STRIP_GAP = 16
 
-/** The rep pace leads; the zones drop to the strip at the middle's foot. */
+/** The rep pace leads; the zones drop to the strip at the middle's foot, or under the trace when there is one. */
 function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadline, { middleH }: ShareCardLayout, trace: ShareTrace | null) {
   const { activity, palette, fonts } = scene
   const zones = shareZones(activity)
   const detail = shareRepDetail(activity)
-  const stripTop = zones ? middleH - ZONE_STRIP_PAD_BOTTOM - ZONE_STRIP_H : middleH
   const detailH = detail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[detail.kind] : 0
-  const traceH = trace ? TRACE_PANEL_GAP + TRACE_PANEL_H : 0
-  const top = Math.max(0, (stripTop - (HEADLINE_SIZE + REP_CAPTION_GAP + REP_CAPTION + detailH + traceH)) / 2)
+  const blockH = HEADLINE_SIZE + REP_CAPTION_GAP + REP_CAPTION + detailH
+  const stripH = zones ? ZONE_STRIP_GAP + ZONE_STRIP_H : 0
+  const room = middleH - ZONE_STRIP_PAD_BOTTOM
+  const panelH = trace ? Math.max(TRACE_PANEL_H, Math.min(TRACE_PANEL_MAX_H, room - blockH - TRACE_PANEL_GAP - stripH)) : 0
+  const groupH = trace ? blockH + TRACE_PANEL_GAP + panelH + stripH : blockH
+  const stripTop = trace ? null : zones ? middleH - ZONE_STRIP_PAD_BOTTOM - ZONE_STRIP_H : middleH
+  const top = Math.max(0, ((stripTop ?? room) - groupH) / 2)
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
@@ -1116,8 +1124,9 @@ function drawRepMiddle(ctx: Ctx, scene: ShareCardScene, headline: ShareRepHeadli
 
   const ink = { tx: palette.tx, mu: palette.mu, mark: palette.tx }
   if (detail) drawRepDetail(ctx, scene, detail, captionTop + REP_CAPTION + REP_DETAIL_PAD_TOP, ink)
-  if (trace) drawTrace(ctx, scene, trace, captionTop + REP_CAPTION + detailH + TRACE_PANEL_GAP)
-  if (zones) drawZoneStrip(ctx, scene, zones, stripTop)
+  const traceTop = captionTop + REP_CAPTION + detailH + TRACE_PANEL_GAP
+  if (trace) drawTrace(ctx, scene, trace, traceTop, panelH)
+  if (zones) drawZoneStrip(ctx, scene, zones, stripTop ?? traceTop + panelH + ZONE_STRIP_GAP)
 }
 
 const TRACE_PANEL_H = 74
@@ -1128,7 +1137,7 @@ const TRACE_PANEL_GAP = 12
 const TRACE_PANEL_FOOT = 4
 /** What the zones or the rep pace need above the panel, or the panel is left out. */
 const TRACE_ROOM = { zones: 120, reps: 156 } as const
-/** The zones' height with fixed gaps: a taller card gives the rest to the trace, then above the hero. */
+/** The zones' height with fixed gaps: a taller card gives the rest to the trace, then centres the two. */
 const ZONES_H = 150
 const TRACE_PANEL_MAX_H = TRACE_PANEL_H * 1.5
 
@@ -1222,7 +1231,7 @@ function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
   const panelH = Math.min(TRACE_PANEL_MAX_H, layout.middleH - zonesH - TRACE_PANEL_GAP - TRACE_PANEL_FOOT)
   const spare = layout.middleH - zonesH - TRACE_PANEL_GAP - panelH - TRACE_PANEL_FOOT
   ctx.save()
-  ctx.translate(0, spare)
+  ctx.translate(0, spare / 2)
   drawZones(ctx, scene, { ...layout, middleH: zonesH })
   drawTrace(ctx, scene, shown, zonesH + TRACE_PANEL_GAP, panelH)
   ctx.restore()

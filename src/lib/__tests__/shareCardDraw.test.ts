@@ -320,8 +320,7 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === ruleY && o.args[0] === 0 && o.args[2] === W && o.args[3] === 1)).toBe(true)
   })
 
-  // The Activity map's markers (routeMarkers) at the card's 0.85: the finish's outline, the start's outline and dot.
-  const k = 0.85
+  const k = 0.85 * 0.8
   const FINISH_OUTLINE = 9 * k + 1 * k
   const START_OUTLINE = 8 * k + 1 * k
   const LOOP_OUTLINE = 11 * k + 1.5 * k
@@ -490,16 +489,32 @@ describe('the 9:16 story', () => {
     expect(ops.find((o) => o.op === 'drawImage')?.args.slice(1)).toEqual([0, 0, W, W * 16 / 9])
   })
 
-  it('grows the Stats card\'s trace by half on a story, the rest above the hero', () => {
+  it('grows the Stats card\'s trace by half on a story, centred with the zones in the rest', () => {
     const hrSamples = Array.from({ length: 120 }, (_, i) => 140 + (i % 5))
     const activity = { ...RUN, hrSamples }
     const panel = (ops: Op[]) => ops.find((o) => o.op === 'roundRect' && o.args[0] === 16 && o.args[4] === 12)!
-    const portrait = panel(draw({ design: 'stats', activity }))
-    const story = panel(draw({ design: 'stats', activity, size: 'story' }))
-    expect(portrait.args[3]).toBe(74)
-    expect(story.args[3]).toBe(111)
     const hero = (ops: Op[]) => ops.find((o) => o.op === 'fillText' && o.args[0] === '80%')!
-    expect(hero(draw({ design: 'stats', activity, size: 'story' })).ty).toBeGreaterThan(hero(draw({ design: 'stats', activity })).ty)
+    const portraitOps = draw({ design: 'stats', activity })
+    const storyOps = draw({ design: 'stats', activity, size: 'story' })
+    expect(panel(portraitOps).args[3]).toBe(74)
+    expect(panel(storyOps).args[3]).toBe(111)
+    const story = shareCardLayout(recorder().ctx, activity, FALLBACK_FONTS, 'stats', 'story')
+    const above = hero(storyOps).ty - hero(portraitOps).ty
+    const { ty, args } = panel(storyOps)
+    const below = story.middleTop + story.middleH - 4 - (ty + (args[1] as number) + 111)
+    expect(above).toBeGreaterThan(0)
+    expect(above).toBeCloseTo(below, 6)
+  })
+
+  it('grows an interval Stats card\'s trace on a story, the zone strip right under it', () => {
+    const paceSamples = Array.from({ length: 120 }, (_, i) => (i % 40 < 20 ? 262 : 360))
+    const activity = { ...RUN, type: 'Threshold' as const, reps: REPS, paceSamples }
+    const ops = draw({ design: 'stats', activity, size: 'story' })
+    const panel = ops.find((o) => o.op === 'roundRect' && o.args[0] === 16 && o.args[4] === 12)!
+    expect(panel.args[3]).toBeGreaterThan(74)
+    const panelBottom = panel.ty + (panel.args[1] as number) + (panel.args[3] as number)
+    const strip = ops.find((o) => o.ty + (o.args[1] as number) > panelBottom && o.op === 'fillText' && /^Z\d/.test(o.args[0] as string))!
+    expect(strip.ty + (strip.args[1] as number) - panelBottom).toBeLessThan(40)
   })
 
   it('draws the strides on the Stats card\'s trace in the Route card\'s pink', () => {
@@ -653,7 +668,7 @@ describe('the place names on the Route card', () => {
 
 describe('the route video\'s frames', () => {
   const session = { ...RUN, type: 'Threshold' as const, reps: REPS }
-  const k = 0.85
+  const k = 0.85 * 0.8
   const START_DOT = 8 * k - 2.5 * k
   const FINISH_OUTLINE = 9 * k + 1 * k
   const HEAD_DOT = (8 - 2.5) * (11 / 16)
@@ -834,8 +849,8 @@ describe('arranging the place names', () => {
       { text: 'Au Bout', x: 220, y: 250, size: 10, color: '#8d9391', opacity: 1 },
     ] })
     expect(texts(ops)).not.toContain('Au Bout')
-    expect(shareMarkerRadius('finish', palette)).toBeCloseTo(8.5, 9)
-    expect(markerObstacles(pts, palette).map((o) => o.r)).toEqual([shareMarkerRadius('start', palette) + 4, 8.5 + 4])
+    expect(shareMarkerRadius('finish', palette)).toBeCloseTo(6.8, 9)
+    expect(markerObstacles(pts, palette).map((o) => o.r)).toEqual([shareMarkerRadius('start', palette) + 4, shareMarkerRadius('finish', palette) + 4])
   })
 
   it('breaks a long park name over two balanced lines', () => {

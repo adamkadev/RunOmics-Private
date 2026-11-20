@@ -61,6 +61,12 @@ describe('shareTrace', () => {
     expect(meanY(marked.points.slice(-10))).toBeLessThan(meanY(plain.points.slice(-10)))
   })
 
+  it('keeps a steady run\'s heart rate flat, never stretched to the full height', () => {
+    const steady = Array.from({ length: 150 }, (_, i) => 136 + (i % 7))
+    const ys = shareTrace({ ...RUN, hrSamples: steady })!.points.map((p) => p.y)
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.4)
+  })
+
   it('shades nothing on a run without reps', () => {
     expect(shareTrace({ ...RUN, hrSamples: easyHr })!.shade).toEqual([])
   })

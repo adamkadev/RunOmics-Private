@@ -22,9 +22,12 @@ All notable changes to this project are documented in this file.
   one, judged from what lies under it, with a soft halo, and an interval session's reps in their colour over an edge in
   the route's own tone.
 - Share card, Stats: strides show on the heart-rate trace in the Route card's pink, read from their laps and drawn at
-  their peak; with Show rep pace off, the reps are shaded behind the heart rate. On 9:16 the trace grows by half and the
-  rest of the height goes above the headline. A lone hard sliver keeps its own row on the zone bar (an easy run with
+  their peak; with Show rep pace off, the reps are shaded behind the heart rate. On 9:16 the trace grows by half, an
+  interval card's zone strip sits right under it, and the whole block is centred. A steady run's heart rate keeps a
+  40 bpm scale, so its noise no longer reads as spikes. A lone hard sliver keeps its own row on the zone bar (an easy run with
   strides read "Z1–Z3 Easy 100%" beside "96% easy").
+- Share card: the start dot and chequered finish are a fifth smaller on the card than on the Activity map, where they
+  outweighed the route.
 - Share card: a famous place's mark stays where the place is. Only its name moves off the route, to a free side of the
   mark, and a place whose mark cannot show where it is stays off the card (a cathedral's mark moved with its name).
 - A week's planned kilometres count a session set by time from its steps' paces, and when a session still has no
