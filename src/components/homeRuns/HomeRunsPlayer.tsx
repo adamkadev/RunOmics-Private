@@ -31,20 +31,17 @@ interface PeriodTab {
 /** The runs a start point needs to be replayed at all (GetHomeRuns): a year takes over from the last one at the same count. */
 export const YEAR_MIN_RUNS = 21
 
-/**
- * All, and one year: this one once it holds more than 20 runs, last year until then, so January never replays three
- * runs. None when the year would hold every run.
- */
+/** Last year beside this one until it holds 20 runs, so January never replays three runs alone. */
 export function homeRunPeriods(runs: HomeRun[], today: string): PeriodTab[] {
   const inYear = (year: number) => runs.filter((run) => run.date.startsWith(String(year)))
   const current = Number(today.slice(0, 4))
   const thisYear = inYear(current)
-  const [year, yearRuns] = thisYear.length >= YEAR_MIN_RUNS ? [current, thisYear] : [current - 1, inYear(current - 1)]
-  if (yearRuns.length === 0 || yearRuns.length === runs.length) return []
-  return [
-    { id: 'all', label: t.homeRuns.periodAll, runs },
-    { id: String(year), label: String(year), runs: yearRuns },
-  ]
+  const years = thisYear.length >= YEAR_MIN_RUNS ? [current] : [current - 1, current]
+  const tabs = years
+    .map((year): PeriodTab => ({ id: String(year), label: String(year), runs: year === current ? thisYear : inYear(year) }))
+    .filter((tab) => tab.runs.length > 0)
+  if (tabs.length === 0 || tabs.some((tab) => tab.runs.length === runs.length)) return []
+  return [{ id: 'all', label: t.homeRuns.periodAll, runs }, ...tabs]
 }
 
 /** The start point a link or the switcher picked (`?start=2`), the busiest one by default. */
@@ -100,6 +97,7 @@ export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: 
       finished: t.homeRuns.finished,
       histogram: t.homeRuns.histogram,
       elapsed: t.homeRuns.elapsed,
+      minutes: t.homeRuns.minutes,
     },
   }), [runs, accentId, spots, spot])
 
@@ -223,16 +221,20 @@ export function HomeRunsPlayer({ spots, today }: { spots: HomeRunSpot[]; today: 
         role="img"
         aria-label={t.homeRuns.canvasLabel(runs.length)}
         data-testid="home-runs-canvas"
-        className="aspect-[9/16] w-full max-w-[420px] rounded-[24px] bg-[#0a0c10]"
+        className="aspect-[9/16] w-full max-w-[420px] rounded-[24px] bg-[#0a0c10] ring-1 ring-inset ring-border"
       />
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button variant="secondary" onClick={() => (time >= REPLAY_CUES.end ? restart() : setPlaying((p) => !p))} data-testid="home-runs-play">
-          {playing ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
-          {playing ? t.homeRuns.pause : t.homeRuns.play}
+        <Button
+          variant="secondary"
+          onClick={() => (time >= REPLAY_CUES.end ? restart() : setPlaying((p) => !p))}
+          aria-label={playing ? t.homeRuns.pause : t.homeRuns.play}
+          className="size-11 px-0"
+          data-testid="home-runs-play"
+        >
+          {playing ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
         </Button>
-        <Button variant="secondary" onClick={restart} data-testid="home-runs-restart">
-          <RotateCcw size={16} aria-hidden="true" />
-          {t.homeRuns.restart}
+        <Button variant="secondary" onClick={restart} aria-label={t.homeRuns.restart} className="size-11 px-0" data-testid="home-runs-restart">
+          <RotateCcw size={18} aria-hidden="true" />
         </Button>
         {encoder && (videoFile ? (
           <Button onClick={() => void shareOrSaveFile(videoFile, t.homeRuns.title)} data-testid="home-runs-save">

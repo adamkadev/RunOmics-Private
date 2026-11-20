@@ -7,10 +7,12 @@ import { ActivityThumbRow } from './ActivityThumbRow'
 import { ActivityFilterSheet } from './ActivityFilterSheet'
 import {
   ALL_RUNS,
+  FILTER_GROUPS,
   GROUP_IDS,
   checkedTypes,
   countByType,
   filterTypes,
+  matchingCount,
   normalizeTypes,
   parseFilter,
   parseSort,
@@ -435,7 +437,7 @@ export function ActivityListClient({
                     <X size={14} aria-hidden="true" className="shrink-0" />
                   </Pill>
                 ) : (
-                  GROUP_IDS.map((group) => (
+                  GROUP_IDS.filter((group) => group === 'all' || filter.group === group || matchingCount(typeCounts, FILTER_GROUPS[group]) > 0).map((group) => (
                     <Pill
                       key={group}
                       as="button"
@@ -532,7 +534,7 @@ export function ActivityListClient({
                     <section key={block.key} data-testid="month">
                       <div
                         data-sticky-strip
-                        className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
+                        className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5"
                         style={{ top: `calc(${PINNED_TOP} + ${PINNED_ROW_H}px)` }}
                       >
                         <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>

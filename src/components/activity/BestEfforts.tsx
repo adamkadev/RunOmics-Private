@@ -25,7 +25,7 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })}>
       <h3 className="text-headline text-foreground">{s.title}</h3>
-      <div className="grid grid-cols-3 gap-2.5" data-testid="best-efforts">
+      <div className={cn('grid gap-2.5', entries.length === 1 ? 'grid-cols-1' : entries.length === 2 ? 'grid-cols-2' : 'grid-cols-3')} data-testid="best-efforts">
         {entries.map(({ key, label, km, seconds, rank }) => (
           <div key={key} className="relative flex min-w-0 flex-col gap-0.5 rounded-xl bg-[var(--surface-2)] px-3 py-3 sm:px-3.5">
             <span className="truncate text-xs text-muted-foreground">{s.distances[key] ?? label}</span>

@@ -69,7 +69,8 @@ export function GlassTabBar() {
     setTapped(null)
   }
   const activeHref = tapped ?? currentHref
-  const activeIndex = Math.max(0, TAB_HREFS.indexOf(activeHref as (typeof TAB_HREFS)[number]))
+  const tabIndex = TAB_HREFS.indexOf(activeHref as (typeof TAB_HREFS)[number])
+  const activeIndex = Math.max(0, tabIndex)
   const current = TABS.find((tab) => tab.href === currentHref) ?? TABS[0]
   const CurrentIcon = current.icon
   const { rowRef, lens, rowHandlers } = useTabLens({
@@ -121,7 +122,7 @@ export function GlassTabBar() {
             )}
           >
             <div ref={rowRef} {...rowHandlers} className="relative flex h-full" style={{ touchAction: 'none' }}>
-            <Platter index={activeIndex} count={TABS.length} lens={lens} />
+            {(tabIndex >= 0 || lens) && <Platter index={activeIndex} count={TABS.length} lens={lens} />}
             {TABS.map(({ href, label, icon: Icon }) => {
               const active = currentHref === href
               const lit = activeHref === href

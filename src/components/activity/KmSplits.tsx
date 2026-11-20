@@ -7,6 +7,7 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { MINUS, formatDistance, formatDuration, formatClock, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { intendedType } from '@/lib/activityTitle'
 import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
 import type { NumberRange } from '@/domain/coaching/types'
 import type { ActivityDetailView } from './activityViews'
@@ -32,8 +33,8 @@ const TYPE_COLORS: Record<string, string> = {
 
 const NUMBERED_TYPES = new Set(['interval_active', 'lap'])
 
-const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem]'
-const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
+const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_3.25rem]'
+const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_3.25rem_1.75rem]'
 
 /**
  * The share of the run a single lap must cover to be the whole run: a session
@@ -216,7 +217,18 @@ function WholeRunLap({
 }
 
 /** `total` is the run's own: summed laps each rounded to the second read 58:04 under a 58:03 header. */
-function LapTable({ splits, bare = false, total }: { splits: ActivitySplit[]; bare?: boolean; total?: { durationSec: number; distanceKm: number } }) {
+function LapTable({
+  splits,
+  bare = false,
+  total,
+  workLabel,
+}: {
+  splits: ActivitySplit[]
+  bare?: boolean
+  total?: { durationSec: number; distanceKm: number }
+  /** The run's own type for its lone work block, which is not an interval. */
+  workLabel?: string
+}) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const showHr = splits.some((s) => s.avgHr !== null)
   const rowCls = showHr ? ROW_HR : ROW_NO_HR
@@ -260,8 +272,9 @@ function LapTable({ splits, bare = false, total }: { splits: ActivitySplit[]; ba
           return splits.map((split: ActivitySplit, i: number) => {
             const isNumbered = NUMBERED_TYPES.has(split.type)
             if (isNumbered) splitNum++
-            const typeLabel = t.activity.splits.intervalTypes[split.type] ?? split.type
-            const typeColor = TYPE_COLORS[split.type] ?? 'text-foreground'
+            const loneWork = workLabel !== undefined && split.type === 'interval_active'
+            const typeLabel = loneWork ? workLabel : (t.activity.splits.intervalTypes[split.type] ?? split.type)
+            const typeColor = loneWork ? 'text-foreground' : (TYPE_COLORS[split.type] ?? 'text-foreground')
             const hasSubLaps = isNumbered && split.laps.length >= 2
             const isOpen = expanded.has(i)
 
@@ -356,12 +369,13 @@ export function KmSplits({ activity, plannedRepPace = null, repsOnOverview = fal
   const lapRows = lapsOnly ? laps : splits
   const hasLaps = set !== null || lapRows.length > 1 || (lapRows[0]?.laps.length ?? 0) > 1
   const wholeRun = set === null && lapRows.length === 1 ? lapRows[0]! : null
+  const workLabel = splits.filter((s) => s.type === 'interval_active').length === 1 ? t.activityTypes[intendedType(activity)] : undefined
   const lapsView = set ? (
     <IntervalSet set={set} bare={hasKm} />
   ) : wholeRun ? (
     <WholeRunLap split={wholeRun} activityDistanceKm={activity.distanceKm} bare={hasKm} onKmSplits={hasKm ? () => setView('km') : undefined} />
   ) : (
-    <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} total={activity.distanceKm > 0 && activity.durationSeconds > 0 ? { durationSec: activity.durationSeconds, distanceKm: activity.distanceKm } : undefined} />
+    <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} workLabel={workLabel} total={activity.distanceKm > 0 && activity.durationSeconds > 0 ? { durationSec: activity.durationSeconds, distanceKm: activity.distanceKm } : undefined} />
   )
 
   if (!hasKm) return lapsView

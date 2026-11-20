@@ -32,11 +32,10 @@ describe('BestEfforts', () => {
     expect(screen.getByText('PR')).toBeInTheDocument()
   })
 
-  // The 1 km's time is its pace, so it is said once.
-  it('lays efforts out in three columns of distance, time and pace', () => {
+  it('lays efforts out in as many columns as efforts, up to three', () => {
     render(<BestEfforts bestEfforts={{ '1k': 223, '5k': 1205 }} qualifiedEfforts={[]} />)
 
-    expect(screen.getByTestId('best-efforts').className).toContain('grid-cols-3')
+    expect(screen.getByTestId('best-efforts').className).toContain('grid-cols-2')
     expect(screen.getByText('1 km')).toBeInTheDocument()
     expect(screen.getByText('5 km')).toBeInTheDocument()
     expect(screen.getAllByText(/\/km/)).toHaveLength(1)

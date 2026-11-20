@@ -72,7 +72,7 @@ interface BarAction {
 
 /** As the page header's controls, so a mirrored copy lands on the original. */
 const SIDE_PAD = 16
-const TITLE_MAX = 150
+const TITLE_MAX = 260
 /** The least room between the title and either side's controls. */
 const TITLE_GAP = 8
 /** A lead-aligned title's room after the back circle. */

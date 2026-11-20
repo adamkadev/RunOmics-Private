@@ -80,37 +80,40 @@ function FormLine({ points }: { points: FormPoint[] }) {
   )
 }
 
-function RaceDayForm({ form }: { form: FormForecast }) {
+/** Inside this many days, a missing forecast is no longer worth a word. */
+const FORM_NOTE_MIN_DAYS = 3
+
+function RaceDayForm({ form, daysUntil }: { form: FormForecast; daysUntil: number }) {
   const r = t.race
   const readiness = t.dashboard.readiness
+  if (form.kind !== 'forecast') {
+    if (daysUntil < FORM_NOTE_MIN_DAYS) return null
+    return (
+      <p className="px-1 text-[12px] text-muted-foreground text-pretty" data-testid="race-form-unavailable">
+        {form.kind === 'shortHistory'
+          ? r.formShortHistory(form.runningDays, form.neededDays)
+          : form.plannedThrough
+            ? r.formPlanShort(formatDate(form.plannedThrough))
+            : r.formNoPlan}
+      </p>
+    )
+  }
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="race-form" data-state={form.kind}>
       <CardTitle as="h2">{r.formTitle}</CardTitle>
-      {form.kind === 'forecast' ? (
-        <>
-          <StatGrid columns={3}>
-            <Stat
-              label={readiness.formLabel}
-              value={<span data-testid="race-form-tsb">{formatDelta(Math.round(form.raceDay.tsb))}</span>}
-              meaning={t.formBand[formBand(form.raceDay.tsb)]}
-            />
-            <Stat label={readiness.ctl} value={Math.round(form.raceDay.ctl)} />
-            <Stat label={readiness.atl} value={Math.round(form.raceDay.atl)} />
-          </StatGrid>
-          {form.points.length >= 2 && <FormLine points={form.points} />}
-          <p className="text-[12px] text-muted-foreground text-pretty">
-            {r.formToday(formatDelta(Math.round(form.tsbToday)))} {r.formCaption}
-          </p>
-        </>
-      ) : (
-        <p className="text-sm text-muted-foreground text-pretty" data-testid="race-form-unavailable">
-          {form.kind === 'shortHistory'
-            ? r.formShortHistory(form.runningDays, form.neededDays)
-            : form.plannedThrough
-              ? r.formPlanShort(formatDate(form.plannedThrough))
-              : r.formNoPlan}
-        </p>
-      )}
+      <StatGrid columns={3}>
+        <Stat
+          label={readiness.formLabel}
+          value={<span data-testid="race-form-tsb">{formatDelta(Math.round(form.raceDay.tsb))}</span>}
+          meaning={t.formBand[formBand(form.raceDay.tsb)]}
+        />
+        <Stat label={readiness.ctl} value={Math.round(form.raceDay.ctl)} />
+        <Stat label={readiness.atl} value={Math.round(form.raceDay.atl)} />
+      </StatGrid>
+      {form.points.length >= 2 && <FormLine points={form.points} />}
+      <p className="text-[12px] text-muted-foreground text-pretty">
+        {r.formToday(formatDelta(Math.round(form.tsbToday)))} {r.formCaption}
+      </p>
     </section>
   )
 }
@@ -118,7 +121,7 @@ function RaceDayForm({ form }: { form: FormForecast }) {
 export function NoRace({ back }: { back?: ReactNode }) {
   return (
     <div className="flex flex-col gap-3.5">
-      <PageHeader back={back} title={<FitTitle text={t.race.title} />} />
+      <PageHeader back={back} title={<FitTitle text={t.race.title} />} className="mb-1.5" />
       <section className={cardClass({ className: 'flex flex-col gap-1.5' })} data-testid="race-none">
         <CardTitle as="h2">{t.race.noneTitle}</CardTitle>
         <p className="text-sm text-muted-foreground text-pretty">{t.race.none}</p>
@@ -173,7 +176,7 @@ export function RaceView({ data, back }: { data: RacePageData; back?: ReactNode 
         )}
       </section>
 
-      <RaceDayForm form={form} />
+      <RaceDayForm form={form} daysUntil={daysUntil} />
 
       {trend.length >= 2 && (
         <section className={cardClass({ className: 'flex flex-col gap-2' })} data-testid="race-trend">

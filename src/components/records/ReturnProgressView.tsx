@@ -20,7 +20,7 @@ export function ReturnProgressView({ progress, today }: { progress: ReturnProgre
           <>
             <p className="text-sm font-semibold text-foreground">{r.longest}</p>
             <p className="text-2xl font-bold tabular-nums text-foreground" data-testid="return-longest">
-              {progress.longestSec > 0 ? formatDurationWords(progress.longestSec) : '—'}
+              {progress.longestSec > 0 ? formatDurationWords(Math.floor(progress.longestSec / 60) * 60) : '—'}
             </p>
           </>
         )}

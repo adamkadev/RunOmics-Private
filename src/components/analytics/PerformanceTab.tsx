@@ -431,7 +431,6 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   const max = mid + half
   const W = 1000
   const H = 72
-  const d = (v: number | null) => (v === null ? '–' : formatDeltaFixed(v, 2))
   const sentence =
     view.trend === 'dipping'
       ? `${s.dipping}${view.heatCost !== null && view.heatCost >= 0.01 ? s.dippingHeat(formatDecimal(view.heatCost, 2)) : s.dippingNoHeat}`
@@ -447,15 +446,20 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
         note={
           view.delta4w !== null || view.delta12w !== null ? (
             <span data-testid="efficiency-deltas">
-              <span style={{ color: deltaColor('efficiency', view.delta4w) }}>
-                {d(view.delta4w)}
-                {s.in4w}
-              </span>
-              {' · '}
-              <span style={{ color: deltaColor('efficiency', view.delta12w) }}>
-                {d(view.delta12w)}
-                {s.in12w}
-              </span>
+              {[
+                [view.delta4w, s.in4w],
+                [view.delta12w, s.in12w],
+              ]
+                .filter((part): part is [number, string] => part[0] !== null)
+                .map(([delta, span], i) => (
+                  <span key={span}>
+                    {i > 0 && ' · '}
+                    <span style={{ color: deltaColor('efficiency', delta) }}>
+                      {formatDeltaFixed(delta, 2)}
+                      {span}
+                    </span>
+                  </span>
+                ))}
             </span>
           ) : undefined
         }

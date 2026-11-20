@@ -204,7 +204,7 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
                     <span
                       data-testid="month-bar"
                       data-month={m.key}
-                      className="relative box-border block w-full rounded-[3px] border-[1.5px] border-dashed border-[var(--axis-text)]"
+                      className="relative box-border block w-full shrink-0 rounded-[3px] border-[1.5px] border-dashed border-[var(--axis-text)]"
                       style={{ height: px(m.projectedKm ?? m.km) }}
                     >
                       <span data-testid="month-so-far" className="absolute inset-x-0 bottom-0 block rounded-[2px] bg-accent" style={{ height: px(m.km) }} />
@@ -214,7 +214,7 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
                       data-testid="month-bar"
                       data-month={m.key}
                       data-best={isBest || undefined}
-                      className="block w-full rounded-[3px]"
+                      className="block w-full shrink-0 rounded-[3px]"
                       style={{ height: px(m.km), background: m.year !== view.currentYear ? 'var(--band)' : 'var(--data-done)' }}
                     />
                   )}

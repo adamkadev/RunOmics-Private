@@ -259,10 +259,9 @@ describe('the hub rows that draw their data', () => {
     expect(screen.getByTestId('athlete-row').textContent).not.toMatch(/%/)
   })
 
-  it('shows a pair in good shape as its wear bar, without its km', () => {
+  it('shows a pair in good shape as its km and wear bar', () => {
     render(<ProgressHub view={progressHubView({ ...INPUT, shoes: [shoe({ gearId: 's', name: 'Solo', totalKm: 338, wearPercent: 42 })] })} />)
-    expect(screen.queryByTestId('shoes-row-value')).toBeNull()
-    expect(screen.getByTestId('shoes-row').textContent).not.toContain('338')
+    expect(screen.getByTestId('shoes-row-value')).toHaveTextContent(`338 ${t.units.km}`)
     expect(screen.getByTestId('shoes-bar')).toBeInTheDocument()
   })
 

@@ -1,11 +1,14 @@
-import Link from 'next/link'
-import { HeartPulse, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { HeaderMark } from '@/components/layout/HeaderMark'
+import { ButtonLink } from '@/components/ui/Button'
 import { t } from '@/i18n'
 
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <HeartPulse size={24} aria-hidden="true" className="mb-4 text-accent-text" />
+      <div className="mb-4">
+        <HeaderMark size={44} />
+      </div>
       <h1 className="text-6xl font-black text-foreground">{t.pages.notFound.code}</h1>
       <p className="mt-2 text-balance text-lg font-medium text-muted-foreground">
         {t.pages.notFound.heading}
@@ -13,13 +16,10 @@ export default function NotFound() {
       <p className="mt-1 text-balance text-sm text-subtle">
         {t.pages.notFound.sub}
       </p>
-      <Link
-        href="/"
-        className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/85"
-      >
-        <ArrowLeft size={16} />
+      <ButtonLink href="/" variant="primary" className="mt-8 h-11 rounded-xl px-5 text-sm">
+        <ArrowLeft size={16} aria-hidden="true" />
         {t.pages.notFound.back}
-      </Link>
+      </ButtonLink>
     </div>
   )
 }

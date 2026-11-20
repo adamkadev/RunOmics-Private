@@ -13,6 +13,16 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Share cards (design review): strides are cased and at least 8 px long, with the start dot under them, and stay
+  pink through their recoveries on the heart-rate trace; Download and Copy wait for the map; place names sit under
+  the route and the start town is left to the subtitle; the warm-up line is lighter; 4:5 rep cards keep the trace in
+  place of the chips; the zone the reps ran in takes the rep colour; strides are pink on the Photo outline, which is
+  now on by default.
+- Design review across the app: Z1 is a pale blue, apart from Z3's grey, and the Athlete table's Z3 matches it;
+  percentages carry the French space everywhere; All time's best month is the tallest bar; week labels sit under
+  their bars; the long-run warning needs four runs a week and stays quiet in reprise; Records links to Goals only
+  when there are goals; plus fixes to the compact title, filters, best efforts, splits, plan, checkpoint, race,
+  home runs, settings, 404 and the map's top edge.
 - Maps: new light and dark basemaps, designed in MapTiler Cloud and pulled into the repo by `npm run map:styles`.
   Light is a paler ground with white roads on a hairline casing; dark is lifted to charcoal with clearer roads,
   greener parks and bluer water; place names are a step brighter in both. The share card still deepens parks and

@@ -171,6 +171,13 @@ describe('findNextMilestones', () => {
     expect(distance!.progress).toBeCloseTo(1569 / 2000, 3)
   })
 
+  it('offers only the year tier the recent pace reaches by 31 Dec', () => {
+    const weekly = Array.from({ length: 8 }, (_, i) => ({ date: `2026-10-${String(1 + i * 3).padStart(2, '0')}`, distanceKm: 10 }))
+    const [, distance] = findNextMilestones([...runs(1, '2026-03-01', 40), ...weekly], 2026, [500], [100, 150, 200, 250, 500], '2026-10-24')
+
+    expect(distance).toMatchObject({ kind: 'distance-tier', remaining: 30 })
+  })
+
   it('drops a milestone past its last tier', () => {
     expect(findNextMilestones(runs(5, '2026-01-01', 100), 2026, [5], [500])).toEqual([])
   })

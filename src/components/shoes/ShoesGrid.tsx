@@ -44,26 +44,26 @@ function RotationRow({ shoe, context, tickLabel }: { shoe: ShoeStats; context: s
     <Link href={`/shoes/${shoe.gearId}?from=shoes`} className={cn(ROW_DIVIDER, 'block px-5 py-3.5 transition-colors active:bg-foreground/[0.04]')} data-testid="shoe-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{shoe.brand}</p>
-          <p className="truncate font-display text-body font-bold text-foreground">{shoe.name}</p>
-        </div>
-        <div className="flex shrink-0 items-start gap-1.5">
-          <div className="flex flex-col items-end gap-1">
-            {!over && (
-              <p className="text-footnote text-muted-foreground">
-                <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
-              </p>
-            )}
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-caption uppercase tracking-[0.08em] text-muted-foreground">{shoe.brand}</p>
             {status !== 'ok' && (
               <span
                 data-testid="shoe-verdict-pill"
-                className="rounded-md px-2 py-0.5 text-caption font-semibold uppercase tracking-[0.08em]"
+                className="shrink-0 rounded-md px-2 py-0.5 text-caption font-semibold uppercase tracking-[0.08em]"
                 style={{ color: WEAR_COLOR[status], background: `color-mix(in srgb, ${WEAR_COLOR[status]} 15%, transparent)` }}
               >
                 {t.shoes.status[status]}
               </span>
             )}
           </div>
+          <p className="truncate font-display text-body font-bold text-foreground">{shoe.name}</p>
+        </div>
+        <div className="flex shrink-0 items-start gap-1.5">
+          {!over && (
+            <p className="text-footnote text-muted-foreground">
+              <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
+            </p>
+          )}
           <ChevronRight size={16} className="mt-0.5 text-muted-foreground" aria-hidden="true" />
         </div>
       </div>

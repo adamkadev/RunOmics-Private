@@ -39,6 +39,7 @@ export interface WeeklyTrendPoint {
   zoneSeconds: Record<number, number>
   longestKm: number
   longestDate: string | null
+  runs: number
   thresholdSessions: number
   intervalSessions: number
 }
@@ -197,6 +198,7 @@ export function buildWeeklyTrends(all: Activity[], z4FloorBpm = DEFAULT_Z4_FLOOR
         zoneSeconds,
         longestKm: longest ? round(longest.distanceKm) : 0,
         longestDate: longest?.date.slice(0, 10) ?? null,
+        runs: acts.length,
         thresholdSessions: acts.filter((a) => qualityKind(a.type) === 'threshold').length,
         intervalSessions: acts.filter((a) => qualityKind(a.type) === 'intervals').length,
       }

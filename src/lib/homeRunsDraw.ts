@@ -31,6 +31,7 @@ export interface ReplayLabels {
   histogram: string
   /** Over the timer, which would read as a time of day. */
   elapsed: string
+  minutes: (n: number) => string
 }
 
 export interface ReplayScene {
@@ -38,6 +39,8 @@ export interface ReplayScene {
   /** Width over height of the projected box. */
   aspect: number
   maxSeconds: number
+  /** The first bar's start: the shortest run, so the bars do not open on empty minutes. */
+  binStart: number
   binCount: number
   accent: string
   font: string
@@ -74,11 +77,13 @@ export function buildReplayScene(
     return { xy, times, duration: r.durationSeconds }
   })
   const maxSeconds = Math.max(1, ...replayRuns.map((r) => r.duration))
+  const binStart = Math.floor(Math.min(maxSeconds, ...replayRuns.map((r) => r.duration)) / BIN_SECONDS) * BIN_SECONDS
   return {
     runs: replayRuns,
     aspect: wide / tall,
     maxSeconds,
-    binCount: Math.min(MAX_BINS, Math.max(1, Math.ceil(maxSeconds / BIN_SECONDS))),
+    binStart,
+    binCount: Math.min(MAX_BINS, Math.max(1, Math.ceil((maxSeconds - binStart) / BIN_SECONDS))),
     ...style,
   }
 }
@@ -206,8 +211,9 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
   const finished = scene.runs.length - running
   ctx.fillText(running > 0 ? scene.labels.running(running, scene.runs.length) : scene.labels.finished(finished), w - side, footer + 80 * u)
 
-  const all = finishBins(scene.runs.map((r) => r.duration), Infinity, BIN_SECONDS, scene.binCount)
-  const done = finishBins(scene.runs.map((r) => r.duration), seconds, BIN_SECONDS, scene.binCount)
+  const durations = scene.runs.map((r) => r.duration - scene.binStart)
+  const all = finishBins(durations, Infinity, BIN_SECONDS, scene.binCount)
+  const done = finishBins(durations, seconds - scene.binStart, BIN_SECONDS, scene.binCount)
   const peak = Math.max(1, ...all)
   const histTop = onPage ? h - bottom + 50 * u : footer + 130 * u
   const histH = 150 * u
@@ -225,11 +231,12 @@ export function drawReplay(ctx: CanvasRenderingContext2D, scene: ReplayScene, se
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
   ctx.font = `500 ${26 * u}px ${scene.font}`
   ctx.textAlign = 'left'
-  ctx.fillText('0:00', side, histTop + histH + 38 * u)
+  const durationLabel = (s: number) => (s < 3600 ? scene.labels.minutes(Math.floor(s / 60)) : formatClock(s).replace(/:\d\d$/, ''))
+  ctx.fillText(durationLabel(scene.binStart), side, histTop + histH + 38 * u)
   ctx.textAlign = 'center'
   ctx.fillText(scene.labels.histogram, w / 2, histTop + histH + 38 * u)
   ctx.textAlign = 'right'
-  const lastBin = scene.binCount * BIN_SECONDS
-  ctx.fillText(`${formatClock(Math.min(lastBin, scene.maxSeconds)).replace(/:\d\d$/, '')}`, w - side, histTop + histH + 38 * u)
+  const lastBin = scene.binStart + scene.binCount * BIN_SECONDS
+  ctx.fillText(durationLabel(Math.min(lastBin, scene.maxSeconds)), w - side, histTop + histH + 38 * u)
   ctx.restore()
 }

@@ -127,8 +127,24 @@ export function Spark({ values, lowerUp = false }: { values: number[]; lowerUp?:
   )
 }
 
-/** Axis labels under a chart, spread end to end: 11 px muted. */
-export function AxisLabels({ labels, className }: { labels: string[]; className?: string }) {
+/** Axis labels under a chart: spread end to end, or under their bars' centres when given `at` slots out of `slots`. */
+export function AxisLabels({ labels, className, at, slots }: { labels: string[]; className?: string; at?: number[]; slots?: number }) {
+  if (at && slots) {
+    return (
+      <div className={cn('relative h-[1em] text-caption leading-none text-muted-foreground', className)} aria-hidden>
+        {labels.map((label, i) => {
+          const slot = at[i] ?? 0
+          // The end labels hold the chart's edges rather than spill past the card.
+          const style = slot === 0 ? { left: 0 } : slot === slots - 1 ? { right: 0 } : { left: `${((slot + 0.5) / slots) * 100}%`, transform: 'translateX(-50%)' }
+          return (
+            <span key={i} className="absolute top-0 whitespace-nowrap" style={style}>
+              {label}
+            </span>
+          )
+        })}
+      </div>
+    )
+  }
   return (
     <div className={cn('flex justify-between text-caption leading-none text-muted-foreground', className)} aria-hidden>
       {labels.map((label, i) => (

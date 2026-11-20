@@ -916,10 +916,9 @@ describe('an easy run with strides', () => {
     const ops = draw({ design: 'route', activity: { ...RUN, route: loop, strides: { count: 1, windows: [[0.97, 0.99]] } } })
     const stroked = strokes(ops)
     expect(stroked.filter((c) => c === palette.casing).length).toBeGreaterThanOrEqual(1)
-    const stride = stroked.lastIndexOf(palette.zones[4])
-    const dot = ops.findLastIndex((o) => o.op === 'arc')
-    expect(dot).toBeLessThan(ops.findLastIndex((o) => o.op === 'stroke' && o.stroke === palette.zones[4]))
+    const stride = ops.findLastIndex((o) => o.op === 'stroke' && o.stroke === palette.zones[4])
     expect(stride).toBeGreaterThan(-1)
+    expect(ops.findLastIndex((o) => o.op === 'arc')).toBeLessThan(stride)
   })
 
   it('lets reps win when a session has both', () => {

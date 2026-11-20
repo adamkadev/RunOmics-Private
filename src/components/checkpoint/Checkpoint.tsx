@@ -41,7 +41,7 @@ function Row({ row }: { row: CompareRow }) {
     <li className="flex flex-col gap-0.5 border-t border-border py-2.5 first:border-t-0 first:pt-1 last:pb-0" data-testid="checkpoint-row" data-key={row.key} data-tone={row.delta === null ? undefined : row.tone}>
       <span className="text-[13px] text-[var(--text-2)] text-pretty">{row.label}</span>
       {row.absent !== null ? (
-        <span className="text-[15px] text-muted-foreground" data-testid="checkpoint-absent">{row.absent}</span>
+        <span className="text-[13px] text-muted-foreground text-pretty" data-testid="checkpoint-absent">{row.absent}</span>
       ) : (
         <div className="flex items-baseline justify-between gap-3">
           <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">

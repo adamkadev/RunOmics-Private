@@ -50,10 +50,10 @@ function Ladder({ view }: { view: Graded }) {
                 key={band.grade}
                 aria-current={you || undefined}
                 data-testid={`grade-row-${band.grade}`}
-                className={cn('grid items-center gap-3 px-4 py-3', i > 0 && 'border-t border-border', you && 'bg-muted')}
+                className={cn('grid items-center gap-3 px-4 py-3', i > 0 && 'border-t border-border', you && 'bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]')}
                 style={{ gridTemplateColumns: '2.75rem minmax(0,1fr) auto' }}
               >
-                <span className="font-display text-title3 font-bold text-foreground">{band.grade}</span>
+                <span className={cn('font-display text-title3 font-bold', you ? 'text-accent-text' : 'text-foreground')}>{band.grade}</span>
                 <span className="text-subhead text-foreground">
                   {rangeText(band.min, band.max)}
                   {you && <span className="text-muted-foreground"> · {g.you(one(view.value))}</span>}
