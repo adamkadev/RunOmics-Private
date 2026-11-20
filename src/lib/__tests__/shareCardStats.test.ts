@@ -170,6 +170,25 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(shareRepDetail(RUN)).toBeNull()
   })
 
+  it('keeps four reps as chips, numbered short to fit the row', () => {
+    expect(shareRepDetail({ ...RUN, reps: { ...REPS, count: 4, paces: [261, 263, 262, 262] } })).toEqual({
+      kind: 'chips',
+      chips: [
+        { label: '#1', pace: '4:21' },
+        { label: '#2', pace: '4:23' },
+        { label: '#3', pace: '4:22' },
+        { label: '#4', pace: '4:22' },
+      ],
+    })
+  })
+
+  it('draws reps a few seconds apart as bars of nearly one height', () => {
+    const close = shareRepDetail({ ...RUN, reps: { ...REPS, count: 5, paces: [261, 263, 262, 262, 261] } })
+    if (close?.kind !== 'bars') throw new Error('expected bars')
+    expect(Math.min(...close.bars)).toBeGreaterThan(0.8)
+    expect(Math.max(...close.bars)).toBe(1)
+  })
+
   it('titles a rep session by its set and its pace, its type leading the subtitle', () => {
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' }
     expect(shareCardTitle(run)).toBe('3 × 8′ @ 4:25')

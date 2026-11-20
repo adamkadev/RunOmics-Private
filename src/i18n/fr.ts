@@ -1306,6 +1306,7 @@ export const fr = {
       repPace: 'Allure des fractions',
       target: (pace: string) => `cible ${pace}`,
       rep: (n: number) => `Fraction ${n}`,
+      repShort: (n: number) => `n°${n}`,
       repRange: (fastest: string, slowest: string) => `Plus rapide ${fastest} · Plus lente ${slowest}`,
       // La légende du parcours d’une séance de fractionné : elle marque les fractions.
       repsLegend: 'Fractions',

@@ -1396,6 +1396,8 @@ export const en = {
       repPace: 'Rep pace',
       target: (pace: string) => `target ${pace}`,
       rep: (n: number) => `Rep ${n}`,
+      // A rep's chip when four share the row.
+      repShort: (n: number) => `#${n}`,
       repRange: (fastest: string, slowest: string) => `Fastest ${fastest} · Slowest ${slowest}`,
       // The route's legend on an interval session: the reps are what it marks.
       repsLegend: 'Reps',

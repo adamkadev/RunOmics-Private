@@ -26,6 +26,8 @@ All notable changes to this project are documented in this file.
   interval card's zone strip sits right under it, and the whole block is centred. A steady run's heart rate keeps a
   40 bpm scale, so its noise no longer reads as spikes. A lone hard sliver keeps its own row on the zone bar (an easy run with
   strides read "Z1–Z3 Easy 100%" beside "96% easy").
+- Share card: four reps read as chips like three ("#1 4:21"), the bars kept for five or more and drawn on a span of
+  at least 15 s, so reps 2 s apart no longer look a third apart.
 - Share card: the start dot and chequered finish are a fifth smaller on the card than on the Activity map, where they
   outweighed the route.
 - Share card: a famous place's mark stays where the place is. Only its name moves off the route, to a free side of the

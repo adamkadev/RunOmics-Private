@@ -184,6 +184,9 @@ export type ShareRepDetail =
   | { kind: 'chips'; chips: ShareRepChip[] }
   | { kind: 'bars'; bars: number[]; range: string }
 
+const MAX_CHIPS = 4
+const BAR_MIN_SPAN = 15
+
 export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
   const paces = activity.reps?.paces ?? []
   if (paces.length < 2) return null
@@ -191,12 +194,14 @@ export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
   const slowest = Math.max(...paces)
   if (fastest === slowest) return null
   const s = t.activity.shareCard
-  if (paces.length <= 3) {
-    return { kind: 'chips', chips: paces.map((pace, i) => ({ label: s.rep(i + 1), pace: formatClock(pace) })) }
+  if (paces.length <= MAX_CHIPS) {
+    // Four chips leave no room for "Rep 1", nor "Fraction 1".
+    const label = paces.length === MAX_CHIPS ? s.repShort : s.rep
+    return { kind: 'chips', chips: paces.map((pace, i) => ({ label: label(i + 1), pace: formatClock(pace) })) }
   }
-  // Taller is faster.
-  const span = slowest - fastest
-  const bars = paces.map((pace) => (span > 0 ? 1 - (pace - fastest) / span : 1))
+  // Taller is faster, on a span of at least BAR_MIN_SPAN: 2 s between reps is not a third of a bar.
+  const span = Math.max(BAR_MIN_SPAN, slowest - fastest)
+  const bars = paces.map((pace) => 1 - (pace - fastest) / span)
   return { kind: 'bars', bars, range: s.repRange(formatClock(fastest), formatClock(slowest)) }
 }
 
