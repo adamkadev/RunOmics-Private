@@ -13,6 +13,9 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Zone colours: Z2, Z3 and Z4 are told apart by lightness and hue, so they no longer merge for red-green colour-blind
+  eyes (worst neighbour distance 2.8 to 7.9 in dark, 2.9 to 14.0 in light). Dark Z2 is a brighter sky blue, Z3 a
+  periwinkle and Z4 a magenta; light Z3 is a deep purple and Z4 a lighter violet.
 - Share cards (design review): strides are cased and at least 8 px long, with the start dot under them, and stay
   pink through their recoveries on the heart-rate trace; Download and Copy wait for the map; place names sit under
   the route and the start town is left to the subtitle; the warm-up line is lighter; 4:5 rep cards keep the trace in
