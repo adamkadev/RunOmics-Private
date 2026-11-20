@@ -692,9 +692,10 @@ run time and names places in the app's language. When editing on the website:
 - Keep `name:en` in label fields: the app swaps it for `name:fr` on the French deployment.
 - Keep the layer names. The heat map greys layers by name (`heatBasemapStyle`) and the share card
   deepens parks and water by layer (`shareBasemapStyle`).
-- The run maps hide every style label except place names. A label layer whose id starts with
-  `runomics-` stays visible, as `runomics-style-stadium` and `runomics-style-museum` do. Avoid
-  `runomics-water-label` and `runomics-landmark-label`: the app adds those itself.
+- Leave landmarks to the app. The run maps hide every style label except place names, and the
+  names a run passes (rivers, parks, cathedrals, stations, stadiums) are chosen near the route and
+  placed off it in code (`famousPlaces.ts`, `runMapNames.ts`), on the activity map and the share card
+  alike. A style label layer would show every such place in view and sit on the route.
 
 ### Releases
 

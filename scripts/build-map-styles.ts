@@ -8,6 +8,8 @@ import { huedColors, withKeyPlaceholder, withoutEditorFields, type StyleJson } f
 
 const MAPS = { light: '01a1fa0c-fe78-741c-91bb-21cb805e3c64', dark: '01a1fa0d-3e31-7989-a394-f50a69919fc1' } as const
 const OUT_DIR = join(process.cwd(), 'src', 'map', 'styles')
+/** The run maps' park and landmark icons come from it; MapTiler's editor drops it once no style layer draws an icon. */
+const SPRITE = 'https://api.maptiler.com/sprites/general/sprite'
 
 async function main() {
   const key = process.env.MAPTILER_KEY ?? process.env.NEXT_PUBLIC_MAPTILER_TOKEN
@@ -18,6 +20,7 @@ async function main() {
     const res = await fetch(`https://api.maptiler.com/maps/${MAPS[mode]}/style.json?key=${key}`)
     if (!res.ok) throw new Error(`[map:styles] ${mode}: HTTP ${res.status}`)
     const style = withKeyPlaceholder(withoutEditorFields((await res.json()) as StyleJson, `runomics-${mode}`))
+    style.sprite ??= SPRITE
     if (JSON.stringify(style).includes(key)) throw new Error(`[map:styles] ${mode}: the key is still in the style`)
 
     const hued = huedColors(style)

@@ -6657,110 +6657,15 @@
         ],
         "Point"
       ]
-    },
-    {
-      "id": "runomics-style-stadium",
-      "type": "symbol",
-      "source": "maptiler_planet_v4",
-      "source-layer": "poi_sport",
-      "minzoom": 12,
-      "layout": {
-        "text-field": [
-          "coalesce",
-          [
-            "get",
-            "name:en"
-          ],
-          [
-            "get",
-            "name"
-          ]
-        ],
-        "text-font": [
-          "Metropolis Semi Bold Italic",
-          "Noto Sans Semi Bold Italic"
-        ],
-        "text-size": 10.5,
-        "text-max-width": 8,
-        "text-padding": 4
-      },
-      "paint": {
-        "text-color": "#4f5452",
-        "text-halo-color": "#f0f1ef",
-        "text-halo-width": 1.4,
-        "text-halo-blur": 0.4
-      },
-      "filter": [
-        "match",
-        [
-          "get",
-          "class"
-        ],
-        [
-          "soccer",
-          "stadium",
-          "rugby",
-          "athletics",
-          "multi"
-        ],
-        true,
-        false
-      ]
-    },
-    {
-      "id": "runomics-style-museum",
-      "type": "symbol",
-      "source": "maptiler_planet_v4",
-      "source-layer": "poi_culture",
-      "minzoom": 13,
-      "layout": {
-        "text-field": [
-          "coalesce",
-          [
-            "get",
-            "name:en"
-          ],
-          [
-            "get",
-            "name"
-          ]
-        ],
-        "text-font": [
-          "Metropolis Semi Bold Italic",
-          "Noto Sans Semi Bold Italic"
-        ],
-        "text-size": 10.5,
-        "text-max-width": 8,
-        "text-padding": 4
-      },
-      "paint": {
-        "text-color": "#4f5452",
-        "text-halo-color": "#f0f1ef",
-        "text-halo-width": 1.4,
-        "text-halo-blur": 0.4
-      },
-      "filter": [
-        "match",
-        [
-          "get",
-          "class"
-        ],
-        [
-          "museum",
-          "monument"
-        ],
-        true,
-        false
-      ]
     }
   ],
   "glyphs": "https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key={key}",
-  "sprite": "https://api.maptiler.com/sprites/general/sprite",
   "bearing": 0,
   "pitch": 0,
   "center": [
     0,
     0
   ],
-  "zoom": 1
+  "zoom": 1,
+  "sprite": "https://api.maptiler.com/sprites/general/sprite"
 }

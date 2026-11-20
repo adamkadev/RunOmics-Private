@@ -56,6 +56,10 @@ describe('the committed styles', () => {
     }
   })
 
+  it('keep the sprite the run maps draw their park and landmark icons from', () => {
+    for (const style of [light, dark] as unknown as StyleJson[]) expect(style.sprite).toMatch(/^https:\/\/api\.maptiler\.com\/sprites\//)
+  })
+
   it('name places through name:en, which lib/maptiler swaps for the app language', () => {
     for (const style of [light, dark] as unknown as StyleJson[]) {
       expect(style.layers.some((l) => JSON.stringify(l.layout?.['text-field'] ?? '').includes('name:en'))).toBe(true)
