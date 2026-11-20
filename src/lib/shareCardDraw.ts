@@ -358,7 +358,8 @@ function drawRepDetail(ctx: Ctx, { activity, fonts, palette }: ShareCardScene, d
       const labelW = ctx.measureText(`${chip.label} `).width
       ctx.font = `600 ${CHIP_TEXT}px ${fonts.text}`
       const from = x + (width - labelW - ctx.measureText(chip.pace).width) / 2
-      ctx.fillStyle = palette.card
+      // A tint of the ink, not the card's grey: on the glow's purple that grey vanished.
+      ctx.fillStyle = withAlpha(ink.tx, 0.08)
       roundRect(ctx, x, top, width, CHIP_H, 7)
       ctx.fill()
       ctx.font = `400 ${CHIP_TEXT}px ${fonts.text}`
