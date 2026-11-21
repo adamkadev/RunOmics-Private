@@ -6,6 +6,7 @@ import { creditedEffortSeconds, matchesEffortDistance, officialResultsByActivity
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 import { t } from '@/i18n'
 import type { RecordEntry } from '@/domain/race/records'
+import type { PbYear } from '@/domain/goals/types'
 
 export type { RecordEntry } from '@/domain/race/records'
 
@@ -58,11 +59,14 @@ export async function getRecords(): Promise<RecordEntry[]> {
   return records
 }
 
-function computeRecords(activities: Activity[]): RecordEntry[] {
-  const pbYears = getPbYears()
+export function computeRecords(
+  activities: Activity[],
+  pbYears: PbYear[] = getPbYears(),
+  officialResults: OfficialRaceResult[] = getOfficialRaceResults(),
+): RecordEntry[] {
   const activityMap = new Map(activities.map((a) => [a.id, a]))
-  const computed = computeBestEfforts(activities)
-  const officialByActivityId = officialResultsByActivityId(getOfficialRaceResults())
+  const computed = computeBestEfforts(activities, officialResults)
+  const officialByActivityId = officialResultsByActivityId(officialResults)
 
   const officialPbs = new Map<string, { seconds: number; activityId: string | null }>()
   for (const year of pbYears) {
@@ -78,7 +82,9 @@ function computeRecords(activities: Activity[]): RecordEntry[] {
 
   const effortRecords: RecordEntry[] = EFFORTS.map(({ key, label, km }) => {
     const official = officialPbs.get(key)
-    if (official) {
+    const best = computed.get(key) ?? null
+    // A chip time is trusted over a GPS effort only until a run beats it.
+    if (official && !(best && Math.round(best.seconds) < official.seconds)) {
       const activity = official.activityId ? activityMap.get(official.activityId) : undefined
       const date = activity?.date ?? null
       return {
@@ -93,7 +99,6 @@ function computeRecords(activities: Activity[]): RecordEntry[] {
       }
     }
 
-    const best = computed.get(key) ?? null
     // The winning effort can itself be official: creditedEffortSeconds credits
     // chip times into the computed set.
     const bestResult = best?.activityId ? officialByActivityId.get(best.activityId) : undefined

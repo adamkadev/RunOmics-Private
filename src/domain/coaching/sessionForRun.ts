@@ -1,5 +1,5 @@
 import type { Activity, ActivityType } from '@/domain/activity/types'
-import { intendedType } from '@/lib/activityTitle'
+import { intendedType, leadingTypeWord } from '@/lib/activityTitle'
 import { PLAN_MATCH_WINDOW_DAYS } from '@/domain/training/monthDays'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan, type WorkoutEvaluation, type WorkoutPrescription } from './types'
 
@@ -27,6 +27,12 @@ function nameKey(name: string): string {
   return name.replaceAll('′', "'").replaceAll('″', '"').replace(/\s+/g, ' ').trim().toLowerCase()
 }
 
+/** The watch drops a title's leading type word: "Race · 5K check" runs as "5K check". */
+function titleKeys(title: string): string[] {
+  const [lead, ...rest] = title.split(/\s[-–—·]\s/u)
+  return rest.length && leadingTypeWord(lead) ? [nameKey(title), nameKey(rest.join(' · '))] : [nameKey(title)]
+}
+
 function only<T>(candidates: T[]): T | null {
   return candidates.length === 1 ? candidates[0]! : null
 }
@@ -42,7 +48,7 @@ export function sessionForRun<P extends SessionPrescription>(run: SessionRun, se
   const name = nameKey(run.description ?? '')
   const intended = intendedType(run)
   const typeOf = (prescription: P) => COACHING_TO_ACTIVITY_TYPE[prescription.type]
-  return only(day.filter((p) => name !== '' && p.title !== undefined && nameKey(p.title) === name))
+  return only(day.filter((p) => name !== '' && p.title !== undefined && titleKeys(p.title).includes(name)))
     ?? only(day.filter((p) => typeOf(p) === intended))
     ?? only(day.filter((p) => family(intended) !== null && family(typeOf(p)) === family(intended)))
     ?? (run.typeSource === 'runomics' ? only(day) : null)

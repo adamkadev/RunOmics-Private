@@ -18,6 +18,13 @@ describe('sessionForRun', () => {
     expect(sessionForRun(named, [at('2026-10-06', 'easy', { title: 'Easy run' }), hills])).toBe(hills.prescription)
   })
 
+  it('takes the session whose title the watch shortened to its name', () => {
+    const check = at('2026-10-06', 'race', { title: 'Race · 5K check' })
+    const named = { ...run, type: 'VO2Max' as const, description: '5K check' }
+    expect(sessionForRun(named, [check])).toBe(check.prescription)
+    expect(sessionForRun(named, [at('2026-10-06', 'race', { title: 'Parc · 5K check' })])).toBeNull()
+  })
+
   it('else the day\'s one session of the run\'s type, then of its family', () => {
     const tempo = at('2026-10-06', 'tempo')
     expect(sessionForRun(run, [at('2026-10-06', 'threshold'), tempo])).toBe(tempo.prescription)
