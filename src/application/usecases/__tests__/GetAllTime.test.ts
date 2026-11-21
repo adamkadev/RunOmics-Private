@@ -26,6 +26,11 @@ describe('allTimeView', () => {
     ])
   })
 
+  it('gives each year its km a week over the days of the months run, from the first run to today', () => {
+    const view = allTimeView(RUNS, '2026-09-26')
+    expect(view.years.map((y) => y.kmPerWeek)).toEqual([5, 8])
+  })
+
   it('draws every month since the first, the current one partial, and names the best', () => {
     const view = allTimeView(RUNS, '2026-09-26')
     expect(view.monthly[0]).toMatchObject({ key: '2025-05', km: 31 })

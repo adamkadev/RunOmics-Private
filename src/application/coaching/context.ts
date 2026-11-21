@@ -32,6 +32,7 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import { otherTrainingFacts, type CrossTrainingSession, type OtherTrainingFacts } from '@/domain/activity/crossTraining'
 import { returnToRunning, type ReturnToRunning } from './returnToRunning'
+import { isRunningSince, runningYears } from '@/domain/athlete/runningSince'
 
 const RECENT_DAYS = 28
 const NIGGLE_DAYS = 84
@@ -106,6 +107,10 @@ export interface CoachingContext {
     trainingBreaks?: TrainingBreak[]
     /** The weekly volume growth stops at, typed into athlete.json; absent means none. */
     maxWeeklyKm?: number
+    /** When the current running began, typed into athlete.json (YYYY or YYYY-MM); after a long break, the return. */
+    runningSince?: string
+    /** Whole years since runningSince: how long the body has adapted to running. */
+    runningYears?: number
   }
   /** Absent unless a long injury, illness or pregnancy break has not yet been followed by 30 minutes of running. */
   returnToRunning?: ReturnToRunning
@@ -365,6 +370,9 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       injuryHistory: input.athlete.injuryHistory ?? null,
       ...breaks,
       ...(input.athlete.maxWeeklyKm ? { maxWeeklyKm: input.athlete.maxWeeklyKm } : {}),
+      ...(isRunningSince(input.athlete.runningSince)
+        ? { runningSince: input.athlete.runningSince, runningYears: runningYears(input.athlete.runningSince, referenceDate) }
+        : {}),
     },
     ...(returning ? { returnToRunning: returning } : {}),
     ...wellness,

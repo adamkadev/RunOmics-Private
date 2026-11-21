@@ -301,6 +301,16 @@ describe('official race result overlay', () => {
 })
 
 describe('injury history', () => {
+  it('carries when the running began and its whole years, and leaves both out without one', () => {
+    const runs = [activity('run', '2026-09-20', 10)]
+    const context = buildCoachingContext({ ...input(runs), athlete: { ...input(runs).athlete, runningSince: '2021-04' } }, '2026-09-20')
+    expect(context.athlete).toMatchObject({ runningSince: '2021-04', runningYears: 5 })
+
+    const without = buildCoachingContext(input(runs), '2026-09-20')
+    expect(without.athlete).not.toHaveProperty('runningSince')
+    expect(without.athlete).not.toHaveProperty('runningYears')
+  })
+
   it('carries a reviewed-but-empty history through as evidence of none', () => {
     const context = buildCoachingContext(
       { ...input([]), athlete: { injuryHistory: { reviewedOn: '2026-09-22', injuries: [] } } },

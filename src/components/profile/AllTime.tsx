@@ -79,6 +79,7 @@ export function YearRows({ years, currentYear, since, reprise = false }: { years
           {t.allTime.yearTotals(formatKm(y.km), y.runs)}
           {from && ` · ${t.allTime.fromMonth(from)}`}
           {y.monthsRun < y.months && ` · ${t.allTime.monthsRun(y.monthsRun)}`}
+          {y.kmPerWeek > 0 && ` · ${t.allTime.perWeek(formatKm(y.kmPerWeek))}`}
         </span>
       </li>
     )

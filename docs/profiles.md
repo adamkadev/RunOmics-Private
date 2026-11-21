@@ -48,6 +48,10 @@ The second athlete's data repository has no `explore/` areas, `goals.json`, `pbs
 `athlete.json` has no LTHR or threshold pace from Garmin. In either profile, `sex: "female"` in `athlete.json`
 switches TRIMP to Banister's female weighting.
 
+`runningSince` (`"2021"` or `"2021-04"`), typed into `athlete.json`, is when the current running began: the first
+run, or the first run back after a long break. The coach reads it as `runningYears`; All time shows it only when it
+goes back before the synced history, since a later date would contradict the page's own months.
+
 `firestore.rules` is deployed by hand, once per Firebase project, after every change to it.
 
 ## Owner-only and rich-data-only features

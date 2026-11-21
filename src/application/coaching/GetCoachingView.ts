@@ -100,6 +100,11 @@ export function getPastSessions(current: CoachingPlan, today = appTodayIso(), re
       date >= span.startDate && date <= span.endDate && !held.has(date)))
 }
 
+/** Every session Plan shows: those of the blocks a renewal left behind, then the current block's. */
+export function getPlanSessions(coaching: CoachingOverview | null, today = appTodayIso()): PrescriptionView[] {
+  return coaching ? [...getPastSessions(coaching.plan, today), ...coaching.workouts] : []
+}
+
 export function getRunSessions(
   repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getEvaluations' | 'getArchivedPlans'> = new JsonCoachingRepository(),
 ): RunSession[] {

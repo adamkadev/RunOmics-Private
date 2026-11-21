@@ -1,6 +1,8 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { isoDate, startOfWeek } from '@/lib/calendarDate'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { runningSinceBefore, type RunningSince } from '@/domain/athlete/runningSince'
+import { DAY_MS, isoDate, startOfWeek } from '@/lib/calendarDate'
 
 export interface AllTimeYear {
   year: number
@@ -13,6 +15,8 @@ export interface AllTimeYear {
   kmPerMonth: number
   /** Those months with a run: fewer than `months` across a break. */
   monthsRun: number
+  /** Km a week over the days of the months run, cut to the first run and today. */
+  kmPerWeek: number
 }
 
 export interface AllTimeMonth {
@@ -60,6 +64,13 @@ function monthsBetween(from: string, to: string): string[] {
     }
   }
   return keys
+}
+
+function daysRun(key: string, since: string, today: string): number {
+  const [year, month] = key.split('-').map(Number) as [number, number]
+  const first = Math.max(Date.UTC(year, month - 1, 1), Date.parse(`${since}T00:00:00Z`))
+  const last = Math.min(Date.UTC(year, month, 0), Date.parse(`${today}T00:00:00Z`))
+  return last >= first ? (last - first) / DAY_MS + 1 : 0
 }
 
 export function allTimeView(
@@ -111,7 +122,9 @@ export function allTimeView(
   const years = Array.from({ length: currentYear - firstYear + 1 }, (_, i) => firstYear + i).map((year) => {
     const entry = byYear.get(year)
     const months = monthly.filter((m) => m.year === year).length
-    const monthsRun = monthly.filter((m) => m.year === year && m.km > 0).length
+    const runMonths = monthly.filter((m) => m.year === year && m.km > 0)
+    const monthsRun = runMonths.length
+    const runDays = since ? runMonths.reduce((sum, m) => sum + daysRun(m.key, since, today), 0) : 0
     return {
       year,
       km: Math.round(entry?.km ?? 0),
@@ -120,6 +133,7 @@ export function allTimeView(
       months,
       monthsRun,
       kmPerMonth: monthsRun > 0 ? Math.round((entry?.km ?? 0) / monthsRun) : 0,
+      kmPerWeek: runDays > 0 ? Math.round(((entry?.km ?? 0) / runDays) * 7) : 0,
     }
   })
   const bestMonth = monthly.reduce<AllTimeMonth | null>((best, m) => (!best || m.km > best.km ? m : best), null)
@@ -144,6 +158,7 @@ export function allTimeView(
   }
 }
 
-export function getAllTime(today: string): AllTimeView {
-  return allTimeView(getAllActivities(), today)
+export function getAllTime(today: string): AllTimeView & { runningSince: RunningSince | null } {
+  const view = allTimeView(getAllActivities(), today)
+  return { ...view, runningSince: runningSinceBefore(getAthleteProfile().runningSince, view.since, today) }
 }

@@ -148,6 +148,14 @@ describe('the data contract', () => {
     expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.maxWeeklyKm' })])
   })
 
+  it('refuses a runningSince that is not a year or a month', () => {
+    write('athlete.json', { runningSince: '2021-04' })
+    expect(checkDataDirectory(dir)).toEqual([])
+
+    write('athlete.json', { runningSince: 'April 2021' })
+    expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.runningSince' })])
+  })
+
   it('accepts the heart-rate source and continuous-run fields, and only warns on unknown values', () => {
     activities(
       activity({ hrSource: 'external', longestContinuousRunSec: 900, longestContinuousRunM: 2010.5 }),

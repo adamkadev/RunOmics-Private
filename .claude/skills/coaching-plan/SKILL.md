@@ -31,6 +31,10 @@ workspace, so what one block was told carries to the next; the decision records 
 hash. Keep an athlete's standing instructions there, such as a clinician's limits
 during a return to running.
 
+`context.athlete.runningYears` (from `runningSince`, typed into `athlete.json`) is the
+training age: under a year, or a return after a long break, means tendons and bones
+still adapting, so the long run and the week grow at the low end of what the signal allows.
+
 That file carries the rules, the athlete's context and the answer schema. Answer
 it with a single JSON object, save it, and feed it back:
 

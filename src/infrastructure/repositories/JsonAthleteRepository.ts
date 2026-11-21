@@ -56,6 +56,8 @@ export interface AthleteProfile {
   trainingBreaks?: TrainingBreak[]
   /** Typed by hand: the weekly kilometres a block's growth stops at. */
   maxWeeklyKm?: number
+  /** Typed by hand, YYYY or YYYY-MM: running before the watch's history began. */
+  runningSince?: string
 }
 
 export function getAthleteProfile(): AthleteProfile {

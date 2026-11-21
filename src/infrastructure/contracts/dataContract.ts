@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { diskFiles, type DataFiles } from '../dataFiles'
 import { readGoalEntry, readRaceEntry } from '@/domain/goals/entries'
+import { isRunningSince } from '@/domain/athlete/runningSince'
 
 /**
  * `error`: the app dereferences the field unconditionally, so the build refuses the dataset.
@@ -256,6 +257,9 @@ function checkAthlete(dir: string, problems: Problem[]) {
     if (athlete.sex !== undefined && athlete.sex !== 'male' && athlete.sex !== 'female') report.warn('$.sex', 'expected "male" or "female"')
     if (athlete.maxWeeklyKm !== undefined && !(typeof athlete.maxWeeklyKm === 'number' && athlete.maxWeeklyKm > 0)) {
       report.error('$.maxWeeklyKm', 'expected a positive number of kilometres')
+    }
+    if (athlete.runningSince !== undefined && !isRunningSince(athlete.runningSince)) {
+      report.error('$.runningSince', 'expected a year or a month: "2021" or "2021-04"')
     }
     const injuries = athlete.injuryHistory
     if (injuries !== undefined && !(isObject(injuries) && Array.isArray(injuries.injuries))) {

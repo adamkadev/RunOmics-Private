@@ -24,7 +24,13 @@ export default async function AllTimePage() {
       <PageHeader back={<BackButton label={a.back} fallbackHref="/profile" />} title={a.title}>
         {view.since && (
           <p className="text-footnote text-muted-foreground">
-            {a.subtitle(formatDate(view.since, { precision: 'month', year: 'always' }), view.months)}
+            {view.runningSince
+              ? a.runningSince(
+                  view.runningSince.since.length === 4 ? view.runningSince.since : formatDate(`${view.runningSince.since}-01`, { precision: 'month', year: 'always' }),
+                  view.runningSince.years,
+                  formatDate(view.since, { precision: 'month', year: 'always' }),
+                )
+              : a.subtitle(formatDate(view.since, { precision: 'month', year: 'always' }), view.months)}
           </p>
         )}
       </PageHeader>

@@ -1704,10 +1704,13 @@ export const fr = {
     title: 'Depuis le début',
     back: 'Progression',
     subtitle: (since: string, months: number) => `Depuis ${since} · ${months} mois`,
+    runningSince: (since: string, years: number, history: string) =>
+      `Course à pied depuis ${since}${years > 0 ? ` · ${years} an${years > 1 ? 's' : ''}` : ''} · historique depuis ${history}`,
     runs: 'sorties',
     byYear: 'Par année',
     perMonth: 'moy. km / mois',
     yearTotals: (km: string, runs: number) => `${km} km · ${runs} sortie${runs > 1 ? 's' : ''}`,
+    perWeek: (km: string) => `≈ ${km} km/sem.`,
     fromMonth: (month: string) => `depuis ${month}`,
     yearLabel: (year: number, perMonth: string) => `${year} : ${perMonth} km par mois`,
     monthly: 'Km par mois',
@@ -1934,6 +1937,18 @@ export const fr = {
     // One word: « RP Plus longue sortie » cuts the run's name to « Race … » at 393 pt.
     badgeLabels: { longest: 'Distance' } as Record<string, string>,
     raceTag: 'course',
+    vdotProfile: {
+      title: 'Vitesse ou endurance',
+      aria: (rows: string) => `VDOT par distance : ${rows}`,
+      leadSpeed: (gap: number) => `Tes records courts mènent de ${gap} VDOT : le temps à gagner est en endurance.`,
+      leadEndurance: (gap: number) => `Tes records longs mènent de ${gap} VDOT : le temps à gagner est en vitesse.`,
+      even: 'Tes records courts et longs se tiennent au même niveau.',
+      stale: (labels: string) => `Records de plus de six mois : ${labels}. L’écart vient peut-être d’une course pas encore courue.`,
+      worthTitle: (label: string) => `Au niveau de ton ${label}`,
+      now: 'Actuel',
+      worth: 'Vaut',
+      note: 'VDOT selon les tables de Daniels.',
+    },
     segmented: {
       best: 'Chronos',
       milestones: 'Étapes',

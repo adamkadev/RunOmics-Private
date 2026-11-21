@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
+import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { digestPush, weeklyDigest } from '../digest'
@@ -48,6 +48,15 @@ describe('weekly digest', () => {
       title: 'Last week',
       body: '34 of 42 km · 1 of 2 quality sessions · 1 h 30 other training\nResting HR 48 (−2)\nThis week: Aerobic base, one controlled threshold',
     })
+  })
+
+  it('counts last week from the block a renewal left behind when the watch calendar lacks it', () => {
+    const past = [
+      { prescription: { date: '2026-10-13', type: 'easy' }, state: 'completed', activityId: null, distanceMeters: 8000 },
+      { prescription: { date: '2026-10-16', type: 'easy' }, state: 'missed', activityId: null, distanceMeters: 12000 },
+    ] as unknown as PrescriptionView[]
+    const digest = weeklyDigest({ today: '2026-10-19', activities, planned: [], coaching, pastSessions: past, recovery, crossTraining })
+    expect(digest.planKm).toBe(20)
   })
 
   it("sends the coach's focus whole, however long", () => {

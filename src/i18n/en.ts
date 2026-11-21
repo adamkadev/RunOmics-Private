@@ -1831,11 +1831,15 @@ export const en = {
     title: 'All time',
     back: 'Progress',
     subtitle: (since: string, months: number) => `Since ${since} · ${months} month${months === 1 ? '' : 's'}`,
+    // Typed into athlete.json when the running goes back before the watch's history.
+    runningSince: (since: string, years: number, history: string) =>
+      `Running since ${since}${years > 0 ? ` · ${years} year${years === 1 ? '' : 's'}` : ''} · history from ${history}`,
     runs: 'runs',
     // Years compared by km a month, which is fair to a first year that started late.
     byYear: 'By year',
     perMonth: 'avg km / month',
     yearTotals: (km: string, runs: number) => `${km} km · ${runs} run${runs === 1 ? '' : 's'}`,
+    perWeek: (km: string) => `≈ ${km} km/week`,
     // A first year that started after January.
     fromMonth: (month: string) => `from ${month}`,
     yearLabel: (year: number, perMonth: string) => `${year}: ${perMonth} km a month`,
@@ -2096,6 +2100,19 @@ export const en = {
     /** A shorter name for a record on a run's row badge, where the run's own name must fit beside it. */
     badgeLabels: { longest: 'Longest Run' } as Record<string, string>,
     raceTag: 'race',
+    vdotProfile: {
+      title: 'Speed vs endurance',
+      aria: (rows: string) => `VDOT by distance: ${rows}`,
+      leadSpeed: (gap: number) => `Your short records lead by ${gap} VDOT: endurance is where the time is.`,
+      leadEndurance: (gap: number) => `Your long records lead by ${gap} VDOT: speed is where the time is.`,
+      even: 'Your records sit level with each other, short and long.',
+      // Old enough that the gap may be a race not run rather than a weakness.
+      stale: (labels: string) => `Set over six months ago: ${labels}. The gap may be a race not run yet.`,
+      worthTitle: (label: string) => `At your ${label} level`,
+      now: 'Now',
+      worth: 'Worth',
+      note: "VDOT from Daniels' tables.",
+    },
     segmented: {
       best: 'Best times',
       milestones: 'Milestones',
