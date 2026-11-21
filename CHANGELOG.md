@@ -6,6 +6,12 @@ All notable changes to this project are documented in this file.
 
 ### Coaching
 
+- Run verdicts: a fitness check planned as "Race · 5K check" is judged as the race effort it is, not as an easy run
+  with strides, so its high heart rate is the job rather than a cost. A new best ever over a distance is handed to the
+  verdict with its margin over the previous best, and leads it. The prompt is at version 6: verdicts inside the horizon
+  are written again.
+- Records: a run faster than an official race time takes the record, with its own date, so the Records page and the
+  Today celebration show it.
 - Naming rules: an easy run with strides is "Easy run + 6 strides" (shortName "Easy + 6 strides"), never a bare "Easy"
   or the easy part's length; the app shows the name as written. Applies from the next block.
 - Controlled threshold blocks: the week after a 5K check returns to the full threshold dose. The check takes one

@@ -2,7 +2,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity, ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
-import type { LongestRun, PreviousRun, PreviousSession, RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
+import type { EffortStanding, LongestRun, PreviousRun, PreviousSession, RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
 import type { SessionIntent } from '@/domain/coaching/sessionIntent'
 import { gapHalves } from '@/domain/activity/gradeAdjusted'
 import { isLongSession } from '@/domain/activity/longRun'
@@ -10,7 +10,7 @@ import { raceExecution } from '@/domain/activity/raceExecution'
 import { MIN_REP_SECONDS, repStats, sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { resolvePerformance, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { isRunWalk, runWalkBlocks } from '@/domain/activity/runWalk'
-import { namedType } from '@/lib/activityTitle'
+import { namedType, namesRace } from '@/lib/activityTitle'
 import { formatClock } from '@/lib/formatters'
 import { insightHash } from './insightHash'
 import { avoidClause, promptVersion, systemInstruction } from './prompt'
@@ -20,7 +20,7 @@ export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
 /** Part of every verdict's hash: bump it with a prompt change, so runs inside the horizon are written again. */
-export const RUN_VERDICT_PROMPT_VERSION = 5
+export const RUN_VERDICT_PROMPT_VERSION = 6
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
@@ -148,7 +148,8 @@ export function runKind(
   execution: SessionExecution,
   sessionType: ActivityType | null = null
 ): RunKind {
-  if (activity.type === 'Race') return 'race'
+  // The watch stores a race workout as "Base": its name is the only sign of it.
+  if (activity.type === 'Race' || (!sessionType && namesRace(planned?.name))) return 'race'
   const reps = plannedReps(planned)
   const intended = sessionType ?? planned?.type
   const named = intended ? KIND_BY_TYPE[intended] : undefined
@@ -472,7 +473,12 @@ function plannedLine(planned: PlannedWorkout): string {
 
 const DAYS_PER_MONTH = 30.44
 
-function standingLine(label: string, daysSinceBetter: number | null): string {
+const margin = (seconds: number) => (seconds < 60 ? `${seconds} s` : formatClock(seconds))
+
+function standingLine({ label, daysSinceBetter, seconds, previousBestSeconds }: EffortStanding): string {
+  if (daysSinceBetter === null && previousBestSeconds !== null && previousBestSeconds > seconds) {
+    return `- A new best ever over ${label}: ${formatClock(seconds)}, ${margin(previousBestSeconds - seconds)} quicker than your previous best of ${formatClock(previousBestSeconds)}`
+  }
   if (daysSinceBetter === null) return `- No earlier run of yours went faster over ${label}`
   return `- No run in the last ${Math.round(daysSinceBetter / DAYS_PER_MONTH)} months went faster over ${label}`
 }
@@ -553,7 +559,8 @@ function facts(context: RunVerdictContext) {
     airTemperature: recentWeather ? Math.round(recentWeather.tempC) : null,
     windKph: recentWeather ? Math.round(recentWeather.windKph) : null,
     humidityPct: recentWeather ? Math.round(recentWeather.humidityPct) : null,
-    execution: execution ? executionLine(execution, kind, activity) : null,
+    // A check's warm-up strides are no reps: a race is judged on its pacing.
+    execution: execution && kind !== 'race' ? executionLine(execution, kind, activity) : null,
     reps:
       kind === 'runWalk'
         ? runBlocksLine(reps, execution)
@@ -571,6 +578,8 @@ function facts(context: RunVerdictContext) {
     baseline: history.baseline && comparable ? baselineLine(kind, activity.type, history.baseline, activity) : null,
     standing: history.standing?.label ?? null,
     standingDays: history.standing?.daysSinceBetter ?? null,
+    standingSeconds: history.standing?.seconds ?? null,
+    standingPrevious: history.standing?.previousBestSeconds ?? null,
     runsInPast7Days: history.runsInPast7Days,
     daysSinceLastRun: history.daysSinceLastRun,
     previous: history.previous ? `${history.previous.daysAgo}:${history.previous.description || history.previous.type}` : null,
@@ -635,7 +644,8 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked. Reps on target at a lower effort than expected are good news, never a shortfall. When they held, look past them: the change since the last session of its kind, the heart rate at that pace, the rep that was hardest, the place of the session in the plan.',
   'An interval session is judged on the reps completed and held at the target, and the fade from first to last; when they held, the story is elsewhere, as for a threshold session.',
   "On a structured session the athlete's RPE covers the whole run, warm-up and cool-down included: judge the reps by their pace and heart rate, never by that number, and never call a session short of its intensity because of it.",
-  'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing.',
+  'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing. A fitness check is run as a race to measure fitness: a high heart rate and a hard effort are what it asks, never a cost.',
+  'A new best ever over a distance, when the facts give one, is the headline: congratulate the athlete on it plainly, with the margin over the previous best.',
   "When the coach's words for the session are given, they say what this particular session was for - a first measurement of a pace, easy running the day after the reps, a long run kept inside its recent maximum - and whether it did that is the verdict. Never quote them back.",
   'Lead with what this run makes the most of; never default to the comparison with earlier runs because it is there.',
   'When the effort sits outside the expected band, look for a cause in the other facts - heat, humidity, wind, elevation - and name it rather than assuming the athlete misjudged the session. Name the cause, never its number.',
@@ -656,7 +666,7 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdic
     f.previousSession,
     f.baseline,
     f.longest,
-    history.standing ? standingLine(history.standing.label, history.standing.daysSinceBetter) : null,
+    history.standing ? standingLine(history.standing) : null,
     history.previous ? cadenceLine(f.runsInPast7Days, history.previous) : null,
   ].filter((line) => line !== null)
 

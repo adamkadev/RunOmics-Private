@@ -94,14 +94,14 @@ describe('effortStanding', () => {
     const current = run({ id: 'c', date: '2026-06-22', bestEfforts: efforts(1500) })
     const past = run({ id: 'p', date: '2026-01-10', bestEfforts: efforts(1560) })
 
-    expect(runHistory(current, [current, past]).standing).toEqual({ label: '5 km', daysSinceBetter: null })
+    expect(runHistory(current, [current, past]).standing).toMatchObject({ label: '5 km', daysSinceBetter: null, seconds: 1500, previousBestSeconds: 1560 })
   })
 
   it('counts the days back to the last run that went faster', () => {
     const current = run({ id: 'c', date: '2026-06-22', bestEfforts: efforts(1500) })
     const better = run({ id: 'b', date: '2026-01-22', bestEfforts: efforts(1450) })
 
-    expect(runHistory(current, [current, better]).standing).toEqual({ label: '5 km', daysSinceBetter: 151 })
+    expect(runHistory(current, [current, better]).standing).toMatchObject({ label: '5 km', daysSinceBetter: 151, seconds: 1500, previousBestSeconds: null })
   })
 
   it('says nothing when a faster run is recent enough to remember', () => {
@@ -170,7 +170,7 @@ describe('effortStanding with official race results', () => {
   const history = [older, remich, escher]
 
   it('reads the over-read device split as an all-time best without the official results', () => {
-    expect(runHistory(escher, history).standing).toEqual({ label: '5 km', daysSinceBetter: null })
+    expect(runHistory(escher, history).standing).toMatchObject({ label: '5 km', daysSinceBetter: null })
   })
 
   it('stops crediting Escher with a benchmark it did not run', () => {
@@ -188,7 +188,7 @@ describe('effortStanding with official race results', () => {
   })
 
   it('still credits Remich, whose certified time is the standing best', () => {
-    expect(runHistory(remich, history, [escherOfficial, remichOfficial]).standing).toEqual({
+    expect(runHistory(remich, history, [escherOfficial, remichOfficial]).standing).toMatchObject({
       label: '5 km',
       daysSinceBetter: null,
     })

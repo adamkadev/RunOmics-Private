@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeBestEfforts, getMostRecentRecord, getQualifiedEffortsByActivityId, getTopEfforts, type RecordEntry } from '../GetRecords'
+import { computeBestEfforts, computeRecords, getMostRecentRecord, getQualifiedEffortsByActivityId, getTopEfforts, type RecordEntry } from '../GetRecords'
 import type { Activity } from '@/domain/activity/types'
 
 const act = (id: string, date: string, bestEfforts: Record<string, number> | null, description = ''): Activity =>
@@ -223,5 +223,30 @@ describe('official PB badges never label a device effort', () => {
     const result = getQualifiedEffortsByActivityId(derivedRecord, activities, 3, [])
 
     expect(result.remich).toEqual([{ key: '5k', label: '5 km', rank: 1 }])
+  })
+})
+
+describe('computeRecords against official PBs', () => {
+  const race = act('race', '2025-09-28', { '5k': 1_245, half: 6_000 }, 'Wine Route')
+  const pbYears = [
+    { year: 2025, entries: [{ distance: '5K', seconds: 1_242, activityId: 'race' }] },
+    { year: 2026, entries: [{ distance: 'Half-Marathon', seconds: 5_968, activityId: 'race' }] },
+  ]
+  const record = (activities: Activity[], key: string) => computeRecords(activities, pbYears, []).find((r) => r.key === key)
+
+  it('lets a run faster than the official PB take the record, with its own date', () => {
+    const check = act('check', '2026-11-21', { '5k': 1_196.3 }, '5K check')
+    expect(record([check, race], '5k')).toMatchObject({ seconds: 1_196, activityId: 'check', date: '2026-11-21', official: false })
+  })
+
+  it('keeps the official PB while no run beats it', () => {
+    const slower = act('slower', '2026-11-21', { '5k': 1_250 })
+    expect(record([slower, race], '5k')).toMatchObject({ seconds: 1_242, activityId: 'race', official: true })
+    expect(record([slower, race], 'half')).toMatchObject({ seconds: 5_968, official: true })
+  })
+
+  it('makes the beaten record the newest one for the celebration', () => {
+    const check = act('check', '2026-11-21', { '5k': 1_196 })
+    expect(getMostRecentRecord(computeRecords([check, race], pbYears, []))?.activityId).toBe('check')
   })
 })

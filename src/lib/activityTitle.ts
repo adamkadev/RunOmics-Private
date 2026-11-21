@@ -43,6 +43,18 @@ export function intendedType(activity: { type: ActivityType; description?: strin
   return namedType(activity.description) ?? activity.type
 }
 
+/** The type word a session's name leads with, normalised ("race", "easy run"), even one that fits several types. */
+export function leadingTypeWord(name: string | null | undefined): string | null {
+  const key = typeKey((name?.trim() ?? '').split(/\s[-–—·]\s|\d/u)[0] ?? '')
+  return TYPE_WORDS.has(key) ? key : null
+}
+
+/** A race, or a check run as one: "Race · 5K check", "Course · 10 km". */
+export function namesRace(name: string | null | undefined): boolean {
+  const word = leadingTypeWord(name)
+  return word === 'race' || word === 'course'
+}
+
 /** The type a session's name leads with ("Footing 4 × 6′" is easy); null when it names none, or several. */
 export function namedType(name: string | null | undefined): ActivityType | null {
   const leading = (name?.trim() ?? '').split(/\s[-–—·]\s|\d/u)[0] ?? ''

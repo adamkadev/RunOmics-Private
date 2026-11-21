@@ -23,6 +23,9 @@ export interface TypeBaseline {
 export interface EffortStanding {
   label: string
   daysSinceBetter: number | null
+  seconds: number
+  /** The best before this run, for the margin of a new best ever. */
+  previousBestSeconds: number | null
 }
 
 export interface PreviousRun {
@@ -138,7 +141,8 @@ function effortStanding(
       const better = before.find((a) => (creditedEffortSeconds(a, key, km, official) ?? Infinity) < seconds)
       const daysSinceBetter = better ? day - dayNumber(better.date) : null
       if (daysSinceBetter !== null && daysSinceBetter < STANDING_MIN_DAYS) return []
-      return [{ label, daysSinceBetter }]
+      const previousBestSeconds = better ? null : Math.min(...before.map((a) => creditedEffortSeconds(a, key, km, official) ?? Infinity))
+      return [{ label, daysSinceBetter, seconds: Math.round(seconds), previousBestSeconds: previousBestSeconds === null ? null : Math.round(previousBestSeconds) }]
     })
     .sort((a, b) => (b.daysSinceBetter ?? ALL_TIME) - (a.daysSinceBetter ?? ALL_TIME))
 
