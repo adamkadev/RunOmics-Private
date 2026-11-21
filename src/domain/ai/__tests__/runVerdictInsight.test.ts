@@ -667,10 +667,11 @@ describe('a 5K check that sets a new best', () => {
   const check = run({ id: 'c', date: '2026-11-21', type: 'VO2Max', rpe: 9, distanceKm: 11.4, bestEfforts: { '5k': 1196.3 } })
   const before = run({ id: 'b', date: '2026-09-05', bestEfforts: { '5k': 1237 } })
 
-  it('is judged as a race when the watch plan is named one, or the coach set one', () => {
-    expect(runVerdictKind({ activity: check, planned })).toBe('race')
-    expect(runVerdictKind({ activity: check, planned: null, sessionType: 'Race' })).toBe('race')
-    expect(runVerdictKind({ activity: check, planned: { ...planned, name: 'Easy run' } })).not.toBe('race')
+  it('is judged as a check, not a race, when the watch plan or the coach names it one', () => {
+    expect(runVerdictKind({ activity: check, planned })).toBe('check')
+    expect(runVerdictKind({ activity: check, planned: null, sessionType: 'Race' })).toBe('check')
+    expect(runVerdictKind({ activity: { ...check, type: 'Race' }, planned })).toBe('race')
+    expect(runVerdictKind({ activity: check, planned: { ...planned, name: 'Easy run' } })).not.toBe('check')
   })
 
   it('reads its hard effort as the job, not a cost', () => {
@@ -680,8 +681,10 @@ describe('a 5K check that sets a new best', () => {
   it('hands the model the new best and its margin, and asks for it as the headline', () => {
     const prompt = runVerdictInsightPrompt({ activity: check, history: runHistory(check, [check, before]), planned }, [])
 
-    expect(prompt).toContain('- Session: a race')
+    expect(prompt).toContain('- Session: a fitness check')
+    expect(prompt).toContain('not a race')
     expect(prompt).toContain('- A new best ever over 5 km: 19:56, 41 s quicker than your previous best of 20:37')
     expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('A new best ever over a distance')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('never call it a race')
   })
 })

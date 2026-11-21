@@ -6,9 +6,10 @@ All notable changes to this project are documented in this file.
 
 ### Coaching
 
-- Run verdicts: a fitness check planned as "Race · 5K check" is judged as the race effort it is, not as an easy run
-  with strides, so its high heart rate is the job rather than a cost. A new best ever over a distance is handed to the
-  verdict with its margin over the previous best, and leads it. The prompt is at version 6: verdicts inside the horizon
+- Run verdicts: a fitness check planned as "Race · 5K check" is judged as a check, neither an easy run with strides
+  nor a race: one hard effort between a warm-up and a cool-down, with no chip, so its high heart rate is the job
+  rather than a cost. A run the watch typed as a race stays a race. A new best ever over a distance is handed to the
+  verdict with its margin over the previous best, and leads it. The prompt is at version 7: verdicts inside the horizon
   are written again.
 - Records: a run faster than an official race time takes the record, with its own date, so the Records page and the
   Today celebration show it.
