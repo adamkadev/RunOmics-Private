@@ -13,6 +13,9 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Bar glass: the grey glass behind the bar buttons blurs again. The zone colour change regenerated the tokens and
+  dropped its two filters, which lived only in `globals.css`; they now come from `themeTokens.ts`, and a test fails on
+  any variable the stylesheet reads but never defines.
 - Zone colours: Z2, Z3 and Z4 are told apart by lightness and hue, so they no longer merge for red-green colour-blind
   eyes (worst neighbour distance 2.8 to 7.3 in dark, 2.9 to 14.0 in light). Dark Z2 is a deeper blue, Z3 a
   lavender and Z4 a magenta, all clear of the cyan accent; light Z3 is a deep purple and Z4 a lighter violet.

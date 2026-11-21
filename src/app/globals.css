@@ -13,9 +13,7 @@
   --color-subtle-2:          var(--subtle-2);
   --color-accent:            var(--accent);
   --color-accent-hover:      var(--accent-hover);
-  --color-accent-dark:       var(--accent-dark);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent-subtle:     var(--accent-subtle);
   --color-accent-text:       var(--accent-text);
   --color-destructive:       var(--destructive);
   --color-delta-good:        var(--delta-good);
@@ -225,6 +223,8 @@
   --tab-glass-fill:          rgb(255 255 255 / 0.36);
   --clear-glass-fill:        rgb(255 255 255 / 0.10);
   --clear-glass-filter:      blur(8px) saturate(1.8);
+  --bar-glass-filter:        blur(18px) saturate(0) brightness(1.02);
+  --bar-glass-edge-filter:   blur(1px) saturate(0) brightness(1.08);
   --sheet-glass-fill:        rgb(250 251 250 / 0.55);
   --sheet-glass-filter:      blur(28px) saturate(2);
   --sheet-fill:              rgb(0 0 0 / 0.05);
@@ -360,6 +360,8 @@
   --tab-glass-fill:          rgb(34 38 37 / 0.60);
   --clear-glass-fill:        rgb(16 18 18 / 0.22);
   --clear-glass-filter:      blur(5px) saturate(1.6) brightness(0.9);
+  --bar-glass-filter:        blur(12px) saturate(0) brightness(1.1);
+  --bar-glass-edge-filter:   blur(1px) saturate(0) brightness(1.25);
   --sheet-glass-fill:        rgb(28 31 31 / 0.80);
   --sheet-glass-filter:      blur(28px) saturate(1.8);
   --sheet-fill:              rgb(255 255 255 / 0.10);
