@@ -246,6 +246,9 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--tab-glass-fill': 'rgb(255 255 255 / 0.36)',
         '--clear-glass-fill': 'rgb(255 255 255 / 0.10)',
         '--clear-glass-filter': 'blur(8px) saturate(1.8)',
+        // Grey bar glass: a page's glow never tints the bar buttons.
+        '--bar-glass-filter': 'blur(18px) saturate(0) brightness(1.02)',
+        '--bar-glass-edge-filter': 'blur(1px) saturate(0) brightness(1.08)',
         '--sheet-glass-fill': 'rgb(250 251 250 / 0.55)',
         // Wider: a sheet sits over text that must not read through.
         '--sheet-glass-filter': 'blur(28px) saturate(2)',
@@ -282,6 +285,8 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--tab-glass-fill': 'rgb(34 38 37 / 0.60)',
         '--clear-glass-fill': 'rgb(16 18 18 / 0.22)',
         '--clear-glass-filter': 'blur(5px) saturate(1.6) brightness(0.9)',
+        '--bar-glass-filter': 'blur(12px) saturate(0) brightness(1.1)',
+        '--bar-glass-edge-filter': 'blur(1px) saturate(0) brightness(1.25)',
         '--sheet-glass-fill': 'rgb(28 31 31 / 0.80)',
         '--sheet-glass-filter': 'blur(28px) saturate(1.8)',
         '--sheet-fill': 'rgb(255 255 255 / 0.10)',
