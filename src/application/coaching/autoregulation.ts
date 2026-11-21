@@ -303,6 +303,9 @@ function currentGuides(byDate: Map<string, WorkoutPrescription[]>, referenceDate
   return guides
 }
 
+const effortMeters = (workout: WorkoutPrescription) => workout.blocks
+  .reduce((sum, block) => sum + (block.kind === 'effort' ? block.target.distanceMeters ?? 0 : 0), 0)
+
 /** The latest 5K, raced or prescribed as a time trial; the first check only sets the baseline. */
 export function readFitnessCheck(
   activities: Activity[],
@@ -311,16 +314,22 @@ export function readFitnessCheck(
   officialResults: Pick<OfficialRaceResult, 'activityId' | 'distanceMeters' | 'chipTimeSeconds'>[] = [],
 ): FitnessCheck | null {
   const rules = CONTROLLED_THRESHOLD.fitnessCheck
+  const inRange = (km: number) => km >= rules.distanceKm.min && km <= rules.distanceKm.max
+  const prescribed = (activity: Activity) => byDate.get(dayOf(activity)) ?? []
+  const whole = (activity: Activity) => inRange(activity.distanceKm)
+    && (activity.type === 'Race' || prescribed(activity).some((workout) => workout.type === 'race'))
+  // A check run as prescribed carries its warm-up and cool-down, so only the 5K inside it is timed.
+  const embedded = (activity: Activity) => !whole(activity) && activity.bestEfforts?.['5k'] != null
+    && prescribed(activity).some((workout) => workout.type === 'race' && inRange(effortMeters(workout) / 1_000))
   const checks = activities
-    .filter((activity) => isRun(activity) && dayOf(activity) <= referenceDate
-      && activity.distanceKm >= rules.distanceKm.min && activity.distanceKm <= rules.distanceKm.max
-      && (activity.type === 'Race' || (byDate.get(dayOf(activity)) ?? []).some((workout) => workout.type === 'race')))
+    .filter((activity) => isRun(activity) && dayOf(activity) <= referenceDate && (whole(activity) || embedded(activity)))
     .sort((left, right) => dayOf(left).localeCompare(dayOf(right)))
   const latest = checks.at(-1)
   if (!latest || dayOf(latest) < daysBefore(referenceDate, rules.withinDays)) return null
   // A 5K is a measured course: the chip time when there is one, over 5 km, never the GPS distance.
   const official = new Map(officialResults.filter((result) => result.distanceMeters === 5_000).map((result) => [result.activityId, result.chipTimeSeconds]))
-  const seconds = (activity: Activity) => official.get(activity.id) ?? activity.durationSeconds
+  const seconds = (activity: Activity) => official.get(activity.id)
+    ?? (embedded(activity) ? Math.round(activity.bestEfforts!['5k']!) : activity.durationSeconds)
   const pace = (activity: Activity) => Math.round(seconds(activity) / 5)
   const before = checks.at(-2)
   const previous = before && dayOf(before) >= daysBefore(dayOf(latest), rules.previousWithinDays) ? before : undefined

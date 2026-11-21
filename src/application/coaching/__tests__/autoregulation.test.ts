@@ -296,6 +296,32 @@ describe('the fitness check', () => {
     expect(report.fitnessCheck).toMatchObject({ previous: null, proposedGuides: [] })
   })
 
+  const raceDay = (date: string, efforts: number[]) => plan({
+    id: `race-${date}`,
+    weeks: [{ id: `race-${date}:w`, index: 1, startDate: date, endDate: date, focus: 'f', workouts: [workout({
+      id: `check-${date}`,
+      date,
+      type: 'race',
+      blocks: [
+        { kind: 'warmup', target: { distanceMeters: 2_000 } },
+        ...efforts.map((distanceMeters) => ({ kind: 'effort' as const, target: { distanceMeters } })),
+        { kind: 'cooldown', target: { distanceMeters: 2_000 } },
+      ],
+    })] }],
+  })
+  const session = (date: string, distanceKm: number, fiveK: number): Activity =>
+    ({ ...race(date, 3_500, distanceKm), id: `session-${date}`, type: 'VO2Max', bestEfforts: { '5k': fiveK } }) as Activity
+
+  it('times a check run inside its warm-up and cool-down by the 5K within it', () => {
+    const report = autoregulationReport([session('2026-11-21', 11.4, 1_196.3)], [raceDay('2026-11-21', [1_000, 3_000, 1_000]), current], '2026-11-21')
+    expect(report.fitnessCheck).toMatchObject({ date: '2026-11-21', seconds: 1_196, paceSecPerKm: 239, previous: null })
+  })
+
+  it('takes no 5K split out of a longer race as a check', () => {
+    const report = autoregulationReport([session('2026-11-21', 12.4, 1_196.3)], [raceDay('2026-11-21', [10_000]), current], '2026-11-21')
+    expect(report.fitnessCheck).toBeNull()
+  })
+
   it('says nothing about a check older than the look-back', () => {
     expect(autoregulationReport([race('2026-08-01', 1_274)], [current], '2026-11-15').fitnessCheck).toBeNull()
   })

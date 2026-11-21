@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Coaching
 
+- Autoregulation: a 5K check run as prescribed, between its warm-up and cool-down, is read as a check, timed by the
+  5K inside it. It was missed, since only a whole run of about 5 km counted, so its guide proposals never appeared.
 - Run verdicts: a fitness check planned as "Race · 5K check" is judged as a check, neither an easy run with strides
   nor a race: one hard effort between a warm-up and a cool-down, with no chip, so its high heart rate is the job
   rather than a cost. A run the watch typed as a race stays a race. A new best ever over a distance is handed to the
