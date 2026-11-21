@@ -1313,6 +1313,14 @@ export const fr = {
       stridesLegend: (n: number) => `${n} accélérations`,
       // L’interrupteur d’une séance de fractionné : éteint, la carte est celle d’une sortie facile.
       showReps: 'Voir l’allure des fractions',
+      // L’interrupteur d’une sortie qui bat un record : éteint, la carte est celle de la sortie.
+      showRecord: 'Voir le record',
+      // Le héros d’un record : « Nouveau record sur 5 km · première fois sous 20 min », puis « −41 s sur 20:37 ».
+      newRecord: (distance: string) => `Nouveau record sur ${distance}`,
+      firstUnder: (mark: string) => `première fois sous ${mark}${/^\d+$/.test(mark) ? ' min' : ''}`,
+      recordGap: (gap: string, previous: string) => `${gap} sur ${previous}`,
+      // La première stat de la carte Parcours sur une sortie record.
+      recordStat: (distance: string) => `Record ${distance}`,
       // L’interrupteur de la carte Photo : le tracé de la sortie sur la photo.
       showRoute: 'Voir le parcours',
       // Le tracé de la sortie sur la carte Stats, dans le temps.

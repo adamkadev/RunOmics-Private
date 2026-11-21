@@ -4,7 +4,7 @@ import { cache } from 'react'
 import type { Activity } from '@/domain/activity/types'
 import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
-import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
+import { runRecord, getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
@@ -132,7 +132,7 @@ export default async function ActivityDetailPage({
         plannedRepPace={prescribedRepPace(session)}
         repsOnOverview={!!controlledRun}
         back={<BackButton label={t.activity.back} fallbackHref="/activities" variant="round" />}
-        share={<ShareButton activity={shareActivity(activity, session, plannedForDay)} />}
+        share={<ShareButton activity={shareActivity(activity, session, plannedForDay, runRecord(activity, records, activities))} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         shoe={shoe}
         shoeOptions={shoeOptions}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
+import { shareRecordHero,
   mergeSlivers, percentsTo100, repLength, zoneName, zoneTint, shareCardSubtitle, shareCardTitle, shareRepHeadline, shareRepHero, shareRepResult, shareStats, shareZones, type ShareActivity, shareRepDetail,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
@@ -241,5 +241,28 @@ describe('shareCardSubtitle', () => {
   it('is the app date, then the town', () => {
     expect(shareCardSubtitle(RUN, 'Hoenheim')).toBe(`${formatDate('2026-09-26')} · Hoenheim`)
     expect(shareCardSubtitle(RUN, null)).toBe(formatDate('2026-09-26'))
+  })
+})
+
+describe('a run that set a record', () => {
+  const record = { key: '5k', seconds: 1196, previousSeconds: 1237, milestoneSeconds: 1200 }
+
+  it('leads the Stats and Photo cards with the record, its first round mark and its margin', () => {
+    expect(shareRecordHero({ ...RUN, record })).toEqual({
+      eyebrow: 'New 5 km record · first sub-20',
+      pace: '19:56',
+      unit: '5 km',
+      target: '−41 s on 20:37',
+      record: true,
+    })
+    expect(shareRecordHero({ ...RUN, record: { ...record, previousSeconds: null, milestoneSeconds: null } })).toMatchObject({ eyebrow: 'New 5 km record', target: null })
+    expect(shareRecordHero(RUN)).toBeNull()
+  })
+
+  it('leads the Route card\'s row with the record in place of the average pace', () => {
+    const keys = shareStats({ ...RUN, record }, { repPace: true }).map((stat) => stat.key)
+    expect(keys[0]).toBe('record')
+    expect(keys).not.toContain('pace')
+    expect(shareStats({ ...RUN, record }).map((stat) => stat.key)).not.toContain('record')
   })
 })

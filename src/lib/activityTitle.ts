@@ -95,8 +95,14 @@ export function easyWord(name: string): string {
   return name.replace(/^easy(?:\s+run)?(?![\p{L}\d])(?!\s+run)/iu, t.plan.kinds.easy)
 }
 
+/** "Race · 5K check" reads "5K check": the coach files a check as a race, and a race's own name says what it was. */
+export function withoutRaceWord(name: string): string {
+  const parts = /^(.+?)\s·\s(.+)$/u.exec(name.trim())
+  return parts && namesRace(parts[1]) ? parts[2]!.trim() : name
+}
+
 export function sessionLabel(title: string): string {
-  const name = easyWord(title.trim())
+  const name = easyWord(withoutRaceWord(title.trim()))
   const dash = /\s[-–—]\s/.exec(name)
   if (dash) {
     const garmin = name.slice(dash.index + dash[0].length)

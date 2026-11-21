@@ -1,7 +1,8 @@
 import type { Activity, ActivityType } from '@/domain/activity/types'
-import { formatClock, formatDate, formatDurationRounded, formatKm } from '@/lib/formatters'
+import { formatClock, formatDate, formatDuration, formatDurationRounded, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { activityTitle, namedType, sessionLabel } from '@/lib/activityTitle'
+import { activityTitle, namedType, sessionLabel, withoutRaceWord } from '@/lib/activityTitle'
+import type { RunRecord } from '@/domain/race/records'
 
 export type ShareActivity = Pick<
   Activity,
@@ -15,6 +16,8 @@ export type ShareActivity = Pick<
   strides?: ShareStrides | null
   /** The reps' windows on a card that hides their pace, shaded on the heart-rate trace. */
   repWindows?: [number, number][] | null
+  /** The record the run set, which leads the card. */
+  record?: RunRecord | null
 }
 
 /** Accelerations after an easy run: marked on the route, never graded like reps. */
@@ -43,7 +46,7 @@ const SET = /^\d+\s*×/
 /** A session's set as the title and its type for the subtitle, the same on every card whoever runs it. */
 function nameParts(activity: ShareActivity): { title: string; type: string | null } {
   const reps = activity.reps
-  const name = activity.sessionTitle?.trim() || activityTitle(activity)
+  const name = withoutRaceWord(activity.sessionTitle?.trim() || activityTitle(activity))
   const typed = namedType(name) ? TYPED_SET.exec(name) : null
   if (reps) {
     // The session's own set when its name has one, its "@ 4:36" kept: the reps alone only when the name has no set.
@@ -66,7 +69,7 @@ export function shareCardSubtitle(activity: ShareActivity, place: string | null 
   return [nameParts(activity).type, formatDate(activity.date.slice(0, 10)), place].filter(Boolean).join(' · ')
 }
 
-export type ShareStatKey = 'repPace' | 'distance' | 'time' | 'pace' | 'hr'
+export type ShareStatKey = 'record' | 'repPace' | 'distance' | 'time' | 'pace' | 'hr'
 
 export interface ShareStat {
   key: ShareStatKey
@@ -80,11 +83,17 @@ export function shareDuration(seconds: number): { value: string; unit: string } 
   return { value, unit: unit ? ` ${unit}` : '' }
 }
 
-/** `repPace` leads an interval session's row with the reps' pace: the Route card has no rep-pace hero over it. */
+/**
+ * `repPace` leads an interval session's row with the reps' pace: the Route card has no rep-pace hero over it.
+ * A record leads the Route card's row instead, and the average pace gives up its cell to it.
+ */
 export function shareStats(activity: ShareActivity, { repPace = false }: { repPace?: boolean } = {}): ShareStat[] {
   const s = t.activity.shareCard
   const stats: ShareStat[] = []
-  if (repPace && activity.reps) {
+  const record = repPace ? activity.record : null
+  if (record) {
+    stats.push({ key: 'record', value: formatDuration(record.seconds), unit: '', label: s.recordStat(recordDistance(record)) })
+  } else if (repPace && activity.reps) {
     stats.push({ key: 'repPace', value: formatClock(activity.reps.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.repPaceStat })
   }
   stats.push(
@@ -92,7 +101,7 @@ export function shareStats(activity: ShareActivity, { repPace = false }: { repPa
     { key: 'time', ...shareDuration(activity.durationSeconds), label: s.time },
   )
   // An interval session drops the average pace: over reps and recoveries it describes neither.
-  if (!activity.reps && activity.paceSecPerKm && activity.paceSecPerKm > 0) {
+  if (!record && !activity.reps && activity.paceSecPerKm && activity.paceSecPerKm > 0) {
     stats.push({ key: 'pace', value: formatClock(activity.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.pace })
   }
   if (activity.avgHeartRate) {
@@ -121,6 +130,8 @@ export interface ShareRepHero {
   pace: string
   unit: string
   target: string | null
+  /** A record's hero, in the record colour. */
+  record?: boolean
 }
 
 function targetBand(target: { min: number; max: number } | null): string | null {
@@ -140,6 +151,36 @@ export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
     unit: t.units.perKm,
     target: target ? [s.target(target), off].filter(Boolean).join(' · ') : null,
   }
+}
+
+function recordDistance(record: RunRecord): string {
+  return t.records.distances[record.key] ?? record.key
+}
+
+/** "20" for a whole minute under the hour, else the clock: "sub-20", "sub-3:30", "sub-1:40". */
+function markText(seconds: number): string {
+  return seconds < 3600 && seconds % 60 === 0 ? String(seconds / 60) : formatDuration(seconds)
+}
+
+/** The record as the Stats and Photo cards' hero: "New 5 km record · first sub-20", "19:56", "−41 s on 20:37". */
+export function shareRecordHero(activity: ShareActivity): ShareRepHero | null {
+  const record = activity.record
+  if (!record) return null
+  const s = t.activity.shareCard
+  const distance = recordDistance(record)
+  const gap = record.previousSeconds !== null ? record.previousSeconds - record.seconds : 0
+  return {
+    eyebrow: [s.newRecord(distance), record.milestoneSeconds ? s.firstUnder(markText(record.milestoneSeconds)) : null].filter(Boolean).join(' · '),
+    pace: formatDuration(record.seconds),
+    unit: distance,
+    target: record.previousSeconds !== null && gap > 0 ? s.recordGap(gapText(gap), formatDuration(record.previousSeconds)) : null,
+    record: true,
+  }
+}
+
+/** The app's one gap form: "−41 s" under a minute, "−1:02" past it. */
+function gapText(seconds: number): string {
+  return seconds < 60 ? `−${seconds} s` : `−${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
 export interface ShareRepHeadline {

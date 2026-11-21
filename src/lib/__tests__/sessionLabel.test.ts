@@ -95,3 +95,11 @@ describe('isGenericName', () => {
     for (const name of ['Easy · 51 min + 6 strides', '3 × 8′ @ 4:25', 'Wine Route - Luxemburg']) expect(isGenericName(name)).toBe(false)
   })
 })
+
+describe('withoutRaceWord', () => {
+  it('drops the race word a check is filed under, and nothing else', () => {
+    expect(sessionLabel('Race · 5K check')).toBe('5K check')
+    expect(sessionLabel('Course · 10 km de Metz')).toBe('10 km de Metz')
+    expect(sessionLabel('Wine Route · Luxemburg')).toBe('Wine Route · Luxemburg')
+  })
+})
