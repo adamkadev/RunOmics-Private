@@ -5,10 +5,10 @@ import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceRe
 import { creditedEffortSeconds, matchesEffortDistance, officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 import { t } from '@/i18n'
-import type { RecordEntry } from '@/domain/race/records'
+import type { RecordEntry, RunRecord } from '@/domain/race/records'
 import type { PbYear } from '@/domain/goals/types'
 
-export type { RecordEntry } from '@/domain/race/records'
+export type { RecordEntry, RunRecord } from '@/domain/race/records'
 
 export { EFFORTS, DISTANCE_KEY }
 
@@ -144,6 +144,37 @@ export function computeRecords(
       }
 
   return [...effortRecords, longestRecord]
+}
+
+/** Whole 30 s marks up to a mile ("sub-3:30"), whole 5 min beyond it ("sub-20", "sub-1:40"). */
+function markStep(km: number): number {
+  return km < 2 ? 30 : 300
+}
+
+/** The longest distance the run holds the record over, against the best before it. */
+export function runRecord(
+  activity: Pick<Activity, 'id' | 'date'>,
+  records: RecordEntry[],
+  activities: Activity[] = getAllActivities(),
+  pbYears: PbYear[] = getPbYears(),
+  officialResults: OfficialRaceResult[] = getOfficialRaceResults(),
+): RunRecord | null {
+  const held = EFFORTS.filter(({ key }) => records.some((r) => r.key === key && r.activityId === activity.id && r.seconds !== null))
+  const effort = held.at(-1)
+  if (!effort) return null
+  const seconds = records.find((r) => r.key === effort.key)!.seconds!
+  const before = activities.filter((a) => a.date < activity.date)
+  const ids = new Set(before.map((a) => a.id))
+  const earlierPbs = pbYears.map((year) => ({ ...year, entries: year.entries.filter((entry) => ids.has(entry.activityId)) }))
+  const previousSeconds = computeRecords(before, earlierPbs, officialResults).find((r) => r.key === effort.key)?.seconds ?? null
+  const step = markStep(effort.km)
+  const mark = Math.ceil(seconds / step) * step
+  return {
+    key: effort.key,
+    seconds,
+    previousSeconds,
+    milestoneSeconds: previousSeconds !== null && previousSeconds >= mark && seconds < mark ? mark : null,
+  }
 }
 
 export function getMostRecentRecord(records: RecordEntry[]): RecordEntry | null {

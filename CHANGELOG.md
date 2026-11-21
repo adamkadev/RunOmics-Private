@@ -6,9 +6,10 @@ All notable changes to this project are documented in this file.
 
 ### Coaching
 
-- Run verdicts: a fitness check planned as "Race · 5K check" is judged as the race effort it is, not as an easy run
-  with strides, so its high heart rate is the job rather than a cost. A new best ever over a distance is handed to the
-  verdict with its margin over the previous best, and leads it. The prompt is at version 6: verdicts inside the horizon
+- Run verdicts: a fitness check planned as "Race · 5K check" is judged as a check, neither an easy run with strides
+  nor a race: one hard effort between a warm-up and a cool-down, with no chip, so its high heart rate is the job
+  rather than a cost. A run the watch typed as a race stays a race. A new best ever over a distance is handed to the
+  verdict with its margin over the previous best, and leads it. The prompt is at version 7: verdicts inside the horizon
   are written again.
 - Records: a run faster than an official race time takes the record, with its own date, so the Records page and the
   Today celebration show it.
@@ -19,6 +20,11 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Share cards: a run that set a record leads with it. Stats and Photo show "New 5 km record · first sub-20", the time
+  and the margin over the previous best in gold, with the zone bar kept and its headline dropped; Route leads its stat
+  row with the record in place of the average pace. A "Show record" switch turns it off.
+- Fitness checks: a check the coach set as "Race · 5K check" shows as "5K check" with the run's own type (VO₂ max),
+  on the page, its tab title, the verdict badge and the share card; only a run the watch typed as a race reads "Race".
 - Bar glass: the grey glass behind the bar buttons blurs again. The zone colour change regenerated the tokens and
   dropped its two filters, which lived only in `globals.css`; they now come from `themeTokens.ts`, and a test fails on
   any variable the stylesheet reads but never defines.

@@ -1,9 +1,9 @@
 import {
-  shareCardSubtitle, shareCardTitle, shareDuration, shareRepDetail, shareRepHeadline, shareRepHero, shareRepResult, shareStats,
-  shareZones, zoneName, zoneTint,
+  shareCardSubtitle, shareCardTitle, shareDuration, shareRepDetail, shareRecordHero, shareRepHeadline, shareRepHero, shareRepResult,
+  shareStats, shareZones, zoneName, zoneTint,
   type ShareActivity, type ShareRepDetail, type ShareRepHeadline, type ShareRepHero, type ShareZoneRow, type ShareZones,
 } from '@/lib/shareCardStats'
-import { W, H, shareCardHeight, type ShareDesign, type SharePalette, type ShareSize } from '@/lib/shareCardPalette'
+import { SHARE_RECORD_HEX, W, H, shareCardHeight, type ShareDesign, type SharePalette, type ShareSize } from '@/lib/shareCardPalette'
 import { sameArea } from '@/lib/shareCardPlaces'
 import { projectRoute, routeFencePoints, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
@@ -223,8 +223,10 @@ export function shareCardLayout(
   const result = design === 'photo' ? null : shareRepResult(activity)
   const middleTop = HEADER_BASE + (title.lines.length - 1) * title.lineHeight + (result ? RESULT_H : 0)
   const repHeadline = design === 'stats' ? shareRepHeadline(activity) : null
-  const hero = design === 'route' || repHeadline ? null : shareRepHero(activity)
-  const repDetail = hero ? shareRepDetail(activity) : null
+  // A record outranks the rep pace: the Route card carries it in its stat row instead.
+  const recordHero = design === 'route' ? null : shareRecordHero(activity)
+  const hero = recordHero ?? (design === 'route' || repHeadline ? null : shareRepHero(activity))
+  const repDetail = hero && !recordHero ? shareRepDetail(activity) : null
   const detailH = repDetail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[repDetail.kind] : 0
   const statsTop = height - STATS_PAD_BOTTOM - STATS_BLOCK
   const stripTop = statsTop - (hero ? STATS_PAD_TOP_AFTER_HERO : STATS_PAD_TOP)
@@ -328,7 +330,7 @@ function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   ctx.font = `700 9.5px ${fonts.text}`
-  ctx.fillStyle = ink === PHOTO_INK ? ink.tx : repColor(activity, palette)
+  ctx.fillStyle = hero.record ? (ink === PHOTO_INK ? SHARE_RECORD_HEX.dark : palette.record) : ink === PHOTO_INK ? ink.tx : repColor(activity, palette)
   setSpacing(ctx, 0.08 * 9.5)
   ctx.fillText(hero.eyebrow.toLocaleUpperCase(t.locale), PAD_X, top + 9)
 
@@ -957,7 +959,13 @@ export function zoneBlockLayout(middleH: number, rows: number): ZoneBlockLayout 
 }
 
 /** No gaps between the bar's segments, so each segment is its percent. */
-function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { middleH }: ShareCardLayout) {
+function bareZoneBlock(middleH: number): ZoneBlockLayout {
+  const barTop = (middleH - ZONE_BAR_H - ZONE_MIN_GAP - LEGEND_ROW) / 2
+  return { headlineTop: 0, barTop, legendTop: barTop + ZONE_BAR_H + ZONE_MIN_GAP, legendH: LEGEND_ROW }
+}
+
+/** Without its headline, on a record card whose hero is the record: two big numbers would compete. */
+function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { middleH }: ShareCardLayout, headline = true) {
   const s = t.activity.shareCard
   const zones = shareZones(activity)
   ctx.textAlign = 'left'
@@ -969,30 +977,32 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
     return
   }
 
-  const block = zoneBlockLayout(middleH, 1)
+  const block = headline ? zoneBlockLayout(middleH, 1) : bareZoneBlock(middleH)
   const barW = RIGHT - PAD_X
 
-  ctx.textBaseline = 'alphabetic'
-  const pct = formatPercent(zones.headline.percent)
-  ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
-  const labelW = ctx.measureText(zones.headline.label).width
-  let size = HEADLINE_SIZE
-  const headlineFont = () => {
-    ctx.font = `700 ${size}px ${fonts.display}`
-    setSpacing(ctx, -0.04 * size)
-  }
-  headlineFont()
-  while (size > 40 && ctx.measureText(pct).width + HEADLINE_GAP + labelW > barW) {
-    size -= 4
+  if (headline) {
+    ctx.textBaseline = 'alphabetic'
+    const pct = formatPercent(zones.headline.percent)
+    ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
+    const labelW = ctx.measureText(zones.headline.label).width
+    let size = HEADLINE_SIZE
+    const headlineFont = () => {
+      ctx.font = `700 ${size}px ${fonts.display}`
+      setSpacing(ctx, -0.04 * size)
+    }
     headlineFont()
+    while (size > 40 && ctx.measureText(pct).width + HEADLINE_GAP + labelW > barW) {
+      size -= 4
+      headlineFont()
+    }
+    ctx.fillStyle = palette.tx
+    const baseline = block.headlineTop + Math.round(HEADLINE_SIZE * 0.8)
+    ctx.fillText(pct, PAD_X, baseline)
+    const pctW = ctx.measureText(pct).width
+    setSpacing(ctx, 0)
+    ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
+    ctx.fillText(zones.headline.label, PAD_X + pctW + HEADLINE_GAP, baseline)
   }
-  ctx.fillStyle = palette.tx
-  const baseline = block.headlineTop + Math.round(HEADLINE_SIZE * 0.8)
-  ctx.fillText(pct, PAD_X, baseline)
-  const pctW = ctx.measureText(pct).width
-  setSpacing(ctx, 0)
-  ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
-  ctx.fillText(zones.headline.label, PAD_X + pctW + HEADLINE_GAP, baseline)
 
   const barTop = block.barTop
   ctx.save()
@@ -1193,6 +1203,8 @@ const TRACE_PANEL_FOOT = 14
 const TRACE_ROOM_ZONES = 120
 /** The zones' height with fixed gaps: a taller card gives the rest to the trace, then centres the two. */
 const ZONES_H = 150
+/** The bar and its legend alone, under a record hero. */
+const ZONES_H_NO_HEADLINE = 56
 const TRACE_PANEL_MAX_H = TRACE_PANEL_H * 1.5
 
 function traceColor(scene: ShareCardScene, trace: ShareTrace, tag: number): string {
@@ -1275,18 +1287,19 @@ function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayou
     drawRepMiddle(ctx, scene, layout.repHeadline, layout, trace)
     return
   }
+  const record = !!layout.hero?.record
   const room = layout.middleH - TRACE_PANEL_H - TRACE_PANEL_GAP - TRACE_PANEL_FOOT
-  const shown = trace && room >= TRACE_ROOM_ZONES ? trace : null
+  const shown = trace && room >= (record ? ZONES_H_NO_HEADLINE : TRACE_ROOM_ZONES) ? trace : null
   if (!shown) {
-    drawZones(ctx, scene, layout)
+    drawZones(ctx, scene, layout, !record)
     return
   }
-  const zonesH = Math.max(TRACE_ROOM_ZONES, Math.min(ZONES_H, room))
+  const zonesH = record ? ZONES_H_NO_HEADLINE : Math.max(TRACE_ROOM_ZONES, Math.min(ZONES_H, room))
   const panelH = Math.min(TRACE_PANEL_MAX_H, layout.middleH - zonesH - TRACE_PANEL_GAP - TRACE_PANEL_FOOT)
   const spare = layout.middleH - zonesH - TRACE_PANEL_GAP - panelH - TRACE_PANEL_FOOT
   ctx.save()
   ctx.translate(0, spare / 2)
-  drawZones(ctx, scene, { ...layout, middleH: zonesH })
+  drawZones(ctx, scene, { ...layout, middleH: zonesH }, !record)
   drawTrace(ctx, scene, shown, zonesH + TRACE_PANEL_GAP, panelH)
   ctx.restore()
 }
@@ -1486,9 +1499,9 @@ function drawStats(ctx: Ctx, scene: ShareCardScene, top: number, ink: Ink, motio
     if (progress !== undefined && progress < 1) {
       if (stat.key === 'distance') value = formatKm(activity.distanceKm * progress, 1)
       else if (stat.key === 'time') ({ value, unit } = shareDuration(activity.durationSeconds * progress))
-      else if (stat.key === 'pace' || stat.key === 'repPace') ({ value, pending } = { value: PACE_PENDING, pending: true })
+      else if (stat.key === 'pace' || stat.key === 'repPace' || stat.key === 'record') ({ value, pending } = { value: PACE_PENDING, pending: true })
     }
-    if (progress !== undefined && (stat.key === 'pace' || stat.key === 'repPace' || stat.key === 'hr')) {
+    if (progress !== undefined && (stat.key === 'pace' || stat.key === 'repPace' || stat.key === 'record' || stat.key === 'hr')) {
       alpha = progress < 1 ? 0.35 : 0.35 + 0.65 * motion.finish
     }
     ctx.save()
@@ -1505,8 +1518,9 @@ function drawStats(ctx: Ctx, scene: ShareCardScene, top: number, ink: Ink, motio
     }
     ctx.textBaseline = 'top'
     const rep = stat.key === 'repPace'
-    ctx.font = rep ? `600 9.5px ${fonts.text}` : labelFont
-    ctx.fillStyle = rep ? repColor(activity, palette) : ink.mu
+    const record = stat.key === 'record'
+    ctx.font = rep || record ? `600 9.5px ${fonts.text}` : labelFont
+    ctx.fillStyle = record ? (ink === PHOTO_INK ? SHARE_RECORD_HEX.dark : palette.record) : rep ? repColor(activity, palette) : ink.mu
     ctx.fillText(stat.label, x, top + 19)
     ctx.restore()
     x += width + gap

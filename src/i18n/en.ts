@@ -1405,6 +1405,14 @@ export const en = {
       stridesLegend: (n: number) => `${n} strides`,
       // The switch on an interval session: off, the card is an easy run's.
       showReps: 'Show rep pace',
+      // The switch on a run that set a record: off, the card is the run's own.
+      showRecord: 'Show record',
+      // A record's hero: "New 5 km record · first sub-20", then "−41 s on 20:37" beside its time.
+      newRecord: (distance: string) => `New ${distance} record`,
+      firstUnder: (mark: string) => `first sub-${mark}`,
+      recordGap: (gap: string, previous: string) => `${gap} on ${previous}`,
+      // The Route card's first stat on a record run.
+      recordStat: (distance: string) => `${distance} record`,
       // The switch on the Photo card: the run's trace over the photo.
       showRoute: 'Show route',
       // The Stats card's trace of the run, over time.

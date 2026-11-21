@@ -52,6 +52,8 @@ export interface SharePalette {
   /** An interval route's own grey, under its reps. */
   trace: string
   casing: string
+  /** A record's eyebrow and stat label: a trophy's gold, no accent's and no zone's. */
+  record: string
 }
 
 /** The start marker's ring, and on dark a thin outline that keeps it off the dark tiles. */
@@ -59,6 +61,9 @@ export const SHARE_MARKER_HEX = {
   light: { ring: '#ffffff', outline: null },
   dark: { ring: '#f2f4f3', outline: '#0c0d0d' },
 } as const
+
+/** On a photo the scrim is dark whatever the theme, so the record takes the dark gold. */
+export const SHARE_RECORD_HEX = { light: '#8f5f00', dark: '#f3c45a' } as const
 
 export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
   const s = SURFACES[mode]
@@ -81,5 +86,6 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     markerOutline: SHARE_MARKER_HEX[mode].outline,
     trace: mode === 'light' ? '#7a807e' : '#b9bfbc',
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
+    record: SHARE_RECORD_HEX[mode],
   }
 }

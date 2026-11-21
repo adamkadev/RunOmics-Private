@@ -63,7 +63,7 @@ describe('shareActivity', () => {
     expect(Object.keys(shareActivity(ACTIVITY)).sort()).toEqual(
       [
         'avgHeartRate', 'date', 'dayOfWeek', 'description', 'distanceKm', 'durationSeconds', 'elevationGain',
-        'hrSamples', 'hrZones', 'id', 'paceSamples', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'strides', 'type',
+        'hrSamples', 'hrZones', 'id', 'paceSamples', 'paceSecPerKm', 'record', 'reps', 'route', 'sessionTitle', 'strides', 'type',
       ].sort()
     )
   })

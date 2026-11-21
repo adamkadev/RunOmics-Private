@@ -20,7 +20,7 @@ export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
 /** Part of every verdict's hash: bump it with a prompt change, so runs inside the horizon are written again. */
-export const RUN_VERDICT_PROMPT_VERSION = 6
+export const RUN_VERDICT_PROMPT_VERSION = 7
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
@@ -80,7 +80,7 @@ export function runVerdictNoteKey(note: AthleteNote | null): string {
 const NOTE_PROMPT_CHARS = 300
 
 /** What the run is judged against: the plan's purpose when there is one, Garmin's read of the effort only when there is not. */
-export type RunKind = 'easy' | 'long' | 'strides' | 'runWalk' | 'tempo' | 'threshold' | 'intervals' | 'race'
+export type RunKind = 'easy' | 'long' | 'strides' | 'runWalk' | 'tempo' | 'threshold' | 'intervals' | 'race' | 'check'
 
 const KIND_BY_TYPE: Partial<Record<ActivityType, RunKind>> = {
   Race: 'race',
@@ -100,6 +100,7 @@ const KIND_LABEL: Record<RunKind, string> = {
   threshold: 'a threshold session',
   intervals: 'an interval session',
   race: 'a race',
+  check: 'a fitness check: one hard effort over a set distance inside a session with a warm-up and a cool-down, run to measure fitness - not a race, with no chip time or placing',
 }
 
 /** Never Garmin's training-effect label: the watch's estimate can call an easy run spent entirely in zones 1-2 "Tempo". */
@@ -115,6 +116,7 @@ function judgedType(kind: RunKind, activity: Activity): ActivityType {
     case 'threshold':
       return 'Threshold'
     case 'race':
+    case 'check':
       return 'Race'
     case 'intervals':
       return activity.type === 'VO2Max' || activity.type === 'Anaerobic' || activity.type === 'Sprint' ? activity.type : 'VO2Max'
@@ -148,8 +150,9 @@ export function runKind(
   execution: SessionExecution,
   sessionType: ActivityType | null = null
 ): RunKind {
-  // The watch stores a race workout as "Base": its name is the only sign of it.
-  if (activity.type === 'Race' || (!sessionType && namesRace(planned?.name))) return 'race'
+  if (activity.type === 'Race') return 'race'
+  // The coach sets a check as a race; run inside a session with no chip, it is a measurement. The watch stores it as "Base".
+  if (sessionType === 'Race' || (!sessionType && namesRace(planned?.name))) return 'check'
   const reps = plannedReps(planned)
   const intended = sessionType ?? planned?.type
   const named = intended ? KIND_BY_TYPE[intended] : undefined
@@ -559,8 +562,8 @@ function facts(context: RunVerdictContext) {
     airTemperature: recentWeather ? Math.round(recentWeather.tempC) : null,
     windKph: recentWeather ? Math.round(recentWeather.windKph) : null,
     humidityPct: recentWeather ? Math.round(recentWeather.humidityPct) : null,
-    // A check's warm-up strides are no reps: a race is judged on its pacing.
-    execution: execution && kind !== 'race' ? executionLine(execution, kind, activity) : null,
+    // Warm-up strides are no reps: a race or a check is judged on its effort.
+    execution: execution && kind !== 'race' && kind !== 'check' ? executionLine(execution, kind, activity) : null,
     reps:
       kind === 'runWalk'
         ? runBlocksLine(reps, execution)
@@ -644,7 +647,8 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked. Reps on target at a lower effort than expected are good news, never a shortfall. When they held, look past them: the change since the last session of its kind, the heart rate at that pace, the rep that was hardest, the place of the session in the plan.',
   'An interval session is judged on the reps completed and held at the target, and the fade from first to last; when they held, the story is elsewhere, as for a threshold session.',
   "On a structured session the athlete's RPE covers the whole run, warm-up and cool-down included: judge the reps by their pace and heart rate, never by that number, and never call a session short of its intensity because of it.",
-  'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing. A fitness check is run as a race to measure fitness: a high heart rate and a hard effort are what it asks, never a cost.',
+  'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing.',
+  'A fitness check is one hard effort inside a session, between a warm-up and a cool-down, run to measure fitness: never call it a race, and never judge the whole run\'s pace or distance. A high heart rate and a hard effort are what it asks, never a cost; judge the effort\'s time against earlier bests and what it says about fitness.',
   'A new best ever over a distance, when the facts give one, is the headline: congratulate the athlete on it plainly, with the margin over the previous best.',
   "When the coach's words for the session are given, they say what this particular session was for - a first measurement of a pace, easy running the day after the reps, a long run kept inside its recent maximum - and whether it did that is the verdict. Never quote them back.",
   'Lead with what this run makes the most of; never default to the comparison with earlier runs because it is there.',

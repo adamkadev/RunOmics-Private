@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeBestEfforts, computeRecords, getMostRecentRecord, getQualifiedEffortsByActivityId, getTopEfforts, type RecordEntry } from '../GetRecords'
+import { computeBestEfforts, computeRecords, runRecord, getMostRecentRecord, getQualifiedEffortsByActivityId, getTopEfforts, type RecordEntry } from '../GetRecords'
 import type { Activity } from '@/domain/activity/types'
 
 const act = (id: string, date: string, bestEfforts: Record<string, number> | null, description = ''): Activity =>
@@ -248,5 +248,23 @@ describe('computeRecords against official PBs', () => {
   it('makes the beaten record the newest one for the celebration', () => {
     const check = act('check', '2026-11-21', { '5k': 1_196 })
     expect(getMostRecentRecord(computeRecords([check, race], pbYears, []))?.activityId).toBe('check')
+  })
+})
+
+describe('runRecord', () => {
+  const earlier = act('earlier', '2026-09-05', { '5k': 1237 })
+  const check = act('check', '2026-11-21', { '5k': 1196, '1k': 234 })
+  const activities = [check, earlier]
+  const records = computeRecords(activities, [], [])
+
+  it('takes the longest distance the run holds, its previous best and the round mark it broke first', () => {
+    expect(runRecord(check, records, activities, [], [])).toEqual({ key: '5k', seconds: 1196, previousSeconds: 1237, milestoneSeconds: 1200 })
+  })
+
+  it('names no mark the previous best had already broken, and no record the run does not hold', () => {
+    const faster = act('faster', '2026-10-01', { '5k': 1199 })
+    const all = [check, faster, earlier]
+    expect(runRecord(check, computeRecords(all, [], []), all, [], [])?.milestoneSeconds).toBeNull()
+    expect(runRecord(earlier, records, activities, [], [])).toBeNull()
   })
 })

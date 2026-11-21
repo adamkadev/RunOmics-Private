@@ -1,4 +1,6 @@
 import type { Activity, ActivitySplit, ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
+import { sessionRunType } from '@/domain/activity/effectiveType'
+import type { RunRecord } from '@/domain/race/records'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
 import { prescribedRepPace } from '@/domain/coaching/repPace'
@@ -6,7 +8,7 @@ import type { ShareActivity, ShareReps, ShareStrides } from '@/lib/shareCardStat
 import { pickDefined } from '@/components/pickDefined'
 import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
-import { activityTitle, intendedType, sessionLabel } from '@/lib/activityTitle'
+import { activityTitle, intendedType, sessionLabel, withoutRaceWord } from '@/lib/activityTitle'
 import { plannedSessionForRun, type RunSession } from '@/domain/coaching/sessionForRun'
 
 /** Only the fields a client component reads: every field handed to it goes into the page payload, drawn or not. */
@@ -130,7 +132,7 @@ export function shareStrides(activity: Pick<Activity, 'type' | 'splits'>): Share
  * threshold session; the run itself keeps the watch's type, which analytics and filters read.
  */
 export function shownType(activity: Pick<Activity, 'type' | 'description'>, session: WorkoutPrescription | null): ActivityType {
-  return session ? COACHING_TO_ACTIVITY_TYPE[session.type] : intendedType(activity)
+  return session ? sessionRunType(session.type, activity) : intendedType(activity)
 }
 
 type SessionRun = Pick<Activity, 'id' | 'date' | 'type' | 'description'>
@@ -173,7 +175,7 @@ function sessionName(session: WorkoutPrescription): string {
 
 /** The session's name, where the coach set one, so the page's header agrees with its share card. */
 export function runName(activity: Pick<Activity, 'description' | 'date'>, session: WorkoutPrescription | null): string {
-  return session ? sessionName(session) : activityTitle(activity)
+  return session ? withoutRaceWord(sessionName(session)) : activityTitle(activity)
 }
 
 /** The set alone, as a row, the header and the share card show it: the type is the dot beside it. */
@@ -186,13 +188,17 @@ export function shareActivity(
   activity: Activity,
   session: WorkoutPrescription | null = null,
   planned: PlannedWorkout | null = null,
+  record: RunRecord | null = null,
 ): ShareActivity {
-  const type = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
+  const type = session ? sessionRunType(session.type, activity) : activity.type
+  // The reps follow the session as set: a check's warm-up strides are no interval set.
+  const set = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : type
   return {
     ...pickDefined(activity, SHARE_FIELDS),
     type,
     sessionTitle: session ? sessionName(session) : null,
-    reps: shareReps({ type, splits: activity.splits }, session, planned),
-    strides: shareStrides({ type, splits: activity.splits }),
+    reps: shareReps({ type: set, splits: activity.splits }, session, planned),
+    strides: shareStrides({ type: set, splits: activity.splits }),
+    record,
   }
 }

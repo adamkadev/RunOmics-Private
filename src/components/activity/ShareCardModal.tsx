@@ -61,13 +61,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const hasRoute = (activity.route?.length ?? 0) > 1
   const designs = hasRoute ? SHARE_DESIGNS : SHARE_DESIGNS.filter((d) => d !== 'route')
 
-  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, photoRoute, setPhotoRoute, size, setSize } = useShareCardPrefs(appTheme, hasRoute)
+  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps, showRecord, setShowRecord, photoRoute, setPhotoRoute, size, setSize } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   // Without its reps the card is an easy run's: one colour on the route, the average pace back, the reps only shaded.
-  const card = useMemo(
-    () => (showReps || !activity.reps ? activity : { ...activity, reps: null, repWindows: activity.reps.windows }),
-    [activity, showReps],
-  )
+  const card = useMemo(() => {
+    const shown = showRecord || !activity.record ? activity : { ...activity, record: null }
+    return showReps || !shown.reps ? shown : { ...shown, reps: null, repWindows: shown.reps.windows }
+  }, [activity, showReps, showRecord])
   const { locationName: roughPlace } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
   // Measured again once Geist has loaded: the title's lines set the stats'
@@ -151,7 +151,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     fonts: pageFonts(),
   }), [card, design, size, accent, theme, photoImage, photoRoute, locationName, mapImage, mapPoints, mapLabels])
 
-  const videoKey = [card.id, size, theme, accent, showReps, locationName ?? '', mapImage ? 'map' : 'plain', fontsReady].join('|')
+  const videoKey = [card.id, size, theme, accent, showReps, showRecord, locationName ?? '', mapImage ? 'map' : 'plain', fontsReady].join('|')
   const videoReady = !!videoFiles[videoKey]
 
   // The key names what changes the clip; renderOptions follows the same inputs, so a change cancels and restarts.
@@ -425,6 +425,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               <div data-testid="share-photo-route" className={optionRow} style={{ minHeight: 52 }}>
                 <span className="text-foreground" style={{ fontSize: 17 }}>{s.showRoute}</span>
                 <Toggle checked={photoRoute} onChange={setPhotoRoute} label={s.showRoute} />
+              </div>
+            )}
+
+            {activity.record && (
+              <div data-testid="share-record" className={optionRow} style={{ minHeight: 52 }}>
+                <span className="text-foreground" style={{ fontSize: 17 }}>{s.showRecord}</span>
+                <Toggle checked={showRecord} onChange={setShowRecord} label={s.showRecord} />
               </div>
             )}
 
