@@ -4,7 +4,7 @@ import { sendPush } from '@/lib/sendPushNotification'
 import { pushPaths } from '@/lib/pushLinks'
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
-import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getCoachingOverview, getPastSessions } from '@/application/coaching/GetCoachingView'
 import { getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 import { getCrossTrainingEntries } from '@/application/usecases/GetCrossTraining'
 import { sendOncePer } from '@/application/usecases/SendScheduledPush'
@@ -15,12 +15,14 @@ import { digestPush, weeklyDigest } from './digest'
 export const { GET, POST } = scheduledRoute('weekly-digest', async () => {
   await loadData()
   const today = appTodayIso()
+  const coaching = getCoachingOverview(today)
   const push = digestPush(
     weeklyDigest({
       today,
       activities: getActivitySummaries(),
       planned: await getPlannedWorkouts(),
-      coaching: getCoachingOverview(today),
+      coaching,
+      pastSessions: coaching ? getPastSessions(coaching.plan, today) : [],
       recovery: getRecoveryHistory(),
       crossTraining: getCrossTrainingEntries(),
     })

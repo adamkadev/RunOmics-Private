@@ -1,4 +1,4 @@
-import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
+import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { qualityKind } from '@/domain/training/qualitySession'
@@ -23,6 +23,8 @@ export interface DigestInput {
   activities: readonly ActivitySummary[]
   planned: readonly PlannedWorkout[]
   coaching: CoachingOverview | null
+  /** The week after a renewal belongs to the block it left behind. */
+  pastSessions?: readonly PrescriptionView[]
   recovery: readonly RecoveryDay[]
   crossTraining: readonly CrossTrainingEntry[]
 }
@@ -34,11 +36,11 @@ const MIN_BASELINE_READINGS = 7
 const mean = (values: number[]) => values.reduce((sum, v) => sum + v, 0) / values.length
 
 /** Read the way Plan reads a week, so the push and the Plan screen give the same counts. */
-export function weeklyDigest({ today, activities, planned, coaching, recovery, crossTraining }: DigestInput): WeeklyDigest {
+export function weeklyDigest({ today, activities, planned, coaching, pastSessions = [], recovery, crossTraining }: DigestInput): WeeklyDigest {
   const monday = addDays(startOfWeek(new Date(`${today}T00:00:00`)), -7)
   const lastMonday = isoDate(monday)
   const nextMonday = isoDate(addDays(monday, 7))
-  const maps = planMaps(activities, planned, coaching?.workouts ?? [])
+  const maps = planMaps(activities, planned, [...pastSessions, ...(coaching?.workouts ?? [])])
   const days = weekPlanDays(weekDates(monday), maps)
   const target = planWeekTarget(weekDates(monday), maps, today, null)
 

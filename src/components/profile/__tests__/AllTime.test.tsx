@@ -70,8 +70,8 @@ describe('AllTime by year (3.0)', () => {
     expect(screen.getByTestId('year-change').textContent).toBe('+41%')
     expect(screen.getByTestId('year-change').className).toContain('text-[var(--pos)]')
     expect(screen.getAllByTestId('year-totals').map((line) => line.textContent)).toEqual([
-      `${t.allTime.yearTotals('1,125', 2)} · ${t.allTime.monthsRun(2)}`,
-      `${t.allTime.yearTotals('800', 2)} · ${t.allTime.fromMonth('May')} · ${t.allTime.monthsRun(2)}`,
+      `${t.allTime.yearTotals('1,125', 2)} · ${t.allTime.monthsRun(2)} · ${t.allTime.perWeek('164')}`,
+      `${t.allTime.yearTotals('800', 2)} · ${t.allTime.fromMonth('May')} · ${t.allTime.monthsRun(2)} · ${t.allTime.perWeek('106')}`,
     ])
   })
 

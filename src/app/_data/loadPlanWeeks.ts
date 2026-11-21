@@ -1,7 +1,7 @@
 import 'server-only'
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
-import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getPlanSessions, type CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { qualityKind } from '@/domain/training/qualitySession'
 import type { WeekTargetDay } from '@/domain/training/weekTarget'
 import { monthDays } from '@/domain/training/monthDays'
@@ -24,7 +24,7 @@ export interface PlanReading {
 /** Read the way Plan reads a week, so Analytics' "weeks on plan" and "plan asks for" agree with the Plan screen. */
 export async function loadPlanWeeks(coaching: CoachingOverview | null, today: string): Promise<PlanReading> {
   const planned = await getPlannedWorkouts()
-  const coach = coaching?.workouts ?? []
+  const coach = getPlanSessions(coaching, today)
   const dates = [...planned.map((p) => p.date), ...coach.map((view) => view.prescription.date)].sort()
   return planReading(planMaps(getActivitySummaries(), planned, coach), dates, today)
 }

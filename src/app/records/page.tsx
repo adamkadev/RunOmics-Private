@@ -5,6 +5,7 @@ import { getMilestones, getNextMilestones } from '@/application/usecases/GetMile
 import { getRecurringRoutes } from '@/application/usecases/GetRecurringRoutes'
 import { getReturnProgress } from '@/application/usecases/GetReturnProgress'
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
+import { getVdotProfile } from '@/application/usecases/GetVdotProfile'
 import { RecordsClient } from '@/components/records/RecordsClient'
 import { appTodayIso } from '@/lib/calendarDate'
 import { EFFORT_LIST_MAX } from '@/components/records/recordsView'
@@ -42,6 +43,7 @@ export default async function RecordsPage() {
         returnProgress={getReturnProgress(today)}
         today={today}
         hasGoals={hasGoals}
+        vdotProfile={getVdotProfile(records, today)}
       />
     </div>
   )

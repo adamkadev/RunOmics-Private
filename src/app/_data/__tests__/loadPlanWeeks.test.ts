@@ -22,6 +22,12 @@ describe('the plan as Analytics reads it', () => {
     ])
   })
 
+  it('gives a week of a past block its whole plan when the watch calendar holds only part of it', () => {
+    const coach = (date: string, km: number) => ({ prescription: { date, type: 'easy' as const }, state: 'completed' as const, distanceMeters: km * 1000 })
+    const maps = planMaps([], [garmin('2026-10-27')], [coach('2026-10-27', 9), coach('2026-10-29', 10), coach('2026-11-01', 16)])
+    expect(planReading(maps, ['2026-10-27', '2026-10-29', '2026-11-01'], '2026-11-21').weeks).toEqual([{ week: '2026-10-26', planKm: 35, planQuality: 0 }])
+  })
+
   it('reads nothing without a plan', () => {
     expect(planReading(planMaps([run('2026-09-14')], []), [], TODAY)).toEqual({ weeks: [], missed: [] })
   })

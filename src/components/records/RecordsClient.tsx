@@ -6,7 +6,9 @@ import type { Milestone, NextMilestone } from '@/application/usecases/GetMilesto
 import type { PbAlert } from '@/application/usecases/GetPbAlerts'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import type { ReturnProgress } from '@/application/usecases/GetReturnProgress'
+import type { VdotProfile } from '@/application/usecases/GetVdotProfile'
 import { RecordsLeaderboard } from './RecordsLeaderboard'
+import { VdotProfileCard } from './VdotProfileCard'
 import { RecurringRoutes } from './RecurringRoutes'
 import { ReturnProgressView } from './ReturnProgressView'
 import { MilestonesTimeline, NextUpCard } from '@/components/milestones/MilestonesTimeline'
@@ -29,9 +31,10 @@ interface Props {
   returnProgress?: ReturnProgress | null
   today: string
   hasGoals?: boolean
+  vdotProfile?: VdotProfile | null
 }
 
-export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, nextMilestones, recurringRoutes, returnProgress = null, today: serverToday, hasGoals = false }: Props) {
+export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, nextMilestones, recurringRoutes, returnProgress = null, today: serverToday, hasGoals = false, vdotProfile = null }: Props) {
   const today = useToday(serverToday)
   const thisYear = Number(today.slice(0, 4))
   // The tab lives in the URL, so /milestones can land on it and a run's page comes back to it.
@@ -59,6 +62,7 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
           <div className="space-y-3">
             <PbAlertLine alerts={pbAlerts} />
             <RecordsLeaderboard records={records} topEfforts={topEfforts} predictions={predictions} hasGoals={hasGoals} />
+            {vdotProfile && <VdotProfileCard profile={vdotProfile} />}
           </div>
         )}
 
