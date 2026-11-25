@@ -2105,13 +2105,16 @@ export const en = {
       aria: (rows: string) => `VDOT by distance: ${rows}`,
       leadSpeed: (gap: number) => `Your short records lead by ${gap} VDOT: endurance is where the time is.`,
       leadEndurance: (gap: number) => `Your long records lead by ${gap} VDOT: speed is where the time is.`,
-      even: 'Your records sit level with each other, short and long.',
       // Old enough that the gap may be a race not run rather than a weakness.
-      stale: (labels: string) => `Set over six months ago: ${labels}. The gap may be a race not run yet.`,
+      leadSpeedStale: (gap: number, labels: string[]) =>
+        `Your short records lead by ${gap} VDOT, but your ${new Intl.ListFormat('en', { type: 'conjunction' }).format(labels)} ${labels.length === 1 ? 'is' : 'are'} over six months old: endurance may be the gap, or a race not run yet.`,
+      leadEnduranceStale: (gap: number, labels: string[]) =>
+        `Your long records lead by ${gap} VDOT, but your ${new Intl.ListFormat('en', { type: 'conjunction' }).format(labels)} ${labels.length === 1 ? 'is' : 'are'} over six months old: speed may be the gap, or a race not run yet.`,
+      even: 'Your records sit level with each other, short and long.',
       worthTitle: (label: string) => `At your ${label} level`,
       now: 'Now',
-      worth: 'Worth',
-      note: "VDOT from Daniels' tables.",
+      worth: 'Daniels',
+      note: "Records from the mile up. VDOT and times from Daniels' tables; the predictions above are Garmin's own.",
     },
     segmented: {
       best: 'Best times',

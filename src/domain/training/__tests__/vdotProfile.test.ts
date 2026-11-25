@@ -45,6 +45,18 @@ describe('vdotProfile', () => {
     expect(p.staleTrailing.map((r) => r.key)).toEqual(['10k'])
   })
 
+  it('measures the gap from a side\'s recent records before an older faster one', () => {
+    const p = vdotProfile([rec('1mile', 1.60934, 328, '2025-11-01'), rec('5k', 5, 1200, '2026-11-01'), rec('10k', 10, 2600, '2026-04-02')], DISTANCES, '2026-11-21')!
+    expect(p.best.key).toBe('1mile')
+    expect(p.gap).toBe(Math.round(p.rows[1]!.vdot - p.rows[2]!.vdot))
+  })
+
+  it('measures the gap from old records when a side has nothing recent', () => {
+    const p = vdotProfile([rec('5k', 5, 1200, '2026-11-01'), rec('10k', 10, 2640, '2026-04-02')], DISTANCES, '2026-11-21')!
+    expect(p.lead).toBe('speed')
+    expect(p.staleTrailing.map((r) => r.key)).toEqual(['10k'])
+  })
+
   it('never marks a record without a date as stale', () => {
     const p = vdotProfile([rec('5k', 5, 1200), rec('10k', 10, 2640, null)], DISTANCES, '2026-11-21')!
     expect(p.staleTrailing).toEqual([])

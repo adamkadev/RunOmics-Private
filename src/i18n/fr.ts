@@ -1942,12 +1942,15 @@ export const fr = {
       aria: (rows: string) => `VDOT par distance : ${rows}`,
       leadSpeed: (gap: number) => `Tes records courts mènent de ${gap} VDOT : le temps à gagner est en endurance.`,
       leadEndurance: (gap: number) => `Tes records longs mènent de ${gap} VDOT : le temps à gagner est en vitesse.`,
+      leadSpeedStale: (gap: number, labels: string[]) =>
+        `Tes records courts mènent de ${gap} VDOT, mais ${labels.length === 1 ? 'le record' : 'les records'} ${new Intl.ListFormat('fr', { type: 'conjunction' }).format(labels)} ${labels.length === 1 ? 'a' : 'ont'} plus de six mois : le temps à gagner est peut-être en endurance, ou dans une course pas encore courue.`,
+      leadEnduranceStale: (gap: number, labels: string[]) =>
+        `Tes records longs mènent de ${gap} VDOT, mais ${labels.length === 1 ? 'le record' : 'les records'} ${new Intl.ListFormat('fr', { type: 'conjunction' }).format(labels)} ${labels.length === 1 ? 'a' : 'ont'} plus de six mois : le temps à gagner est peut-être en vitesse, ou dans une course pas encore courue.`,
       even: 'Tes records courts et longs se tiennent au même niveau.',
-      stale: (labels: string) => `Records de plus de six mois : ${labels}. L’écart vient peut-être d’une course pas encore courue.`,
       worthTitle: (label: string) => `Au niveau de ton ${label}`,
       now: 'Actuel',
-      worth: 'Vaut',
-      note: 'VDOT selon les tables de Daniels.',
+      worth: 'Daniels',
+      note: 'Records à partir du mile. VDOT et temps selon les tables de Daniels ; les prédictions au-dessus sont celles de Garmin.',
     },
     segmented: {
       best: 'Chronos',
