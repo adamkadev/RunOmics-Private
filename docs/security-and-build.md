@@ -58,10 +58,10 @@ public site, anyone who is not signed in sees what a viewer sees.
 | Run notes and tags (`/api/activities/[id]/note`) | Reads them | Reads and edits them |
 | The coach's words (`/api/coaching/words`) | Yes | Yes |
 | Share cards | Yes | Yes |
-| Explore: generate a loop | Yes, without avoid spots | Yes, around their avoid spots |
+| Explore: generate a loop | Yes | Yes |
 | Route names | The geocoded place only | Their own names, and renames them |
 | Morning check-ins, niggles (`wellness`) | No: the rules refuse the read | Yes |
-| Avoid spots | No: the rules refuse the read | Yes |
+| Avoid spots (no longer used, kept for the backup) | No: the rules refuse the read | Yes |
 | Races and goals editor (`raceEntries`, `goalEntries`) | Sees the races and goals on the pages; the rules refuse the read | Yes, in Settings |
 | Height and weight (`/api/athlete/body`) | No | Yes, in Settings |
 | Settings, Sync, the data export, job trace, phone errors | No | Yes |
@@ -88,7 +88,7 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
   side, pain 0-10, an optional `changesRun`) and `skipped` (`ill`, `rest` or `life`: the day's
   planned session, marked skipped on Plan). Read by the owner only: health data never reaches
   another viewer, and pages never server-render it.
-- `avoidSpots`: Explore's spots to avoid, with `lon`, `lat`, an integer `radiusM` of 20-250, a
+- `avoidSpots`: Explore's former spots to avoid, no longer read by the generator but still backed up by the sync, with `lon`, `lat`, an integer `radiusM` of 20-250, a
   `createdAt` date, an optional `reason` (`blocked`, `mud` or `unsafe`) and an optional `expiresOn`
   date. Read by the owner only: they say where the athlete runs.
 - `raceEntries`: a race with a `name` (1-80 characters), a `date`, a `distanceKm` of 1-250, a
@@ -173,8 +173,7 @@ What leaves the app, and from where:
 - **OpenStreetMap Nominatim** (browser). A run's town, from its first point rounded to 0.01°, only
   without a MapTiler token or when MapTiler names no town there.
 - **OpenRouteService** (server only, `OpenRouteServiceGateway.ts`). Explore's loop requests: the
-  start point as picked, any via points, the loop length and seed, and the avoid spots near the loop
-  as polygons. Its logs replace every coordinate with `#`.
+  start point (the usual one or the one tapped), any via points, the loop length and seed. Its logs replace every coordinate with `#`.
 - **Firebase** (Google). Auth handles the Google sign-in. Firestore holds what the athletes write
   (`activityNotes`, `wellness`, `routeNames`, `avoidSpots`, `runShoes`), the push tokens and the server's own
   records (`jobEvents`, `aiInsights`, `aiStatus`, `aiBudget`, `clientErrors`, `notifications`). FCM delivers the

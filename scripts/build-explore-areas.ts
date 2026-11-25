@@ -21,7 +21,7 @@ import { citySource, displayName } from './explore/cities'
 import { communeContaining, geometryIntersectsBBox, mostPopulous, roundOutward, unionBBox, type Commune } from './explore/communes'
 import { seconds } from './explore/http'
 import { labelPoint } from './explore/labelPoint'
-import { assignCells, RUNNABLE_STEP_M, wayCells } from './explore/runnable'
+import { assignCells, outsideForests, RUNNABLE_STEP_M, wayCells } from './explore/runnable'
 import { geometryAreaM2, simplifyGeometry, SIMPLIFY_M, vertexCount } from './explore/simplify'
 import {
   DEFAULT_OVERPASS,
@@ -33,6 +33,7 @@ import {
   dataGouvDate,
   irisQuartiers,
   osmAdmin10,
+  forests,
   runnableWays,
 } from './explore/sources'
 
@@ -235,10 +236,12 @@ async function main(): Promise<void> {
 
   const union = unionBBox(raw.map((unit) => geometryBBox(unit.geometry)))
   const runnable = await runnableWays(sources, union)
+  const woods = await forests(sources, union)
+  const keep = outsideForests(woods)
   const cells = new Set<number>()
-  for (const coords of runnable.ways) wayCells(coords, p, cells, RUNNABLE_STEP_M)
+  for (const coords of runnable.ways) wayCells(coords, p, cells, RUNNABLE_STEP_M, keep)
   const assigned = assignCells(cells, raw, p)
-  console.log(`[explore] ${runnable.ways.length} runnable ways -> ${cells.size} cells in the box`)
+  console.log(`[explore] ${runnable.ways.length} runnable ways outside ${woods.length} forests -> ${cells.size} cells in the box`)
 
   const units: UnitInput[] = raw.map((unit) => {
     const geometry = simplifyGeometry(unit.geometry, p, SIMPLIFY_M)
@@ -260,7 +263,7 @@ async function main(): Promise<void> {
   if (raw.some((unit) => unit.kind === 'commune')) {
     fileSources.push({ id: 'ign-commune', label: 'IGN – ADMIN EXPRESS COG', licence: LICENCE_OUVERTE, url: 'https://geoservices.ign.fr/adminexpress', version: nearby.edition })
   }
-  fileSources.push({ id: 'osm-runnable', label: '© OpenStreetMap contributors – runnable ways', ...ODBL, version: (runnable.base ?? generatedAt).slice(0, 10) })
+  fileSources.push({ id: 'osm-runnable', label: '© OpenStreetMap contributors – runnable ways and forests', ...ODBL, version: (runnable.base ?? generatedAt).slice(0, 10) })
 
   const area = buildAreaFile({ id: areaId, name: city.name, generatedAt, grid, sources: fileSources, units })
   const text = serializeArea(area)

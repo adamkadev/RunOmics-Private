@@ -3,13 +3,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { areaForCluster } from '@/domain/explore/areaForCluster'
 import type { SessionDay } from '@/domain/explore/climbBudget'
-import type { AreaCoverage, ExploreAreaFile, ExploreAreaRef, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
+import type { AreaCoverage, ExploreAreaFile, ExploreAreaRef, RoutePreferences, ScoredRoute, UnitCoverage } from '@/domain/explore/types'
 import type { RouteCluster } from '@/application/usecases/GetAllRoutes'
 import { removeUrlParams, useUrlParam } from '@/lib/useUrlParam'
 import { parseExploreRoute } from './exploreHref'
 import { generatorDay, generatorPlan, generatorTarget, nextQualityKind, type ExplorePlan, type GeneratorTarget } from './routeGenerator'
-import { routeStartState, type RouteStartState } from './routeStart'
-import { useAvoidSpots, type AvoidSpots } from './useAvoidSpots'
 import type { LonLat } from './workerProtocol'
 
 export const EXPLORE_PARAMS = ['explore', 'quartier', 'km', 'pace', 'date', 'from'] as const
@@ -57,14 +55,15 @@ export interface ExploreGenerator {
   planRun: (unitId: string) => void
   close: () => void
   setKm: (km: number) => void
+  setUnit: (unitId: string) => void
   drawn: ScoredRoute | null
   setDrawn: (route: ScoredRoute | null) => void
-  start: RouteStartState
-  avoid: AvoidSpots
+  /** The start tapped on the map, null until then: the map client falls back on the usual start. */
+  picked: LonLat | null
   day: SessionDay
   /** The kind of the quality session the next day, "Threshold", or null. */
   nextKind: string | null
-  /** What a tap on the map does while it is open: mark a spot or set the start; null while it is shut. */
+  /** What a tap on the map does while it is open: set the start; null while it is shut. */
   mapPick: ((lngLat: LonLat) => void) | null
   /** The opener of the generator closed last, once: focus goes back to it when the map it gives back has rendered. */
   takeClosedOpener: () => GeneratorOpener | null
@@ -96,9 +95,6 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
   }))
   const [drawn, setDrawn] = useState<ScoredRoute | null>(null)
   const [picked, setPicked] = useState<LonLat | null>(null)
-  const start = useMemo(() => routeStartState(picked), [picked])
-  const avoid = useAvoidSpots(generatorOpen, today ?? undefined)
-  const { setMarking } = avoid
   const planDay = generator?.plan ?? null
   const day = useMemo(() => generatorDay(explorePlans, planDay, today), [explorePlans, planDay, today])
   const nextKind = useMemo(() => nextQualityKind(explorePlans, planDay, today), [explorePlans, planDay, today])
@@ -122,12 +118,12 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     setGenerator(null)
     setDrawn(null)
     setPicked(null)
-    setMarking(false)
     if (back) onReturn(back)
     if (exploreParam !== null) removeUrlParams(EXPLORE_PARAMS)
-  }, [generator, exploreParam, setMarking, onReturn])
+  }, [generator, exploreParam, onReturn])
 
   const setKm = useCallback((km: number) => setGenerator((g) => (g ? { ...g, km } : g)), [])
+  const setUnit = useCallback((unitId: string) => setGenerator((g) => (g ? { ...g, unitId } : g)), [])
 
   const takeClosedOpener = useCallback(() => {
     const opener = closedOpener.current
@@ -135,7 +131,7 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     return opener
   }, [])
 
-  const mapPick = !generatorOpen ? null : avoid.marking ? avoid.mark : setPicked
+  const mapPick = generatorOpen ? setPicked : null
 
   return {
     generator,
@@ -146,10 +142,10 @@ export function useExploreGenerator(input: ExploreGeneratorInput): ExploreGenera
     planRun,
     close,
     setKm,
+    setUnit,
     drawn,
     setDrawn,
-    start,
-    avoid,
+    picked,
     day,
     nextKind,
     mapPick,
@@ -174,7 +170,28 @@ export function generatorUnit(
   const asked = unitId ? file.features.find((f) => f.properties.id === unitId) : undefined
   const fromHome = (id: string) => coverage?.units.find((u) => u.id === id)?.distanceKm ?? null
   if (asked) return { id: asked.properties.id, name: asked.properties.name, distanceKm: fromHome(asked.properties.id) }
-  if (!coverage) return null
-  const next = coverage.units.find((u) => u.id === coverage.nextId) ?? [...coverage.units].sort((a, b) => a.pct - b.pct)[0]
+  const next = coverage ? autoUnit(coverage) : null
   return next ? { id: next.id, name: next.name, distanceKm: next.distanceKm ?? null } : null
+}
+
+function autoUnit(coverage: AreaCoverage): UnitCoverage | null {
+  return coverage.units.find((u) => u.id === coverage.nextId) ?? [...coverage.units].sort((a, b) => a.pct - b.pct)[0] ?? null
+}
+
+export interface GeneratorChoice {
+  id: string
+  name: string
+  pct: number
+  /** The quartier the generator picks by itself. */
+  auto: boolean
+}
+
+/** The automatic pick first, then the others by name; a unit with no runnable street holds no loop unless it is the one shown. */
+export function generatorChoices(coverage: AreaCoverage | null, currentId: string | null = null): GeneratorChoice[] {
+  if (!coverage) return []
+  const auto = autoUnit(coverage)
+  const others = coverage.units
+    .filter((u) => u.id !== auto?.id && (u.total > 0 || u.id === currentId))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+  return [...(auto ? [auto] : []), ...others].map((u) => ({ id: u.id, name: u.name, pct: u.pct, auto: u.id === auto?.id }))
 }

@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs'
 import type { Page } from '@playwright/test'
 import { test, expect } from './fixtures'
-import { clearCollection, listDocuments, signInAsOwner } from './owner'
+
+const USUAL_START_LINE = 'Where most of your runs start · tap the map to move it'
 
 // The e2e build has no MapTiler or OpenRouteService key, so these walk the DOM paths and mock the routing proxy.
 test.use({ viewport: { width: 393, height: 852 } })
 
-type LoopRequest = { start: [number, number]; distanceM: number; seeds: number[]; avoid?: [number, number, number][] }
+type LoopRequest = { start: [number, number]; distanceM: number; seeds: number[] }
 
 async function mockLoops(page: Page): Promise<LoopRequest[]> {
   const requests: LoopRequest[] = []
@@ -93,11 +94,7 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
 
   await page.goto('/activities?view=map&explore=route&km=8')
   const panel = page.getByTestId('route-generator')
-  await expect(panel.getByTestId('route-pick-prompt')).toHaveText('Tap the map where you’ll start.')
-  expect(request).toBeNull()
-  await tapMap(page, 0.5, 0.3, async () => {
-    await expect(panel.getByTestId('route-pick-prompt')).toHaveCount(0, { timeout: 1_500 })
-  })
+  await expect(panel.getByTestId('route-start-line')).toHaveText(USUAL_START_LINE, { timeout: 30_000 })
   // The labels show while loops load; the mocked climb only once they're in.
   await expect(panel.getByTestId('route-stats')).toContainText('+24 m')
   expect(request).not.toBeNull()
@@ -132,48 +129,19 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
   await expect(panel.getByTestId('route-saved')).toBeVisible()
 })
 
-test('a tap on the map sets the loop’s start there', async ({ page }) => {
+test('a tap on the map moves the loop’s start from the usual one', async ({ page }) => {
   const requests = await mockLoops(page)
   await page.goto('/activities?view=map&explore=route&km=8')
   const panel = page.getByTestId('route-generator')
-  await expect(panel.getByTestId('route-pick-prompt')).toHaveText('Tap the map where you’ll start.')
+  await expect(panel.getByTestId('route-stats')).toContainText('+24 m', { timeout: 30_000 })
+  const usual = requests.at(-1)!.start
 
   await tapMap(page, 0.5, 0.3, async () => {
-    await expect(panel.getByTestId('route-pick-prompt')).toHaveCount(0, { timeout: 1_500 })
+    await expect(panel.getByTestId('route-start-line')).not.toHaveText(USUAL_START_LINE, { timeout: 1_500 })
   })
-  await expect(panel.getByTestId('route-stats')).toContainText('+24 m')
-  expect(requests.length).toBeGreaterThan(0)
+  await expect.poll(() => requests.at(-1)!.start).not.toEqual(usual)
   const [lon, lat] = requests.at(-1)!.start
   expect(Number.isFinite(lon) && Number.isFinite(lat)).toBe(true)
-})
-
-test('Mark a spot, then a tap on the map adds its row, and the row offers its size', async ({ page }) => {
-  await signInAsOwner(page)
-  await clearCollection('avoidSpots')
-  await mockLoops(page)
-  await page.goto('/activities?view=map&explore=route&km=8')
-  const panel = page.getByTestId('route-generator')
-  await panel.getByRole('button', { name: /^Route options/ }).click()
-  await expect(panel.getByTestId('route-avoid-spot')).toHaveCount(0)
-
-  await panel.getByTestId('route-avoid-mark').click()
-  await expect(panel.getByTestId('route-avoid-marking')).toBeVisible()
-  await tapMap(page, 0.5, 0.3, async () => {
-    await expect(panel.getByTestId('route-avoid-spot')).toHaveCount(1, { timeout: 1_500 })
-  })
-  await expect(panel.getByTestId('route-avoid-marking')).toBeHidden()
-  await expect(panel.getByTestId('route-pick-prompt')).toHaveText('Tap the map where you’ll start.')
-
-  await panel.getByRole('button', { name: /^Show the spot marked/ }).click()
-  const sizes = panel.getByTestId('route-avoid-radius')
-  await expect(sizes.getByRole('button', { name: '80 m' })).toHaveAttribute('aria-pressed', 'true')
-  await sizes.getByRole('button', { name: '150 m' }).click()
-  await expect(sizes.getByRole('button', { name: '150 m' })).toHaveAttribute('aria-pressed', 'true')
-
-  await expect.poll(async () => (await listDocuments('avoidSpots')).map((spot) => spot.fields.radiusM?.integerValue)).toEqual(['150'])
-  await page.reload()
-  await panel.getByRole('button', { name: /^Route options/ }).click()
-  await expect(panel.getByTestId('route-avoid-spot')).toHaveCount(1)
 })
 
 test('a tap on a quartier opens its sheet', async ({ page }) => {

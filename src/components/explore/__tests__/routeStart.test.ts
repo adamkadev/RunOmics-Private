@@ -15,4 +15,13 @@ describe('the start', () => {
     expect(startLineOf(tapped, HOME)).toBe('1.0 km from home · tap the map to move the start')
     expect(startLineOf(tapped, null)).toBe('Tap the map to move the start')
   })
+
+  it('starts where most runs began until the map is tapped', () => {
+    const usual = routeStartState(null, [7.751, 48.62])
+    expect(usual).toEqual({ origin: [7.751, 48.62], waiting: false, usual: true })
+    expect(startLineOf(usual, HOME)).toBe('Where most of your runs start · tap the map to move it')
+
+    const tapped = routeStartState([7.75, 48.629], [7.751, 48.62])
+    expect(tapped).toEqual({ origin: [7.75, 48.629], waiting: false, usual: false })
+  })
 })

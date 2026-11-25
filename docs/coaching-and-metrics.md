@@ -323,7 +323,7 @@ it is scored as an easy run.
 
 | Session | Budget | Also |
 |---|---|---|
-| Quality (controlled threshold, threshold, tempo, intervals) | flat, as "Flat for the reps" | |
+| Quality (controlled threshold, threshold, tempo, intervals) | flat, kept so by itself on a quality day | |
 | The day before a quality session | ≤ 12 m/km | |
 | Recovery run | ≤ 12 m/km | |
 | Long run | ≤ 15 m/km | steep descents (7 % or more) scored like steep climbs |

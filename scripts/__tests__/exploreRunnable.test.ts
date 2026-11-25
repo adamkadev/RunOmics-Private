@@ -1,7 +1,7 @@
 import type { Polygon, Position } from 'geojson'
 import { describe, expect, it } from 'vitest'
 import { cellKey, projection, unproject } from '@/domain/explore/grid'
-import { assignCells, overpassProblem, RUNNABLE_STEP_M, runnableWaysQuery, tileBBox, wayCells, wayCoords } from '../explore/runnable'
+import { assignCells, forestQuery, forestShapes, outsideForests, overpassProblem, RUNNABLE_STEP_M, runnableWaysQuery, tileBBox, wayCells, wayCoords } from '../explore/runnable'
 
 const p = projection({ origin: [20, 5], cellM: 150 })
 /** A way through points given in metres east and north of the origin, as flat [lon, lat, …]. */
@@ -117,5 +117,51 @@ describe('tileBBox', () => {
 
   it('keeps a small box whole', () => {
     expect(tileBBox([6, 49, 6.05, 49.03], 0.09, 0.06)).toEqual([[6, 49, 6.05, 49.03]])
+  })
+})
+
+describe('forests', () => {
+  const ring = (x0: number, y0: number, x1: number, y1: number) =>
+    [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]].map(([x, y]) => {
+      const [lon, lat] = unproject(p, x!, y!)
+      return { lon, lat }
+    })
+  const wood = { type: 'way', id: 1, geometry: ring(150, 0, 450, 300) }
+
+  it('leaves out of the runnable cells the stretch of a way inside a forest', () => {
+    const woods = forestShapes([wood])
+    const cells = wayCells(line([10, 75], [740, 75]), p, new Set(), RUNNABLE_STEP_M, outsideForests(woods))
+    expect([...cells].sort((a, b) => a - b)).toEqual([cellKey(0, 0), cellKey(3, 0), cellKey(4, 0)])
+  })
+
+  it('keeps a clump of trees under a hectare, an open way and a relation cut short', () => {
+    const clump = { type: 'way', id: 2, geometry: ring(0, 0, 90, 90) }
+    const open = { type: 'way', id: 3, geometry: ring(0, 0, 300, 300).slice(0, 4) }
+    const cut = { type: 'relation', id: 4, members: [{ type: 'way', ref: 5, role: 'outer', geometry: ring(0, 0, 300, 300).slice(0, 3) }] }
+    expect(forestShapes([clump, open, cut])).toEqual([])
+  })
+
+  it('assembles a forest drawn as a relation, its clearing still counted', () => {
+    const outer = ring(0, 0, 600, 600)
+    const forest = {
+      type: 'relation',
+      id: 6,
+      members: [
+        { type: 'way', ref: 7, role: 'outer', geometry: outer.slice(0, 3) },
+        { type: 'way', ref: 8, role: 'outer', geometry: outer.slice(2) },
+        { type: 'way', ref: 9, role: 'inner', geometry: ring(200, 200, 400, 400) },
+      ],
+    }
+    const keep = outsideForests(forestShapes([forest]))
+    expect(keep(...unproject(p, 100, 100))).toBe(false)
+    expect(keep(...unproject(p, 300, 300))).toBe(true)
+    expect(keep(...unproject(p, 700, 700))).toBe(true)
+  })
+
+  it('asks Overpass for forest and wood, as ways and as multipolygons', () => {
+    const query = forestQuery([6, 49, 6.1, 49.1])
+    expect(query).toContain('way["landuse"="forest"](49.000000,6.000000,49.100000,6.100000);')
+    expect(query).toContain('rel["type"="multipolygon"]["natural"="wood"]')
+    expect(query).toContain('out geom qt;')
   })
 })

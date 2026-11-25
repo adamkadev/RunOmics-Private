@@ -266,8 +266,8 @@ function score(area: AreaState, msg: RequestOf<'scoreRoutes'>): ExploreResults['
 }
 
 function plan(area: AreaState, msg: RequestOf<'routePlan'>): ExploreResults['routePlan'] {
-  const { unitId, origin, distanceM, seeds, avoid } = msg
-  return planRoute(area.index, visitedCells(area), { unitId, origin, home: homeOf(area, msg.home, msg.homeFromTracks, undefined), distanceM, seeds, avoid })
+  const { unitId, origin, distanceM, seeds } = msg
+  return planRoute(area.index, visitedCells(area), { unitId, origin, home: homeOf(area, msg.home, msg.homeFromTracks, undefined), distanceM, seeds })
 }
 
 function added(ids: string[]): AddedTracks {
