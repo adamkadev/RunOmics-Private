@@ -26,6 +26,7 @@ describe('the proxy', () => {
     function makePrivate() {
       vi.stubEnv('RUNOMICS_PRIVATE', '1')
       vi.stubEnv('SESSION_SECRET', SECRET)
+      vi.stubEnv('FIREBASE_PROJECT_ID', 'runomics-owner')
       vi.stubEnv('RUNOMICS_VIEWERS', '')
     }
 
@@ -47,8 +48,14 @@ describe('the proxy', () => {
 
     it('lets the owner through', () => {
       makePrivate()
-      const cookie = signSession({ sub: 'uid', owner: true, email: 'adam@example.com' }, SECRET)
+      const cookie = signSession({ sub: 'uid', owner: true, email: 'adam@example.com' }, { secret: SECRET, audience: 'runomics-owner' })
       expect(proxy(request('/plan', cookie)).headers.get('x-middleware-next')).toBe('1')
+    })
+
+    it('sends the other deployment’s cookie to sign-in', () => {
+      makePrivate()
+      const cookie = signSession({ sub: 'uid', owner: true, email: 'second@example.com' }, { secret: SECRET, audience: 'runomics-second' })
+      expect(proxy(request('/plan', cookie)).status).toBe(307)
     })
 
     it('keeps sign-in itself open', () => {

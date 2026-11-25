@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import {
   SESSION_MAX_AGE_SEC,
@@ -7,6 +8,7 @@ import {
   mayView,
   publicRealDataError,
   returnPath,
+  sessionKey,
   sessionSecret,
   signSession,
   verifiedEmail,
@@ -15,11 +17,12 @@ import {
 } from '../siteAccess'
 
 const SECRET = 'a-test-secret-that-is-long-enough-1234567890'
+const KEY = { secret: SECRET, audience: 'runomics-owner' }
 const NOW = Date.parse('2026-10-07T12:00:00Z')
 const OWNER = { sub: 'uid-owner', owner: true, email: 'adam@example.com' }
 const VIEWER = { sub: 'uid-viewer', owner: false, email: 'lamiaa@example.com' }
 
-const PRIVATE = { RUNOMICS_PRIVATE: '1', SESSION_SECRET: SECRET, RUNOMICS_VIEWERS: 'Lamiaa@Example.com' }
+const PRIVATE = { RUNOMICS_PRIVATE: '1', SESSION_SECRET: SECRET, FIREBASE_PROJECT_ID: 'runomics-owner', RUNOMICS_VIEWERS: 'Lamiaa@Example.com' }
 
 describe('the private-site settings', () => {
   it('is off unless RUNOMICS_PRIVATE says 1 or true', () => {
@@ -34,6 +37,13 @@ describe('the private-site settings', () => {
     expect(sessionSecret({})).toBeNull()
     expect(sessionSecret({ SESSION_SECRET: 'changeme' })).toBeNull()
     expect(sessionSecret({ SESSION_SECRET: SECRET })).toBe(SECRET)
+  })
+
+  it('signs only with a usable secret and the deployment’s Firebase project', () => {
+    expect(sessionKey({ SESSION_SECRET: SECRET, FIREBASE_PROJECT_ID: ' runomics-owner ' })).toEqual(KEY)
+    expect(sessionKey({ SESSION_SECRET: SECRET })).toBeNull()
+    expect(sessionKey({ SESSION_SECRET: SECRET, FIREBASE_PROJECT_ID: ' ' })).toBeNull()
+    expect(sessionKey({ SESSION_SECRET: 'short', FIREBASE_PROJECT_ID: 'runomics-owner' })).toBeNull()
   })
 
   it('reads the invited list with commas or spaces, in any case', () => {
@@ -88,28 +98,39 @@ describe('who may view', () => {
 
 describe('the session cookie', () => {
   it('carries who it is for, for a month', () => {
-    const session = verifySession(signSession(OWNER, SECRET, NOW), SECRET, NOW + 1000)
-    expect(session).toMatchObject({ ...OWNER, iat: NOW / 1000, exp: NOW / 1000 + SESSION_MAX_AGE_SEC })
-    expect(verifySession(signSession(OWNER, SECRET, NOW), SECRET, NOW + SESSION_MAX_AGE_SEC * 1000)).toBeNull()
+    const session = verifySession(signSession(OWNER, KEY, NOW), KEY, NOW + 1000)
+    expect(session).toMatchObject({ ...OWNER, aud: 'runomics-owner', iat: NOW / 1000, exp: NOW / 1000 + SESSION_MAX_AGE_SEC })
+    expect(verifySession(signSession(OWNER, KEY, NOW), KEY, NOW + SESSION_MAX_AGE_SEC * 1000)).toBeNull()
+  })
+
+  it('opens only the deployment that signed it, even under the same secret', () => {
+    const fromTheOtherSite = signSession(OWNER, { secret: SECRET, audience: 'runomics-second' }, NOW)
+    expect(verifySession(fromTheOtherSite, KEY, NOW)).toBeNull()
+  })
+
+  it('refuses a cookie of the old format, which named no deployment', () => {
+    const body = `v1.${Buffer.from(JSON.stringify({ ...OWNER, iat: NOW / 1000, exp: NOW / 1000 + 60 })).toString('base64url')}`
+    const mac = createHmac('sha256', SECRET).update(body).digest('base64url')
+    expect(verifySession(`${body}.${mac}`, KEY, NOW)).toBeNull()
   })
 
   it('is refused when signed with another secret, edited, or not a session at all', () => {
-    const token = signSession(VIEWER, SECRET, NOW)
-    expect(verifySession(token, `${SECRET}-rotated`, NOW)).toBeNull()
+    const token = signSession(VIEWER, KEY, NOW)
+    expect(verifySession(token, { ...KEY, secret: `${SECRET}-rotated` }, NOW)).toBeNull()
 
     const [version, , mac] = token.split('.')
-    const promoted = Buffer.from(JSON.stringify({ ...VIEWER, owner: true, iat: NOW / 1000, exp: NOW / 1000 + 60 })).toString('base64url')
-    expect(verifySession(`${version}.${promoted}.${mac}`, SECRET, NOW)).toBeNull()
+    const promoted = Buffer.from(JSON.stringify({ ...VIEWER, owner: true, aud: KEY.audience, iat: NOW / 1000, exp: NOW / 1000 + 60 })).toString('base64url')
+    expect(verifySession(`${version}.${promoted}.${mac}`, KEY, NOW)).toBeNull()
 
-    expect(verifySession(undefined, SECRET, NOW)).toBeNull()
-    expect(verifySession('', SECRET, NOW)).toBeNull()
-    expect(verifySession('v1.e30', SECRET, NOW)).toBeNull()
-    expect(verifySession(`${token}.extra`, SECRET, NOW)).toBeNull()
+    expect(verifySession(undefined, KEY, NOW)).toBeNull()
+    expect(verifySession('', KEY, NOW)).toBeNull()
+    expect(verifySession('v2.e30', KEY, NOW)).toBeNull()
+    expect(verifySession(`${token}.extra`, KEY, NOW)).toBeNull()
   })
 
   it('is refused when it claims to be issued later than now', () => {
-    expect(verifySession(signSession(OWNER, SECRET, NOW + 30_000), SECRET, NOW)).not.toBeNull()
-    expect(verifySession(signSession(OWNER, SECRET, NOW + 3600_000), SECRET, NOW)).toBeNull()
+    expect(verifySession(signSession(OWNER, KEY, NOW + 30_000), KEY, NOW)).not.toBeNull()
+    expect(verifySession(signSession(OWNER, KEY, NOW + 3600_000), KEY, NOW)).toBeNull()
   })
 })
 
@@ -136,22 +157,29 @@ describe('the gate', () => {
   })
 
   it('lets the owner and an invited viewer in', () => {
-    expect(decide('/', signSession(OWNER, SECRET, NOW))).toBe('pass')
-    expect(decide('/api/map/routes', signSession(VIEWER, SECRET, NOW))).toBe('pass')
+    expect(decide('/', signSession(OWNER, KEY, NOW))).toBe('pass')
+    expect(decide('/api/map/routes', signSession(VIEWER, KEY, NOW))).toBe('pass')
   })
 
   it('closes a viewer’s session once their email leaves the list', () => {
-    const cookie = signSession(VIEWER, SECRET, NOW)
+    const cookie = signSession(VIEWER, KEY, NOW)
     expect(decide('/', cookie, { ...PRIVATE, RUNOMICS_VIEWERS: '' })).toBe('signIn')
     // The owner needs no list.
-    expect(decide('/', signSession(OWNER, SECRET, NOW), { ...PRIVATE, RUNOMICS_VIEWERS: '' })).toBe('pass')
+    expect(decide('/', signSession(OWNER, KEY, NOW), { ...PRIVATE, RUNOMICS_VIEWERS: '' })).toBe('pass')
   })
 
   // A gate that opened on a missing env var would not be one.
-  it('lets nobody in when private without a usable secret', () => {
-    const cookie = signSession(OWNER, SECRET, NOW)
-    expect(decide('/', cookie, { RUNOMICS_PRIVATE: '1' })).toBe('signIn')
-    expect(decide('/', cookie, { RUNOMICS_PRIVATE: '1', SESSION_SECRET: 'short' })).toBe('signIn')
+  it('lets nobody in when private without a usable secret or a Firebase project', () => {
+    const cookie = signSession(OWNER, KEY, NOW)
+    expect(decide('/', cookie, { RUNOMICS_PRIVATE: '1', FIREBASE_PROJECT_ID: 'runomics-owner' })).toBe('signIn')
+    expect(decide('/', cookie, { RUNOMICS_PRIVATE: '1', SESSION_SECRET: 'short', FIREBASE_PROJECT_ID: 'runomics-owner' })).toBe('signIn')
+    expect(decide('/', cookie, { RUNOMICS_PRIVATE: '1', SESSION_SECRET: SECRET })).toBe('signIn')
+  })
+
+  it('turns away the other athlete’s owner cookie, though both sites share a secret', () => {
+    const cookie = signSession(OWNER, { secret: SECRET, audience: 'runomics-second' }, NOW)
+    expect(decide('/', cookie)).toBe('signIn')
+    expect(decide('/api/map/routes', cookie)).toBe('unauthorized')
   })
 })
 

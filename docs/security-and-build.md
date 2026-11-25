@@ -29,9 +29,12 @@ With `RUNOMICS_PRIVATE=1`, `src/proxy.ts` puts every page and API route behind G
 sign-in (`src/lib/siteAccess.ts`). Only `/sign-in`, `/api/session` and `/api/internal/*` stay
 open, and each internal route checks its own secret. `/api/session` verifies the Firebase ID
 token once and sets a cookie signed with `SESSION_SECRET` (32 characters or more), valid for
-30 days. After that, the proxy checks only the signature. The owner and the Google accounts
-in `RUNOMICS_VIEWERS` (verified emails only) get in. If the site is private but has no usable
-secret, nobody gets in.
+30 days. After that, the proxy checks only the signature and the cookie's audience: the
+deployment's `FIREBASE_PROJECT_ID`, so a cookie from the other athlete's deployment never opens
+this one, even if both were given the same secret. The owner and the Google accounts in
+`RUNOMICS_VIEWERS` (verified emails only) get in. If the site is private but has no usable
+secret or no `FIREBASE_PROJECT_ID`, nobody gets in. Changing the cookie's format (its `v1.`/`v2.`
+prefix) or the secret signs everyone out once.
 
 Pages are prerendered (ISR), so what a page's HTML carries is served from a cache. The coach's
 own words (the block's name and focus, each week's focus, each session's description and notes)
@@ -144,14 +147,21 @@ median start rounded to 0.1°, so it needs no browser allowance, and its URL is 
 
 What leaves the app, and from where:
 
+- **Vercel Web Analytics and Speed Insights** (browser, `src/app/layout.tsx`). Each page view sends
+  the page's address (a run's page carries its activity id), the referrer, the browser, OS, device
+  type and the country Vercel derives from the IP, with no cookie; Speed Insights adds the page's
+  load-time measurements (Core Web Vitals). Both go to Vercel's own `/_vercel/` paths on the
+  deployment's origin, so the CSP needs no allowance.
 - **Google Gemini** (server only, `src/lib/gemini.ts`). The nightly insight pass sends a run's figures:
   distance, time, pace, heart rate and zones, reps and splits, RPE, training effect, elevation and
   weather. It also sends the planned session and the coach's words, an official result if there is
   one, and **the athlete's note on the run (its first 300 characters) and its tags**. The coaching CLI
   sends Gemini its whole coaching context, and only with `--advisor gemini`. That context holds the
   last 28 days of runs, notes and tags, **check-ins and niggles, weight, height, age and sex**, the
-  injury history, goals, PBs and races. Without the flag, the CLI writes the prompt to a file. No
-  coordinates or routes go to Gemini.
+  injury history, goals, PBs and races, and **the overnight tracker's sleep, HRV and resting HR of the
+  last 28 nights, which come from the Google Health API** (`overnight`, `src/application/coaching/context.ts`).
+  Without the flag, the CLI writes the same prompt to a file, which a Claude Code session (Anthropic)
+  answers. No coordinates or routes go to Gemini.
 - **MapTiler** (browser). Styles, tiles, terrain, glyphs and sprites for every map and for the share
   card's basemap. The token is public (`NEXT_PUBLIC_MAPTILER_TOKEN`), so MapTiler sees which tiles
   are fetched, that is, the areas being viewed. Reverse geocoding for route and cluster names sends

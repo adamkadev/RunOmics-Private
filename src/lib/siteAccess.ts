@@ -32,6 +32,18 @@ export function sessionSecret(env: Env): string | null {
   return secret && secret.length >= MIN_SECRET_LENGTH ? secret : null
 }
 
+/** The audience is the deployment's Firebase project, so a cookie from the other athlete's site never opens this one. */
+export interface SessionKey {
+  secret: string
+  audience: string
+}
+
+export function sessionKey(env: Env): SessionKey | null {
+  const secret = sessionSecret(env)
+  const audience = env.FIREBASE_PROJECT_ID?.trim()
+  return secret && audience ? { secret, audience } : null
+}
+
 /** The build's check, because isSitePrivate defaults to off: a Vercel deployment of the athlete's repo must be gated. */
 export function publicRealDataError(env: Env): string | null {
   if (env.VERCEL !== '1' || !env.RUNOMICS_DATA_REPO_URL?.trim()) return null
@@ -73,22 +85,25 @@ export function verifiedEmail(claims: { email?: unknown; email_verified?: unknow
 export interface SiteSession extends SiteViewer {
   /** The Firebase uid. */
   sub: string
+  /** The Firebase project of the deployment that signed it. */
+  aud: string
   /** Seconds since the epoch. */
   iat: number
   exp: number
 }
 
-const TOKEN_VERSION = 'v1'
+// v1 carried no audience: bumped, so every v1 cookie is refused rather than read as one for any site.
+const TOKEN_VERSION = 'v2'
 
 function signature(body: string, secret: string): Buffer {
   return createHmac('sha256', secret).update(body).digest()
 }
 
-export function signSession(who: SiteViewer & { sub: string }, secret: string, nowMs = Date.now(), maxAgeSec = SESSION_MAX_AGE_SEC): string {
+export function signSession(who: SiteViewer & { sub: string }, key: SessionKey, nowMs = Date.now(), maxAgeSec = SESSION_MAX_AGE_SEC): string {
   const iat = Math.floor(nowMs / 1000)
-  const session: SiteSession = { sub: who.sub, owner: who.owner, email: who.email, iat, exp: iat + maxAgeSec }
+  const session: SiteSession = { sub: who.sub, owner: who.owner, email: who.email, aud: key.audience, iat, exp: iat + maxAgeSec }
   const body = `${TOKEN_VERSION}.${Buffer.from(JSON.stringify(session)).toString('base64url')}`
-  return `${body}.${signature(body, secret).toString('base64url')}`
+  return `${body}.${signature(body, key.secret).toString('base64url')}`
 }
 
 function isSession(value: unknown): value is SiteSession {
@@ -99,17 +114,18 @@ function isSession(value: unknown): value is SiteSession {
     typeof session.sub === 'string' &&
     typeof session.owner === 'boolean' &&
     (session.email === null || typeof session.email === 'string') &&
+    typeof session.aud === 'string' &&
     typeof session.iat === 'number' &&
     typeof session.exp === 'number'
   )
 }
 
-export function verifySession(token: string | undefined, secret: string, nowMs = Date.now()): SiteSession | null {
+export function verifySession(token: string | undefined, key: SessionKey, nowMs = Date.now()): SiteSession | null {
   const [version, payload, mac, ...rest] = token?.split('.') ?? []
   if (version !== TOKEN_VERSION || !payload || !mac || rest.length) return null
 
   const given = Buffer.from(mac, 'base64url')
-  const expected = signature(`${version}.${payload}`, secret)
+  const expected = signature(`${version}.${payload}`, key.secret)
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null
 
   let session: unknown
@@ -118,7 +134,7 @@ export function verifySession(token: string | undefined, secret: string, nowMs =
   } catch {
     return null
   }
-  if (!isSession(session)) return null
+  if (!isSession(session) || session.aud !== key.audience) return null
 
   const now = nowMs / 1000
   if (session.exp <= now || session.iat > now + CLOCK_SKEW_SEC) return null
@@ -129,14 +145,14 @@ export type GateDecision = 'pass' | 'signIn' | 'unauthorized'
 
 /**
  * The invited list is read on each request, so taking an email off it closes
- * that session at the next deploy. A private site without a usable secret lets
- * nobody in: a gate that opens on a missing env var is not one.
+ * that session at the next deploy. A private site without a usable secret or a
+ * Firebase project lets nobody in: a gate that opens on a missing env var is not one.
  */
 export function gateDecision({ pathname, cookie, env, nowMs = Date.now() }: { pathname: string; cookie: string | undefined; env: Env; nowMs?: number }): GateDecision {
   if (!isSitePrivate(env) || isPublicPath(pathname)) return 'pass'
 
-  const secret = sessionSecret(env)
-  const session = secret ? verifySession(cookie, secret, nowMs) : null
+  const key = sessionKey(env)
+  const session = key ? verifySession(cookie, key, nowMs) : null
   if (session && mayView(session, viewerEmails(env))) return 'pass'
 
   return pathname === '/api' || pathname.startsWith('/api/') ? 'unauthorized' : 'signIn'
