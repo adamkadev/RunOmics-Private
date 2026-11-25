@@ -1,8 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
-import { clearOfSpots, spotsInReach, type AvoidCircle, type AvoidSpot } from '@/domain/explore/avoidSpots'
 import type { RouteContext } from '@/domain/explore/routeScore'
 import type { ExploreAreaRef, RouteCandidate, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
 import { getExploreEngine, type ExploreEngine } from './exploreEngine'
@@ -31,8 +30,6 @@ export interface RouteGeneratorInput {
   home: LonLat | null
   /** The day's session and whether the loop runs into the dark: they re-rank, they ask nothing new. */
   context: RouteContext
-  /** Marked by the owner and not expired: the start, the vias and the provider keep clear of those within reach. */
-  avoidSpots: readonly AvoidSpot[]
 }
 
 export type RouteGeneratorStatus = 'idle' | 'generating' | 'ready' | 'error'
@@ -91,19 +88,15 @@ const bit = (on: boolean) => (on ? 1 : 0)
 const prefsKeyOf = (p: RoutePreferences, c: RouteContext) =>
   `${bit(p.avoidBusyRoads)}${bit(p.newStreetsFirst)}${bit(p.flatForReps)}|${c.day.session ?? '-'}${bit(c.day.beforeQuality)}${bit(c.dark)}`
 
-const circlesKeyOf = (circles: readonly AvoidCircle[]) => circles.map((c) => c.join(':')).join(',')
-
 /** Every toggle, the session and the daylight re-rank the batch in hand; the start, the distance and the spots in reach ask again. */
 export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGeneratorDeps = {}): RouteGenerator {
-  const { enabled, area, unitId, km, prefs, tracksReady, user, authReady, origin, waiting, home, context, avoidSpots } = input
+  const { enabled, area, unitId, km, prefs, tracksReady, user, authReady, origin, waiting, home, context } = input
   const { engineFor = getExploreEngine, request = requestRouteBatch, debounceMs = ROUTE_DEBOUNCE_MS } = deps
   const unitKey = `${area ? areaKey(area) : ''}|${unitId ?? ''}`
 
   const active = enabled && !!area && !!unitId && tracksReady && authReady && !waiting && !!origin
   const startKey = !waiting && origin ? startKeyOf(origin) : 'waiting'
-  const inReach = useMemo(() => (origin ? spotsInReach(avoidSpots, origin, km * 1000) : []), [avoidSpots, origin, km])
-  const inReachKey = circlesKeyOf(inReach)
-  const requestKey = `${unitKey}|${startKey}|${km}|${inReachKey}`
+  const requestKey = `${unitKey}|${startKey}|${km}`
   const prefsKey = prefsKeyOf(prefs, context)
 
   const [cursorState, setCursor] = useState<Cursor | null>(null)
@@ -112,9 +105,9 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
   const [result, setResult] = useState<Result | null>(null)
 
   // Read by the effects, which key on the strings built from them.
-  const inputs = useRef({ area, unitId, km, prefs, context, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home, inReach })
+  const inputs = useRef({ area, unitId, km, prefs, context, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home })
   useLayoutEffect(() => {
-    inputs.current = { area, unitId, km, prefs, context, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home, inReach }
+    inputs.current = { area, unitId, km, prefs, context, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home }
   })
 
   // The quartier whose first batch has gone out: every request after it waits for the stepper to rest.
@@ -136,7 +129,6 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
       startKey: forStart,
       origin: from,
       home: homePoint,
-      inReach: avoid,
     } = inputs.current
     if (!ref || !unit || !from) return
     // Back on the question the batch in hand answers (the stepper went there and back): the loop shown stays.
@@ -157,19 +149,17 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
         try {
           let candidates = cached
           if (!candidates) {
-            const plan = await engine.routePlan(ref, { unitId: unit, origin: from, home: homePoint, homeFromTracks: true, distanceM: targetM, seeds, avoid })
+            const plan = await engine.routePlan(ref, { unitId: unit, origin: from, home: homePoint, homeFromTracks: true, distanceM: targetM, seeds })
             if (controller.signal.aborted) return
             if (plan?.kind === 'tooFar') return failed('tooFar', plan.minKm)
             if (!plan) throw new RouteRequestError('noRoute')
             const vias = plan.vias.some((list) => list.length > 0) ? plan.vias : undefined
             const batch = await request(
-              { start: from, distanceM: targetM, seeds, ...(vias ? { vias } : {}), ...(avoid.length ? { avoid } : {}) },
+              { start: from, distanceM: targetM, seeds, ...(vias ? { vias } : {}) },
               { user: owner, signal: controller.signal },
             )
             if (controller.signal.aborted) return
-            const stopsOf = (seed: number): LonLat[] => [from, ...(vias?.[seeds.indexOf(seed)] ?? [])]
-            // ORS leaves out a spot by the start or a via, and may cut the corner of one it was given.
-            candidates = batch.candidates.filter((c) => clearOfSpots(c.coordinates, avoid, stopsOf(c.seed)))
+            candidates = batch.candidates
             remember(batches.current, fetchKey, candidates)
           }
           if (candidates.length === 0) throw new RouteRequestError('noRoute')

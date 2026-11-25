@@ -137,8 +137,9 @@ committed to this repo, and the median start is computed in memory and never sen
 `src/domain/explore/*`). Each track is projected to metres about the area's public origin,
 interpolated so samples are at most 75 m apart (a step over 300 m is a dropout and
 is left open), and binned into 150 m cells. A unit's denominator is its *runnable* cells - those
-holding an OpenStreetMap footway, path, track or street, precomputed by the build - so rivers, rail
-and woods never count as unexplored. `pct = floor(100 · visited / runnable)`: complete at 90 %, fog
+holding an OpenStreetMap footway, path, track or street outside a forest (`landuse=forest` or
+`natural=wood` of a hectare or more), precomputed by the build - so rivers, rail and forest trails
+never count as unexplored, and a quartier's % is its streets and parks alone. `pct = floor(100 · visited / runnable)`: complete at 90 %, fog
 under 15 %. Km run are credited to the unit owning each step's midpoint. The area file and each
 run's cells are cached in IndexedDB, keyed by area version and a fingerprint of the track.
 
@@ -149,23 +150,27 @@ count as the same distance, and then the more explored goes first, then the name
 range, the nearest incomplete unit of all.
 
 **Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`) once per seed, five
-seeds a batch. The loop starts where the athlete taps the map, and a later tap moves it; the panel
-is titled with that start's street ("Run from Rue Émile Michel") and its distance from home. The
-worker plans the loop on the device: from the tapped point, through two unexplored runnable cells of
+seeds a batch. The loop starts where most runs began (`usualStart`: the start with the most others
+within 150 m, then the median of that group), and a tap on the map moves it; the panel is titled
+with that start's street ("Run from Rue Émile Michel") and, once tapped, its distance from home. A
+**District** row lists the quartiers, the automatic pick first and marked "suggested", then the
+others by name with their %, and switches the loop to the one chosen. The worker plans the loop on
+the device: from the start, through two unexplored runnable cells of
 the quartier (one may lie outside it when the quartier is too small for the distance), and back,
 chosen per seed so the straight lines add up to the distance over a 1.3 street detour. Each seed is
 one directions request through those points. When no loop of the distance reaches the quartier, the
 panel names the shortest that does. The bar over the map stays empty until a loop is drawn, then
 reads "Loop · 8.5 km".
 
-The device's position is never read: the loop starts exactly at the tapped point. The vias the
+The device's position is never read: the loop starts exactly at the usual or tapped point, which
+goes to ORS as the first stop. The vias the
 worker picks are never closer than 600 m to home (the median start of the runs, kept on the
 device). The key stays on the server; on a private site any signed-in session may call
 it, on a public one only the owner, 12 batches a minute per caller. Each request asks ORS for the
 `waytype`, `surface` and `steepness` extras. Loops are ranked by
 `|d − target|/target + wNew·(1 − new share) + wBusy·busy share + wTrail·trail share + 1·steep share
-+ wClimb·min(1, climb per km / 20 m) + 0.2·(m/km over the climb budget)`, with `wNew` 0.6 ("New streets
-first") or 0.15, `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully and
++ wClimb·min(1, climb per km / 20 m) + 0.2·(m/km over the climb budget)`, with `wNew` 0.6 (new streets
+always come first; the 0.15 the scorer also knows is no longer offered), `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully and
 other roads half, and `wClimb` 0.25. Trail share counts steps, soft ground on any way (unpaved, dirt,
 ground or mud, sand, grass, ice) and paths or tracks without a paved surface (gravel half); `wTrail` is
 0 in daylight, on any day, and 6 whenever the run would start before sunrise or end after sunset less 15 min (NOAA's solar
@@ -173,30 +178,17 @@ equations at the start, the run timed from now at the easy pace, 6:00/km without
 day's plan, from the athlete's usual start hour that day, the median of the last 20 runs' starts within
 the part of the day Garmin scheduled). Steep share counts climbs of 7-10 % half and steeper ones in full, and descents too on a
 long run. The climb budget comes from the day's session (see
-[Explore loops](coaching-and-metrics.md#explore-loops)). "Flat for the reps", on by default when the
-day's session is a quality one, makes `wClimb` 0.5 and adds `0.4·(1 − traffic-free share)`, traffic-free
-being paved paths and tracks, footways and cycleways. Every toggle, "Avoid busy roads" included (it is a
-ranking weight, never sent to ORS), the session and the daylight re-rank the loops already fetched,
+[Explore loops](coaching-and-metrics.md#explore-loops)). On a quality day the loop is kept flat by
+itself, with no toggle: `wClimb` 0.5 and `0.4·(1 − traffic-free share)` added, traffic-free being paved
+paths and tracks, footways and cycleways. "Avoid busy roads", the panel's one toggle (a ranking weight,
+never sent to ORS), the session and the daylight re-rank the loops already fetched,
 without a new request; the last four batches are kept, so the stepper back and forth asks for nothing. The panel names the day's
 budget and the loop's m/km against it, the sunset when it applies, and the share on trails and a hint
 to walk steep climbs when they are notable. The GPX is GPX 1.1, the loop only, closed on its start,
 named `runomics-<quartier>-<km>km.gpx`.
 
-**Spots to avoid:** the owner marks a spot (Route options › Spots to avoid › Mark a spot, then a tap on
-the map) where a fallen tree, a flooded path or an unsafe corner should keep loops away. Until the tap,
-the panel steps down to a one-line bar, the prompt and Cancel (Escape too), so the map is free to tap
-and the camera fits the larger view; it comes back with the new spot's row in view, to pick its
-reason. Each is a circle in Firestore `avoidSpots` (owner-only rules), 80 m to start with, with an
-optional reason, listed and removed in the same place and drawn on the map. A tap on a spot's row flies
-the map to it and shows its size, 40, 80 or 150 m. A reason that wears off sets an expiry, counted from
-the day the reason is given: mud 3 weeks, blocked 6, unsafe never; a spot past it is removed when the
-list is next read. At 100 spots Mark a spot turns off and says to remove one. The quartier's own start
-and the worker's vias skip any cell within a spot's radius plus 50 m. A batch is keyed on, and sends,
-the nearest 20 a loop could reach (`options.avoid_polygons`, octagons around the circles), leaving out
-any within 50 m of the start or a via, where it would leave ORS no routable point and fail every loop.
-Each loop that comes back is then checked against those spots: one whose line passes inside a circle
-(ORS can cut an octagon's corner) is dropped, the spots by the start or a via aside, and with none left
-the panel says no loop was found.
+**Spots to avoid** are gone from the generator: nothing marks, draws or routes around them. The spots
+marked before stay in Firestore `avoidSpots` and in the sync's `avoid_spots.json` backup.
 
 **When the runs don't load:** a failed `/api/map/routes` fetch shows an error with Retry on the heat
 map, the Districts card and the generator's panel, instead of loading forever, and tries again by

@@ -166,6 +166,7 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
 - **Route names and avoid spots** (`route_names.json`, `avoid_spots.json`). Also only in Firestore
   otherwise: one `GET /api/internal/route-data` returns both, sorted by id, and the step writes one
   file each and logs the two counts. Nothing in the app reads them back; they are there to restore.
+  The route generator no longer uses avoid spots; the ones marked before are still backed up here.
 - **Races and goals edited in the app** (`race_entries.json`, `goal_entries.json`). Settings →
   Races & goals writes Firestore `raceEntries` and `goalEntries`; one `GET /api/internal/goals-races`
   returns both, sorted by id, and the step writes one file each. Unlike the backups above, the app
