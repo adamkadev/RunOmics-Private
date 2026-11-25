@@ -3,7 +3,7 @@ import { gateDecision } from '@/lib/siteAccess'
 
 const { warmPages } = await import('../warmPages')
 
-const ENV = { RUNOMICS_PRIVATE: '1', SESSION_SECRET: 'x'.repeat(40) }
+const ENV = { RUNOMICS_PRIVATE: '1', SESSION_SECRET: 'x'.repeat(40), FIREBASE_PROJECT_ID: 'runomics-test' }
 
 afterEach(() => vi.restoreAllMocks())
 

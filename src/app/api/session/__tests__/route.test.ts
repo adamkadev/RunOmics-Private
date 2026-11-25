@@ -8,6 +8,7 @@ vi.mock('@/lib/verifyFirebaseIdToken', () => ({ verifyFirebaseIdToken: verify })
 import { DELETE, POST } from '../route'
 
 const SECRET = 'a-test-secret-that-is-long-enough-1234567890'
+const KEY = { secret: SECRET, audience: 'runomics-test' }
 
 function post(token?: string, origin = 'https://run.example') {
   return new NextRequest(new URL('/api/session', origin), {
@@ -43,14 +44,15 @@ describe('/api/session', () => {
     expect(header).toMatch(/Path=\//)
     expect(header).toMatch(/Max-Age=2592000/)
     const cookie = response.cookies.get(SESSION_COOKIE)!.value
-    expect(verifySession(cookie, SECRET)).toMatchObject({ sub: 'uid-owner', owner: true, email: 'adam@example.com' })
+    expect(verifySession(cookie, KEY)).toMatchObject({ sub: 'uid-owner', owner: true, email: 'adam@example.com', aud: 'runomics-test' })
+    expect(verifySession(cookie, { ...KEY, audience: 'runomics-other' })).toBeNull()
   })
 
   it('lets an invited viewer in, by her verified email', async () => {
     verify.mockResolvedValue({ sub: 'uid-viewer', email: 'Lamiaa@Example.com', email_verified: true })
     const response = await POST(post('id-token'))
     expect(response.status).toBe(200)
-    expect(verifySession(response.cookies.get(SESSION_COOKIE)!.value, SECRET)).toMatchObject({ owner: false, email: 'lamiaa@example.com' })
+    expect(verifySession(response.cookies.get(SESSION_COOKIE)!.value, KEY)).toMatchObject({ owner: false, email: 'lamiaa@example.com' })
   })
 
   it('turns away an account nobody invited, and one whose email is unverified', async () => {
@@ -69,8 +71,12 @@ describe('/api/session', () => {
     expect((await POST(post('stale'))).status).toBe(401)
   })
 
-  it('answers 503 on a deployment without a secret', async () => {
+  it('answers 503 on a deployment without a secret or a Firebase project', async () => {
     vi.stubEnv('SESSION_SECRET', '')
+    expect((await POST(post('id-token'))).status).toBe(503)
+
+    vi.stubEnv('SESSION_SECRET', SECRET)
+    vi.stubEnv('FIREBASE_PROJECT_ID', '')
     expect((await POST(post('id-token'))).status).toBe(503)
     expect(verify).not.toHaveBeenCalled()
   })

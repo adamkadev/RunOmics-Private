@@ -6,6 +6,7 @@ import {
   SESSION_MAX_AGE_SEC,
   isSitePrivate,
   mayView,
+  sessionKey,
   sessionSecret,
   signSession,
   verifiedEmail,
@@ -28,10 +29,9 @@ function cookieOptions(req: NextRequest, maxAge: number) {
 }
 
 export async function POST(req: NextRequest) {
-  const projectId = process.env.FIREBASE_PROJECT_ID
-  const secret = sessionSecret(process.env)
-  if (!projectId || !secret) {
-    console.error('[session] not configured:', [!projectId && 'FIREBASE_PROJECT_ID', !secret && 'SESSION_SECRET (32+ characters)'].filter(Boolean).join(', '))
+  const key = sessionKey(process.env)
+  if (!key) {
+    console.error('[session] not configured:', [!process.env.FIREBASE_PROJECT_ID?.trim() && 'FIREBASE_PROJECT_ID', !sessionSecret(process.env) && 'SESSION_SECRET (32+ characters)'].filter(Boolean).join(', '))
     logRejectedRequest(req, 'not-configured')
     return NextResponse.json({ error: 'Sign-in is not configured' }, { status: 503 })
   }
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   let claims: Awaited<ReturnType<typeof verifyFirebaseIdToken>>
   try {
-    claims = await verifyFirebaseIdToken(token, projectId)
+    claims = await verifyFirebaseIdToken(token, key.audience)
   } catch {
     logRejectedRequest(req, 'unauthorized')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   }
 
   const response = NextResponse.json({ ok: true })
-  response.cookies.set(SESSION_COOKIE, signSession({ sub: claims.sub, ...viewer }, secret), cookieOptions(req, SESSION_MAX_AGE_SEC))
+  response.cookies.set(SESSION_COOKIE, signSession({ sub: claims.sub, ...viewer }, key), cookieOptions(req, SESSION_MAX_AGE_SEC))
   return response
 }
 

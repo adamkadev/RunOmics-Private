@@ -401,6 +401,13 @@ All notable changes to this project are documented in this file.
 ### Security
 
 - Next.js 16.4.2 → 16.4.6 (with `eslint-config-next` and `@next/bundle-analyzer`), for a published security advisory.
+- A private site's sign-in cookie names its deployment's Firebase project, so a cookie from the other athlete's
+  deployment no longer opens this one, even under a shared `SESSION_SECRET`. Everyone signs in once more after this
+  deploy. A private site without `FIREBASE_PROJECT_ID` lets nobody in.
+- Privacy policy (`/privacy.html`): names every service that receives data (Vercel Web Analytics and Speed Insights,
+  GitHub, Firebase, Gemini, the training plan's AI model, intervals.icu and the map, routing and weather services),
+  says that invited viewers see the recovery charts, and that the training plan's prompt carries the Google Health
+  sleep, HRV and resting HR readings. The terms name the invited viewers too.
 
 ## [3.3.0] - 2026-10-28
 
