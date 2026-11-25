@@ -5,7 +5,6 @@ import type {
   RoutingErrorKind,
   RoutingGateway,
 } from '@/application/ports/RoutingGateway'
-import { avoidPolygons } from '@/domain/explore/avoidSpots'
 import type { RouteCandidate } from '@/domain/explore/types'
 
 /** Server-side only: an ORS key belongs to one person and must never reach a browser. */
@@ -20,10 +19,9 @@ const NO_ROUTE_CODES = new Set([2009, 2010])
 const NO_ROUTE_MESSAGE = /route could not be found|could not find routable point|unable to find a route/i
 
 // "Avoid busy roads" is only a weight in the client's ranking: ORS's `quiet` weighting is untried with round_trip.
-// An extra ORS lacks comes back as a warning; avoid_polygons takes avoid_features' path in ORS, round trip included.
-function requestBody({ start, lengthM, seed, vias = [], avoid = [] }: RoundTripRequest) {
+// An extra ORS lacks comes back as a warning.
+function requestBody({ start, lengthM, seed, vias = [] }: RoundTripRequest) {
   const tour = vias.length > 0
-  const avoidPolygonsOption = avoidPolygons(avoid, [start, ...vias])
   return {
     coordinates: tour ? [start, ...vias, start] : [start],
     elevation: true,
@@ -34,7 +32,6 @@ function requestBody({ start, lengthM, seed, vias = [], avoid = [] }: RoundTripR
     options: {
       ...(tour ? {} : { round_trip: { length: Math.round(lengthM), points: 4, seed } }),
       avoid_features: ['ferries', 'fords'],
-      ...(avoidPolygonsOption ? { avoid_polygons: avoidPolygonsOption } : {}),
     },
   }
 }

@@ -1,4 +1,3 @@
-import type { AvoidCircle } from '@/domain/explore/avoidSpots'
 import type { RoutePlan } from '@/domain/explore/routePlan'
 import type { RouteContext } from '@/domain/explore/routeScore'
 import type {
@@ -59,7 +58,6 @@ export interface RoutePlanRequest {
   homeFromTracks?: boolean
   distanceM: number
   seeds: number[]
-  avoid?: AvoidCircle[]
 }
 
 export type ExploreRequestBody =

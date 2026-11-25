@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Maximize, Minimize, SlidersHorizontal } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { FILTER_GROUPS } from "@/components/activities/activityFilter";
 import { areaForCluster } from "@/domain/explore/areaForCluster";
-import { medianStart } from "@/domain/explore/home";
-import { circleOf } from "@/domain/explore/avoidSpots";
+import { medianStart, usualStart } from "@/domain/explore/home";
+import { routeStartState } from "@/components/explore/routeStart";
 import type { ExploreAreaRef } from "@/domain/explore/types";
 import { TEST_MAPS } from "@/lib/maptiler";
 import { reverseGeocode } from "@/lib/reverseGeocode";
@@ -33,7 +33,7 @@ import { NextQuartierCard } from "@/components/explore/NextQuartierCard";
 import { QuartierSheet } from "@/components/explore/QuartierSheet";
 import { useDistrictsTap, useQuartierCamera } from "@/components/explore/useQuartierMap";
 import { RouteGeneratorMode } from "@/components/explore/RouteGeneratorMode";
-import { generatorUnit, useExploreGenerator } from "@/components/explore/useExploreGenerator";
+import { generatorChoices, generatorUnit, useExploreGenerator } from "@/components/explore/useExploreGenerator";
 import {
   easyPaceOf,
   lineBounds,
@@ -43,7 +43,7 @@ import {
 } from "@/components/explore/routeGenerator";
 import type { RouteDrawing } from "@/components/explore/routeLayer";
 import { combineOverlays, useRouteOverlay, useRouteSync } from "@/components/explore/useRouteOverlay";
-import { QUARTIER_EASE_MS, quartierPadding, sheetBoxOf, unitBounds } from "@/components/explore/quartierCamera";
+import { quartierPadding, sheetBoxOf, unitBounds } from "@/components/explore/quartierCamera";
 import {
   activeFilterCount,
   areaRows,
@@ -79,8 +79,6 @@ const NO_TRACKS: [number, number][][] = [];
 /** Until the panel is measured: it stands about 430 pt tall on a phone. */
 const GENERATOR_PADDING: CameraPadding = { top: 72, right: 24, bottom: 460, left: 24 };
 
-/** Close enough to see which street the circle covers. */
-const SPOT_ZOOM = 16;
 
 const samePadding = (a: CameraPadding | null, b: CameraPadding | null) =>
   a === b || (!!a && !!b && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left);
@@ -192,8 +190,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     onReturn: onGeneratorReturn,
     onOpen: closeSheet,
   });
-  const { generator, generatorOpen, linked: linkedGenerator, avoid, drawn: drawnRoute, start: routeStart, takeClosedOpener } = explore;
-  const { setMarking: setAvoidMarking, marking: avoidMarking } = avoid;
+  const { generator, generatorOpen, linked: linkedGenerator, drawn: drawnRoute, picked: pickedStart, takeClosedOpener } = explore;
   const closeGenerator = explore.close;
 
   // Read once, on mount: the map opens on Heat, Districts only from a link or by hand. A change by hand takes the
@@ -247,6 +244,13 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     return medianStart(cluster.routeIndices.flatMap((i) => (coverageRoutes[i]?.[0] ? [coverageRoutes[i]![0]!] : [])));
   }, [districtsOn, clusters, selectedIdx, coverageRoutes]);
 
+  const districtsUsualStart = useMemo(() => {
+    const cluster = clusters[selectedIdx];
+    if (!generatorOpen || !cluster) return null;
+    return usualStart(cluster.routeIndices.flatMap((i) => (coverageRoutes[i]?.[0] ? [coverageRoutes[i]![0]!] : [])));
+  }, [generatorOpen, clusters, selectedIdx, coverageRoutes]);
+  const routeStart = useMemo(() => routeStartState(pickedStart, districtsUsualStart), [pickedStart, districtsUsualStart]);
+
   const districts = useDistrictsCoverage({
     enabled: districtsOn,
     area: districtsArea,
@@ -280,6 +284,10 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     () => (generatorOpen ? generatorUnit(districtsFile, districtsCoverage, generatorUnitId) : null),
     [generatorOpen, districtsFile, districtsCoverage, generatorUnitId],
   );
+  const districtChoices = useMemo(
+    () => (generatorOpen ? generatorChoices(districtsCoverage, target?.id ?? null) : []),
+    [generatorOpen, districtsCoverage, target?.id],
+  );
 
   const districtsState = useMemo(
     () => ({
@@ -296,14 +304,11 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
 
   // Home is drawn here only, never sent anywhere.
   const startPoint = routeStart.origin;
-  const avoidCircles = useMemo(() => avoid.spots.map(circleOf), [avoid.spots]);
   const routeDrawing = useMemo<RouteDrawing | null>(() => {
     if (!generatorOpen) return null;
-    if (drawnRoute) {
-      return { coordinates: drawnRoute.candidate.coordinates, newSteps: drawnRoute.newSteps, from: startPoint ?? districtsHome, avoid: avoidCircles };
-    }
-    return startPoint || avoidCircles.length ? { coordinates: [], newSteps: [], from: startPoint, avoid: avoidCircles } : null;
-  }, [generatorOpen, drawnRoute, districtsHome, startPoint, avoidCircles]);
+    if (drawnRoute) return { coordinates: drawnRoute.candidate.coordinates, newSteps: drawnRoute.newSteps, from: startPoint ?? districtsHome };
+    return startPoint ? { coordinates: [], newSteps: [], from: startPoint } : null;
+  }, [generatorOpen, drawnRoute, districtsHome, startPoint]);
   const routeOverlay = useRouteOverlay(routeDrawing, generatorOpen);
   const overlay = useMemo(() => combineOverlays(districtsOverlay, routeOverlay), [districtsOverlay, routeOverlay]);
 
@@ -390,21 +395,6 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   useDistrictsSync(mapRef, mapReady, districtsState);
   useRouteSync(mapRef, mapReady, routeDrawing);
 
-  const locatedTap = avoid.located?.tap ?? 0;
-  const locatedAt = avoid.located ? ([avoid.located.spot.lon, avoid.located.spot.lat] as [number, number]) : null;
-  // Read by the effect, which flies once per tap: a new padding or radius alone does not fly again.
-  const locatedRef = useRef({ center: locatedAt, padding: panelPadding ?? GENERATOR_PADDING });
-  useLayoutEffect(() => {
-    locatedRef.current = { center: locatedAt, padding: panelPadding ?? GENERATOR_PADDING };
-  });
-  useEffect(() => {
-    const map = mapRef.current;
-    const { center, padding } = locatedRef.current;
-    if (!mapReady || !map || !center || locatedTap === 0) return;
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    map.easeTo({ center, zoom: Math.max(map.getZoom(), SPOT_ZOOM), padding, duration: reduce ? 0 : QUARTIER_EASE_MS });
-  }, [mapRef, mapReady, locatedTap]);
-
   // Measured on its layout box: its rise is a transform.
   useEffect(() => {
     if (!generatorOpen) return;
@@ -468,13 +458,12 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     if (!isFullscreen || sheetOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
-      if (avoidMarking) setAvoidMarking(false);
-      else if (generatorOpen) closeGenerator();
+      if (generatorOpen) closeGenerator();
       else setExpanded(false);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [isFullscreen, sheetOpen, avoidMarking, setAvoidMarking, generatorOpen, closeGenerator]);
+  }, [isFullscreen, sheetOpen, generatorOpen, closeGenerator]);
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;
@@ -561,6 +550,8 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
           <RouteGeneratorMode
             area={districtsArea}
             target={target}
+            districts={districtChoices}
+            onDistrictChange={explore.setUnit}
             tracksReady={districtsCoverage !== null}
             tracksFailed={tracksFailed}
             onRetryTracks={retryTracks}
@@ -571,7 +562,6 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
             start={routeStart}
             day={explore.day}
             nextKind={explore.nextKind}
-            avoid={avoid}
             home={districtsHome}
             paceSecPerKm={generator.pace}
             plan={generator.plan}

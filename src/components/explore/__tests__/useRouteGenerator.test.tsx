@@ -1,6 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AvoidSpot } from '@/domain/explore/avoidSpots'
 import { NO_SESSION } from '@/domain/explore/climbBudget'
 import type { RouteContext } from '@/domain/explore/routeScore'
 import type { ExploreAreaRef, RouteCandidate, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
@@ -33,7 +32,6 @@ const loop = (seed: number, line: number[][] = [east(0), east(1000), east(0)]): 
 } as unknown as RouteCandidate)
 const scored = (candidate: RouteCandidate, score: number): ScoredRoute =>
   ({ candidate, score, newShare: 0.5, busyShare: 0, trailShare: 0, steepClimbM: 0, newSteps: [] }) as unknown as ScoredRoute
-const spot = (id: string, eastM: number, radiusM = 80): AvoidSpot => ({ id, lon: ORIGIN[0] + eastM * M, lat: 0, radiusM, createdAt: '2026-10-26', reason: null, expiresOn: null })
 
 function setup(overrides: Partial<RouteGeneratorInput> = {}) {
   const engine = {
@@ -59,7 +57,6 @@ function setup(overrides: Partial<RouteGeneratorInput> = {}) {
     waiting: false,
     home: null,
     context: CONTEXT,
-    avoidSpots: [],
     ...overrides,
   }
   const deps = { engineFor: () => engine as unknown as ExploreEngine, request, debounceMs: DEBOUNCE }
@@ -166,34 +163,6 @@ describe('useRouteGenerator', () => {
     await settle()
     expect(request).toHaveBeenCalledTimes(2)
     expect(result.current.status).toBe('ready')
-  })
-
-  it('keys the request on the spots in reach only, and sends them to the planner and the provider', async () => {
-    const near = spot('near', 2000)
-    const { request, engine, rerender } = setup({ avoidSpots: [near] })
-    await settle()
-    expect(engine.routePlan.mock.calls[0]![1]).toMatchObject({ avoid: [[near.lon, 0, 80]] })
-    expect(request.mock.calls[0]![0].avoid).toEqual([[near.lon, 0, 80]])
-    rerender({ avoidSpots: [near, spot('far', 9000)] })
-    await wait(DEBOUNCE)
-    expect(request).toHaveBeenCalledTimes(1)
-    rerender({ avoidSpots: [near, spot('close', 500)] })
-    await wait(DEBOUNCE)
-    expect(request).toHaveBeenCalledTimes(2)
-  })
-
-  it('drops a loop that runs through a spot, and says no loop when none is left', async () => {
-    const { result, request, rerender } = setup({ avoidSpots: [spot('s', 700, 40)] })
-    request.mockImplementation(async (req) => ({
-      candidates: req.seeds.map((seed) => (seed === 1 ? loop(seed) : loop(seed, [east(0), east(300), east(0)]))),
-      attribution: '',
-    }))
-    await settle()
-    expect(result.current.route?.candidate.seed).toBe(2)
-    request.mockImplementation(async (req) => ({ candidates: req.seeds.map((seed) => loop(seed)), attribution: '' }))
-    rerender({ km: 9 })
-    await wait(DEBOUNCE)
-    expect(result.current.failure).toBe('noRoute')
   })
 
   it('asks for nothing until the start is tapped', async () => {

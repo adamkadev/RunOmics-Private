@@ -4,7 +4,7 @@ import { cachedFetch, HttpError, seconds, type FetchOptions, type FetchRequest }
 import type { CityWfsSource } from './cities'
 import type { Commune } from './communes'
 import { assembleMultipolygon, type OsmMember } from './rings'
-import { overpassProblem, runnableWaysQuery, tileBBox, wayCoords, type OverpassResponse } from './runnable'
+import { forestQuery, forestShapes, overpassProblem, runnableWaysQuery, tileBBox, wayCoords, type OverpassArea, type OverpassResponse } from './runnable'
 
 // Only public things are sent: INSEE codes, the bbox of whole communes, and the cluster's frame rounded out. Never home.
 
@@ -252,4 +252,21 @@ export async function runnableWays(sources: Sources, bbox: BBox): Promise<{ ways
     }
   }
   return { ways, base }
+}
+
+/** A forest across a tile edge comes back from both tiles and is kept once. */
+export async function forests(sources: Sources, bbox: BBox): Promise<(Polygon | MultiPolygon)[]> {
+  const tiles = tileBBox(bbox, TILE_LON, TILE_LAT)
+  const seen = new Set<string>()
+  const elements: OverpassArea[] = []
+  for (const [i, tile] of tiles.entries()) {
+    const response = await sources.overpass(`Overpass forests, tile ${i + 1}/${tiles.length}`, forestQuery(tile))
+    for (const element of (response.elements ?? []) as unknown as OverpassArea[]) {
+      const id = `${element.type}/${element.id}`
+      if (seen.has(id)) continue
+      seen.add(id)
+      elements.push(element)
+    }
+  }
+  return forestShapes(elements)
 }

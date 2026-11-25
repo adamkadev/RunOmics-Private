@@ -92,20 +92,6 @@ describe('OpenRouteServiceGateway', () => {
     expect(body.options).toEqual({ avoid_features: ['ferries', 'fords'] })
   })
 
-  it('sends the spots to avoid as polygons, all but one that covers the start', async () => {
-    fetchMock.mockResolvedValue(json(orsAnswer()))
-
-    await new OpenRouteServiceGateway('ors-test-key').roundTrip({ ...REQUEST, avoid: [[-150.01, 0, 80], [-150, 0, 80]] })
-
-    const polygons = JSON.parse(fetchMock.mock.calls[0]![1].body).options.avoid_polygons
-    expect(polygons.type).toBe('MultiPolygon')
-    expect(polygons.coordinates).toHaveLength(1)
-    const ring: number[][] = polygons.coordinates[0][0]
-    expect(ring).toHaveLength(9)
-    expect(ring[8]).toEqual(ring[0])
-    expect(ring.every(([lon]) => Math.abs(lon! + 150.01) < 0.001)).toBe(true)
-  })
-
   it('reads the loop, its length, climb, way types, surfaces and steepness', async () => {
     fetchMock.mockResolvedValue(json(orsAnswer()))
 

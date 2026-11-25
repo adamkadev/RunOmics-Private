@@ -22,6 +22,18 @@ All notable changes to this project are documented in this file.
 
 ### Interface
 
+- Explore › Route generator: a District row switches the loop to another quartier. The automatic pick stays the
+  default and is marked "suggested" in the list; the others follow by name with how much of each has been run.
+- Explore › Route generator: the loop starts where most runs began, within 150 m, and is generated without a tap. A tap
+  on the map still moves the start. That point goes to the routing service like a tapped one.
+- Explore › Route generator: "Spots to avoid" is gone. Loops no longer route around saved spots, and the panel has no
+  rows or map marking for them. Saved spots stay in Firestore and in the route-data backup.
+- Explore › Route generator: "Avoid busy roads" is the one option left. New streets always come first, and a reps or
+  tempo day still gets a flat loop by itself.
+- Explore › Districts: forest paths no longer count in a quartier's %. Ways inside `landuse=forest` or `natural=wood` of
+  a hectare or more are left out of the runnable cells, so the % is streets and parks alone, and a quartier that
+  is all forest drops out. **Needs** `npm run explore:areas` again for each area, with the new area files committed to
+  each data repository.
 - Records › Best times: a "Speed vs endurance" card turns each record from a mile up into a VDOT, says whether the
   short or the long records lead and by how much (each side measured by its records of the last six months when it
   has one), says in the same sentence when the trailing records are over six months old, dims an old record's bar,
@@ -401,6 +413,13 @@ All notable changes to this project are documented in this file.
 ### Security
 
 - Next.js 16.4.2 → 16.4.6 (with `eslint-config-next` and `@next/bundle-analyzer`), for a published security advisory.
+- A private site's sign-in cookie names its deployment's Firebase project, so a cookie from the other athlete's
+  deployment no longer opens this one, even under a shared `SESSION_SECRET`. Everyone signs in once more after this
+  deploy. A private site without `FIREBASE_PROJECT_ID` lets nobody in.
+- Privacy policy (`/privacy.html`): names every service that receives data (Vercel Web Analytics and Speed Insights,
+  GitHub, Firebase, Gemini, the training plan's AI model, intervals.icu and the map, routing and weather services),
+  says that invited viewers see the recovery charts, and that the training plan's prompt carries the Google Health
+  sleep, HRV and resting HR readings. The terms name the invited viewers too.
 
 ## [3.3.0] - 2026-10-28
 

@@ -2,19 +2,9 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AreaCoverage, ExploreAreaFile, ExploreAreaRef } from '@/domain/explore/types'
 import type { ExplorePlan } from '../routeGenerator'
-import { generatorUnit, useExploreGenerator, type ExploreGeneratorInput } from '../useExploreGenerator'
+import { generatorChoices, generatorUnit, useExploreGenerator, type ExploreGeneratorInput } from '../useExploreGenerator'
 
-const owner = vi.hoisted(() => ({ isOwner: true }))
-vi.mock('@/lib/useOwnerAuth', () => ({ useOwnerAuth: () => ({ user: null, isOwner: owner.isOwner, loading: false }) }))
 
-const spots = vi.hoisted(() => ({
-  read: vi.fn(async () => [] as unknown[]),
-  add: vi.fn(async ([lon, lat]: [number, number], radiusM: number) => ({ id: 'new', lon, lat, radiusM, createdAt: '2026-10-27', reason: null, expiresOn: null })),
-  remove: vi.fn(async () => {}),
-  setReason: vi.fn(async () => {}),
-  setRadius: vi.fn(async () => {}),
-}))
-vi.mock('@/lib/avoidSpots', () => ({ firestoreAvoidSpots: spots }))
 
 const AREA: ExploreAreaRef = { id: 'test-area', name: 'Test', version: 'v1', bbox: [-150.05, -0.05, -149.95, 0.05] }
 const CLUSTER = { labelPoint: [-150, 0] as [number, number], center: [-150, 0] as [number, number] }
@@ -45,7 +35,6 @@ function setup(more: Partial<ExploreGeneratorInput> = {}) {
 }
 
 beforeEach(() => {
-  owner.isOwner = true
   window.history.replaceState(null, '', '/activities')
 })
 
@@ -92,38 +81,32 @@ describe('useExploreGenerator', () => {
     expect(onReturn).toHaveBeenCalledWith({ expanded: true, unitId: 'test-open' })
   })
 
-  it('sends a map tap to the start, then to a new spot while marking', async () => {
+  it('switches the loop to another quartier, keeping its distance and start', () => {
     const { result } = setup()
     act(() => result.current.planRun('test-unit'))
-    expect(result.current.start).toEqual({ origin: null, waiting: true })
     act(() => result.current.mapPick?.([-150.01, 0.01]))
-    expect(result.current.start.origin).toEqual([-150.01, 0.01])
-
-    act(() => result.current.avoid.setMarking(true))
-    await act(async () => result.current.mapPick?.([-150.02, 0.02]))
-    expect(spots.add).toHaveBeenCalledWith([-150.02, 0.02], 80)
-    expect(result.current.avoid.marking).toBe(false)
-    expect(result.current.avoid.spots).toHaveLength(1)
-    expect(result.current.start.origin).toEqual([-150.01, 0.01])
+    act(() => result.current.setKm(10.5))
+    act(() => result.current.setUnit('test-other'))
+    expect(result.current.generator).toMatchObject({ unitId: 'test-other', km: 10.5 })
+    expect(result.current.picked).toEqual([-150.01, 0.01])
   })
 
-  it('keeps no spot past its expiry and removes it from Firestore', async () => {
-    spots.read.mockResolvedValueOnce([
-      { id: 'old', lon: -150, lat: 0, radiusM: 80, createdAt: '2026-09-01', reason: 'mud', expiresOn: '2026-09-22' },
-      { id: 'live', lon: -150, lat: 0, radiusM: 80, createdAt: '2026-10-20', reason: 'mud', expiresOn: '2026-11-10' },
-    ])
+  it('switches nothing while the generator is shut', () => {
     const { result } = setup()
-    await act(async () => result.current.planRun('test-unit'))
-    expect(result.current.avoid.spots.map((s) => s.id)).toEqual(['live'])
-    expect(spots.remove).toHaveBeenCalledWith('old')
+    act(() => result.current.setUnit('test-other'))
+    expect(result.current.generator).toBeNull()
   })
 
-  it('opens the generator with no spots for a viewer who is not the owner', async () => {
-    owner.isOwner = false
+  it('sends a map tap to the start while open, and nowhere once shut', () => {
     const { result } = setup()
-    await act(async () => result.current.planRun('test-unit'))
-    expect(result.current.avoid.enabled).toBe(false)
-    expect(spots.read).not.toHaveBeenCalled()
+    expect(result.current.mapPick).toBeNull()
+    act(() => result.current.planRun('test-unit'))
+    expect(result.current.picked).toBeNull()
+    act(() => result.current.mapPick?.([-150.01, 0.01]))
+    expect(result.current.picked).toEqual([-150.01, 0.01])
+    act(() => result.current.close())
+    expect(result.current.picked).toBeNull()
+    expect(result.current.mapPick).toBeNull()
   })
 })
 
@@ -144,5 +127,42 @@ describe('generatorUnit', () => {
     expect(generatorUnit(file, { ...coverage, nextId: 'test-a' }, null)).toEqual({ id: 'test-a', name: 'Alpha', distanceKm: 0.9 })
     expect(generatorUnit(file, coverage, null)).toEqual({ id: 'test-b', name: 'Bravo', distanceKm: null })
     expect(generatorUnit(null, coverage, 'test-a')).toBeNull()
+  })
+})
+
+describe('generatorChoices', () => {
+  const coverage = {
+    nextId: 'test-c',
+    units: [
+      { id: 'test-a', name: 'Bravo', pct: 40, total: 12 },
+      { id: 'test-b', name: 'Alpha', pct: 10, total: 30 },
+      { id: 'test-c', name: 'Charlie', pct: 0, total: 8 },
+      { id: 'test-d', name: 'Delta', pct: 0, total: 0 },
+    ],
+  } as unknown as AreaCoverage
+
+  it('puts the automatic pick first, then the others by name', () => {
+    expect(generatorChoices(coverage)).toEqual([
+      { id: 'test-c', name: 'Charlie', pct: 0, auto: true },
+      { id: 'test-b', name: 'Alpha', pct: 10, auto: false },
+      { id: 'test-a', name: 'Bravo', pct: 40, auto: false },
+    ])
+  })
+
+  it('falls back to the least explored as the automatic pick without a next one', () => {
+    expect(generatorChoices({ ...coverage, nextId: null }).map((c) => [c.id, c.auto])).toEqual([
+      ['test-c', true],
+      ['test-b', false],
+      ['test-a', false],
+    ])
+  })
+
+  it('leaves out a quartier with no runnable street unless it is the one shown', () => {
+    expect(generatorChoices(coverage).some((c) => c.id === 'test-d')).toBe(false)
+    expect(generatorChoices(coverage, 'test-d').map((c) => c.id)).toEqual(['test-c', 'test-b', 'test-a', 'test-d'])
+  })
+
+  it('is empty until the coverage is in', () => {
+    expect(generatorChoices(null)).toEqual([])
   })
 })

@@ -153,10 +153,10 @@ describe('generateLoopRoutes', () => {
 describe('parseLoopRequest', () => {
   const valid = { start: START, distanceM: 8000, seeds: [0, 1, 2, 3, 4] }
 
-  it('accepts a well-formed body, and leaves out the busy roads an older client still sends', () => {
+  it('accepts a well-formed body, and leaves out the busy roads and spots an older client still sends', () => {
     expect(parseLoopRequest(valid)).toEqual(valid)
     expect(parseLoopRequest({ ...valid, avoidBusyRoads: true })).toEqual(valid)
-    expect(parseLoopRequest({ ...valid, avoid: [[-150.01, 0, 80]] })?.avoid).toEqual([[-150.01, 0, 80]])
+    expect(parseLoopRequest({ ...valid, avoid: [[-150.01, 0, 80]] })).toEqual(valid)
   })
 
   it('folds repeated seeds into one request each', () => {
@@ -178,8 +178,6 @@ describe('parseLoopRequest', () => {
     ['seven seeds', { ...valid, seeds: [1, 2, 3, 4, 5, 6, 7] }],
     ['a fractional seed', { ...valid, seeds: [1.5] }],
     ['seeds that are not an array', { ...valid, seeds: 4 }],
-    ['an avoid spot 5 km wide', { ...valid, avoid: [[-150.01, 0, 5000]] }],
-    ['twenty-one avoid spots', { ...valid, avoid: Array.from({ length: 21 }, () => [-150.01, 0, 80]) }],
   ])('refuses %s', (_label, body) => {
     expect(parseLoopRequest(body)).toBeNull()
   })

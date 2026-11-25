@@ -29,9 +29,12 @@ With `RUNOMICS_PRIVATE=1`, `src/proxy.ts` puts every page and API route behind G
 sign-in (`src/lib/siteAccess.ts`). Only `/sign-in`, `/api/session` and `/api/internal/*` stay
 open, and each internal route checks its own secret. `/api/session` verifies the Firebase ID
 token once and sets a cookie signed with `SESSION_SECRET` (32 characters or more), valid for
-30 days. After that, the proxy checks only the signature. The owner and the Google accounts
-in `RUNOMICS_VIEWERS` (verified emails only) get in. If the site is private but has no usable
-secret, nobody gets in.
+30 days. After that, the proxy checks only the signature and the cookie's audience: the
+deployment's `FIREBASE_PROJECT_ID`, so a cookie from the other athlete's deployment never opens
+this one, even if both were given the same secret. The owner and the Google accounts in
+`RUNOMICS_VIEWERS` (verified emails only) get in. If the site is private but has no usable
+secret or no `FIREBASE_PROJECT_ID`, nobody gets in. Changing the cookie's format (its `v1.`/`v2.`
+prefix) or the secret signs everyone out once.
 
 Pages are prerendered (ISR), so what a page's HTML carries is served from a cache. The coach's
 own words (the block's name and focus, each week's focus, each session's description and notes)
@@ -55,10 +58,10 @@ public site, anyone who is not signed in sees what a viewer sees.
 | Run notes and tags (`/api/activities/[id]/note`) | Reads them | Reads and edits them |
 | The coach's words (`/api/coaching/words`) | Yes | Yes |
 | Share cards | Yes | Yes |
-| Explore: generate a loop | Yes, without avoid spots | Yes, around their avoid spots |
+| Explore: generate a loop | Yes | Yes |
 | Route names | The geocoded place only | Their own names, and renames them |
 | Morning check-ins, niggles (`wellness`) | No: the rules refuse the read | Yes |
-| Avoid spots | No: the rules refuse the read | Yes |
+| Avoid spots (no longer used, kept for the backup) | No: the rules refuse the read | Yes |
 | Races and goals editor (`raceEntries`, `goalEntries`) | Sees the races and goals on the pages; the rules refuse the read | Yes, in Settings |
 | Height and weight (`/api/athlete/body`) | No | Yes, in Settings |
 | Settings, Sync, the data export, job trace, phone errors | No | Yes |
@@ -85,7 +88,7 @@ and writes as admin, which the rules do not govern), and checks the shape of eve
   side, pain 0-10, an optional `changesRun`) and `skipped` (`ill`, `rest` or `life`: the day's
   planned session, marked skipped on Plan). Read by the owner only: health data never reaches
   another viewer, and pages never server-render it.
-- `avoidSpots`: Explore's spots to avoid, with `lon`, `lat`, an integer `radiusM` of 20-250, a
+- `avoidSpots`: Explore's former spots to avoid, no longer read by the generator but still backed up by the sync, with `lon`, `lat`, an integer `radiusM` of 20-250, a
   `createdAt` date, an optional `reason` (`blocked`, `mud` or `unsafe`) and an optional `expiresOn`
   date. Read by the owner only: they say where the athlete runs.
 - `raceEntries`: a race with a `name` (1-80 characters), a `date`, a `distanceKm` of 1-250, a
@@ -144,14 +147,21 @@ median start rounded to 0.1°, so it needs no browser allowance, and its URL is 
 
 What leaves the app, and from where:
 
+- **Vercel Web Analytics and Speed Insights** (browser, `src/app/layout.tsx`). Each page view sends
+  the page's address (a run's page carries its activity id), the referrer, the browser, OS, device
+  type and the country Vercel derives from the IP, with no cookie; Speed Insights adds the page's
+  load-time measurements (Core Web Vitals). Both go to Vercel's own `/_vercel/` paths on the
+  deployment's origin, so the CSP needs no allowance.
 - **Google Gemini** (server only, `src/lib/gemini.ts`). The nightly insight pass sends a run's figures:
   distance, time, pace, heart rate and zones, reps and splits, RPE, training effect, elevation and
   weather. It also sends the planned session and the coach's words, an official result if there is
   one, and **the athlete's note on the run (its first 300 characters) and its tags**. The coaching CLI
   sends Gemini its whole coaching context, and only with `--advisor gemini`. That context holds the
   last 28 days of runs, notes and tags, **check-ins and niggles, weight, height, age and sex**, the
-  injury history, goals, PBs and races. Without the flag, the CLI writes the prompt to a file. No
-  coordinates or routes go to Gemini.
+  injury history, goals, PBs and races, and **the overnight tracker's sleep, HRV and resting HR of the
+  last 28 nights, which come from the Google Health API** (`overnight`, `src/application/coaching/context.ts`).
+  Without the flag, the CLI writes the same prompt to a file, which a Claude Code session (Anthropic)
+  answers. No coordinates or routes go to Gemini.
 - **MapTiler** (browser). Styles, tiles, terrain, glyphs and sprites for every map and for the share
   card's basemap. The token is public (`NEXT_PUBLIC_MAPTILER_TOKEN`), so MapTiler sees which tiles
   are fetched, that is, the areas being viewed. Reverse geocoding for route and cluster names sends
@@ -163,8 +173,7 @@ What leaves the app, and from where:
 - **OpenStreetMap Nominatim** (browser). A run's town, from its first point rounded to 0.01°, only
   without a MapTiler token or when MapTiler names no town there.
 - **OpenRouteService** (server only, `OpenRouteServiceGateway.ts`). Explore's loop requests: the
-  start point as picked, any via points, the loop length and seed, and the avoid spots near the loop
-  as polygons. Its logs replace every coordinate with `#`.
+  start point (the usual one or the one tapped), any via points, the loop length and seed. Its logs replace every coordinate with `#`.
 - **Firebase** (Google). Auth handles the Google sign-in. Firestore holds what the athletes write
   (`activityNotes`, `wellness`, `routeNames`, `avoidSpots`, `runShoes`), the push tokens and the server's own
   records (`jobEvents`, `aiInsights`, `aiStatus`, `aiBudget`, `clientErrors`, `notifications`). FCM delivers the

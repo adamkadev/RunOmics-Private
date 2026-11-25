@@ -182,7 +182,7 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
 
   async function routePlan(ref: ExploreAreaRef, request: RoutePlanRequest): Promise<RoutePlan | null> {
     await loadArea(ref)
-    const { unitId, origin, home, homeFromTracks, distanceM, seeds, avoid } = request
+    const { unitId, origin, home, homeFromTracks, distanceM, seeds } = request
     return call<'routePlan'>({
       type: 'routePlan',
       areaKey: areaKey(ref),
@@ -192,7 +192,6 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
       homeFromTracks,
       distanceM,
       seeds: [...seeds],
-      ...(avoid?.length ? { avoid: [...avoid] } : {}),
     })
   }
 

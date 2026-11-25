@@ -18,7 +18,7 @@ import { RouteGeneratorPanel } from './RouteGeneratorPanel'
 import { generatorBack, routeStats, runStart, type ExplorePlan } from './routeGenerator'
 import { routeGpxFile } from './routeGpx'
 import { startLineOf, startTitleOf, type RouteStartState } from './routeStart'
-import type { AvoidSpots } from './useAvoidSpots'
+import type { GeneratorChoice } from './useExploreGenerator'
 import { useRouteGenerator } from './useRouteGenerator'
 import type { LonLat } from './workerProtocol'
 
@@ -44,6 +44,9 @@ export interface RouteGeneratorModeProps {
   area: ExploreAreaRef
   /** The quartier to loop in; null until the area (or its coverage, for the next one) is in. */
   target: { id: string; name: string; distanceKm?: number | null } | null
+  /** The quartiers the owner can switch the loop to. */
+  districts?: readonly GeneratorChoice[]
+  onDistrictChange?: (unitId: string) => void
   /** The runs are in the worker: loops can be scored against them. */
   tracksReady: boolean
   /** The runs never came: no loop can be scored until they are fetched again. */
@@ -59,7 +62,6 @@ export interface RouteGeneratorModeProps {
   day: SessionDay
   /** The kind of the quality session the next day, "Threshold", or null. */
   nextKind?: string | null
-  avoid: AvoidSpots
   home: LonLat | null
   paceSecPerKm: number | null
   /** The session it plans for (the linked day's, or today's), or null. */
@@ -81,6 +83,8 @@ export interface RouteGeneratorModeProps {
 export function RouteGeneratorMode({
   area,
   target,
+  districts,
+  onDistrictChange,
   tracksReady,
   tracksFailed = false,
   onRetryTracks,
@@ -91,7 +95,6 @@ export function RouteGeneratorMode({
   start,
   day,
   nextKind = null,
-  avoid,
   home,
   paceSecPerKm,
   plan,
@@ -133,7 +136,6 @@ export function RouteGeneratorMode({
     waiting: start.waiting,
     home,
     context,
-    avoidSpots: avoid.spots,
   })
   const { route, drawn } = generator
   const noTracks = tracksFailed && !tracksReady
@@ -189,11 +191,13 @@ export function RouteGeneratorMode({
           onDistanceChange={onDistanceChange}
           plan={plan ? { heading: !today || plan.date === today ? e.todaysPlan : e.planFor(formatWeekday(plan.date, true)), label: plan.label, km: planRouteKm(plan.distanceM) } : null}
           start={start}
+          districts={districts}
+          districtId={target?.id ?? null}
+          onDistrictChange={onDistrictChange}
           startLine={startLineOf(start, home)}
           day={day}
           nextKind={nextKind}
           darkness={darkness}
-          avoid={avoid}
           prefs={prefs}
           onPrefsChange={onPrefsChange}
           status={noTracks ? 'error' : generator.status === 'idle' ? 'generating' : generator.status}

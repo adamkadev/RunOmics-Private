@@ -2,31 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { t } from '@/i18n'
 import { describe, expect, it, vi } from 'vitest'
 import { RouteGeneratorPanel, type RouteGeneratorPanelProps } from '../RouteGeneratorPanel'
-import type { AvoidSpot } from '@/domain/explore/avoidSpots'
-import type { AvoidSpots } from '../useAvoidSpots'
 
-const avoidSpots = (marking: boolean, setMarking: (on: boolean) => void = () => {}, more: Partial<AvoidSpots> = {}): AvoidSpots => ({
-  enabled: true,
-  spots: [],
-  marking,
-  setMarking,
-  mark: () => {},
-  remove: () => {},
-  setReason: () => {},
-  setRadius: () => {},
-  selectedId: null,
-  located: null,
-  locate: () => {},
-  full: false,
-  failed: false,
-  ...more,
-})
-
-const SPOT: AvoidSpot = { id: 's1', lon: -150, lat: 0, radiusM: 80, createdAt: '2026-10-26', reason: 'mud', expiresOn: '2026-11-16' }
-
-const openOptions = () => fireEvent.click(screen.getByRole('button', { name: /^Route options/ }))
-
-const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
+const props = (): RouteGeneratorPanelProps => ({
   title: 'Run from Rue de la Paix',
   distanceKm: 8.5,
   onDistanceChange: () => {},
@@ -34,7 +11,6 @@ const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
   start: { waiting: false },
   day: { session: null, beforeQuality: false },
   darkness: null,
-  avoid,
   prefs: { avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false },
   onPrefsChange: () => {},
   status: 'generating',
@@ -51,15 +27,34 @@ const props = (avoid: AvoidSpots): RouteGeneratorPanelProps => ({
 
 describe('RouteGeneratorPanel', () => {
   it('opens on the tap-to-start prompt, its Generate and GPX buttons off until there is a start and a route', () => {
-    const base = props(avoidSpots(false))
+    const base = props()
     render(<RouteGeneratorPanel {...base} start={{ ...base.start, waiting: true }} />)
     expect(screen.getByTestId('route-pick-prompt')).toHaveTextContent(t.pages.map.explore.start.pickPrompt)
     expect(screen.getByRole('button', { name: 'Download GPX' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Generate 8.5 km loop' })).toBeDisabled()
   })
 
+  it('names the loop’s quartier, the suggested one marked, and switches on a pick', () => {
+    const onDistrictChange = vi.fn()
+    const districts = [
+      { id: 'test-c', name: 'Charlie', pct: 0, auto: true },
+      { id: 'test-a', name: 'Alpha', pct: 40, auto: false },
+    ]
+    render(<RouteGeneratorPanel {...props()} districts={districts} districtId="test-c" onDistrictChange={onDistrictChange} />)
+    const picker = screen.getByRole('combobox', { name: t.pages.map.explore.district })
+    expect(picker).toHaveValue('test-c')
+    expect(within(picker).getAllByRole('option').map((o) => o.textContent)).toEqual(['Charlie · 0% · suggested', 'Alpha · 40%'])
+    fireEvent.change(picker, { target: { value: 'test-a' } })
+    expect(onDistrictChange).toHaveBeenCalledWith('test-a')
+  })
+
+  it('shows no quartier row before the choices are in', () => {
+    render(<RouteGeneratorPanel {...props()} onDistrictChange={() => {}} />)
+    expect(screen.queryByTestId('route-district')).toBeNull()
+  })
+
   it('says where the loop starts, and how the next day bounds its climb', () => {
-    const base = props(avoidSpots(false))
+    const base = props()
     render(
       <RouteGeneratorPanel
         {...base}
@@ -73,66 +68,14 @@ describe('RouteGeneratorPanel', () => {
     expect(screen.getByTestId('route-footnote')).toHaveTextContent(t.pages.map.explore.generating)
   })
 
-  it('shrinks to the prompt and Cancel while a spot is being marked, leaving the map free to tap', () => {
-    const { rerender } = render(<RouteGeneratorPanel {...props(avoidSpots(false))} />)
-    rerender(<RouteGeneratorPanel {...props(avoidSpots(true))} />)
-    expect(screen.getByTestId('route-avoid-marking')).toHaveTextContent('Tap the map where loops must not go.')
-    const cancel = screen.getByRole('button', { name: 'Cancel' })
-    expect(cancel).toHaveFocus()
-    expect(cancel).toHaveAccessibleDescription('Tap the map where loops must not go.')
-    expect(screen.queryByRole('button', { name: 'Download GPX' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull()
+  it('switches Avoid busy roads alone, keeping the other preferences', () => {
+    const onPrefsChange = vi.fn()
+    render(<RouteGeneratorPanel {...props()} prefs={{ avoidBusyRoads: true, newStreetsFirst: true, flatForReps: true }} onPrefsChange={onPrefsChange} />)
+    expect(screen.queryByRole('button', { name: /^Route options/ })).toBeNull()
+    expect(screen.queryByText('Flat for the reps')).toBeNull()
+    expect(screen.queryByText('New streets first')).toBeNull()
+    fireEvent.click(screen.getByRole('switch', { name: 'Avoid busy roads' }))
+    expect(onPrefsChange).toHaveBeenCalledWith({ avoidBusyRoads: false, newStreetsFirst: true, flatForReps: true })
   })
 
-  it('ends the marking on Cancel', () => {
-    const setMarking = vi.fn()
-    render(<RouteGeneratorPanel {...props(avoidSpots(true, setMarking))} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(setMarking).toHaveBeenCalledWith(false)
-  })
-
-  it('comes back whole after the tap, options still open and the focus on Mark a spot', () => {
-    const setMarking = vi.fn()
-    const { rerender } = render(<RouteGeneratorPanel {...props(avoidSpots(false, setMarking))} />)
-    fireEvent.click(screen.getByRole('button', { name: /^Route options/ }))
-    fireEvent.click(screen.getByTestId('route-avoid-mark'))
-    expect(setMarking).toHaveBeenCalledWith(true)
-
-    rerender(<RouteGeneratorPanel {...props(avoidSpots(true, setMarking))} />)
-    expect(screen.queryByRole('button', { name: 'Mark a spot' })).toBeNull()
-
-    rerender(<RouteGeneratorPanel {...props(avoidSpots(false, setMarking))} />)
-    expect(screen.queryByTestId('route-avoid-marking')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Download GPX' })).toBeVisible()
-    expect(screen.getByTestId('route-avoid-mark')).toHaveFocus()
-  })
-
-  it('turns Mark a spot off at the cap and says why', () => {
-    render(<RouteGeneratorPanel {...props(avoidSpots(false, undefined, { full: true }))} />)
-    openOptions()
-    expect(screen.getByTestId('route-avoid-mark')).toBeDisabled()
-    expect(screen.getByTestId('route-avoid-mark')).toHaveAccessibleDescription('100 spots is the most. Remove one to mark another.')
-  })
-
-  it('names how long a spot lasts and flies to it on a tap of its row', () => {
-    const locate = vi.fn()
-    render(<RouteGeneratorPanel {...props(avoidSpots(false, undefined, { spots: [SPOT], locate }))} />)
-    openOptions()
-    const row = screen.getByRole('button', { name: /^Show the spot marked/ })
-    expect(row).toHaveTextContent(/^Marked .+ · until .+$/)
-    fireEvent.click(row)
-    expect(locate).toHaveBeenCalledWith('s1')
-    expect(screen.queryByTestId('route-avoid-radius')).toBeNull()
-  })
-
-  it('offers the three sizes on the spot shown, its own pressed', () => {
-    const setRadius = vi.fn()
-    render(<RouteGeneratorPanel {...props(avoidSpots(false, undefined, { spots: [SPOT], selectedId: 's1', setRadius }))} />)
-    openOptions()
-    const sizes = within(screen.getByTestId('route-avoid-radius')).getAllByRole('button')
-    expect(sizes.map((b) => b.textContent)).toEqual(['40 m', '80 m', '150 m'])
-    expect(sizes.map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false'])
-    fireEvent.click(sizes[2]!)
-    expect(setRadius).toHaveBeenCalledWith('s1', 150)
-  })
 })

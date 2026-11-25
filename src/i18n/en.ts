@@ -371,7 +371,6 @@ export const en = {
         // `street` is the start's, "Rue Émile Michel"; null when the map can't name it.
         title: (street: string | null) => (street ? `Run from ${street}` : 'Run from the map point'),
         titleWaiting: 'Choose a start',
-        loop: 'Loop',
         // The bar over the map once a loop is drawn. `km` is "8.5 km".
         loopOf: (km: string) => `Loop · ${km}`,
         todaysPlan: 'Today’s plan',
@@ -383,19 +382,20 @@ export const en = {
           pickPrompt: 'Tap the map where you’ll start.',
           // Under the title. `distance` is "0.9 km", or null without a home.
           line: (distance: string | null) => (distance ? `${distance} from home · tap the map to move the start` : 'Tap the map to move the start'),
+          // Under the title while the start is the one picked for the athlete, before any tap.
+          usual: 'Where most of your runs start · tap the map to move it',
         },
         // The button that takes the shortest distance reaching the quartier. `km` is "12.5 km".
         useDistance: (km: string) => `Use ${km}`,
+        // The quartier the loop is in; the owner can switch it from the one picked for them.
+        district: 'District',
+        // `pct` is "12%". The automatic pick reads as such once switched away from.
+        districtOption: (name: string, pct: string) => `${name} · ${pct}`,
+        districtAuto: (name: string, pct: string) => `${name} · ${pct} · suggested`,
         distance: 'Distance',
         shorter: 'Shorter',
         longer: 'Longer',
-        options: 'Route options',
         avoidBusyRoads: 'Avoid busy roads',
-        newStreetsFirst: 'New streets first',
-        // On by itself on a reps or tempo day: flat ground, on paths and cycleways rather than across streets.
-        flatForReps: 'Flat for the reps',
-        // The options row's summary, "Loop · Avoid busy roads · New streets first": one line on a 393 pt phone.
-        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat' },
         // The climb a loop may hold for the day's session. `max` and `perKm` are whole metres a km, "20".
         climb: {
           sessions: {
@@ -423,25 +423,6 @@ export const en = {
         // `pct` is "18%".
         trailShare: (pct: string) => `${pct} on trails or unpaved ground`,
         steepHint: 'Steep climbs: walk them to keep it easy',
-        // Places the owner marks for loops to go around: a fallen tree, a flooded path.
-        avoid: {
-          title: 'Spots to avoid',
-          mark: 'Mark a spot',
-          cancel: 'Cancel',
-          markPrompt: 'Tap the map where loops must not go.',
-          // A spot's row. `date` is "26 Oct".
-          marked: (date: string) => `Marked ${date}`,
-          // A spot whose reason wears off: "Marked 26 Oct · until 16 Nov".
-          markedUntil: (date: string, until: string) => `Marked ${date} · until ${until}`,
-          locate: (date: string) => `Show the spot marked ${date} on the map`,
-          radius: 'Size',
-          radiusM: (m: string) => `${m} m`,
-          full: (max: number) => `${max} spots is the most. Remove one to mark another.`,
-          reason: 'Reason',
-          reasons: { none: 'No reason', blocked: 'Blocked', mud: 'Muddy', unsafe: 'Unsafe' },
-          remove: 'Remove spot',
-          failed: 'That change wasn’t saved. Try again.',
-        },
         distanceStat: 'Distance',
         timeStat: 'Time',
         // Under the time: the pace it is worked out at, "5:50".

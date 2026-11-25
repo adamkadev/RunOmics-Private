@@ -1,5 +1,5 @@
 import 'server-only'
-import { SESSION_COOKIE, isSitePrivate, sessionSecret, signSession } from '@/lib/siteAccess'
+import { SESSION_COOKIE, isSitePrivate, sessionKey, signSession } from '@/lib/siteAccess'
 
 const MAIN_PAGES = ['/', '/activities', '/plan', '/analytics', '/profile']
 /** Long enough for a cold render of every page at once, short enough that a leaked cookie is worth nothing. */
@@ -19,13 +19,13 @@ export async function warmPages(
   const started = Date.now()
   try {
     await new Promise((resolve) => setTimeout(resolve, settleMs))
-    const secret = sessionSecret(env)
-    if (isSitePrivate(env) && !secret) {
-      console.warn('[data-revalidate] no warm-up: the private site has no SESSION_SECRET to sign one with')
+    const key = sessionKey(env)
+    if (isSitePrivate(env) && !key) {
+      console.warn('[data-revalidate] no warm-up: the private site has no SESSION_SECRET and FIREBASE_PROJECT_ID to sign one with')
       return
     }
-    const cookie = isSitePrivate(env) && secret
-      ? `${SESSION_COOKIE}=${signSession({ sub: 'data-revalidate', owner: true, email: null }, secret, Date.now(), SESSION_SEC)}`
+    const cookie = isSitePrivate(env) && key
+      ? `${SESSION_COOKIE}=${signSession({ sub: 'data-revalidate', owner: true, email: null }, key, Date.now(), SESSION_SEC)}`
       : undefined
 
     const newest = await newestRunId()

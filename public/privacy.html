@@ -19,10 +19,10 @@
 </head>
 <body>
 <h1>Privacy Policy</h1>
-<p class="meta">RunOmics · last updated 11 November 2026</p>
+<p class="meta">RunOmics · last updated 25 November 2026</p>
 
-<p>RunOmics is a personal, single-user running dashboard. It is run by one individual for their own training data
-and is not offered as a service to the public. There are no other users, no customers and no analytics on visitors.</p>
+<p>RunOmics is a personal running dashboard. It is run by one individual for their own training data and is not
+offered as a service to the public. The owner can invite a few people to view it, by their Google account.</p>
 
 <h2>What data is read</h2>
 <p>With the owner's explicit consent, RunOmics reads the owner's own health and fitness data from two sources:</p>
@@ -34,21 +34,55 @@ and is not offered as a service to the public. There are no other users, no cust
 <p>Only the account holder's own records are requested. No data about any other person is read.</p>
 
 <h2>How it is used</h2>
-<p>The data is used for one purpose: to display the owner's training and recovery history back to them, and to
-inform the training plan the application produces. It is not used for advertising, profiling, credit assessment,
-employment decisions, or any purpose unrelated to the owner's own training.</p>
+<p>The data is used for one purpose: to display the owner's training and recovery history, and to inform the
+training plan the application produces. It is not used for advertising, profiling, credit assessment, employment
+decisions, or any purpose unrelated to the owner's own training.</p>
+
+<h2>Who sees it</h2>
+<p>The owner, and the people the owner invites. Invited viewers see the same pages: the runs and their maps, the
+records, the plan, and the recovery charts, sleep and heart rate variability included. Morning check-ins, body
+measurements, settings and the data export are the owner's alone.</p>
+
+<h2>Services that receive data</h2>
+<ul>
+  <li><strong>Vercel</strong> hosts the application. Its Web Analytics and Speed Insights record each page view (the
+      page's address, which for a run includes its id, the referrer, the browser, device type and country) and how
+      fast the page loaded, without cookies.</li>
+  <li><strong>GitHub</strong> stores the data in private repositories, and its Actions run the nightly sync, keeping
+      Garmin's raw activity files in their cache.</li>
+  <li><strong>Firebase</strong> (Google) handles sign-in, stores the notes and check-ins written in the application,
+      and delivers its notifications, whose short texts can carry a run's figures or the week's resting heart rate.</li>
+  <li><strong>Google Gemini</strong> receives, each night, a run's figures (distance, pace, heart rate, splits,
+      weather), the planned session and the athlete's note on it, to write a short verdict. No GPS track or coordinate is sent.</li>
+  <li><strong>The training plan's AI model</strong> receives a summary of the last four weeks: the runs and their
+      notes, check-ins, injuries, goals, age, sex, weight and height, and the Google Health sleep, heart rate
+      variability and resting heart rate readings. It is Anthropic's Claude, run by hand by the owner, or Google Gemini
+      when the owner asks for it. No GPS track or coordinate is sent.</li>
+  <li><strong>intervals.icu</strong> receives the planned workouts, to send them on to the watch.</li>
+  <li><strong>MapTiler</strong> serves the maps, so it sees which areas are viewed, and names places from points
+      rounded to about 10 metres or more.</li>
+  <li><strong>OpenStreetMap Nominatim</strong> names a run's town from its first point rounded to about a kilometre,
+      when MapTiler has none.</li>
+  <li><strong>OpenRouteService</strong> receives the start point and the places to avoid when a running loop is
+      suggested.</li>
+  <li><strong>Open-Meteo</strong> gives the forecast for the runs' usual area, rounded to about 10 kilometres.</li>
+</ul>
+<p>Each service handles what it receives under its own terms. None is an advertising or data-broker service, and no
+data is sold.</p>
 
 <h2>Limited use</h2>
-<p>RunOmics' use of information received from Google APIs adheres to the
+<p>RunOmics' use and transfer of information received from Google APIs adheres to the
 <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
-including the Limited Use requirements. Data obtained through the Google Health API is never sold, never transferred
-to third parties except as required by law, and never used for serving advertisements. It is not read by humans other
-than the account holder.</p>
+including the Limited Use requirements. Data obtained through the Google Health API is used only for the features
+above: the recovery charts, the weekly summary notification and the training plan. It is transferred only to the
+services listed above to provide those features, or as required by law. It is never sold, never used for serving
+advertisements, and not used by RunOmics to train AI models. Apart from the owner, it is seen only by the people the
+owner invites.</p>
 
 <h2>Where it is stored</h2>
-<p>Fetched data is stored in a private repository and rendered by a private deployment that only the owner can sign
-in to. Access credentials are held as encrypted secrets and are never committed alongside the data. Nothing is shared
-with a third-party analytics, advertising or data-broker service.</p>
+<p>Fetched data is stored in private GitHub repositories and shown by a private deployment that only the owner and
+the people they invite can sign in to. Access credentials are held as encrypted secrets and are never committed
+alongside the data.</p>
 
 <h2>Retention and deletion</h2>
 <p>Data is retained while the owner continues to use the application. The owner can revoke this application's access

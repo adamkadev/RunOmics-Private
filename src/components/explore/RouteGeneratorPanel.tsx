@@ -1,15 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useId, useRef, useState, type Ref } from 'react'
-import { ArrowDownToLine, Check, ChevronRight, MapPin, Minus, Plus, Share2, X } from 'lucide-react'
+import { ArrowDownToLine, Check, ChevronDown, MapPin, Minus, Plus, Share2, X } from 'lucide-react'
 import { t } from '@/i18n'
-import { AVOID_LIMITS, AVOID_RADII_M, AVOID_REASONS, type AvoidReason } from '@/domain/explore/avoidSpots'
 import { climbBudget, type ClimbBudget, type SessionDay } from '@/domain/explore/climbBudget'
 import type { Darkness } from '@/domain/explore/daylight'
 import type { RoutePreferences } from '@/domain/explore/types'
 import {
   formatClock,
-  formatDate,
   formatDecimal,
   formatDistance,
   formatDurationWords,
@@ -26,7 +24,7 @@ import { SHEET_CONTROL } from '@/components/ui/Sheet'
 import { Toggle } from '@/components/ui/Toggle'
 import { ROUTE_KM_MAX } from './exploreHref'
 import { canStepDown, canStepUp, stepRouteKm, type RouteStats } from './routeGenerator'
-import type { AvoidSpots } from './useAvoidSpots'
+import type { GeneratorChoice } from './useExploreGenerator'
 import type { GeneratorFailure } from './useRouteGenerator'
 
 /** For the camera to measure, as the quartier sheet's. */
@@ -102,7 +100,6 @@ const stepperKm = (value: number) => `${formatDecimal(value, 1)} ${t.units.km}`
 const GROUPED = 'rounded-[20px] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]'
 /** A label that can't fit is cut short, not wrapped, and a size down on a 320 pt phone, so the row holds in both languages. */
 const ROW_BUTTON = 'min-w-0 whitespace-nowrap px-3 max-[359px]:text-[14px]'
-const OPTIONS_FADE = 'linear-gradient(to right, #000 calc(100% - 28px), transparent)'
 /** 38 pt, a 44 pt hit. */
 const STEP_BUTTON = cn(SHEET_CONTROL, 'size-[38px] h-[38px] text-foreground disabled:opacity-35')
 
@@ -115,13 +112,16 @@ export interface RouteGeneratorPanelProps {
   /** The session it plans for; its km is what the check compares the distance with. */
   plan: { heading: string; label: string; km: number | null } | null
   start: { waiting: boolean }
+  /** The quartiers the loop can be for; none until the coverage is in. */
+  districts?: readonly GeneratorChoice[]
+  districtId?: string | null
+  onDistrictChange?: (unitId: string) => void
   /** "0.6 km from home · tap the map to move the start", once the start is tapped. */
   startLine?: string | null
   day: SessionDay
   /** The kind of the quality session the next day, "Threshold", or null. */
   nextKind?: string | null
   darkness: Darkness
-  avoid: AvoidSpots
   prefs: RoutePreferences
   onPrefsChange: (prefs: RoutePreferences) => void
   status: RouteGeneratorStatus
@@ -147,11 +147,13 @@ export function RouteGeneratorPanel({
   onDistanceChange,
   plan,
   start,
+  districts = [],
+  districtId = null,
+  onDistrictChange,
   startLine = null,
   day,
   nextKind = null,
   darkness,
-  avoid,
   prefs,
   onPrefsChange,
   status,
@@ -168,7 +170,7 @@ export function RouteGeneratorPanel({
 }: RouteGeneratorPanelProps) {
   const e = t.pages.map.explore
   const titleId = useId()
-  const optionsId = useId()
+  const districtLabelId = useId()
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
   // Focus comes into the dialog on open, since the control that opened it is usually gone; on close the map gives it back (GlobalMapClient).
   const dialogRef = useRef<HTMLDivElement | null>(null)
@@ -183,20 +185,6 @@ export function RouteGeneratorPanel({
     },
     [ref],
   )
-  const [optionsOpen, setOptionsOpen] = useState(false)
-  const listRef = useRef<HTMLDivElement | null>(null)
-  const markRef = useRef<HTMLButtonElement | null>(null)
-  const wasMarking = useRef(avoid.marking)
-  // Back from the marking bar, its row is scrolled to the top so the new spot's row, and its reason, are in view.
-  useEffect(() => {
-    const back = wasMarking.current && !avoid.marking
-    wasMarking.current = avoid.marking
-    const list = listRef.current
-    const mark = markRef.current
-    if (!back || !list || !mark) return
-    list.scrollTop += mark.getBoundingClientRect().top - list.getBoundingClientRect().top
-    mark.focus({ preventScroll: true })
-  }, [avoid.marking])
   // The file saved, and for which loop: a new loop is a new file to save.
   const [saved, setSaved] = useState<{ key: string; file: File; canShare: boolean } | null>(null)
   const isSaved = saved !== null && saved.key === routeKey
@@ -219,12 +207,6 @@ export function RouteGeneratorPanel({
     }
   }
 
-  const options = [
-    e.loop,
-    ...(prefs.avoidBusyRoads ? [e.summary.avoidBusyRoads] : []),
-    ...(prefs.newStreetsFirst ? [e.summary.newStreetsFirst] : []),
-    ...(prefs.flatForReps ? [e.summary.flatForReps] : []),
-  ].join(' · ')
   const budget = climbBudget(day)
   const notes = [climbLine(budget, ready ? stats : null, nextKind), darknessLine(darkness), terrainLine(budget, ready ? stats : null)].filter(
     (line): line is string => line !== null,
@@ -259,8 +241,7 @@ export function RouteGeneratorPanel({
       style={sheetStyle}
     >
       <GlassLayers />
-      {avoid.marking && <MarkingBar onCancel={() => avoid.setMarking(false)} />}
-      <div hidden={avoid.marking} className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pb-[var(--sheet-pad)] pt-1.5">
+      <div className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pb-[var(--sheet-pad)] pt-1.5">
         <div className="-mx-[var(--sheet-pad)] flex justify-center pb-2.5" {...handleProps}>
           <span aria-hidden="true" className="h-[5px] w-9 rounded-[2.5px] bg-[rgb(127_127_127/0.45)]" />
         </div>
@@ -275,7 +256,7 @@ export function RouteGeneratorPanel({
           <span aria-hidden="true" />
         </div>
 
-        <div ref={listRef} className="-mx-[var(--sheet-pad)] mt-3.5 flex min-h-0 flex-col gap-3.5 overflow-y-auto px-[var(--sheet-pad)]" style={{ touchAction: 'pan-y' }}>
+        <div className="-mx-[var(--sheet-pad)] mt-3.5 flex min-h-0 flex-col gap-3.5 overflow-y-auto px-[var(--sheet-pad)]" style={{ touchAction: 'pan-y' }}>
           {/* The one thing to do first is the first line, not a footnote under two disabled buttons. */}
           {start.waiting && (
             <p className="flex items-center gap-2.5 text-[16px] font-semibold text-foreground" data-testid="route-pick-prompt">
@@ -310,6 +291,30 @@ export function RouteGeneratorPanel({
             </button>
           )}
 
+          {districts.length > 0 && onDistrictChange && (
+            <div className="flex items-center justify-between gap-3">
+              <span id={districtLabelId} className="shrink-0 text-[17px] leading-[22px] text-foreground">
+                {e.district}
+              </span>
+              <span className="relative flex min-w-0">
+                <select
+                  aria-labelledby={districtLabelId}
+                  data-testid="route-district"
+                  value={districtId ?? ''}
+                  onChange={(event) => onDistrictChange(event.target.value)}
+                  className="h-11 min-w-0 max-w-full appearance-none truncate rounded-full bg-[var(--sheet-fill)] pl-4 pr-9 text-[15px] font-semibold text-foreground shadow-[var(--sheet-fill-rim)]"
+                >
+                  {districts.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.auto ? e.districtAuto(d.name, formatPercent(d.pct)) : e.districtOption(d.name, formatPercent(d.pct))}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between gap-3">
             <span className="text-[17px] leading-[22px] text-foreground">{e.distance}</span>
             <div role="group" aria-label={e.distance} className="flex items-center gap-3.5">
@@ -342,45 +347,10 @@ export function RouteGeneratorPanel({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => setOptionsOpen((open) => !open)}
-              aria-expanded={optionsOpen}
-              aria-controls={optionsId}
-              aria-label={`${e.options}: ${options}`}
-              className={cn(GROUPED, 'flex h-[46px] items-center gap-2 pl-4 pr-3.5 text-left')}
-            >
-              {/* 14 pt, so the three options fit a 393 pt phone's row; past that they fade out rather than end in "…". */}
-              <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-[14px] text-foreground" style={{ maskImage: OPTIONS_FADE, WebkitMaskImage: OPTIONS_FADE }}>
-                {options}
-              </span>
-              <ChevronRight
-                size={16}
-                aria-hidden="true"
-                className={cn('shrink-0 text-muted-foreground transition-transform duration-200', optionsOpen && 'rotate-90')}
-              />
-            </button>
-            {optionsOpen && (
-              <div id={optionsId} className={cn(GROUPED, 'flex flex-col')}>
-                <label className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
-                  <span className="text-[15px] text-foreground">{e.avoidBusyRoads}</span>
-                  <Toggle checked={prefs.avoidBusyRoads} onChange={(on) => onPrefsChange({ ...prefs, avoidBusyRoads: on })} label={e.avoidBusyRoads} />
-                </label>
-                <div aria-hidden="true" className="ml-4 h-px bg-[var(--row-separator)]" />
-                <label className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
-                  <span className="text-[15px] text-foreground">{e.newStreetsFirst}</span>
-                  <Toggle checked={prefs.newStreetsFirst} onChange={(on) => onPrefsChange({ ...prefs, newStreetsFirst: on })} label={e.newStreetsFirst} />
-                </label>
-                <div aria-hidden="true" className="ml-4 h-px bg-[var(--row-separator)]" />
-                <label className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
-                  <span className="text-[15px] text-foreground">{e.flatForReps}</span>
-                  <Toggle checked={prefs.flatForReps} onChange={(on) => onPrefsChange({ ...prefs, flatForReps: on })} label={e.flatForReps} />
-                </label>
-                {avoid.enabled && <AvoidSpotsRows avoid={avoid} markRef={markRef} />}
-              </div>
-            )}
-          </div>
+          <label className={cn(GROUPED, 'flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5')}>
+            <span className="text-[15px] text-foreground">{e.avoidBusyRoads}</span>
+            <Toggle checked={prefs.avoidBusyRoads} onChange={(on) => onPrefsChange({ ...prefs, avoidBusyRoads: on })} label={e.avoidBusyRoads} />
+          </label>
 
           {status === 'error' && errorText ? (
             <p role="alert" data-testid="route-error" className="min-h-[46px] text-[15px] leading-5 text-foreground text-pretty">
@@ -487,119 +457,5 @@ export function RouteGeneratorPanel({
         </div>
       </div>
     </div>
-  )
-}
-
-/** Concentric with the sheet's corner, which a 74 pt bar rounds to 37 (12 + 25). */
-function MarkingBar({ onCancel }: { onCancel: () => void }) {
-  const a = t.pages.map.explore.avoid
-  const promptId = useId()
-  const cancelRef = useRef<HTMLButtonElement | null>(null)
-  // The button that opened the bar is hidden with the panel's rows.
-  useEffect(() => {
-    cancelRef.current?.focus({ preventScroll: true })
-  }, [])
-  return (
-    <div data-testid="route-avoid-marking" className="flex min-h-[74px] items-center gap-3 py-3 pl-[var(--sheet-pad)] pr-3">
-      <p id={promptId} className="min-w-0 flex-1 text-[15px] leading-5 text-foreground text-pretty max-[359px]:text-[14px]">
-        {a.markPrompt}
-      </p>
-      <Button
-        ref={cancelRef}
-        size="lg"
-        variant="secondary"
-        onClick={onCancel}
-        aria-describedby={promptId}
-        className="shrink-0 bg-[var(--sheet-fill)] px-5 shadow-[var(--sheet-fill-rim)]"
-      >
-        {a.cancel}
-      </Button>
-    </div>
-  )
-}
-
-function AvoidSpotsRows({ avoid, markRef }: { avoid: AvoidSpots; markRef: Ref<HTMLButtonElement> }) {
-  const a = t.pages.map.explore.avoid
-  const fullId = useId()
-  const day = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
-  return (
-    <>
-      <div aria-hidden="true" className="ml-4 h-px bg-[var(--row-separator)]" />
-      <div className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
-        <span className="text-[15px] text-foreground">{a.title}</span>
-        <Button
-          ref={markRef}
-          size="sm"
-          variant="secondary"
-          onClick={() => avoid.setMarking(true)}
-          disabled={avoid.full}
-          aria-describedby={avoid.full ? fullId : undefined}
-          data-testid="route-avoid-mark"
-        >
-          {a.mark}
-        </Button>
-      </div>
-      {avoid.full && (
-        <p id={fullId} data-testid="route-avoid-full" className="px-4 pb-2.5 text-[13px] leading-[18px] text-muted-foreground">
-          {a.full(AVOID_LIMITS.stored)}
-        </p>
-      )}
-      {avoid.spots.map((spot) => {
-        const selected = avoid.selectedId === spot.id
-        return (
-          <div key={spot.id} data-testid="route-avoid-spot" data-selected={selected || undefined} className="flex flex-col">
-            <div className="flex min-h-[44px] items-center gap-2 pl-4 pr-1.5">
-              <button
-                type="button"
-                onClick={() => avoid.locate(spot.id)}
-                aria-label={a.locate(day(spot.createdAt))}
-                className="min-h-[44px] min-w-0 flex-1 truncate text-left text-[13px] text-muted-foreground"
-              >
-                {spot.expiresOn ? a.markedUntil(day(spot.createdAt), day(spot.expiresOn)) : a.marked(day(spot.createdAt))}
-              </button>
-              <select
-                aria-label={a.reason}
-                value={spot.reason ?? ''}
-                onChange={(event) => avoid.setReason(spot.id, (event.target.value || null) as AvoidReason | null)}
-                className="h-8 rounded-lg bg-transparent text-[13px] text-foreground"
-              >
-                <option value="">{a.reasons.none}</option>
-                {AVOID_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {a.reasons[reason]}
-                  </option>
-                ))}
-              </select>
-              <button type="button" onClick={() => avoid.remove(spot.id)} aria-label={a.remove} className="hit-44 flex size-8 items-center justify-center text-muted-foreground">
-                <X size={16} aria-hidden="true" />
-              </button>
-            </div>
-            {selected && (
-              <div role="group" aria-label={a.radius} data-testid="route-avoid-radius" className="flex items-center gap-2 pb-2.5 pl-4 pr-2.5">
-                {AVOID_RADII_M.map((radiusM) => (
-                  <button
-                    key={radiusM}
-                    type="button"
-                    aria-pressed={spot.radiusM === radiusM}
-                    onClick={() => avoid.setRadius(spot.id, radiusM)}
-                    className={cn(
-                      'hit-44 h-8 rounded-full px-3 text-[13px] font-medium tabular-nums',
-                      spot.radiusM === radiusM ? 'bg-accent text-accent-foreground' : 'bg-[var(--sheet-fill)] text-foreground shadow-[var(--sheet-fill-rim)]',
-                    )}
-                  >
-                    {a.radiusM(formatNumber(radiusM, 0))}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      })}
-      {avoid.failed && (
-        <p role="alert" className="px-4 pb-2.5 text-[13px] leading-[18px] text-foreground">
-          {a.failed}
-        </p>
-      )}
-    </>
   )
 }
