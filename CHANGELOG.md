@@ -23,9 +23,10 @@ All notable changes to this project are documented in this file.
 ### Interface
 
 - Records › Best times: a "Speed vs endurance" card turns each record from a mile up into a VDOT, says whether the
-  short or the long records lead and by how much, flags a trailing record over six months old, and gives each
-  longer distance its time at the level of the best record of the last six months. Hidden with fewer than two records or any record set on a
-  run/walk.
+  short or the long records lead and by how much (each side measured by its records of the last six months when it
+  has one), says in the same sentence when the trailing records are over six months old, dims an old record's bar,
+  and gives each longer distance its Daniels time at the level of the best record of the last six months, apart from
+  Garmin's predictions above it. Hidden with fewer than two records or any record set on a run/walk.
 - All time › By year: each year's totals line adds its weekly average, over the days of the months run.
 - `runningSince` in `athlete.json` (`"2021"` or `"2021-04"`): when the current running began. The coach gets it with
   `runningYears`; All time's subtitle reads "Running since 2021 · 5 years · history from May 2025" when it goes back

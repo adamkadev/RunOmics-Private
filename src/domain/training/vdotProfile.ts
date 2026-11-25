@@ -31,7 +31,7 @@ export interface VdotProfile {
   /** The best record of the last six months, else the best: the level the equivalents are worked out at. */
   anchor: VdotRow
   lead: VdotLead
-  /** Best short record against best long one, rounded to the VDOT. */
+  /** Best short record against best long one, each side's recent records first, rounded to the VDOT. */
   gap: number
   /** The records on the trailing side old enough to be the reason they trail. */
   staleTrailing: VdotRow[]
@@ -49,6 +49,12 @@ function daysBetween(from: string, to: string): number {
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10
+}
+
+// An old fast record would overstate a lead the athlete no longer has.
+function topVdot(side: readonly VdotRow[]): number {
+  const recent = side.filter((r) => !r.stale)
+  return Math.max(...(recent.length ? recent : side).map((r) => r.vdot))
 }
 
 export function vdotProfile(records: readonly VdotRecordInput[], distances: readonly { key: string; km: number }[], today: string): VdotProfile | null {
@@ -72,8 +78,8 @@ export function vdotProfile(records: readonly VdotRecordInput[], distances: read
   let gap = 0
   let staleTrailing: VdotRow[] = []
   if (short.length && long.length) {
-    const topShort = Math.max(...short.map((r) => r.vdot))
-    const topLong = Math.max(...long.map((r) => r.vdot))
+    const topShort = topVdot(short)
+    const topLong = topVdot(long)
     gap = Math.round(Math.abs(topShort - topLong))
     if (Math.abs(topShort - topLong) > EVEN_GAP) {
       lead = topShort > topLong ? 'speed' : 'endurance'
