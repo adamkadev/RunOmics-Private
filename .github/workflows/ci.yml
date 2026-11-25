@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # A pull request already ran these on its merge commit: main reruns them only to warm the caches a new lock file needs.
   push:
     branches: [main]
+    paths: [package-lock.json, .nvmrc]
   pull_request:
   workflow_dispatch:
   # Weekly, for the coverage figure and to re-check main against dependency drift.
@@ -18,80 +20,10 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  python-tests:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: scripts/requirements-dev.txt
-
-      - name: Install Python dependencies
-        run: pip install --require-hashes -r scripts/requirements-dev.txt
-
-      - name: Lint Python
-        run: ruff check scripts
-
-      - name: Run pytest
-        run: python -m pytest scripts/tests/ -q
-
-  # firestore.rules is the only guard on what the public web config can reach.
-  firestore-rules:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # The npm cache stays here only: ~/.npm holds the firebase-tools that `npx -y` in test:rules would fetch again.
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: "npm"
-
-      # The Firestore emulator needs Java 21; the runner ships it, not as default.
-      - name: Use the preinstalled JDK 21
-        run: |
-          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
-          echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"
-
-      # Shared with E2E under the same key: a hit skips `npm ci`.
-      - name: Restore node_modules
-        id: node-modules
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
-      # The emulator jar is a download of its own on every run otherwise.
-      - name: Restore the Firestore emulator
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/firebase/emulators
-          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('package.json') }}
-          restore-keys: firebase-emulators-${{ runner.os }}-
-
-      - name: Test the Firestore rules against the emulator
-        run: npm run test:rules
-
+  # One job: each job pays its own checkout, install and minute rounding, which cost more than the tests themselves.
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -171,93 +103,10 @@ jobs:
       - name: Check import cycles
         run: npm run check:cycles
 
-      # A report, not a gate: each finding is a lead to confirm with a whole-repo grep before deleting.
-      - name: Report unused files and exports
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        continue-on-error: true
-        run: |
-          npx -y knip@5.88.1 --no-progress > "$RUNNER_TEMP/knip.txt" 2>&1 || status=$?
-          cat "$RUNNER_TEMP/knip.txt"
-          { echo '### Unused code (knip)'; echo '```'; cat "$RUNNER_TEMP/knip.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          exit "${status:-0}"
-
-  # E2E builds on main alone, so without this a pull request that breaks `next build` merges unbuilt.
-  build:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-
-      # Shared with E2E under the same key: a hit skips `npm ci`.
-      - name: Restore node_modules
-        id: node-modules
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
-      # E2E saves this cache from main; the paths must be E2E's, as they are part of the cache's version.
-      - name: Restore the Next.js build cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            .next/cache
-            .next-e2e-sparse/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-
-      - name: Build against the E2E data
-        run: npm run e2e:build
-
-  # Two shards beside verify, each with a worker per core: vitest's default leaves one core idle.
-  unit-tests:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: ${{ fromJSON((github.event_name == 'push' || github.event_name == 'pull_request') && '[1, 2]' || '[1]') }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-
-      # Shared with E2E under the same key: a hit skips `npm ci`.
-      - name: Restore node_modules
-        id: node-modules
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
       # Coverage doubles the suite's time, so only the weekly and manual runs collect it.
       - name: Test
         if: github.event_name == 'push' || github.event_name == 'pull_request'
-        run: npm test -- --shard=${{ matrix.shard }}/2 --maxWorkers=100%
+        run: npm test -- --maxWorkers=100%
 
       - name: Test, with coverage
         if: github.event_name != 'push' && github.event_name != 'pull_request'
@@ -271,3 +120,14 @@ jobs:
             const rows = ["lines", "statements", "functions", "branches"].map((k) => `| ${k} | ${total[k].pct}% |`)
             console.log(["| Coverage | |", "|---|---:|", ...rows].join("\n"))
           ' >> "$GITHUB_STEP_SUMMARY"
+
+      # A report, not a gate: each finding is a lead to confirm with a whole-repo grep before deleting.
+      - name: Report unused files and exports
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: |
+          npx -y knip@5.88.1 --no-progress > "$RUNNER_TEMP/knip.txt" 2>&1 || status=$?
+          cat "$RUNNER_TEMP/knip.txt"
+          { echo '### Unused code (knip)'; echo '```'; cat "$RUNNER_TEMP/knip.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "${status:-0}"
+

@@ -393,32 +393,32 @@ hook, and a no-op once the directory exists), so a fresh clone can lint, typeche
 test straight after `npm ci` with no private-data configuration.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, the import-cycle check and the Vitest
-suite on every push/PR, plus the Python suite (`pytest scripts/tests/`) and the Firestore
-rules against the emulator as separate jobs. The tests run in two shards beside lint, each
-with a worker per core (`--maxWorkers=100%`). The production-dependency audit
+suite on every pull request, in one job (each extra job pays its own checkout, install and
+minute rounding). It runs on `main` only when `package-lock.json` or `.nvmrc` changes, to
+warm the caches a new lock file needs, plus weekly with coverage. The Python suite
+(`python.yml`, `pytest scripts/tests/`) runs only for a change to the Python scripts or
+`fixtures/`, and the Firestore rules against the emulator (`firestore-rules.yml`) only for a
+change to the rules or their test; both also run weekly. The production-dependency audit
 (`npm audit --omit=dev --audit-level=high`) fails only a change that touches
 `package-lock.json`, so an advisory published overnight does not turn every unrelated PR red;
 Dependabot's security updates (enabled in the repository's settings) open the fix instead, and
 its weekly version updates stay grouped. ESLint keeps a cache (`npm run lint` writes it under
 `node_modules/.cache/eslint`), which CI restores on every run and saves from `main` only, so
 branch runs do not fill GitHub's 10 GB of caches. It does **not**
-run `next build`. The production build is exercised by the E2E workflow
-(`.github/workflows/e2e.yml`), which runs `npm run test:e2e` — Playwright's `webServer`
-runs `e2e:build` (`next build`) and serves it with `e2e:start`. So a change that only
-breaks the build fails E2E, not CI. E2E runs on pushes to main and on demand, not on pull
-requests (a run is about 3 minutes): run it on a branch from Actions → E2E → Run workflow
-before merging a change that could break the build.
+run `next build`: Vercel's preview deployment of every pull request is the build check. The
+E2E workflow (`.github/workflows/e2e.yml`) runs `npm run test:e2e` only by hand: run it on a
+branch from Actions → E2E → Run workflow before merging a change that could break a page.
 
 ### End-to-end tests
 
 Playwright drives a real production build (`next build && next start`). No Firebase
-project or secrets are needed: every page (dashboard, activities list → detail,
-analytics, records, goals, map, shoes, plan, progress) is built from the generated demo
-dataset, and the owner's writes go to local emulators (below). The
-`iphone` project walks every page in WebKit at the iPhone 16 Pro's size, with reduced
-motion, for text that runs past an edge. The `sparse-fr` project builds a second app,
-French and from a sparse Forerunner 55 profile (`npm run demo:generate -- --profile sparse`),
-and runs the layout, Today, Plan and Analytics specs plus an axe pass against it.
+project or secrets are needed: the pages are built from the generated demo dataset, and the
+owner's writes go to local emulators (below). The suite is kept small, to what only a real
+build and browser can check: every page hydrates, the main pages render, the API refuses a
+caller without the owner's token, and the owner's writes reach Firestore. The rest belongs in
+unit tests. The `sparse-fr` project builds a second app, French and from a sparse Forerunner
+55 profile (`npm run demo:generate -- --profile sparse`), and runs the Today and Plan specs,
+the second athlete's own and an axe pass against it, in Chromium at an iPhone's size.
 
 **Running:**
 
@@ -451,7 +451,7 @@ script from apis.google.com even against the emulator. The Firestore rules apply
 they do in production.
 `owner.spec.ts` covers the morning check-in, a note with a tag and the HR-unreliable
 switch, and the notification switches; `sparse.spec.ts` marks a missed session
-« Sautée » in French; `explore.spec.ts` marks spots to avoid in the owner's Firestore.
+« Sautée » in French.
 Each test clears the documents it writes, since the emulator outlives a local run and
 both builds share it. `next.config.ts` refuses all three test flags on Vercel, so none
 can reach a deployment.

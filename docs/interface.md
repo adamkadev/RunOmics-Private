@@ -317,11 +317,9 @@ which is what an ESM-only library spawning a module worker requires.
 
 **A map that cannot render is invisible to the test suite.** `.env.e2e` carries no
 `NEXT_PUBLIC_MAPTILER_TOKEN`, and both map components return before constructing a `Map` without
-one, so nothing in the E2E run ever instantiated MapLibre; the map specs assert the page shell
-because the shell is all they could reach. That is how the worker breakage above shipped. The
-canvas spec in `map.spec.ts` closes it: given a token it waits for the worker request, the style
-request and an attached `canvas.maplibregl-canvas`, and it skips when no token is set, so CI
-behaves as before until a token is added as a secret.
+one, so no E2E run instantiates MapLibre. That is how the worker breakage above shipped. The suite
+keeps no map spec, so a change to the map, its worker or `next.config.ts` is checked by hand on a
+Vercel preview, which has the token.
 
 - Only the **basemap** is rendered through MapLibre; the trace is painted on afterwards in the
   athlete's accent. That is what makes changing accent free — the cached render does not depend on it.
