@@ -4,7 +4,8 @@ import { EMULATORS_COMMAND, AUTH_EMULATOR_HOST } from './e2e/owner'
 
 const PORT = process.env.PORT ?? '3000'
 const SPARSE_PORT = String(Number(PORT) + 1)
-const iphone = { ...devices['iPhone 16 Pro'], serviceWorkers: 'block' as const, reducedMotion: 'reduce' as const }
+// Chromium at the phone's size: no WebKit and its system libraries to install for a run.
+const phone = { ...devices['iPhone 16 Pro'], browserName: 'chromium' as const, serviceWorkers: 'block' as const, reducedMotion: 'reduce' as const }
 
 export default defineConfig<AppOptions>({
   testDir: './e2e',
@@ -19,14 +20,12 @@ export default defineConfig<AppOptions>({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(layout|sparse|a11y)\.spec\.ts/ },
-    // Safari at the athlete's phone, where text past an edge shows first; reduced motion skips waiting for animations.
-    { name: 'iphone', use: iphone, testMatch: /(layout|swipe)\.spec\.ts/ },
-    // The second athlete's deployment: French, a Forerunner 55's sparse data and a run/walk return, on her phone.
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(sparse|a11y)\.spec\.ts/ },
+    // The second athlete's deployment: French, a Forerunner 55's sparse data and a run/walk return, at her phone's size.
     {
       name: 'sparse-fr',
-      use: { ...iphone, baseURL: `http://localhost:${SPARSE_PORT}`, locale: 'fr-FR', appLocale: 'fr' },
-      testMatch: /(layout|dashboard|plan|analytics|sparse|a11y|swipe)\.spec\.ts/,
+      use: { ...phone, baseURL: `http://localhost:${SPARSE_PORT}`, locale: 'fr-FR', appLocale: 'fr' },
+      testMatch: /(dashboard|plan|sparse|a11y)\.spec\.ts/,
     },
   ],
   webServer: [

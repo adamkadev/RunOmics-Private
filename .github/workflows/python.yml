@@ -1,0 +1,48 @@
+name: Python
+
+# The sync's scripts alone: a change that touches none of them has nothing here to break.
+on:
+  pull_request:
+    paths:
+      - "scripts/**.py"
+      - scripts/diagnostics/**
+      - scripts/requirements*.txt
+      - scripts/pyproject.toml
+      - fixtures/**
+      - .github/workflows/python.yml
+  workflow_dispatch:
+  schedule:
+    - cron: "13 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: scripts/requirements-dev.txt
+
+      - name: Install Python dependencies
+        run: pip install --require-hashes -r scripts/requirements-dev.txt
+
+      - name: Lint Python
+        run: ruff check scripts
+
+      - name: Run pytest
+        run: python -m pytest scripts/tests/ -q

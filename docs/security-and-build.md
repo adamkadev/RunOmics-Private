@@ -273,22 +273,16 @@ Firestore-backed pages. `PORT` comes from `.env.e2e` (3100) so a personal dev se
 running on 3000 does not collide with the suite's own build; both Playwright configs read
 it, and the screenshot run can still be pointed elsewhere with `SCREENSHOT_BASE_URL`.
 
-The suite also has an `iphone` project: `e2e/layout.spec.ts` alone, in WebKit at iPhone 16 Pro
-size, walks every page, every tab of a run and every Analytics tab and period (a test per page
-and per tab), and fails on a horizontal scroll or on text past its clipping box or the screen.
-It runs with reduced motion, waits at most 3 s for the animations it can see to end (WebKit
-stalls fades in rows it skips rendering), and blocks the service worker, whose registration
-WebKit refuses on `localhost`.
-
-A third project, `sparse-fr`, is the second athlete's deployment in miniature. Playwright
+A second project, `sparse-fr`, is the second athlete's deployment in miniature. Playwright
 starts a second server on `PORT + 1` from `generate_demo_data.mjs --profile sparse`, written
 to `.e2e-data-sparse/` and built with `NEXT_PUBLIC_LOCALE=fr` into `.next-e2e-sparse/`, so it
 never overwrites the first build while that one serves. The profile is made up and shaped like
 a Forerunner 55: no Training Effect, training status, LTHR or running dynamics; no races,
 goals, PBs or explore area; a long break, then a run/walk return block planned in French with
 notes on every step, one missed session, and its first runs carrying a wrong VO2 max guess.
-On her phone's WebKit it runs `layout`, `dashboard`, `plan` and `analytics` (whose names
-come from the active locale's strings through the `t` fixture), `sparse.spec.ts` for the
+In Chromium at her phone's size, with reduced motion and the service worker blocked, it runs
+`dashboard` and `plan` (whose names come from the active locale's strings through the `t`
+fixture), `sparse.spec.ts` for the
 second athlete's own fixes, and `a11y.spec.ts`, an axe pass (WCAG 2.1 A and AA, serious and
 critical) over seven pages, with one exemption: Plan's day buttons keep a spoken label
 ("mardi 27 octobre : Repos") fuller than their "M 27". A change that only breaks the sparse French deployment fails here.

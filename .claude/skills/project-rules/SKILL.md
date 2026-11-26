@@ -16,7 +16,7 @@ Comments follow the `code-comments` skill; training blocks follow `coaching-plan
 
 Check every change against both. A feature that needs data she does not have must degrade quietly, never show
 0, an empty card or an English word. The demo generator builds her profile (`npm run demo:generate -- --profile sparse`)
-and the `sparse-fr` Playwright project runs it in French on an iPhone.
+and the `sparse-fr` Playwright project runs it in French at an iPhone's size.
 
 **No stop signals for the second athlete.** Her guidance says "no stop signals": no stop rule, symptom warning
 or "stop if it hurts" in her plan, its notes, the app's copy or a notification. `draftRules.ts` refuses a draft
@@ -43,7 +43,7 @@ write French that needs no agreement.
 | `ruff check scripts` and `python -m pytest scripts/tests/ -q` | Any change under `scripts/` in Python. |
 | `npm run test:rules` | Any change to `firestore.rules` (Java 21). |
 | `npm run export:demo -- --to <public clone> --check --strict` | Always, as CI does. A new file naming an athlete goes on the deny list in `scripts/export_public_demo.config.json`. |
-| E2E: Actions → E2E → Run workflow on the branch | Before merging anything that could break the build or a page: it does not run on pull requests. |
+| E2E: Actions → E2E → Run workflow on the branch | Before merging anything that could break a page: it runs only by hand. Prefer a unit test; add an E2E spec only for what needs a real build and browser. |
 | Visual: Actions → Visual → Run workflow | Before a perf or visual pull request (`e2e/visual/README.md`). |
 
 The pre-push hook (`git config core.hooksPath .githooks`) runs `verify` and pytest before a push to main.

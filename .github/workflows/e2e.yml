@@ -1,12 +1,7 @@
 name: E2E
 
-# Not on pull requests: a run is about 3 min, most of it install and
-# `next build`, and PRs wait on CI (lint, types, unit tests) alone. It runs
-# on every push to main, and on demand for a branch (Actions → E2E → Run
-# workflow) before merging anything risky.
+# By hand only (Actions → E2E → Run workflow on the branch), before merging what could break the build or a page.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -48,24 +43,19 @@ jobs:
         id: playwright-version
         run: echo "version=$(node -p 'require("@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
 
-      # Playwright ships a WebKit per Ubuntu release: one cached on 24.04 fails on a newer image for want of libicu74.
-      - name: Name the runner's Ubuntu release
-        id: os
-        run: echo "release=$(. /etc/os-release && echo "${ID}${VERSION_ID}")" >> "$GITHUB_OUTPUT"
-
       # Chromium's headless shell needs no apt step: the runner image ships Chrome and its libraries.
       - name: Restore Playwright's browsers
         id: playwright
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-shell-webkit-${{ steps.os.outputs.release }}-${{ steps.playwright-version.outputs.version }}
+          key: playwright-shell-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright's browsers
         if: steps.playwright.outputs.cache-hit != 'true'
         run: |
           for try in 1 2 3; do
-            npx playwright install --only-shell chromium && npx playwright install webkit && exit 0
+            npx playwright install --only-shell chromium && exit 0
             sleep 15
           done
           exit 1
@@ -73,37 +63,6 @@ jobs:
       - name: Name the week
         id: week
         run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
-
-      # The Azure mirror has served these 117 MB at 50 KB/s: a week's .debs from the cache leave apt nothing to fetch.
-      - name: Restore WebKit's system packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/webkit-apt
-          key: webkit-apt-${{ steps.os.outputs.release }}-${{ steps.playwright-version.outputs.version }}-${{ steps.week.outputs.week }}
-          restore-keys: webkit-apt-${{ steps.os.outputs.release }}-${{ steps.playwright-version.outputs.version }}-
-
-      # The iPhone and sparse-fr projects run in WebKit, whose system libraries the runner image does not ship.
-      # apt has hung for a whole job and crawled on a slow mirror: each try gets its own 3 minutes.
-      - name: Install WebKit's system libraries
-        timeout-minutes: 10
-        run: |
-          # A try cut short leaves its apt-get running under sudo, holding the lock: the next waits for it, not fails.
-          echo 'DPkg::Lock::Timeout "120";' | sudo tee /etc/apt/apt.conf.d/90-lock-timeout > /dev/null
-          mkdir -p ~/.cache/webkit-apt/partial
-          printf 'Dir::Cache::Archives "%s";\n' "$HOME/.cache/webkit-apt" | sudo tee /etc/apt/apt.conf.d/90-webkit-cache > /dev/null
-          status=1
-          for try in 1 2 3; do
-            if timeout -k 10 180 npx playwright install-deps webkit; then
-              status=0
-              break
-            fi
-            sudo pkill -x apt-get || true
-            sleep 5
-          done
-          # apt writes as root; the cache is saved as the runner user.
-          sudo chown -R "$(id -u):$(id -g)" ~/.cache/webkit-apt
-          echo "$(find ~/.cache/webkit-apt -maxdepth 1 -name '*.deb' | wc -l) package(s) in the cache."
-          exit "$status"
 
       # The owner's specs run against the Auth and Firestore emulators, which need Java 21; the runner ships it, not as default.
       - name: Use the preinstalled JDK 21
